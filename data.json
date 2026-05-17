@@ -2,46 +2,328 @@
   "meta": {
     "empresa": "Estação Sapatão",
     "periodo": "Maio 2026",
-    "dia_atual": 16,
+    "dia_atual": 17,
     "dias_no_mes": 31,
     "atualizado_em": "2026-05-17"
   },
   "cards": [
-    { "canal": "OTTO",          "is_qtd": true,  "metrica": 363077.55, "projecao": 703462.75, "meta": 758258,  "pct_proj": 0.9277, "mix_vpower": 23.7, "dia_atual": 16, "dias_no_mes": 31 },
-    { "canal": "DIESEL",        "is_qtd": true,  "metrica": 315391.39, "projecao": 611070.82, "meta": 564761,  "pct_proj": 1.0820, "mix_vpower": null,  "dia_atual": 16, "dias_no_mes": 31 },
-    { "canal": "LOJA",          "is_qtd": false, "metrica": 301757.61, "projecao": 584655.37, "meta": 578267,  "pct_proj": 1.0110, "mix_vpower": null,  "dia_atual": 16, "dias_no_mes": 31 },
-    { "canal": "ARLA",          "is_qtd": true,  "metrica": 4668.85,   "projecao": 9045.90,   "meta": 8900,    "pct_proj": 1.0164, "mix_vpower": null,  "dia_atual": 16, "dias_no_mes": 31 },
-    { "canal": "PROD. AUTO",    "is_qtd": false, "metrica": 38808.25,  "projecao": 75190.98,  "meta": 76065,   "pct_proj": 0.9885, "mix_vpower": null,  "dia_atual": 16, "dias_no_mes": 31 }
+    {
+      "canal": "OTTO",
+      "is_qtd": true,
+      "metrica": 363077.55,
+      "projecao": 703462.75,
+      "meta": 758258,
+      "pct_proj": 0.9277,
+      "mix_vpower": 23.7,
+      "dia_atual": 16,
+      "dias_no_mes": 31
+    },
+    {
+      "canal": "DIESEL",
+      "is_qtd": true,
+      "metrica": 315391.39,
+      "projecao": 611070.82,
+      "meta": 564761,
+      "pct_proj": 1.082,
+      "mix_vpower": null,
+      "dia_atual": 16,
+      "dias_no_mes": 31
+    },
+    {
+      "canal": "LOJA",
+      "is_qtd": false,
+      "metrica": 301757.61,
+      "projecao": 584655.37,
+      "meta": 578267,
+      "pct_proj": 1.011,
+      "mix_vpower": null,
+      "dia_atual": 16,
+      "dias_no_mes": 31
+    },
+    {
+      "canal": "ARLA",
+      "is_qtd": true,
+      "metrica": 4668.85,
+      "projecao": 9045.9,
+      "meta": 8900,
+      "pct_proj": 1.0164,
+      "mix_vpower": null,
+      "dia_atual": 16,
+      "dias_no_mes": 31
+    },
+    {
+      "canal": "PROD. AUTO",
+      "is_qtd": false,
+      "metrica": 38808.25,
+      "projecao": 75190.98,
+      "meta": 76065,
+      "pct_proj": 0.9885,
+      "mix_vpower": null,
+      "dia_atual": 16,
+      "dias_no_mes": 31
+    }
   ],
   "aceleradores": [
-    { "grupo": "loja",   "acelerador": "FAT. LOJA",          "realizado": 301757.61, "meta": 578267,  "meta_dia": 18653.77, "media_dia": 18859.85, "projecao": 584655.37, "pct_proj": 1.0110, "is_currency": true,  "is_pct": false },
-    { "grupo": "loja",   "acelerador": "CLIENTES",            "realizado": 12744,     "meta": 23239,   "meta_dia": 749.65,   "media_dia": 796.5,    "projecao": 24692,     "pct_proj": 1.0625, "is_currency": false, "is_pct": false },
-    { "grupo": "loja",   "acelerador": "TICKET MÉDIO",        "realizado": 23.68,     "meta": 47.00,   "meta_dia": null,     "media_dia": null,     "projecao": null,      "pct_proj": 0.5038, "is_currency": true,  "is_pct": false },
-    { "grupo": "loja",   "acelerador": "REFEIÇÕES",           "realizado": 1717,      "meta": 3150,    "meta_dia": 101.61,   "media_dia": 107.3,    "projecao": 3327,      "pct_proj": 1.0562, "is_currency": false, "is_pct": false },
-    { "grupo": "loja",   "acelerador": "EXTRAS",              "realizado": 389,       "meta": 850,     "meta_dia": 27.4,     "media_dia": 24.3,     "projecao": 754,       "pct_proj": 0.8870, "is_currency": false, "is_pct": false },
-    { "grupo": "loja",   "acelerador": "ALAMINUTA",           "realizado": 1281,      "meta": 2550,    "meta_dia": 82.3,     "media_dia": 80.1,     "projecao": 2482,      "pct_proj": 0.9737, "is_currency": false, "is_pct": false },
-    { "grupo": "loja",   "acelerador": "COMBO FARROUPILHA",   "realizado": 360,       "meta": 1150,    "meta_dia": 37.1,     "media_dia": 22.5,     "projecao": 698,       "pct_proj": 0.6068, "is_currency": false, "is_pct": false },
-    { "grupo": "loja",   "acelerador": "COMBO P. QUEIJO",     "realizado": 521,       "meta": 1100,    "meta_dia": 35.5,     "media_dia": 32.6,     "projecao": 1009,      "pct_proj": 0.9170, "is_currency": false, "is_pct": false },
-    { "grupo": "postos", "acelerador": "CICLO OTO",           "realizado": 363078,    "meta": 758258,  "meta_dia": 24459.9,  "media_dia": 22692.3,  "projecao": 703462.8,  "pct_proj": 0.9277, "is_currency": false, "is_pct": false },
-    { "grupo": "postos", "acelerador": "MIX V-POWER",         "realizado": 23.70,     "meta": 54.00,   "meta_dia": null,     "media_dia": null,     "projecao": null,      "pct_proj": 0.4389, "is_currency": false, "is_pct": true  },
-    { "grupo": "postos", "acelerador": "CICLO DIESEL",        "realizado": 315391,    "meta": 564761,  "meta_dia": 18218.1,  "media_dia": 19712,    "projecao": 611070.8,  "pct_proj": 1.0820, "is_currency": false, "is_pct": false },
-    { "grupo": "postos", "acelerador": "ARLA",                "realizado": 4669,      "meta": 8900,    "meta_dia": 287.1,    "media_dia": 291.8,    "projecao": 9045.9,    "pct_proj": 1.0164, "is_currency": false, "is_pct": false },
-    { "grupo": "postos", "acelerador": "PROD. AUTO (PA)",     "realizado": 38808.25,  "meta": 76065,   "meta_dia": 2453.71,  "media_dia": 2425.52,  "projecao": 75190.98,  "pct_proj": 0.9885, "is_currency": true,  "is_pct": false },
-    { "grupo": "postos", "acelerador": "LAVAGEM - CUPONS",    "realizado": 938,       "meta": 1650,    "meta_dia": 53.2,     "media_dia": 58.6,     "projecao": 1817,      "pct_proj": 1.1012, "is_currency": false, "is_pct": false },
-    { "grupo": "postos", "acelerador": "PIX",                 "realizado": 9.97,      "meta": null,    "meta_dia": null,     "media_dia": null,     "projecao": null,      "pct_proj": null,   "is_currency": false, "is_pct": true  },
-    { "grupo": "postos", "acelerador": "SHELLBOX",            "realizado": 15.10,     "meta": null,    "meta_dia": null,     "media_dia": null,     "projecao": null,      "pct_proj": null,   "is_currency": false, "is_pct": true  },
-    { "grupo": "fidelidade", "acelerador": "APP NOVOS",       "realizado": 129,       "meta": null,    "meta_dia": null,     "media_dia": 8.1,      "projecao": 250,       "pct_proj": null,   "is_currency": false, "is_pct": false }
+    {
+      "grupo": "loja",
+      "acelerador": "FAT. LOJA",
+      "realizado": 301757.61,
+      "meta": 578267,
+      "meta_dia": 18653.77,
+      "media_dia": 18859.85,
+      "projecao": 584655.37,
+      "pct_proj": 1.011,
+      "is_currency": true,
+      "is_pct": false
+    },
+    {
+      "grupo": "loja",
+      "acelerador": "CLIENTES",
+      "realizado": 12744,
+      "meta": 23239,
+      "meta_dia": 749.65,
+      "media_dia": 796.5,
+      "projecao": 24692,
+      "pct_proj": 1.0625,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "loja",
+      "acelerador": "TICKET MÉDIO",
+      "realizado": 23.68,
+      "meta": 47,
+      "meta_dia": null,
+      "media_dia": null,
+      "projecao": null,
+      "pct_proj": 0.5038,
+      "is_currency": true,
+      "is_pct": false
+    },
+    {
+      "grupo": "loja",
+      "acelerador": "REFEIÇÕES",
+      "realizado": 1717,
+      "meta": 3150,
+      "meta_dia": 101.61,
+      "media_dia": 107.3,
+      "projecao": 3327,
+      "pct_proj": 1.0562,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "loja",
+      "acelerador": "EXTRAS",
+      "realizado": 389,
+      "meta": 850,
+      "meta_dia": 27.4,
+      "media_dia": 24.3,
+      "projecao": 754,
+      "pct_proj": 0.887,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "loja",
+      "acelerador": "ALAMINUTA",
+      "realizado": 1281,
+      "meta": 2550,
+      "meta_dia": 82.3,
+      "media_dia": 80.1,
+      "projecao": 2482,
+      "pct_proj": 0.9737,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "loja",
+      "acelerador": "COMBO FARROUPILHA",
+      "realizado": 360,
+      "meta": 1150,
+      "meta_dia": 37.1,
+      "media_dia": 22.5,
+      "projecao": 698,
+      "pct_proj": 0.6068,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "loja",
+      "acelerador": "COMBO P. QUEIJO",
+      "realizado": 521,
+      "meta": 1100,
+      "meta_dia": 35.5,
+      "media_dia": 32.6,
+      "projecao": 1009,
+      "pct_proj": 0.917,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "postos",
+      "acelerador": "CICLO OTO",
+      "realizado": 363078,
+      "meta": 758258,
+      "meta_dia": 24459.9,
+      "media_dia": 22692.3,
+      "projecao": 703462.8,
+      "pct_proj": 0.9277,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "postos",
+      "acelerador": "MIX V-POWER",
+      "realizado": 23.7,
+      "meta": 54,
+      "meta_dia": null,
+      "media_dia": null,
+      "projecao": null,
+      "pct_proj": 0.4389,
+      "is_currency": false,
+      "is_pct": true
+    },
+    {
+      "grupo": "postos",
+      "acelerador": "CICLO DIESEL",
+      "realizado": 315391,
+      "meta": 564761,
+      "meta_dia": 18218.1,
+      "media_dia": 19712,
+      "projecao": 611070.8,
+      "pct_proj": 1.082,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "postos",
+      "acelerador": "ARLA",
+      "realizado": 4669,
+      "meta": 8900,
+      "meta_dia": 287.1,
+      "media_dia": 291.8,
+      "projecao": 9045.9,
+      "pct_proj": 1.0164,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "postos",
+      "acelerador": "PROD. AUTO (PA)",
+      "realizado": 38808.25,
+      "meta": 76065,
+      "meta_dia": 2453.71,
+      "media_dia": 2425.52,
+      "projecao": 75190.98,
+      "pct_proj": 0.9885,
+      "is_currency": true,
+      "is_pct": false
+    },
+    {
+      "grupo": "postos",
+      "acelerador": "LAVAGEM - CUPONS",
+      "realizado": 938,
+      "meta": 1650,
+      "meta_dia": 53.2,
+      "media_dia": 58.6,
+      "projecao": 1817,
+      "pct_proj": 1.1012,
+      "is_currency": false,
+      "is_pct": false
+    },
+    {
+      "grupo": "postos",
+      "acelerador": "PIX",
+      "realizado": 9.97,
+      "meta": null,
+      "meta_dia": null,
+      "media_dia": null,
+      "projecao": null,
+      "pct_proj": null,
+      "is_currency": false,
+      "is_pct": true
+    },
+    {
+      "grupo": "postos",
+      "acelerador": "SHELLBOX",
+      "realizado": 15.1,
+      "meta": null,
+      "meta_dia": null,
+      "media_dia": null,
+      "projecao": null,
+      "pct_proj": null,
+      "is_currency": false,
+      "is_pct": true
+    },
+    {
+      "grupo": "fidelidade",
+      "acelerador": "APP NOVOS",
+      "realizado": 129,
+      "meta": null,
+      "meta_dia": null,
+      "media_dia": 8.1,
+      "projecao": 250,
+      "pct_proj": null,
+      "is_currency": false,
+      "is_pct": false
+    }
   ],
   "top_produtos": [
-    { "rank": 1, "produto": "GASOLINA COMUM",                 "qtd": 263100.54, "faturamento": 1680956.92 },
-    { "rank": 2, "produto": "DIESEL S-10 ADITIVADO V-POWER",  "qtd": 223119.55, "faturamento": 1443725.58 },
-    { "rank": 3, "produto": "DIESEL S-500",                   "qtd": 92271.84,  "faturamento": 587010.74  },
-    { "rank": 4, "produto": "GASOLINA ADITIVADA V-POWER",     "qtd": 81733.93,  "faturamento": 544462.29  },
-    { "rank": 5, "produto": "ETANOL COMUM",                   "qtd": 10881.96,  "faturamento": 52063.50   },
-    { "rank": 6, "produto": "GÁS NATURAL VEICULAR",           "qtd": 7361.12,   "faturamento": 34267.18   },
-    { "rank": 7, "produto": "REFEIÇÃO ALAMINUTA GADO",        "qtd": 855,       "faturamento": 27896.96   },
-    { "rank": 8, "produto": "LAVAGEM",                        "qtd": 15966,     "faturamento": 15966.00   },
-    { "rank": 9, "produto": "SALGADO PÃO DE QUEIJO SELECT",   "qtd": 2202,      "faturamento": 12514.84   }
+    {
+      "rank": 1,
+      "produto": "GASOLINA COMUM",
+      "qtd": 263100.54,
+      "faturamento": 1680956.92
+    },
+    {
+      "rank": 2,
+      "produto": "DIESEL S-10 ADITIVADO V-POWER",
+      "qtd": 223119.55,
+      "faturamento": 1443725.58
+    },
+    {
+      "rank": 3,
+      "produto": "DIESEL S-500",
+      "qtd": 92271.84,
+      "faturamento": 587010.74
+    },
+    {
+      "rank": 4,
+      "produto": "GASOLINA ADITIVADA V-POWER",
+      "qtd": 81733.93,
+      "faturamento": 544462.29
+    },
+    {
+      "rank": 5,
+      "produto": "ETANOL COMUM",
+      "qtd": 10881.96,
+      "faturamento": 52063.5
+    },
+    {
+      "rank": 6,
+      "produto": "GÁS NATURAL VEICULAR",
+      "qtd": 7361.12,
+      "faturamento": 34267.18
+    },
+    {
+      "rank": 7,
+      "produto": "REFEIÇÃO ALAMINUTA GADO",
+      "qtd": 855,
+      "faturamento": 27896.96
+    },
+    {
+      "rank": 8,
+      "produto": "LAVAGEM",
+      "qtd": 15966,
+      "faturamento": 15966
+    },
+    {
+      "rank": 9,
+      "produto": "SALGADO PÃO DE QUEIJO SELECT",
+      "qtd": 2202,
+      "faturamento": 12514.84
+    }
   ],
   "unidades": [
     "ESTAÇÃO SAPATÃO",
@@ -50,12 +332,12 @@
   "api": {
     "base_url": "https://dashboard.estacaosapatao.com.br",
     "endpoints": {
-      "cards":        "/api/dashboard/cards?ano={ano}&meses={mes}",
+      "cards": "/api/dashboard/cards?ano={ano}&meses={mes}",
       "aceleradores": "/api/dashboard/aceleradores?ano={ano}&meses={mes}",
       "top_produtos": "/api/dashboard/top-produtos?ano={ano}&meses={mes}",
-      "evolucao":     "/api/dashboard/evolucao-mensal?",
-      "unidades":     "/api/dashboard/filtros/unidades",
-      "periodos":     "/api/dashboard/filtros/periodos"
+      "evolucao": "/api/dashboard/evolucao-mensal?",
+      "unidades": "/api/dashboard/filtros/unidades",
+      "periodos": "/api/dashboard/filtros/periodos"
     },
     "auth": {
       "tipo": "Bearer Token",
