@@ -2,87 +2,69 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Painel ES">
 <meta name="theme-color" content="#1a3a2a">
 <title>Painel Operacional — Estação Sapatão</title>
 <link rel="manifest" href="manifest.json">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%231a3a2a' width='180' height='180'/><text x='50%' y='50%' font-size='100' font-weight='800' fill='white' text-anchor='middle' dominant-baseline='middle' font-family='system-ui'>ES</text></svg>" type="image/svg+xml">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%231a3a2a' width='180' height='180' rx='40'/><text x='50%' y='50%' font-size='100' font-weight='800' fill='white' text-anchor='middle' dominant-baseline='middle' font-family='system-ui'>ES</text></svg>" type="image/svg+xml">
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #f5f5f0; color: #1a1a1a; min-height: 100vh; padding: 16px 12px;
-    -webkit-user-select: none; user-select: none;
-    -webkit-touch-callout: none;
+    background: #f5f5f0; color: #1a1a1a; min-height: 100vh; padding: 24px;
   }
 
   /* HEADER */
-  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e0e0d8; }
-  .header-left { display: flex; align-items: center; gap: 10px; }
-  .logo-circle { width: 40px; height: 40px; border-radius: 50%; background: #1a3a2a; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff; flex-shrink: 0; }
-  .header-title { font-size: 16px; font-weight: 700; }
-  .header-sub { font-size: 12px; color: #666; margin-top: 2px; }
-  .period-badge { background: #1a3a2a; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-  .day-indicator { font-size: 11px; color: #888; margin-top: 3px; text-align: right; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e0e0d8; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-circle { width: 44px; height: 44px; border-radius: 50%; background: #1a3a2a; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: #fff; }
+  .header-title { font-size: 20px; font-weight: 700; }
+  .header-sub { font-size: 13px; color: #666; margin-top: 2px; }
+  .period-badge { background: #1a3a2a; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .day-indicator { font-size: 12px; color: #888; margin-top: 4px; text-align: right; }
 
   /* SECTION */
-  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; margin: 20px 0 12px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #888; margin: 24px 0 12px; }
 
   /* KPI CARDS */
-  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-  .kpi-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; position: relative; overflow: hidden; }
+  .cards-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .kpi-card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e8e8e0; position: relative; overflow: hidden; }
   .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
   .kpi-card.verde::before { background: #22c55e; }
   .kpi-card.amarelo::before { background: #f59e0b; }
   .kpi-card.vermelho::before { background: #ef4444; }
-  .kpi-canal { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #888; margin-bottom: 6px; }
-  .kpi-value { font-size: 18px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
-  .kpi-unit { font-size: 10px; color: #666; margin-bottom: 8px; }
-  .kpi-pct-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+  .kpi-canal { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+  .kpi-unit { font-size: 11px; color: #666; margin-bottom: 10px; }
+  .kpi-pct-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
   .badge-verde { background: #dcfce7; color: #16a34a; }
   .badge-amarelo { background: #fef9c3; color: #b45309; }
   .badge-vermelho { background: #fee2e2; color: #dc2626; }
-  .kpi-row { display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-top: 3px; }
+  .kpi-row { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: 4px; }
   .kpi-row span:last-child { font-weight: 600; color: #333; }
-  .progress-bar-bg { background: #f0f0ea; border-radius: 4px; height: 4px; margin-top: 8px; overflow: hidden; }
+  .progress-bar-bg { background: #f0f0ea; border-radius: 4px; height: 5px; margin-top: 10px; overflow: hidden; }
   .progress-bar-fill { height: 100%; border-radius: 4px; }
   .fill-verde { background: #22c55e; }
   .fill-amarelo { background: #f59e0b; }
   .fill-vermelho { background: #ef4444; }
 
-  /* CHARTS */
-  .charts-row { display: grid; grid-template-columns: 1fr; gap: 14px; }
-  .chart-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; }
-  .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
-  .chart-sub { font-size: 11px; color: #888; margin-bottom: 12px; }
-  .chart-wrapper { position: relative; height: 220px; }
-
-  /* TOP PRODUTOS */
-  .produto-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .produto-rank { width: 20px; height: 20px; border-radius: 50%; background: #f0f0ea; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #666; flex-shrink: 0; }
-  .produto-rank.top3 { background: #1a3a2a; color: #fff; }
-  .produto-info { flex: 1; min-width: 0; }
-  .produto-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .produto-fat { font-size: 10px; color: #666; margin-top: 1px; }
-  .produto-bar-bg { background: #f0f0ea; border-radius: 3px; height: 3px; margin-top: 4px; }
-  .produto-bar-fill { height: 100%; border-radius: 3px; background: #1a3a2a; }
-
-  /* TABLES */
-  .acel-section { display: grid; grid-template-columns: 1fr; gap: 14px; }
-  .table-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; }
-  .table-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
-  .table-sub { font-size: 11px; color: #888; margin-bottom: 12px; }
-  table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th { text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #888; padding: 6px 6px; border-bottom: 2px solid #f0f0ea; }
-  td { padding: 8px 6px; border-bottom: 1px solid #f5f5f0; color: #333; }
+  /* ACELERADORES TABLE */
+  .acel-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .table-card { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8e8e0; }
+  .table-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .table-sub { font-size: 12px; color: #888; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #888; padding: 6px 8px; border-bottom: 2px solid #f0f0ea; }
+  td { padding: 7px 8px; border-bottom: 1px solid #f5f5f0; color: #333; }
   tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
   .td-canal { font-weight: 600; color: #1a1a1a; }
-  .pct-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; min-width: 40px; text-align: center; }
+  .pct-badge { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; min-width: 44px; text-align: center; }
   .num-right { text-align: right; }
 
   /* AÇÕES SUGERIDAS */
@@ -103,19 +85,13 @@
   .acao-pct { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
   .acao-gap { font-size: 10px; color: #999; margin-bottom: 8px; }
   .acao-text { font-size: 12px; color: #333; line-height: 1.5; border-left: 2px solid #e0e0d8; padding-left: 8px; }
-  .gap-indicator strong { color: #333; }
 
   /* FOOTER */
-  .footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid #e0e0d8; display: flex; flex-direction: column; gap: 6px; font-size: 9px; color: #aaa; text-align: center; }
+  .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e0e0d8; display: flex; justify-content: space-between; font-size: 11px; color: #aaa; }
   .footer strong { color: #555; }
 
-  /* SAFE AREA (iPhone) */
-  @supports (padding: max(0px)) {
-    body { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); }
-  }
-
   @media (max-width: 1100px) { .acoes-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 900px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } .charts-row, .acel-section, .acoes-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } .acel-section, .acoes-grid { grid-template-columns: 1fr; } }
 
   /* PRINT */
   @media print {
@@ -143,19 +119,6 @@
 <div class="section-label">Performance por Canal</div>
 <div class="cards-grid" id="kpi-cards"></div>
 
-<div class="section-label">Projeção vs Meta</div>
-<div class="charts-row">
-  <div class="chart-card">
-    <div class="chart-title">Realizado · Projeção · Meta</div>
-    <div class="chart-sub">Comparativo por canal — Maio 2026</div>
-    <div class="chart-wrapper"><canvas id="chartCanais"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title">Top Produtos</div>
-    <div class="chart-sub">Ranking por faturamento</div>
-    <div id="topProdutos"></div>
-  </div>
-</div>
 
 <div class="section-label">Aceleradores</div>
 <div class="acel-section">
@@ -181,11 +144,6 @@
 </div>
 
 <script>
-// ─── SERVICE WORKER ──────────────────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
-
 // ─── FIXED ACTIONS MAP (Não muda com dados, é fixo) ────────────────────────
 const acoesMap = {
   "CICLO OTO":        { gap: "proj. 703k L vs meta 758k L",    acao: "Ação \"tanque cheio\" com brinde na loja para aumentar volume por visita." },
@@ -240,40 +198,6 @@ fetch('data.json')
         <div class="kpi-row" style="margin-top:8px"><span>Projeção</span><span>${fmtProjecao(c)}</span></div>
         <div class="kpi-row"><span>Meta</span><span>${fmtMeta(c)}</span></div>
         ${extra}
-      </div>`;
-    }).join('');
-
-    // ─── CHART
-    const chartCtx = document.getElementById('chartCanais');
-    new Chart(chartCtx, {
-      type:'bar',
-      data:{
-        labels: cards.map(c => c.canal),
-        datasets:[
-          { label:'Realizado %', data:cards.map(c => +(c.metrica/c.meta*100).toFixed(1)), backgroundColor:'#1a3a2a', borderRadius:5 },
-          { label:'Projeção %',  data:cards.map(c => +(c.projecao/c.meta*100).toFixed(1)), backgroundColor:'#5a9a6a', borderRadius:5 },
-          { label:'Meta (100%)', data:cards.map(()=>100), backgroundColor:'#e0e8e4', borderRadius:5 },
-        ]
-      },
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{position:'top', labels:{font:{size:11}, boxWidth:10, padding:10}}, tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.raw}%`}} },
-        scales:{ x:{grid:{display:false}, ticks:{font:{size:10}}}, y:{ticks:{callback:v=>v+'%', font:{size:10}}, grid:{color:'#f0f0ea'}, min:0, max:130} }
-      }
-    });
-
-    // ─── TOP PRODUTOS
-    const maxFat = topProdutos[0].faturamento;
-    document.getElementById('topProdutos').innerHTML = topProdutos.map((p,i) => {
-      const w = (p.faturamento/maxFat*100).toFixed(1);
-      const short = p.produto.length > 26 ? p.produto.substring(0,24)+'…' : p.produto;
-      return `<div class="produto-row">
-        <div class="produto-rank ${i<3?'top3':''}">${i+1}</div>
-        <div class="produto-info">
-          <div class="produto-name">${short}</div>
-          <div class="produto-fat">${fmtBRL(p.faturamento)}</div>
-          <div class="produto-bar-bg"><div class="produto-bar-fill" style="width:${w}%"></div></div>
-        </div>
       </div>`;
     }).join('');
 
