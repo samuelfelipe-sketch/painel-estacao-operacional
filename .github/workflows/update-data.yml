@@ -59,10 +59,12 @@ jobs:
           // Read current data.json
           const currentData = JSON.parse(fs.readFileSync('data.json', 'utf8'));
 
-          // Update metadata
+          // Update metadata (dados são sempre D-1)
           const now = new Date();
+          const yesterday = new Date(now);
+          yesterday.setDate(now.getDate() - 1);
           currentData.meta.atualizado_em = now.toISOString().split('T')[0];
-          currentData.meta.dia_atual = now.getDate();
+          currentData.meta.dia_atual = yesterday.getDate();
 
           // Get month info (would be replaced with API data in production)
           const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
