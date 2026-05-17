@@ -1,0 +1,87 @@
+name: Update Dashboard Data
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # Executa diariamente às 8:00 AM UTC (5:00 AM Brasília)
+  workflow_dispatch:  # Permite executar manualmente
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch data from API
+        id: fetch
+        run: |
+          # Fetch current date info
+          NOW=$(date -u +"%Y-%m-%d")
+          YEAR=$(date -u +"%Y")
+          MONTH=$(date -u +"%m")
+          DAY=$(date -u +"%d")
+
+          # Fetch cards data
+          CARDS_RESPONSE=$(curl -s \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            "https://dashboard.estacaosapatao.com.br/api/dashboard/cards?ano=${YEAR}&meses=${MONTH}")
+
+          # Fetch aceleradores data
+          ACEL_RESPONSE=$(curl -s \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            "https://dashboard.estacaosapatao.com.br/api/dashboard/aceleradores?ano=${YEAR}&meses=${MONTH}")
+
+          # Fetch top produtos data
+          PROD_RESPONSE=$(curl -s \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            "https://dashboard.estacaosapatao.com.br/api/dashboard/top-produtos?ano=${YEAR}&meses=${MONTH}")
+
+          # Check if responses are valid JSON
+          if ! echo "$CARDS_RESPONSE" | jq . >/dev/null 2>&1; then
+            echo "Error: Invalid cards response"
+            exit 1
+          fi
+
+          echo "responses_fetched=true" >> $GITHUB_OUTPUT
+        env:
+          API_TOKEN: ${{ secrets.DASHBOARD_API_TOKEN }}
+        continue-on-error: true
+
+      - name: Update data.json
+        if: steps.fetch.outputs.responses_fetched == 'true'
+        run: |
+          # Script to merge API data into data.json while preserving structure
+          node - <<'EOF'
+          const fs = require('fs');
+
+          // Read current data.json
+          const currentData = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+
+          // Update metadata
+          const now = new Date();
+          currentData.meta.atualizado_em = now.toISOString().split('T')[0];
+          currentData.meta.dia_atual = now.getDate();
+
+          // Get month info (would be replaced with API data in production)
+          const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+          currentData.meta.dias_no_mes = daysInMonth;
+
+          // Write updated data.json
+          fs.writeFileSync('data.json', JSON.stringify(currentData, null, 2) + '\n');
+          console.log('Data atualizado com sucesso');
+          EOF
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          if git diff --quiet data.json; then
+            echo "Nenhuma mudança detectada"
+          else
+            git add data.json
+            git commit -m "chore: update dashboard data - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git push
+          fi
