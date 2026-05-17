@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Painel ES">
+<meta name="theme-color" content="#1a3a2a">
+<title>Painel Operacional — Estação Sapatão</title>
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f0; color: #1a1a1a; min-height: 100vh; padding: 16px 12px;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e0e0d8; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo-circle { width: 40px; height: 40px; border-radius: 50%; background: #1a3a2a; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff; flex-shrink: 0; }
+  .header-title { font-size: 16px; font-weight: 700; }
+  .header-sub { font-size: 12px; color: #666; margin-top: 2px; }
+  .period-badge { background: #1a3a2a; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .day-indicator { font-size: 11px; color: #888; margin-top: 3px; text-align: right; }
+
+  /* SECTION */
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; margin: 20px 0 12px; }
+
+  /* KPI CARDS */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .kpi-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; position: relative; overflow: hidden; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .kpi-card.verde::before { background: #22c55e; }
+  .kpi-card.amarelo::before { background: #f59e0b; }
+  .kpi-card.vermelho::before { background: #ef4444; }
+  .kpi-canal { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #888; margin-bottom: 6px; }
+  .kpi-value { font-size: 18px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+  .kpi-unit { font-size: 10px; color: #666; margin-bottom: 8px; }
+  .kpi-pct-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+  .badge-verde { background: #dcfce7; color: #16a34a; }
+  .badge-amarelo { background: #fef9c3; color: #b45309; }
+  .badge-vermelho { background: #fee2e2; color: #dc2626; }
+  .kpi-row { display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-top: 3px; }
+  .kpi-row span:last-child { font-weight: 600; color: #333; }
+  .progress-bar-bg { background: #f0f0ea; border-radius: 4px; height: 4px; margin-top: 8px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 4px; }
+  .fill-verde { background: #22c55e; }
+  .fill-amarelo { background: #f59e0b; }
+  .fill-vermelho { background: #ef4444; }
+
+  /* CHARTS */
+  .charts-row { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .chart-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; }
+  .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .chart-sub { font-size: 11px; color: #888; margin-bottom: 12px; }
+  .chart-wrapper { position: relative; height: 220px; }
+
+  /* TOP PRODUTOS */
+  .produto-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .produto-rank { width: 20px; height: 20px; border-radius: 50%; background: #f0f0ea; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #666; flex-shrink: 0; }
+  .produto-rank.top3 { background: #1a3a2a; color: #fff; }
+  .produto-info { flex: 1; min-width: 0; }
+  .produto-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .produto-fat { font-size: 10px; color: #666; margin-top: 1px; }
+  .produto-bar-bg { background: #f0f0ea; border-radius: 3px; height: 3px; margin-top: 4px; }
+  .produto-bar-fill { height: 100%; border-radius: 3px; background: #1a3a2a; }
+
+  /* TABLES */
+  .acel-section { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .table-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; }
+  .table-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .table-sub { font-size: 11px; color: #888; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #888; padding: 6px 6px; border-bottom: 2px solid #f0f0ea; }
+  td { padding: 8px 6px; border-bottom: 1px solid #f5f5f0; color: #333; }
+  tr:last-child td { border-bottom: none; }
+  .td-canal { font-weight: 600; color: #1a1a1a; }
+  .pct-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; min-width: 40px; text-align: center; }
+  .num-right { text-align: right; }
+
+  /* AÇÕES SUGERIDAS */
+  .acoes-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .acao-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; border-left: 4px solid #ef4444; }
+  .acao-card.amarelo-borda { border-left-color: #f59e0b; }
+  .acao-card.vermelho-borda { border-left-color: #ef4444; }
+  .acao-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
+  .acao-canal { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #1a1a1a; flex: 1; min-width: 0; }
+  .acao-pct { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 5px; flex-shrink: 0; }
+  .acao-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .acao-item { display: flex; gap: 8px; align-items: flex-start; }
+  .acao-num { width: 18px; height: 18px; border-radius: 50%; background: #f0f0ea; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #555; flex-shrink: 0; margin-top: 1px; }
+  .acao-text { font-size: 11px; color: #444; line-height: 1.4; }
+  .gap-indicator { font-size: 10px; color: #888; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f0f0ea; }
+  .gap-indicator strong { color: #333; }
+
+  /* FOOTER */
+  .footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid #e0e0d8; display: flex; flex-direction: column; gap: 6px; font-size: 9px; color: #aaa; text-align: center; }
+  .footer strong { color: #555; }
+
+  /* SAFE AREA (iPhone) */
+  @supports (padding: max(0px)) {
+    body { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  }
+
+  /* MOBILE 320px+ */
+  @media (max-width: 400px) {
+    .cards-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+    .section-label { font-size: 10px; margin: 16px 0 10px; }
+    .header { margin-bottom: 16px; }
+    .header-title { font-size: 14px; }
+    .header-sub { font-size: 11px; }
+    .period-badge { font-size: 11px; padding: 5px 10px; }
+    .charts-row { gap: 12px; }
+    .acel-section { gap: 12px; }
+    .acoes-grid { gap: 10px; }
+  }
+
+  /* TABLET 600px+ */
+  @media (min-width: 600px) {
+    body { padding: 20px; }
+    .cards-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+    .charts-row { grid-template-columns: 1.6fr 1fr; }
+    .acel-section { grid-template-columns: 1fr 1fr; }
+    .acoes-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* DESKTOP 1000px+ */
+  @media (min-width: 1000px) {
+    body { padding: 24px; }
+    .cards-grid { grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .charts-row { grid-template-columns: 1.6fr 1fr; gap: 16px; }
+    .acel-section { grid-template-columns: 1fr 1fr; gap: 16px; }
+    .acoes-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  }
+
+  /* PRINT */
+  @media print {
+    body { background: #fff; padding: 0; }
+    .header { margin-bottom: 16px; padding-bottom: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo-circle">ES</div>
+    <div>
+      <div class="header-title">Painel Operacional</div>
+      <div class="header-sub">Estação Sapatão · Faturamento & Aceleradores</div>
+    </div>
+  </div>
+  <div style="text-align:right">
+    <div class="period-badge">Maio 2026</div>
+    <div class="day-indicator">Dia 16 de 31 · 51,6% do mês</div>
+  </div>
+</div>
+
+<div class="section-label">Performance por Canal</div>
+<div class="cards-grid" id="kpi-cards"></div>
+
+<div class="section-label">Projeção vs Meta</div>
+<div class="charts-row">
+  <div class="chart-card">
+    <div class="chart-title">Realizado · Projeção · Meta</div>
+    <div class="chart-sub">Comparativo por canal — Maio 2026</div>
+    <div class="chart-wrapper"><canvas id="chartCanais"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Top Produtos</div>
+    <div class="chart-sub">Ranking por faturamento</div>
+    <div id="topProdutos"></div>
+  </div>
+</div>
+
+<div class="section-label">Aceleradores</div>
+<div class="acel-section">
+  <div class="table-card">
+    <div class="table-title">Loja</div>
+    <div class="table-sub">Realizados, meta e projeção</div>
+    <table id="table-loja"></table>
+  </div>
+  <div class="table-card">
+    <div class="table-title">Postos</div>
+    <div class="table-sub">Realizados, meta e projeção</div>
+    <table id="table-postos"></table>
+  </div>
+</div>
+
+<div class="section-label">⚡ Ações Sugeridas — Metas Abaixo da Projeção</div>
+<div class="acoes-grid" id="acoes-grid"></div>
+
+<div class="footer">
+  <span>Estação Sapatão · dashboard.estacaosapatao.com.br</span>
+  <span>Snapshot <strong>Maio 2026 · Dia 16/31</strong> — atualizado em 17/05/2026</span>
+</div>
+
+<script>
+// ─── SERVICE WORKER ──────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const cards = [
+  { canal:"OTTO",        is_qtd:true,  metrica:363077.55, projecao:703462.75, meta:758258,  pct_proj:0.9277, mix_vpower:23.7, dia_atual:16, dias_no_mes:31 },
+  { canal:"DIESEL",      is_qtd:true,  metrica:315391.39, projecao:611070.82, meta:564761,  pct_proj:1.0820 },
+  { canal:"LOJA",        is_qtd:false, metrica:301757.61, projecao:584655.37, meta:578267,  pct_proj:1.0110 },
+  { canal:"ARLA",        is_qtd:true,  metrica:4668.85,   projecao:9045.90,   meta:8900,    pct_proj:1.0164 },
+  { canal:"PROD. AUTO",  is_qtd:false, metrica:38808.25,  projecao:75190.98,  meta:76065,   pct_proj:0.9885 },
+];
+
+const aceleradores = [
+  { grupo:"loja",   acelerador:"FAT. LOJA",         realizado:301757.61, meta:578267,  media_dia:18859.85, projecao:584655.37, pct_proj:1.0110, is_currency:true },
+  { grupo:"loja",   acelerador:"CLIENTES",           realizado:12744,     meta:23239,   media_dia:796.5,    projecao:24692,     pct_proj:1.0625, is_currency:false },
+  { grupo:"loja",   acelerador:"TICKET MÉDIO",       realizado:23.68,     meta:47.00,   media_dia:null,     projecao:null,      pct_proj:0.5038, is_currency:true },
+  { grupo:"loja",   acelerador:"REFEIÇÕES",          realizado:1717,      meta:3150,    media_dia:107.3,    projecao:3327,      pct_proj:1.0562, is_currency:false },
+  { grupo:"loja",   acelerador:"EXTRAS",             realizado:389,       meta:850,     media_dia:24.3,     projecao:754,       pct_proj:0.8870, is_currency:false },
+  { grupo:"loja",   acelerador:"ALAMINUTA",          realizado:1281,      meta:2550,    media_dia:80.1,     projecao:2482,      pct_proj:0.9737, is_currency:false },
+  { grupo:"loja",   acelerador:"COMBO FARROUPILHA",  realizado:360,       meta:1150,    media_dia:22.5,     projecao:698,       pct_proj:0.6068, is_currency:false },
+  { grupo:"loja",   acelerador:"COMBO P. QUEIJO",    realizado:521,       meta:1100,    media_dia:32.6,     projecao:1009,      pct_proj:0.9170, is_currency:false },
+  { grupo:"postos", acelerador:"CICLO OTO",          realizado:363078,    meta:758258,  media_dia:22692.3,  projecao:703462.8,  pct_proj:0.9277, is_currency:false },
+  { grupo:"postos", acelerador:"MIX V-POWER",        realizado:23.70,     meta:54.00,   media_dia:null,     projecao:null,      pct_proj:0.4389, is_currency:false, is_pct:true },
+  { grupo:"postos", acelerador:"CICLO DIESEL",       realizado:315391,    meta:564761,  media_dia:19712,    projecao:611070.8,  pct_proj:1.0820, is_currency:false },
+  { grupo:"postos", acelerador:"ARLA",               realizado:4669,      meta:8900,    media_dia:291.8,    projecao:9045.9,    pct_proj:1.0164, is_currency:false },
+  { grupo:"postos", acelerador:"PROD. AUTO (PA)",    realizado:38808.25,  meta:76065,   media_dia:2425.52,  projecao:75190.98,  pct_proj:0.9885, is_currency:true },
+  { grupo:"postos", acelerador:"LAVAGEM - CUPONS",   realizado:938,       meta:1650,    media_dia:58.6,     projecao:1817,      pct_proj:1.1012, is_currency:false },
+  { grupo:"postos", acelerador:"PIX",                realizado:9.97,      meta:null,    media_dia:null,     projecao:null,      pct_proj:null,   is_pct:true },
+  { grupo:"postos", acelerador:"SHELLBOX",           realizado:15.10,     meta:null,    media_dia:null,     projecao:null,      pct_proj:null,   is_pct:true },
+];
+
+const topProdutos = [
+  { produto:"GASOLINA COMUM",                faturamento:1680956.92 },
+  { produto:"DIESEL S-10 ADITIVADO V-POWER", faturamento:1443725.58 },
+  { produto:"DIESEL S-500",                  faturamento:587010.74 },
+  { produto:"GASOLINA ADITIVADA V-POWER",    faturamento:544462.29 },
+  { produto:"ETANOL COMUM",                  faturamento:52063.50 },
+  { produto:"GÁS NATURAL VEICULAR",          faturamento:34267.18 },
+  { produto:"REFEIÇÃO ALAMINUTA GADO",       faturamento:27896.96 },
+  { produto:"LAVAGEM",                       faturamento:15966.00 },
+];
+
+const acoesMap = {
+  "CICLO OTO": {
+    gap: "Projeção 54.870 L abaixo da meta (~7,3%)",
+    acoes: [
+      "Intensificar a oferta ativa de V-Power pelos frentistas — o mix atual de 23,7% está muito abaixo da meta de 54%; cada conversão aumenta volume e margem ao mesmo tempo.",
+      "Criar ação de abastecimento mínimo (ex: \"complete o tanque\") vinculado a desconto ou brinde na loja de conveniência para estimular volume por visita.",
+      "Mapear horários de baixo fluxo nas bombas Otto e acionar comunicação local (painel digital, WhatsApp) com oferta de preço ou benefício nesses períodos."
+    ]
+  },
+  "MIX V-POWER": {
+    gap: "Projeção 23,7% vs meta 54% — gap de 30,3 p.p.",
+    acoes: [
+      "Implantar script padrão de abordagem: frentistas devem perguntar \"posso colocar V-Power?\" antes de iniciar todo abastecimento de ciclo Otto.",
+      "Criar ranking semanal interno com premiação para o frentista com maior taxa de conversão V-Power — visibilidade no grupo da equipe.",
+      "Sinalizar as bombas V-Power com material visual de impacto: \"Protege o motor, rende mais\" — reforça a percepção de valor para o cliente."
+    ]
+  },
+  "TICKET MÉDIO": {
+    gap: "Ticket médio R$ 23,68 vs meta R$ 47,00 — gap de 50%",
+    acoes: [
+      "Treinar equipe de caixa para sugestão ativa de 1 item complementar por atendimento: \"quer adicionar um café ou pão de queijo por R$X?\".",
+      "Criar combos visíveis no balcão com 3 itens (bebida + snack + doce) a um preço ligeiramente abaixo da soma individual — aumenta ticket sem percepção de custo.",
+      "Revisar o layout da loja: posicionar produtos de maior valor (bebidas geladas, snacks premium, itens de conveniência) na rota entre a entrada e o caixa."
+    ]
+  },
+  "EXTRAS": {
+    gap: "Projeção 754 vs meta 850 — gap de ~11%",
+    acoes: [
+      "Verificar se a equipe está apresentando o cardápio de extras proativamente ou apenas quando o cliente solicita — fazer treinamento rápido de abordagem.",
+      "Criar destaque visual no cardápio ou balcão: \"Complete seu pedido — Extras a partir de R$X\" com sugestão visual.",
+      "Checar se há ruptura de estoque nos itens mais pedidos como extras — venda perdida por falta de produto impacta diretamente esse indicador."
+    ]
+  },
+  "ALAMINUTA": {
+    gap: "Projeção 2.482 vs meta 2.550 — gap de ~3%",
+    acoes: [
+      "Intensificar venda cruzada no horário do almoço (11h–14h): atendentes devem mencionar a Alaminuta ao fechar qualquer pedido de refeição.",
+      "Verificar visibilidade, temperatura de apresentação e validade do produto no PDV — produto mal apresentado reduz conversão.",
+      "Publicar post com foto apetitosa + oferta relâmpago no WhatsApp da unidade no horário de pré-almoço (10h30–11h) por 2 ou 3 dias seguidos."
+    ]
+  },
+  "COMBO FARROUPILHA": {
+    gap: "Projeção 698 vs meta 1.150 — gap de ~39%",
+    acoes: [
+      "Orientar toda a equipe a oferecer o Combo Farroupilha como sugestão padrão no horário do almoço — criar roteiro simples de abordagem (\"hoje o combo Farroupilha está ótimo!\").",
+      "Revisar composição e precificação: verificar se o combo ainda está atrativo vs. opções de concorrentes próximos e ajustar se necessário.",
+      "Criar comunicação visual na entrada e no balcão com foto real do produto — clientes que veem o produto têm muito mais propensão a pedir."
+    ]
+  },
+  "COMBO P. QUEIJO": {
+    gap: "Projeção 1.009 vs meta 1.100 — gap de ~8%",
+    acoes: [
+      "Garantir exposição do combo na altura dos olhos, próximo ao caixa — pequena mudança de posicionamento pode recuperar o gap restante.",
+      "Criar oferta por tempo limitado: \"2 combos com 10% de desconto\" — aumenta ticket e puxa volume para fechar a meta.",
+      "Verificar disponibilidade no horário de pico matinal (7h–10h) — ruptura do produto antes das 10h pode estar limitando vendas."
+    ]
+  },
+  "PROD. AUTO (PA)": {
+    gap: "Projeção R$ 75.191 vs meta R$ 76.065 — gap de ~1%",
+    acoes: [
+      "Treinar frentistas para indicar 1 produto automotivo durante o abastecimento: \"quer que eu verifique o nível do óleo?\" ou \"temos limpador de para-brisa com desconto hoje\".",
+      "Checar ruptura de SKUs de maior giro (óleos, aditivos, limpadores) — falta de 1 produto chave pode ser o que falta para fechar a meta.",
+      "Criar ilha sazonal com produtos de inverno em destaque na entrada da loja (óleo, fluido de freio, raspadores) — sazonalidade pode ser aproveitada."
+    ]
+  }
+};
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const fmtBRL = v => v == null ? '—' : 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
+const fmtNum = (v, d=0) => v == null ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
+const fmtPct = v => v == null ? '—' : Math.round(v * 100) + '%';
+const badgeClass = p => p == null ? '' : p >= 1 ? 'badge-verde' : p >= 0.9 ? 'badge-amarelo' : 'badge-vermelho';
+const cardClass  = p => p >= 1 ? 'verde' : p >= 0.9 ? 'amarelo' : 'vermelho';
+const fillClass  = p => p >= 1 ? 'fill-verde' : p >= 0.9 ? 'fill-amarelo' : 'fill-vermelho';
+const fmtMetrica  = c => c.is_qtd ? fmtNum(c.metrica/1000,1)+' mil L' : fmtBRL(c.metrica);
+const fmtProjecao = c => c.is_qtd ? fmtNum(c.projecao/1000,1)+' mil L' : fmtBRL(c.projecao);
+const fmtMeta     = c => c.is_qtd ? fmtNum(c.meta/1000,1)+' mil L' : fmtBRL(c.meta);
+
+// ─── KPI CARDS ───────────────────────────────────────────────────────────────
+document.getElementById('kpi-cards').innerHTML = cards.map(c => {
+  const cls = cardClass(c.pct_proj), bCls = badgeClass(c.pct_proj), fCls = fillClass(c.pct_proj);
+  const w = Math.min(c.pct_proj*100, 100).toFixed(1);
+  const extra = c.mix_vpower ? `<div class="kpi-row"><span>V-Power Mix</span><span>${c.mix_vpower.toFixed(1)}%</span></div>` : '';
+  return `<div class="kpi-card ${cls}">
+    <div class="kpi-canal">${c.canal}</div>
+    <div class="kpi-value">${fmtMetrica(c)}</div>
+    <div class="kpi-unit">realizado · dia ${c.dia_atual||16}/${c.dias_no_mes||31}</div>
+    <span class="kpi-pct-badge ${bCls}">${fmtPct(c.pct_proj)} da meta</span>
+    <div class="progress-bar-bg"><div class="progress-bar-fill ${fCls}" style="width:${w}%"></div></div>
+    <div class="kpi-row" style="margin-top:8px"><span>Projeção</span><span>${fmtProjecao(c)}</span></div>
+    <div class="kpi-row"><span>Meta</span><span>${fmtMeta(c)}</span></div>
+    ${extra}
+  </div>`;
+}).join('');
+
+// ─── CHART ───────────────────────────────────────────────────────────────────
+const chartCtx = document.getElementById('chartCanais');
+new Chart(chartCtx, {
+  type:'bar',
+  data:{
+    labels: cards.map(c => c.canal),
+    datasets:[
+      { label:'Realizado %', data:cards.map(c => +(c.metrica/c.meta*100).toFixed(1)), backgroundColor:'#1a3a2a', borderRadius:5 },
+      { label:'Projeção %',  data:cards.map(c => +(c.projecao/c.meta*100).toFixed(1)), backgroundColor:'#5a9a6a', borderRadius:5 },
+      { label:'Meta (100%)', data:cards.map(()=>100), backgroundColor:'#e0e8e4', borderRadius:5 },
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'top', labels:{font:{size:11}, boxWidth:10, padding:10}}, tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.raw}%`}} },
+    scales:{ x:{grid:{display:false}, ticks:{font:{size:10}}}, y:{ticks:{callback:v=>v+'%', font:{size:10}}, grid:{color:'#f0f0ea'}, min:0, max:130} }
+  }
+});
+
+// ─── TOP PRODUTOS ─────────────────────────────────────────────────────────────
+const maxFat = topProdutos[0].faturamento;
+document.getElementById('topProdutos').innerHTML = topProdutos.map((p,i) => {
+  const w = (p.faturamento/maxFat*100).toFixed(1);
+  const short = p.produto.length > 26 ? p.produto.substring(0,24)+'…' : p.produto;
+  return `<div class="produto-row">
+    <div class="produto-rank ${i<3?'top3':''}">${i+1}</div>
+    <div class="produto-info">
+      <div class="produto-name">${short}</div>
+      <div class="produto-fat">${fmtBRL(p.faturamento)}</div>
+      <div class="produto-bar-bg"><div class="produto-bar-fill" style="width:${w}%"></div></div>
+    </div>
+  </div>`;
+}).join('');
+
+// ─── ACELERADORES TABLES ──────────────────────────────────────────────────────
+function buildTable(id, grupo) {
+  const rows = aceleradores.filter(a => a.grupo === grupo);
+  document.getElementById(id).innerHTML = `
+    <thead><tr>
+      <th>Canal</th><th class="num-right">Realizado</th><th class="num-right">Meta</th><th class="num-right">Méd/Dia</th><th style="text-align:center">Proj %</th>
+    </tr></thead>
+    <tbody>${rows.map(r => {
+      const bCls = r.pct_proj != null ? badgeClass(r.pct_proj) : '';
+      const real = r.is_pct ? r.realizado.toFixed(2)+'%' : r.is_currency ? fmtBRL(r.realizado) : fmtNum(r.realizado);
+      const meta = r.meta ? (r.is_currency ? fmtBRL(r.meta) : fmtNum(r.meta)) : '—';
+      const med  = r.media_dia ? (r.is_currency ? fmtBRL(r.media_dia) : fmtNum(r.media_dia,1)) : '—';
+      return `<tr>
+        <td class="td-canal">${r.acelerador}</td>
+        <td class="num-right">${real}</td><td class="num-right">${meta}</td><td class="num-right">${med}</td>
+        <td style="text-align:center"><span class="pct-badge ${bCls}">${r.pct_proj != null ? fmtPct(r.pct_proj) : '—'}</span></td>
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+buildTable('table-loja', 'loja');
+buildTable('table-postos', 'postos');
+
+// ─── AÇÕES SUGERIDAS ──────────────────────────────────────────────────────────
+const comAcoes = aceleradores
+  .filter(a => a.pct_proj != null && a.pct_proj < 1.0 && acoesMap[a.acelerador])
+  .sort((a, b) => a.pct_proj - b.pct_proj);
+
+document.getElementById('acoes-grid').innerHTML = comAcoes.map(a => {
+  const info = acoesMap[a.acelerador];
+  const bCls = badgeClass(a.pct_proj);
+  const borderCls = a.pct_proj < 0.7 ? 'vermelho-borda' : a.pct_proj < 0.9 ? 'vermelho-borda' : 'amarelo-borda';
+  return `<div class="acao-card ${borderCls}">
+    <div class="acao-header">
+      <span class="acao-canal">${a.acelerador}</span>
+      <span class="acao-pct ${bCls}">${fmtPct(a.pct_proj)}</span>
+    </div>
+    <div class="gap-indicator"><strong>Gap:</strong> ${info.gap}</div>
+    <ul class="acao-list">
+      ${info.acoes.map((t,i) => `
+        <li class="acao-item">
+          <div class="acao-num">${i+1}</div>
+          <span class="acao-text">${t}</span>
+        </li>`).join('')}
+    </ul>
+  </div>`;
+}).join('');
+</script>
+</body>
+</html>
