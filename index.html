@@ -86,18 +86,23 @@
   .num-right { text-align: right; }
 
   /* AÇÕES SUGERIDAS */
-  .acoes-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-  .acao-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; border-left: 4px solid #ef4444; }
-  .acao-card.amarelo-borda { border-left-color: #f59e0b; }
-  .acao-card.vermelho-borda { border-left-color: #ef4444; }
-  .acao-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
-  .acao-canal { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #1a1a1a; flex: 1; min-width: 0; }
-  .acao-pct { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 5px; flex-shrink: 0; }
-  .acao-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-  .acao-item { display: flex; gap: 8px; align-items: flex-start; }
-  .acao-num { width: 18px; height: 18px; border-radius: 50%; background: #f0f0ea; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #555; flex-shrink: 0; margin-top: 1px; }
-  .acao-text { font-size: 11px; color: #444; line-height: 1.4; }
-  .gap-indicator { font-size: 10px; color: #888; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f0f0ea; }
+  .acoes-bloco { margin-bottom: 16px; }
+  .acoes-bloco-titulo {
+    font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 6px; display: inline-block; margin-bottom: 10px;
+  }
+  .bloco-critico .acoes-bloco-titulo  { background: #fee2e2; color: #b91c1c; }
+  .bloco-atencao .acoes-bloco-titulo  { background: #fef9c3; color: #92400e; }
+  .acoes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .acoes-grid-atencao { grid-template-columns: repeat(5, 1fr); }
+  .acao-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; border-top: 3px solid #ef4444; }
+  .acao-card.amarelo-borda { border-top-color: #f59e0b; }
+  .acao-card.vermelho-borda { border-top-color: #ef4444; }
+  .acao-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .acao-canal { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #1a1a1a; }
+  .acao-pct { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
+  .acao-gap { font-size: 10px; color: #999; margin-bottom: 8px; }
+  .acao-text { font-size: 12px; color: #333; line-height: 1.5; border-left: 2px solid #e0e0d8; padding-left: 8px; }
   .gap-indicator strong { color: #333; }
 
   /* FOOTER */
@@ -109,36 +114,8 @@
     body { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); }
   }
 
-  /* MOBILE 320px+ */
-  @media (max-width: 400px) {
-    .cards-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
-    .section-label { font-size: 10px; margin: 16px 0 10px; }
-    .header { margin-bottom: 16px; }
-    .header-title { font-size: 14px; }
-    .header-sub { font-size: 11px; }
-    .period-badge { font-size: 11px; padding: 5px 10px; }
-    .charts-row { gap: 12px; }
-    .acel-section { gap: 12px; }
-    .acoes-grid { gap: 10px; }
-  }
-
-  /* TABLET 600px+ */
-  @media (min-width: 600px) {
-    body { padding: 20px; }
-    .cards-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-    .charts-row { grid-template-columns: 1.6fr 1fr; }
-    .acel-section { grid-template-columns: 1fr 1fr; }
-    .acoes-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  /* DESKTOP 1000px+ */
-  @media (min-width: 1000px) {
-    body { padding: 24px; }
-    .cards-grid { grid-template-columns: repeat(5, 1fr); gap: 12px; }
-    .charts-row { grid-template-columns: 1.6fr 1fr; gap: 16px; }
-    .acel-section { grid-template-columns: 1fr 1fr; gap: 16px; }
-    .acoes-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  }
+  @media (max-width: 1100px) { .acoes-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 900px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } .charts-row, .acel-section, .acoes-grid { grid-template-columns: 1fr; } }
 
   /* PRINT */
   @media print {
@@ -195,7 +172,8 @@
 </div>
 
 <div class="section-label">⚡ Ações Sugeridas — Metas Abaixo da Projeção</div>
-<div class="acoes-grid" id="acoes-grid"></div>
+<div id="acoes-critico" class="acoes-bloco bloco-critico"></div>
+<div id="acoes-atencao" class="acoes-bloco bloco-atencao"></div>
 
 <div class="footer">
   <span>Estação Sapatão · dashboard.estacaosapatao.com.br</span>
@@ -210,70 +188,14 @@ if ('serviceWorker' in navigator) {
 
 // ─── FIXED ACTIONS MAP (Não muda com dados, é fixo) ────────────────────────
 const acoesMap = {
-  "CICLO OTO": {
-    gap: "Projeção 54.870 L abaixo da meta (~7,3%)",
-    acoes: [
-      "Intensificar a oferta ativa de V-Power pelos frentistas — o mix atual de 23,7% está muito abaixo da meta de 54%; cada conversão aumenta volume e margem ao mesmo tempo.",
-      "Criar ação de abastecimento mínimo (ex: \"complete o tanque\") vinculado a desconto ou brinde na loja de conveniência para estimular volume por visita.",
-      "Mapear horários de baixo fluxo nas bombas Otto e acionar comunicação local (painel digital, WhatsApp) com oferta de preço ou benefício nesses períodos."
-    ]
-  },
-  "MIX V-POWER": {
-    gap: "Projeção 23,7% vs meta 54% — gap de 30,3 p.p.",
-    acoes: [
-      "Implantar script padrão de abordagem: frentistas devem perguntar \"posso colocar V-Power?\" antes de iniciar todo abastecimento de ciclo Otto.",
-      "Criar ranking semanal interno com premiação para o frentista com maior taxa de conversão V-Power — visibilidade no grupo da equipe.",
-      "Sinalizar as bombas V-Power com material visual de impacto: \"Protege o motor, rende mais\" — reforça a percepção de valor para o cliente."
-    ]
-  },
-  "TICKET MÉDIO": {
-    gap: "Ticket médio R$ 23,68 vs meta R$ 47,00 — gap de 50%",
-    acoes: [
-      "Treinar equipe de caixa para sugestão ativa de 1 item complementar por atendimento: \"quer adicionar um café ou pão de queijo por R$X?\".",
-      "Criar combos visíveis no balcão com 3 itens (bebida + snack + doce) a um preço ligeiramente abaixo da soma individual — aumenta ticket sem percepção de custo.",
-      "Revisar o layout da loja: posicionar produtos de maior valor (bebidas geladas, snacks premium, itens de conveniência) na rota entre a entrada e o caixa."
-    ]
-  },
-  "EXTRAS": {
-    gap: "Projeção 754 vs meta 850 — gap de ~11%",
-    acoes: [
-      "Verificar se a equipe está apresentando o cardápio de extras proativamente ou apenas quando o cliente solicita — fazer treinamento rápido de abordagem.",
-      "Criar destaque visual no cardápio ou balcão: \"Complete seu pedido — Extras a partir de R$X\" com sugestão visual.",
-      "Checar se há ruptura de estoque nos itens mais pedidos como extras — venda perdida por falta de produto impacta diretamente esse indicador."
-    ]
-  },
-  "ALAMINUTA": {
-    gap: "Projeção 2.482 vs meta 2.550 — gap de ~3%",
-    acoes: [
-      "Intensificar venda cruzada no horário do almoço (11h–14h): atendentes devem mencionar a Alaminuta ao fechar qualquer pedido de refeição.",
-      "Verificar visibilidade, temperatura de apresentação e validade do produto no PDV — produto mal apresentado reduz conversão.",
-      "Publicar post com foto apetitosa + oferta relâmpago no WhatsApp da unidade no horário de pré-almoço (10h30–11h) por 2 ou 3 dias seguidos."
-    ]
-  },
-  "COMBO FARROUPILHA": {
-    gap: "Projeção 698 vs meta 1.150 — gap de ~39%",
-    acoes: [
-      "Orientar toda a equipe a oferecer o Combo Farroupilha como sugestão padrão no horário do almoço — criar roteiro simples de abordagem (\"hoje o combo Farroupilha está ótimo!\").",
-      "Revisar composição e precificação: verificar se o combo ainda está atrativo vs. opções de concorrentes próximos e ajustar se necessário.",
-      "Criar comunicação visual na entrada e no balcão com foto real do produto — clientes que veem o produto têm muito mais propensão a pedir."
-    ]
-  },
-  "COMBO P. QUEIJO": {
-    gap: "Projeção 1.009 vs meta 1.100 — gap de ~8%",
-    acoes: [
-      "Garantir exposição do combo na altura dos olhos, próximo ao caixa — pequena mudança de posicionamento pode recuperar o gap restante.",
-      "Criar oferta por tempo limitado: \"2 combos com 10% de desconto\" — aumenta ticket e puxa volume para fechar a meta.",
-      "Verificar disponibilidade no horário de pico matinal (7h–10h) — ruptura do produto antes das 10h pode estar limitando vendas."
-    ]
-  },
-  "PROD. AUTO (PA)": {
-    gap: "Projeção R$ 75.191 vs meta R$ 76.065 — gap de ~1%",
-    acoes: [
-      "Treinar frentistas para indicar 1 produto automotivo durante o abastecimento: \"quer que eu verifique o nível do óleo?\" ou \"temos limpador de para-brisa com desconto hoje\".",
-      "Checar ruptura de SKUs de maior giro (óleos, aditivos, limpadores) — falta de 1 produto chave pode ser o que falta para fechar a meta.",
-      "Criar ilha sazonal com produtos de inverno em destaque na entrada da loja (óleo, fluido de freio, raspadores) — sazonalidade pode ser aproveitada."
-    ]
-  }
+  "CICLO OTO":        { gap: "proj. 703k L vs meta 758k L",    acao: "Ação \"tanque cheio\" com brinde na loja para aumentar volume por visita." },
+  "MIX V-POWER":      { gap: "proj. 23,7% vs meta 54%",        acao: "Script obrigatório: frentistas perguntam \"posso colocar V-Power?\" antes de cada abastecimento Otto." },
+  "TICKET MÉDIO":     { gap: "proj. R$23,68 vs meta R$47,00",  acao: "Caixa sugere 1 item complementar em cada atendimento." },
+  "EXTRAS":           { gap: "proj. 754 vs meta 850",           acao: "Equipe oferece extras proativamente — não aguarda o cliente pedir." },
+  "ALAMINUTA":        { gap: "proj. 2.482 vs meta 2.550",       acao: "Atendentes mencionam Alaminuta ao fechar todo pedido de refeição (11h–14h)." },
+  "COMBO FARROUPILHA":{ gap: "proj. 698 vs meta 1.150",         acao: "Equipe oferece o Combo Farroupilha como sugestão padrão no horário do almoço." },
+  "COMBO P. QUEIJO":  { gap: "proj. 1.009 vs meta 1.100",       acao: "Reposicionar combo na altura dos olhos, próximo ao caixa." },
+  "PROD. AUTO (PA)":  { gap: "proj. R$75.191 vs meta R$76.065", acao: "Frentistas indicam 1 produto automotivo durante o abastecimento." },
 };
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -382,25 +304,33 @@ fetch('data.json')
       .filter(a => a.pct_proj != null && a.pct_proj < 1.0 && acoesMap[a.acelerador])
       .sort((a, b) => a.pct_proj - b.pct_proj);
 
-    document.getElementById('acoes-grid').innerHTML = comAcoes.map(a => {
+    const criticos = comAcoes.filter(a => a.pct_proj < 0.90);
+    const atencao  = comAcoes.filter(a => a.pct_proj >= 0.90);
+
+    function renderAcaoCard(a) {
       const info = acoesMap[a.acelerador];
       const bCls = badgeClass(a.pct_proj);
-      const borderCls = a.pct_proj < 0.7 ? 'vermelho-borda' : a.pct_proj < 0.9 ? 'vermelho-borda' : 'amarelo-borda';
+      const borderCls = a.pct_proj < 0.90 ? 'vermelho-borda' : 'amarelo-borda';
       return `<div class="acao-card ${borderCls}">
         <div class="acao-header">
           <span class="acao-canal">${a.acelerador}</span>
           <span class="acao-pct ${bCls}">${fmtPct(a.pct_proj)}</span>
         </div>
-        <div class="gap-indicator"><strong>Gap:</strong> ${info.gap}</div>
-        <ul class="acao-list">
-          ${info.acoes.map((t,i) => `
-            <li class="acao-item">
-              <div class="acao-num">${i+1}</div>
-              <span class="acao-text">${t}</span>
-            </li>`).join('')}
-        </ul>
+        <div class="acao-gap">${info.gap}</div>
+        <div class="acao-text">${info.acao}</div>
       </div>`;
-    }).join('');
+    }
+
+    if (criticos.length) {
+      document.getElementById('acoes-critico').innerHTML =
+        `<div class="acoes-bloco-titulo">🔴 Crítico</div>
+         <div class="acoes-grid">${criticos.map(renderAcaoCard).join('')}</div>`;
+    }
+    if (atencao.length) {
+      document.getElementById('acoes-atencao').innerHTML =
+        `<div class="acoes-bloco-titulo">🟡 Atenção</div>
+         <div class="acoes-grid acoes-grid-atencao">${atencao.map(renderAcaoCard).join('')}</div>`;
+    }
   })
   .catch(err => {
     console.error(err);
