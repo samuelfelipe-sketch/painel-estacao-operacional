@@ -1,0 +1,207 @@
+const https = require('https');
+const fs    = require('fs');
+const path  = require('path');
+
+const TOKEN          = process.env.API_TOKEN;
+const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
+const BASE_DASHBOARD = 'dashboard.estacaosapatao.com.br';
+const BASE_CLAUDE    = 'api.anthropic.com';
+
+// Datas: dados sao D-1
+const now       = new Date();
+const yesterday = new Date(now);
+yesterday.setDate(now.getDate() - 1);
+
+const YEAR      = yesterday.getFullYear();
+const MONTH     = String(yesterday.getMonth() + 1).padStart(2, '0');
+const DIA_ATUAL = yesterday.getDate();
+const DIAS_MES  = new Date(YEAR, yesterday.getMonth() + 1, 0).getDate();
+
+const MESES = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const PERIODO_FMT = MESES[yesterday.getMonth()] + ' de ' + YEAR;
+
+function request(opts, body) {
+  return new Promise((resolve, reject) => {
+    const bodyBuf = body ? Buffer.from(JSON.stringify(body), 'utf8') : null;
+    if (bodyBuf) opts.headers['Content-Length'] = bodyBuf.length;
+    const req = https.request(opts, res => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8');
+        try { resolve(JSON.parse(text)); }
+        catch(e) { reject(new Error('JSON invalido [' + res.statusCode + ']: ' + text.substring(0,300))); }
+      });
+    });
+    req.on('error', reject);
+    if (bodyBuf) req.write(bodyBuf);
+    req.end();
+  });
+}
+
+function dashboardGet(p) {
+  return request({
+    hostname: BASE_DASHBOARD, path: p, method: 'GET',
+    headers: { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }
+  });
+}
+
+function claudePost(body) {
+  return request({
+    hostname: BASE_CLAUDE, path: '/v1/messages', method: 'POST',
+    headers: {
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json'
+    }
+  }, body);
+}
+
+const GRUPO_MAP = {
+  'FAT. LOJA':           'loja',
+  'CLIENTES':            'loja',
+  'TICKET MEDIO LOJA':   'loja',
+  'REFEICOES':           'loja',
+  'EXTRAS':              'loja',
+  'ALAMINUTA':           'loja',
+  'COMBO FARROUPILHA':   'loja',
+  'COMBO PAO DE QUEIJO': 'loja',
+  'CICLO OTTO':          'postos',
+  'MIX V-POWER':         'postos',
+  'CICLO DIESEL':        'postos',
+  'ARLA':                'postos',
+  'PA':                  'postos',
+  'LAVAGEM - CUPONS':    'postos',
+  'PIX':                 'postos',
+  'SHELLBOX %':          'postos',
+  'APP NOVOS':           'fidelidade',
+};
+
+function normalize(str) {
+  return str.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+}
+
+function getGrupo(acelerador) {
+  const norm = normalize(acelerador);
+  for (const key of Object.keys(GRUPO_MAP)) {
+    if (normalize(key) === norm) return GRUPO_MAP[key];
+  }
+  return 'postos';
+}
+
+function fmtVal(val, is_currency, is_pct) {
+  if (val == null) return '-';
+  if (is_pct)      return val.toFixed(1) + '%';
+  if (is_currency) return 'R$ ' + Math.round(val).toLocaleString('en-US').replace(/,/g, '.');
+  return Math.round(val).toLocaleString('en-US').replace(/,/g, '.');
+}
+
+async function gerarAcoes(aceleradores) {
+  const abaixo = aceleradores.filter(function(a) {
+    return a.pct_proj != null && a.pct_proj < 1.0;
+  });
+  if (!abaixo.length) return [];
+
+  const linhas = abaixo.map(function(a) {
+    var proj = fmtVal(a.projecao, a.is_currency, a.is_pct);
+    var meta = fmtVal(a.meta, a.is_currency, a.is_pct);
+    var pct  = Math.round(a.pct_proj * 100);
+    return '- ' + a.acelerador + ' (' + a.grupo + '): proj ' + proj + ' vs meta ' + meta + ' = ' + pct + '%';
+  }).join('\n');
+
+  var prompt = 'Voce e consultor operacional da Estacao Sapatao (posto + loja no RS).\n\n';
+  prompt += 'Indicadores abaixo da meta em ' + DIA_ATUAL + '/' + MONTH + '/' + YEAR + ':\n';
+  prompt += linhas + '\n\n';
+  prompt += 'Para cada indicador, escreva UMA acao curta (1-2 frases), pratica e especifica para hoje.\n';
+  prompt += 'Use os numeros reais. Responda SOMENTE com JSON (sem markdown):\n';
+  prompt += '[{"acelerador":"NOME_EXATO","acao":"texto"}]';
+
+  var resp = await claudePost({
+    model: 'claude-haiku-4-5',
+    max_tokens: 1024,
+    messages: [{ role: 'user', content: prompt }]
+  });
+
+  if (!resp.content || !resp.content[0]) {
+    throw new Error('Resposta invalida do Claude: ' + JSON.stringify(resp).substring(0,200));
+  }
+
+  var text = resp.content[0].text.trim();
+  var match = text.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error('Claude nao retornou JSON: ' + text.substring(0,200));
+  return JSON.parse(match[0]);
+}
+
+(async function() {
+  try {
+    console.log('Buscando dados da API...');
+    var results = await Promise.all([
+      dashboardGet('/api/dashboard/cards?ano=' + YEAR + '&meses=' + MONTH),
+      dashboardGet('/api/dashboard/aceleradores?ano=' + YEAR + '&meses=' + MONTH),
+      dashboardGet('/api/dashboard/top-produtos?ano=' + YEAR + '&meses=' + MONTH),
+    ]);
+
+    var cardsRaw = results[0];
+    var acelRaw  = results[1];
+    var prodRaw  = results[2];
+
+    if (!Array.isArray(cardsRaw)) throw new Error('Token invalido. Cards: ' + JSON.stringify(cardsRaw));
+    if (!Array.isArray(acelRaw))  throw new Error('Token invalido. Acel: '  + JSON.stringify(acelRaw));
+    if (!Array.isArray(prodRaw))  throw new Error('Token invalido. Prod: '  + JSON.stringify(prodRaw));
+
+    console.log('OK: ' + cardsRaw.length + ' cards, ' + acelRaw.length + ' aceleradores, ' + prodRaw.length + ' produtos');
+
+    var dataPath = path.join(__dirname, '..', 'data.json');
+    var current = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+
+    current.meta.periodo     = PERIODO_FMT;
+    current.meta.dia_atual   = DIA_ATUAL;
+    current.meta.dias_no_mes = DIAS_MES;
+    current.meta.atualizado_em = now.toISOString().split('T')[0];
+
+    current.cards = cardsRaw.map(function(c) {
+      return {
+        canal:       c.canal === 'PRODUTOS AUTOMOTIVOS' ? 'PROD. AUTO' : c.canal,
+        is_qtd:      c.is_qtd,
+        metrica:     c.metrica,
+        projecao:    c.projecao,
+        meta:        c.meta,
+        pct_proj:    c.pct_proj,
+        mix_vpower:  c.mix_vpower != null ? c.mix_vpower : null,
+        dia_atual:   c.dia_atual,
+        dias_no_mes: c.dias_no_mes,
+      };
+    });
+
+    current.aceleradores = acelRaw.map(function(a) {
+      return {
+        grupo:       getGrupo(a.acelerador),
+        acelerador:  a.acelerador,
+        realizado:   a.realizado,
+        meta:        a.meta != null ? a.meta : null,
+        meta_dia:    a.meta_dia != null ? a.meta_dia : null,
+        media_dia:   a.media_dia != null ? a.media_dia : null,
+        projecao:    a.projecao != null ? a.projecao : null,
+        pct_proj:    a.pct_proj != null ? a.pct_proj : null,
+        is_currency: a.is_currency || false,
+        is_pct:      a.is_percent || false,
+      };
+    });
+
+    current.top_produtos = prodRaw.map(function(p, i) {
+      return { rank: i + 1, produto: p.produto, qtd: p.qtd, faturamento: p.faturamento };
+    });
+
+    console.log('Gerando acoes com Claude...');
+    var acoes = await gerarAcoes(current.aceleradores);
+    current.acoes = acoes;
+    console.log('OK: ' + acoes.length + ' acoes geradas');
+
+    fs.writeFileSync(dataPath, JSON.stringify(current, null, 2) + '\n');
+    console.log('data.json atualizado: ' + PERIODO_FMT + ' - Dia ' + DIA_ATUAL + '/' + DIAS_MES);
+
+  } catch(err) {
+    console.error('ERRO:', err.message);
+    process.exit(1);
+  }
+})();
