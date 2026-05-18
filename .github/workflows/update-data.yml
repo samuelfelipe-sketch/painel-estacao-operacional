@@ -17,66 +17,125 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch data from API
-        id: fetch
+      - name: Fetch and update data from API
         run: |
-          # Fetch current date info
-          NOW=$(date -u +"%Y-%m-%d")
-          YEAR=$(date -u +"%Y")
-          MONTH=$(date -u +"%m")
-          DAY=$(date -u +"%d")
+          node - <<'EOF'
+          const https = require('https');
+          const fs   = require('fs');
 
-          # Fetch cards data
-          CARDS_RESPONSE=$(curl -s \
-            -H "Authorization: Bearer ${API_TOKEN}" \
-            "https://dashboard.estacaosapatao.com.br/api/dashboard/cards?ano=${YEAR}&meses=${MONTH}")
+          const TOKEN = process.env.API_TOKEN;
+          const BASE  = 'dashboard.estacaosapatao.com.br';
 
-          # Fetch aceleradores data
-          ACEL_RESPONSE=$(curl -s \
-            -H "Authorization: Bearer ${API_TOKEN}" \
-            "https://dashboard.estacaosapatao.com.br/api/dashboard/aceleradores?ano=${YEAR}&meses=${MONTH}")
+          // Datas: dados são D-1
+          const now       = new Date();
+          const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+          const YEAR      = yesterday.getFullYear();
+          const MONTH     = String(yesterday.getMonth() + 1).padStart(2, '0');
+          const DIA_ATUAL = yesterday.getDate();
+          const DIAS_MES  = new Date(YEAR, yesterday.getMonth() + 1, 0).getDate();
+          const PERIODO   = yesterday.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+          const PERIODO_FMT = PERIODO.charAt(0).toUpperCase() + PERIODO.slice(1);
 
-          # Fetch top produtos data
-          PROD_RESPONSE=$(curl -s \
-            -H "Authorization: Bearer ${API_TOKEN}" \
-            "https://dashboard.estacaosapatao.com.br/api/dashboard/top-produtos?ano=${YEAR}&meses=${MONTH}")
+          function fetchJSON(path) {
+            return new Promise((resolve, reject) => {
+              const options = {
+                hostname: BASE, path,
+                headers: { Authorization: `Bearer ${TOKEN}` }
+              };
+              https.get(options, res => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                  try { resolve(JSON.parse(data)); }
+                  catch(e) { reject(new Error(`JSON inválido em ${path}: ${data.substring(0,200)}`)); }
+                });
+              }).on('error', reject);
+            });
+          }
 
-          # Check if responses are valid JSON
-          if ! echo "$CARDS_RESPONSE" | jq . >/dev/null 2>&1; then
-            echo "Error: Invalid cards response"
-            exit 1
-          fi
+          // Mapeamento de grupo por acelerador
+          const GRUPO_MAP = {
+            'FAT. LOJA':          'loja',
+            'CLIENTES':           'loja',
+            'TICKET MÉDIO LOJA':  'loja',
+            'REFEIÇÕES':          'loja',
+            'EXTRAS':             'loja',
+            'ALAMINUTA':          'loja',
+            'COMBO FARROUPILHA':  'loja',
+            'COMBO PÃO DE QUEIJO':'loja',
+            'CICLO OTTO':         'postos',
+            'MIX V-POWER':        'postos',
+            'CICLO DIESEL':       'postos',
+            'ARLA':               'postos',
+            'PA':                 'postos',
+            'LAVAGEM - CUPONS':   'postos',
+            'PIX':                'postos',
+            'SHELLBOX %':         'postos',
+            'APP NOVOS':          'fidelidade',
+          };
 
-          echo "responses_fetched=true" >> $GITHUB_OUTPUT
+          (async () => {
+            try {
+              const [cardsRaw, acelRaw, prodRaw] = await Promise.all([
+                fetchJSON(`/api/dashboard/cards?ano=${YEAR}&meses=${MONTH}`),
+                fetchJSON(`/api/dashboard/aceleradores?ano=${YEAR}&meses=${MONTH}`),
+                fetchJSON(`/api/dashboard/top-produtos?ano=${YEAR}&meses=${MONTH}`),
+              ]);
+
+              const current = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+
+              // META
+              current.meta.periodo     = PERIODO_FMT;
+              current.meta.dia_atual   = DIA_ATUAL;
+              current.meta.dias_no_mes = DIAS_MES;
+              current.meta.atualizado_em = now.toISOString().split('T')[0];
+
+              // CARDS — normaliza nome do canal
+              current.cards = cardsRaw.map(c => ({
+                canal:       c.canal === 'PRODUTOS AUTOMOTIVOS' ? 'PROD. AUTO' : c.canal,
+                is_qtd:      c.is_qtd,
+                metrica:     c.metrica,
+                projecao:    c.projecao,
+                meta:        c.meta,
+                pct_proj:    c.pct_proj,
+                mix_vpower:  c.mix_vpower ?? null,
+                dia_atual:   c.dia_atual,
+                dias_no_mes: c.dias_no_mes,
+              }));
+
+              // ACELERADORES — adiciona grupo
+              current.aceleradores = acelRaw.map(a => ({
+                grupo:       GRUPO_MAP[a.acelerador] || 'postos',
+                acelerador:  a.acelerador,
+                realizado:   a.realizado,
+                meta:        a.meta ?? null,
+                meta_dia:    a.meta_dia ?? null,
+                media_dia:   a.media_dia ?? null,
+                projecao:    a.projecao ?? null,
+                pct_proj:    a.pct_proj ?? null,
+                is_currency: a.is_currency || false,
+                is_pct:      a.is_percent || false,
+              }));
+
+              // TOP PRODUTOS — adiciona rank
+              current.top_produtos = prodRaw.map((p, i) => ({
+                rank:        i + 1,
+                produto:     p.produto,
+                qtd:         p.qtd,
+                faturamento: p.faturamento,
+              }));
+
+              fs.writeFileSync('data.json', JSON.stringify(current, null, 2) + '\n');
+              console.log(`✅ data.json atualizado — ${PERIODO_FMT} · Dia ${DIA_ATUAL}/${DIAS_MES}`);
+
+            } catch(err) {
+              console.error('❌ Erro ao buscar dados da API:', err.message);
+              process.exit(1);
+            }
+          })();
+          EOF
         env:
           API_TOKEN: ${{ secrets.DASHBOARD_API_TOKEN }}
-        continue-on-error: true
-
-      - name: Update data.json
-        if: steps.fetch.outputs.responses_fetched == 'true'
-        run: |
-          # Script to merge API data into data.json while preserving structure
-          node - <<'EOF'
-          const fs = require('fs');
-
-          // Read current data.json
-          const currentData = JSON.parse(fs.readFileSync('data.json', 'utf8'));
-
-          // Update metadata (dados são sempre D-1)
-          const now = new Date();
-          const yesterday = new Date(now);
-          yesterday.setDate(now.getDate() - 1);
-          currentData.meta.atualizado_em = now.toISOString().split('T')[0];
-          currentData.meta.dia_atual = yesterday.getDate();
-
-          // Get month info (would be replaced with API data in production)
-          const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-          currentData.meta.dias_no_mes = daysInMonth;
-
-          // Write updated data.json
-          fs.writeFileSync('data.json', JSON.stringify(currentData, null, 2) + '\n');
-          console.log('Data atualizado com sucesso');
-          EOF
 
       - name: Commit and push changes
         run: |

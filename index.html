@@ -146,14 +146,17 @@
 <script>
 // ─── FIXED ACTIONS MAP (Não muda com dados, é fixo) ────────────────────────
 const acoesMap = {
-  "CICLO OTO":        { gap: "proj. 703k L vs meta 758k L",    acao: "Ação \"tanque cheio\" com brinde na loja para aumentar volume por visita." },
-  "MIX V-POWER":      { gap: "proj. 23,7% vs meta 54%",        acao: "Script obrigatório: frentistas perguntam \"posso colocar V-Power?\" antes de cada abastecimento Otto." },
-  "TICKET MÉDIO":     { gap: "proj. R$23,68 vs meta R$47,00",  acao: "Caixa sugere 1 item complementar em cada atendimento." },
-  "EXTRAS":           { gap: "proj. 754 vs meta 850",           acao: "Equipe oferece extras proativamente — não aguarda o cliente pedir." },
-  "ALAMINUTA":        { gap: "proj. 2.482 vs meta 2.550",       acao: "Atendentes mencionam Alaminuta ao fechar todo pedido de refeição (11h–14h)." },
-  "COMBO FARROUPILHA":{ gap: "proj. 698 vs meta 1.150",         acao: "Equipe oferece o Combo Farroupilha como sugestão padrão no horário do almoço." },
-  "COMBO P. QUEIJO":  { gap: "proj. 1.009 vs meta 1.100",       acao: "Reposicionar combo na altura dos olhos, próximo ao caixa." },
-  "PROD. AUTO (PA)":  { gap: "proj. R$75.191 vs meta R$76.065", acao: "Frentistas indicam 1 produto automotivo durante o abastecimento." },
+  "CICLO OTTO":          { acao: "Ação \"tanque cheio\" com brinde na loja para aumentar volume por visita." },
+  "MIX V-POWER":         { acao: "Script obrigatório: frentistas perguntam \"posso colocar V-Power?\" antes de cada abastecimento Otto." },
+  "TICKET MÉDIO LOJA":   { acao: "Caixa sugere 1 item complementar em cada atendimento." },
+  "EXTRAS":              { acao: "Equipe oferece extras proativamente — não aguarda o cliente pedir." },
+  "ALAMINUTA":           { acao: "Atendentes mencionam Alaminuta ao fechar todo pedido de refeição (11h–14h)." },
+  "COMBO FARROUPILHA":   { acao: "Equipe oferece o Combo Farroupilha como sugestão padrão no horário do almoço." },
+  "COMBO PÃO DE QUEIJO": { acao: "Reposicionar combo na altura dos olhos, próximo ao caixa." },
+  "PA":                  { acao: "Frentistas indicam 1 produto automotivo durante o abastecimento." },
+  "ARLA":                { acao: "Oferecer Arla proativamente em cada abastecimento de diesel." },
+  "FAT. LOJA":           { acao: "Focar em aumentar ticket médio com combos e sugestão de itens complementares." },
+  "LOJA":                { acao: "Focar em aumentar ticket médio com combos e sugestão de itens complementares." },
 };
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -235,12 +238,16 @@ fetch('data.json')
       const info = acoesMap[a.acelerador];
       const bCls = badgeClass(a.pct_proj);
       const borderCls = a.pct_proj < 0.90 ? 'vermelho-borda' : 'amarelo-borda';
+      // Gera o gap dinamicamente com os valores reais
+      const projFmt = a.is_pct ? fmtNum(a.projecao,1)+'%' : a.is_currency ? fmtBRL(a.projecao) : fmtNum(a.projecao);
+      const metaFmt = a.is_pct ? fmtNum(a.meta,1)+'%'     : a.is_currency ? fmtBRL(a.meta)     : fmtNum(a.meta);
+      const gap = a.projecao && a.meta ? `proj. ${projFmt} vs meta ${metaFmt}` : '';
       return `<div class="acao-card ${borderCls}">
         <div class="acao-header">
           <span class="acao-canal">${a.acelerador}</span>
           <span class="acao-pct ${bCls}">${fmtPct(a.pct_proj)}</span>
         </div>
-        <div class="acao-gap">${info.gap}</div>
+        ${gap ? `<div class="acao-gap">${gap}</div>` : ''}
         <div class="acao-text">${info.acao}</div>
       </div>`;
     }
