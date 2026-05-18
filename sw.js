@@ -1,8 +1,7 @@
-const CACHE_NAME = 'painel-es-v1';
+const CACHE_NAME = 'painel-es-v3';
 const ASSETS = [
-  './painel-operacional-mobile.html',
+  './index.html',
   './manifest.json',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js'
 ];
 
 self.addEventListener('install', e => {
@@ -18,9 +17,20 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const url = e.request.url;
+
+  // data.json: sempre busca da rede (Network First), sem cache
+  if (url.includes('data.json')) {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Demais recursos: Cache First
   e.respondWith(
     caches.match(e.request)
       .then(r => r || fetch(e.request))
-      .catch(() => caches.match('./painel-operacional-mobile.html'))
+      .catch(() => caches.match('./index.html'))
   );
 });
