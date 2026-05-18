@@ -362,5 +362,39 @@
       "header": "Authorization",
       "token_storage": "localStorage['token']"
     }
-  }
+  },
+  "acoes": [
+    {
+      "acelerador": "TICKET MÉDIO LOJA",
+      "acao": "Treinar equipe de loja para sugerir itens adicionais no caixa, focando em produtos de maior valor agregado para aumentar de R$ 24 (atual 51%) para R$ 47."
+    },
+    {
+      "acelerador": "EXTRAS",
+      "acao": "Reposicionar displays de extras na loja e oferecer combos com desconto para atingir 751 → 850 unidades; avaliar quais itens têm menor rotação."
+    },
+    {
+      "acelerador": "COMBO FARROUPILHA",
+      "acao": "Implementar promoção agressiva (desconto ou brinde) no combo Farroupilha hoje para sair de 666 e alcançar meta de 1.150 unidades; considerar reduzir preço."
+    },
+    {
+      "acelerador": "COMBO PÃO DE QUEIJO",
+      "acao": "Aumentar visibilidade do combo Pão de Queijo com sinalização no ponto de venda e treinar vendedores para sugerir na abordagem; faltam apenas 99 unidades para meta."
+    },
+    {
+      "acelerador": "CICLO OTTO",
+      "acao": "Revisar rede de clientes OTTO e executar visitas comerciais aos principais para aumentar volume de 689.170 para 758.258 litros; oferecer condições de pagamento."
+    },
+    {
+      "acelerador": "MIX V-POWER",
+      "acao": "Treinar frentistas para recomendar V-Power na abordagem e destacar benefícios do combustível premium para elevar penetração de 89% para 26.6% da meta."
+    },
+    {
+      "acelerador": "ARLA",
+      "acao": "Reposicionar ARLA no estoque e ampliar comunicação com clientes caminhoneiros; faltam apenas 229 litros para atingir meta de 8.900."
+    },
+    {
+      "acelerador": "PA",
+      "acao": "Revisar precificação de produtos de alimentação e aumentar oferta visível de itens com melhor margem para elevar PA de R$ 72.539 para R$ 76.065."
+    }
+  ]
 }
