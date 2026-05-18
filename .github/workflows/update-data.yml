@@ -82,6 +82,11 @@ jobs:
                 fetchJSON(`/api/dashboard/top-produtos?ano=${YEAR}&meses=${MONTH}`),
               ]);
 
+              // Valida se as respostas são arrays (token inválido retorna objeto)
+              if (!Array.isArray(cardsRaw)) throw new Error(`Token inválido ou expirado. Resposta cards: ${JSON.stringify(cardsRaw)}`);
+              if (!Array.isArray(acelRaw))  throw new Error(`Token inválido ou expirado. Resposta aceleradores: ${JSON.stringify(acelRaw)}`);
+              if (!Array.isArray(prodRaw))  throw new Error(`Token inválido ou expirado. Resposta top-produtos: ${JSON.stringify(prodRaw)}`);
+
               const current = JSON.parse(fs.readFileSync('data.json', 'utf8'));
 
               // META
