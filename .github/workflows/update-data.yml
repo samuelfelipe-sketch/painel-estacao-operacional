@@ -23,43 +23,60 @@ jobs:
           const https = require('https');
           const fs    = require('fs');
 
-          const TOKEN        = process.env.API_TOKEN;
-          const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
-          const BASE         = 'dashboard.estacaosapatao.com.br';
+          const TOKEN          = process.env.API_TOKEN;
+          const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
+          const BASE_DASHBOARD = 'dashboard.estacaosapatao.com.br';
+          const BASE_CLAUDE    = 'api.anthropic.com';
 
           // Datas: dados são D-1
           const now       = new Date();
-          const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+          const yesterday = new Date(now);
+          yesterday.setDate(now.getDate() - 1);
+
           const YEAR      = yesterday.getFullYear();
           const MONTH     = String(yesterday.getMonth() + 1).padStart(2, '0');
           const DIA_ATUAL = yesterday.getDate();
           const DIAS_MES  = new Date(YEAR, yesterday.getMonth() + 1, 0).getDate();
-          const PERIODO   = yesterday.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-          const PERIODO_FMT = PERIODO.charAt(0).toUpperCase() + PERIODO.slice(1);
 
-          function fetchJSON(hostname, path, method = 'GET', body = null, extraHeaders = {}) {
+          const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+          const PERIODO_FMT = `${MESES[yesterday.getMonth()]} de ${YEAR}`;
+
+          // Função genérica de requisição HTTPS
+          function request(opts, body) {
             return new Promise((resolve, reject) => {
-              const bodyStr = body ? JSON.stringify(body) : null;
-              const options = {
-                hostname, path, method,
-                headers: {
-                  'Content-Type': 'application/json',
-                  ...(bodyStr ? { 'Content-Length': Buffer.byteLength(bodyStr) } : {}),
-                  ...extraHeaders,
-                }
-              };
-              const req = https.request(options, res => {
-                let data = '';
-                res.on('data', chunk => data += chunk);
+              const bodyBuf = body ? Buffer.from(JSON.stringify(body)) : null;
+              if (bodyBuf) opts.headers['Content-Length'] = bodyBuf.length;
+              const req = https.request(opts, res => {
+                const chunks = [];
+                res.on('data', c => chunks.push(c));
                 res.on('end', () => {
-                  try { resolve(JSON.parse(data)); }
-                  catch(e) { reject(new Error(`JSON inválido: ${data.substring(0,300)}`)); }
+                  const text = Buffer.concat(chunks).toString();
+                  try { resolve(JSON.parse(text)); }
+                  catch(e) { reject(new Error(`JSON inválido [${res.statusCode}]: ${text.substring(0,300)}`)); }
                 });
               });
               req.on('error', reject);
-              if (bodyStr) req.write(bodyStr);
+              if (bodyBuf) req.write(bodyBuf);
               req.end();
             });
+          }
+
+          function dashboardGet(path) {
+            return request({
+              hostname: BASE_DASHBOARD, path, method: 'GET',
+              headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' }
+            });
+          }
+
+          function claudePost(body) {
+            return request({
+              hostname: BASE_CLAUDE, path: '/v1/messages', method: 'POST',
+              headers: {
+                'x-api-key': ANTHROPIC_KEY,
+                'anthropic-version': '2023-06-01',
+                'Content-Type': 'application/json'
+              }
+            }, body);
           }
 
           // Mapeamento de grupo por acelerador
@@ -83,87 +100,73 @@ jobs:
             'APP NOVOS':           'fidelidade',
           };
 
-          function formatVal(val, is_currency, is_pct) {
+          function fmtVal(val, is_currency, is_pct) {
             if (val == null) return '—';
             if (is_pct)      return val.toFixed(1) + '%';
-            if (is_currency) return 'R$ ' + val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-            return val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            if (is_currency) return 'R$ ' + Math.round(val).toLocaleString('pt-BR');
+            return Math.round(val).toLocaleString('pt-BR');
           }
 
-          async function gerarAcoesComClaude(aceleradores) {
-            const abaixoDaMeta = aceleradores.filter(a => a.pct_proj != null && a.pct_proj < 1.0);
+          async function gerarAcoes(aceleradores) {
+            const abaixo = aceleradores.filter(a => a.pct_proj != null && a.pct_proj < 1.0);
+            if (!abaixo.length) return [];
 
-            if (!abaixoDaMeta.length) return [];
-
-            const resumo = abaixoDaMeta.map(a => {
-              const proj = formatVal(a.projecao, a.is_currency, a.is_pct);
-              const meta = formatVal(a.meta,     a.is_currency, a.is_pct);
+            const linhas = abaixo.map(a => {
+              const proj = fmtVal(a.projecao, a.is_currency, a.is_pct);
+              const meta = fmtVal(a.meta,     a.is_currency, a.is_pct);
               const pct  = Math.round(a.pct_proj * 100);
-              return `- ${a.acelerador} (${a.grupo}): projeção ${proj} vs meta ${meta} = ${pct}% da meta`;
+              return `- ${a.acelerador} (${a.grupo}): projeção ${proj} vs meta ${meta} = ${pct}%`;
             }).join('\n');
 
-            const prompt = `Você é um consultor operacional da Estação Sapatão, rede com posto de combustível e loja de conveniência no RS.
+            const prompt = `Você é consultor operacional da Estação Sapatão (posto + loja de conveniência no RS).
 
-Os seguintes indicadores estão abaixo da meta hoje (${DIA_ATUAL}/${MONTH}/${YEAR}):
+Indicadores abaixo da meta em ${DIA_ATUAL}/${MONTH}/${YEAR}:
+${linhas}
 
-${resumo}
+Para cada indicador, escreva UMA ação curta (1-2 frases), prática e específica que a equipe executa HOJE.
+Use os números reais para contextualizar.
 
-Para cada indicador, gere UMA ação prática, direta e específica que a equipe pode executar HOJE para melhorar o resultado. A ação deve:
-- Ser curta (1-2 frases)
-- Ser operacional (o que fazer agora, não estratégia)
-- Considerar o gap real (quanto falta, não genérico)
-- Ser adequada ao contexto (posto/loja/combo)
+Responda SOMENTE com JSON válido, sem markdown:
+[{"acelerador":"NOME_EXATO","acao":"texto da ação"}]`;
 
-Responda SOMENTE com um JSON válido neste formato exato:
-[
-  { "acelerador": "NOME_EXATO", "acao": "texto da ação aqui" },
-  ...
-]`;
+            const resp = await claudePost({
+              model: 'claude-haiku-4-5',
+              max_tokens: 1024,
+              messages: [{ role: 'user', content: prompt }]
+            });
 
-            const response = await fetchJSON('api.anthropic.com', '/v1/messages', 'POST',
-              {
-                model: 'claude-haiku-4-5',
-                max_tokens: 1024,
-                messages: [{ role: 'user', content: prompt }]
-              },
-              {
-                'x-api-key': ANTHROPIC_KEY,
-                'anthropic-version': '2023-06-01',
-              }
-            );
-
-            if (!response.content || !response.content[0]) {
-              throw new Error('Resposta inválida do Claude: ' + JSON.stringify(response));
+            if (!resp.content || !resp.content[0]) {
+              throw new Error('Resposta inválida do Claude: ' + JSON.stringify(resp).substring(0,200));
             }
 
-            const text = response.content[0].text.trim();
-            // Extrai JSON da resposta (remove markdown se houver)
-            const jsonMatch = text.match(/\[[\s\S]*\]/);
-            if (!jsonMatch) throw new Error('Claude não retornou JSON válido: ' + text);
-            return JSON.parse(jsonMatch[0]);
+            const text = resp.content[0].text.trim();
+            const match = text.match(/\[[\s\S]*\]/);
+            if (!match) throw new Error('Claude não retornou JSON: ' + text.substring(0,200));
+            return JSON.parse(match[0]);
           }
 
           (async () => {
             try {
+              console.log('📡 Buscando dados da API...');
               const [cardsRaw, acelRaw, prodRaw] = await Promise.all([
-                fetchJSON(BASE, `/api/dashboard/cards?ano=${YEAR}&meses=${MONTH}`, 'GET', null, { Authorization: `Bearer ${TOKEN}` }),
-                fetchJSON(BASE, `/api/dashboard/aceleradores?ano=${YEAR}&meses=${MONTH}`, 'GET', null, { Authorization: `Bearer ${TOKEN}` }),
-                fetchJSON(BASE, `/api/dashboard/top-produtos?ano=${YEAR}&meses=${MONTH}`, 'GET', null, { Authorization: `Bearer ${TOKEN}` }),
+                dashboardGet(`/api/dashboard/cards?ano=${YEAR}&meses=${MONTH}`),
+                dashboardGet(`/api/dashboard/aceleradores?ano=${YEAR}&meses=${MONTH}`),
+                dashboardGet(`/api/dashboard/top-produtos?ano=${YEAR}&meses=${MONTH}`),
               ]);
 
-              if (!Array.isArray(cardsRaw)) throw new Error(`Token inválido. Resposta: ${JSON.stringify(cardsRaw)}`);
-              if (!Array.isArray(acelRaw))  throw new Error(`Token inválido. Resposta: ${JSON.stringify(acelRaw)}`);
-              if (!Array.isArray(prodRaw))  throw new Error(`Token inválido. Resposta: ${JSON.stringify(prodRaw)}`);
+              if (!Array.isArray(cardsRaw)) throw new Error('Token inválido. Resposta: ' + JSON.stringify(cardsRaw));
+              if (!Array.isArray(acelRaw))  throw new Error('Token inválido. Resposta: ' + JSON.stringify(acelRaw));
+              if (!Array.isArray(prodRaw))  throw new Error('Token inválido. Resposta: ' + JSON.stringify(prodRaw));
+
+              console.log(`✅ ${cardsRaw.length} cards, ${acelRaw.length} aceleradores, ${prodRaw.length} produtos`);
 
               const current = JSON.parse(fs.readFileSync('data.json', 'utf8'));
 
-              // META
               current.meta.periodo     = PERIODO_FMT;
               current.meta.dia_atual   = DIA_ATUAL;
               current.meta.dias_no_mes = DIAS_MES;
               current.meta.atualizado_em = now.toISOString().split('T')[0];
 
-              // CARDS
               current.cards = cardsRaw.map(c => ({
                 canal:       c.canal === 'PRODUTOS AUTOMOTIVOS' ? 'PROD. AUTO' : c.canal,
                 is_qtd:      c.is_qtd,
@@ -176,7 +179,6 @@ Responda SOMENTE com um JSON válido neste formato exato:
                 dias_no_mes: c.dias_no_mes,
               }));
 
-              // ACELERADORES
               current.aceleradores = acelRaw.map(a => ({
                 grupo:       GRUPO_MAP[a.acelerador] || 'postos',
                 acelerador:  a.acelerador,
@@ -190,7 +192,6 @@ Responda SOMENTE com um JSON válido neste formato exato:
                 is_pct:      a.is_percent || false,
               }));
 
-              // TOP PRODUTOS
               current.top_produtos = prodRaw.map((p, i) => ({
                 rank:        i + 1,
                 produto:     p.produto,
@@ -198,11 +199,10 @@ Responda SOMENTE com um JSON válido neste formato exato:
                 faturamento: p.faturamento,
               }));
 
-              // AÇÕES GERADAS PELO CLAUDE
               console.log('🤖 Gerando ações com Claude...');
-              const acoesGeradas = await gerarAcoesComClaude(current.aceleradores);
-              current.acoes = acoesGeradas;
-              console.log(`✅ ${acoesGeradas.length} ações geradas`);
+              const acoes = await gerarAcoes(current.aceleradores);
+              current.acoes = acoes;
+              console.log(`✅ ${acoes.length} ações geradas`);
 
               fs.writeFileSync('data.json', JSON.stringify(current, null, 2) + '\n');
               console.log(`✅ data.json atualizado — ${PERIODO_FMT} · Dia ${DIA_ATUAL}/${DIAS_MES}`);
@@ -221,7 +221,6 @@ Responda SOMENTE com um JSON válido neste formato exato:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-
           if git diff --quiet data.json; then
             echo "Nenhuma mudança detectada"
           else
