@@ -2,7 +2,8 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const TOKEN          = process.env.API_TOKEN;
+const DASHBOARD_USER = process.env.DASHBOARD_USER;
+const DASHBOARD_PASS = process.env.DASHBOARD_PASS;
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
 const BASE_DASHBOARD = 'dashboard.estacaosapatao.com.br';
 const BASE_CLAUDE    = 'api.anthropic.com';
@@ -39,10 +40,39 @@ function request(opts, body) {
   });
 }
 
-function dashboardGet(p) {
+function login() {
+  var body = 'username=' + encodeURIComponent(DASHBOARD_USER) + '&password=' + encodeURIComponent(DASHBOARD_PASS);
+  var bodyBuf = Buffer.from(body, 'utf8');
+  return new Promise(function(resolve, reject) {
+    var opts = {
+      hostname: BASE_DASHBOARD, path: '/api/auth/login', method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': bodyBuf.length
+      }
+    };
+    var req = https.request(opts, function(res) {
+      var chunks = [];
+      res.on('data', function(c) { chunks.push(c); });
+      res.on('end', function() {
+        var text = Buffer.concat(chunks).toString('utf8');
+        try {
+          var d = JSON.parse(text);
+          if (d.access_token) resolve(d.access_token);
+          else reject(new Error('Login falhou: ' + text));
+        } catch(e) { reject(new Error('Login JSON invalido: ' + text)); }
+      });
+    });
+    req.on('error', reject);
+    req.write(bodyBuf);
+    req.end();
+  });
+}
+
+function dashboardGet(p, token) {
   return request({
     hostname: BASE_DASHBOARD, path: p, method: 'GET',
-    headers: { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
   });
 }
 
@@ -134,11 +164,14 @@ async function gerarAcoes(aceleradores) {
 
 (async function() {
   try {
-    console.log('Buscando dados da API...');
+    console.log('Fazendo login no dashboard...');
+    var token = await login();
+    console.log('Login OK. Buscando dados da API...');
+
     var results = await Promise.all([
-      dashboardGet('/api/dashboard/cards?ano=' + YEAR + '&meses=' + MONTH),
-      dashboardGet('/api/dashboard/aceleradores?ano=' + YEAR + '&meses=' + MONTH),
-      dashboardGet('/api/dashboard/top-produtos?ano=' + YEAR + '&meses=' + MONTH),
+      dashboardGet('/api/dashboard/cards?ano=' + YEAR + '&meses=' + MONTH, token),
+      dashboardGet('/api/dashboard/aceleradores?ano=' + YEAR + '&meses=' + MONTH, token),
+      dashboardGet('/api/dashboard/top-produtos?ano=' + YEAR + '&meses=' + MONTH, token),
     ]);
 
     var cardsRaw = results[0];

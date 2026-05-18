@@ -20,7 +20,8 @@ jobs:
       - name: Fetch and update data from API
         run: node scripts/update-data.js
         env:
-          API_TOKEN: ${{ secrets.DASHBOARD_API_TOKEN }}
+          DASHBOARD_USER: ${{ secrets.DASHBOARD_USER }}
+          DASHBOARD_PASS: ${{ secrets.DASHBOARD_PASS }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Commit and push changes
