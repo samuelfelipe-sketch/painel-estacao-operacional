@@ -3,7 +3,7 @@ name: Update Dashboard Data
 on:
   schedule:
     - cron: '0 8 * * *'  # Executa diariamente às 8:00 AM UTC (5:00 AM Brasília)
-  workflow_dispatch:  # Permite executar manualmente
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -21,10 +21,11 @@ jobs:
         run: |
           node - <<'EOF'
           const https = require('https');
-          const fs   = require('fs');
+          const fs    = require('fs');
 
-          const TOKEN = process.env.API_TOKEN;
-          const BASE  = 'dashboard.estacaosapatao.com.br';
+          const TOKEN        = process.env.API_TOKEN;
+          const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+          const BASE         = 'dashboard.estacaosapatao.com.br';
 
           // Datas: dados são D-1
           const now       = new Date();
@@ -36,56 +37,123 @@ jobs:
           const PERIODO   = yesterday.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
           const PERIODO_FMT = PERIODO.charAt(0).toUpperCase() + PERIODO.slice(1);
 
-          function fetchJSON(path) {
+          function fetchJSON(hostname, path, method = 'GET', body = null, extraHeaders = {}) {
             return new Promise((resolve, reject) => {
+              const bodyStr = body ? JSON.stringify(body) : null;
               const options = {
-                hostname: BASE, path,
-                headers: { Authorization: `Bearer ${TOKEN}` }
+                hostname, path, method,
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(bodyStr ? { 'Content-Length': Buffer.byteLength(bodyStr) } : {}),
+                  ...extraHeaders,
+                }
               };
-              https.get(options, res => {
+              const req = https.request(options, res => {
                 let data = '';
                 res.on('data', chunk => data += chunk);
                 res.on('end', () => {
                   try { resolve(JSON.parse(data)); }
-                  catch(e) { reject(new Error(`JSON inválido em ${path}: ${data.substring(0,200)}`)); }
+                  catch(e) { reject(new Error(`JSON inválido: ${data.substring(0,300)}`)); }
                 });
-              }).on('error', reject);
+              });
+              req.on('error', reject);
+              if (bodyStr) req.write(bodyStr);
+              req.end();
             });
           }
 
           // Mapeamento de grupo por acelerador
           const GRUPO_MAP = {
-            'FAT. LOJA':          'loja',
-            'CLIENTES':           'loja',
-            'TICKET MÉDIO LOJA':  'loja',
-            'REFEIÇÕES':          'loja',
-            'EXTRAS':             'loja',
-            'ALAMINUTA':          'loja',
-            'COMBO FARROUPILHA':  'loja',
-            'COMBO PÃO DE QUEIJO':'loja',
-            'CICLO OTTO':         'postos',
-            'MIX V-POWER':        'postos',
-            'CICLO DIESEL':       'postos',
-            'ARLA':               'postos',
-            'PA':                 'postos',
-            'LAVAGEM - CUPONS':   'postos',
-            'PIX':                'postos',
-            'SHELLBOX %':         'postos',
-            'APP NOVOS':          'fidelidade',
+            'FAT. LOJA':           'loja',
+            'CLIENTES':            'loja',
+            'TICKET MÉDIO LOJA':   'loja',
+            'REFEIÇÕES':           'loja',
+            'EXTRAS':              'loja',
+            'ALAMINUTA':           'loja',
+            'COMBO FARROUPILHA':   'loja',
+            'COMBO PÃO DE QUEIJO': 'loja',
+            'CICLO OTTO':          'postos',
+            'MIX V-POWER':         'postos',
+            'CICLO DIESEL':        'postos',
+            'ARLA':                'postos',
+            'PA':                  'postos',
+            'LAVAGEM - CUPONS':    'postos',
+            'PIX':                 'postos',
+            'SHELLBOX %':          'postos',
+            'APP NOVOS':           'fidelidade',
           };
+
+          function formatVal(val, is_currency, is_pct) {
+            if (val == null) return '—';
+            if (is_pct)      return val.toFixed(1) + '%';
+            if (is_currency) return 'R$ ' + val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            return val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+          }
+
+          async function gerarAcoesComClaude(aceleradores) {
+            const abaixoDaMeta = aceleradores.filter(a => a.pct_proj != null && a.pct_proj < 1.0);
+
+            if (!abaixoDaMeta.length) return [];
+
+            const resumo = abaixoDaMeta.map(a => {
+              const proj = formatVal(a.projecao, a.is_currency, a.is_pct);
+              const meta = formatVal(a.meta,     a.is_currency, a.is_pct);
+              const pct  = Math.round(a.pct_proj * 100);
+              return `- ${a.acelerador} (${a.grupo}): projeção ${proj} vs meta ${meta} = ${pct}% da meta`;
+            }).join('\n');
+
+            const prompt = `Você é um consultor operacional da Estação Sapatão, rede com posto de combustível e loja de conveniência no RS.
+
+Os seguintes indicadores estão abaixo da meta hoje (${DIA_ATUAL}/${MONTH}/${YEAR}):
+
+${resumo}
+
+Para cada indicador, gere UMA ação prática, direta e específica que a equipe pode executar HOJE para melhorar o resultado. A ação deve:
+- Ser curta (1-2 frases)
+- Ser operacional (o que fazer agora, não estratégia)
+- Considerar o gap real (quanto falta, não genérico)
+- Ser adequada ao contexto (posto/loja/combo)
+
+Responda SOMENTE com um JSON válido neste formato exato:
+[
+  { "acelerador": "NOME_EXATO", "acao": "texto da ação aqui" },
+  ...
+]`;
+
+            const response = await fetchJSON('api.anthropic.com', '/v1/messages', 'POST',
+              {
+                model: 'claude-haiku-4-5',
+                max_tokens: 1024,
+                messages: [{ role: 'user', content: prompt }]
+              },
+              {
+                'x-api-key': ANTHROPIC_KEY,
+                'anthropic-version': '2023-06-01',
+              }
+            );
+
+            if (!response.content || !response.content[0]) {
+              throw new Error('Resposta inválida do Claude: ' + JSON.stringify(response));
+            }
+
+            const text = response.content[0].text.trim();
+            // Extrai JSON da resposta (remove markdown se houver)
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+            if (!jsonMatch) throw new Error('Claude não retornou JSON válido: ' + text);
+            return JSON.parse(jsonMatch[0]);
+          }
 
           (async () => {
             try {
               const [cardsRaw, acelRaw, prodRaw] = await Promise.all([
-                fetchJSON(`/api/dashboard/cards?ano=${YEAR}&meses=${MONTH}`),
-                fetchJSON(`/api/dashboard/aceleradores?ano=${YEAR}&meses=${MONTH}`),
-                fetchJSON(`/api/dashboard/top-produtos?ano=${YEAR}&meses=${MONTH}`),
+                fetchJSON(BASE, `/api/dashboard/cards?ano=${YEAR}&meses=${MONTH}`, 'GET', null, { Authorization: `Bearer ${TOKEN}` }),
+                fetchJSON(BASE, `/api/dashboard/aceleradores?ano=${YEAR}&meses=${MONTH}`, 'GET', null, { Authorization: `Bearer ${TOKEN}` }),
+                fetchJSON(BASE, `/api/dashboard/top-produtos?ano=${YEAR}&meses=${MONTH}`, 'GET', null, { Authorization: `Bearer ${TOKEN}` }),
               ]);
 
-              // Valida se as respostas são arrays (token inválido retorna objeto)
-              if (!Array.isArray(cardsRaw)) throw new Error(`Token inválido ou expirado. Resposta cards: ${JSON.stringify(cardsRaw)}`);
-              if (!Array.isArray(acelRaw))  throw new Error(`Token inválido ou expirado. Resposta aceleradores: ${JSON.stringify(acelRaw)}`);
-              if (!Array.isArray(prodRaw))  throw new Error(`Token inválido ou expirado. Resposta top-produtos: ${JSON.stringify(prodRaw)}`);
+              if (!Array.isArray(cardsRaw)) throw new Error(`Token inválido. Resposta: ${JSON.stringify(cardsRaw)}`);
+              if (!Array.isArray(acelRaw))  throw new Error(`Token inválido. Resposta: ${JSON.stringify(acelRaw)}`);
+              if (!Array.isArray(prodRaw))  throw new Error(`Token inválido. Resposta: ${JSON.stringify(prodRaw)}`);
 
               const current = JSON.parse(fs.readFileSync('data.json', 'utf8'));
 
@@ -95,7 +163,7 @@ jobs:
               current.meta.dias_no_mes = DIAS_MES;
               current.meta.atualizado_em = now.toISOString().split('T')[0];
 
-              // CARDS — normaliza nome do canal
+              // CARDS
               current.cards = cardsRaw.map(c => ({
                 canal:       c.canal === 'PRODUTOS AUTOMOTIVOS' ? 'PROD. AUTO' : c.canal,
                 is_qtd:      c.is_qtd,
@@ -108,7 +176,7 @@ jobs:
                 dias_no_mes: c.dias_no_mes,
               }));
 
-              // ACELERADORES — adiciona grupo
+              // ACELERADORES
               current.aceleradores = acelRaw.map(a => ({
                 grupo:       GRUPO_MAP[a.acelerador] || 'postos',
                 acelerador:  a.acelerador,
@@ -122,7 +190,7 @@ jobs:
                 is_pct:      a.is_percent || false,
               }));
 
-              // TOP PRODUTOS — adiciona rank
+              // TOP PRODUTOS
               current.top_produtos = prodRaw.map((p, i) => ({
                 rank:        i + 1,
                 produto:     p.produto,
@@ -130,17 +198,24 @@ jobs:
                 faturamento: p.faturamento,
               }));
 
+              // AÇÕES GERADAS PELO CLAUDE
+              console.log('🤖 Gerando ações com Claude...');
+              const acoesGeradas = await gerarAcoesComClaude(current.aceleradores);
+              current.acoes = acoesGeradas;
+              console.log(`✅ ${acoesGeradas.length} ações geradas`);
+
               fs.writeFileSync('data.json', JSON.stringify(current, null, 2) + '\n');
               console.log(`✅ data.json atualizado — ${PERIODO_FMT} · Dia ${DIA_ATUAL}/${DIAS_MES}`);
 
             } catch(err) {
-              console.error('❌ Erro ao buscar dados da API:', err.message);
+              console.error('❌ Erro:', err.message);
               process.exit(1);
             }
           })();
           EOF
         env:
           API_TOKEN: ${{ secrets.DASHBOARD_API_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Commit and push changes
         run: |

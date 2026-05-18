@@ -144,21 +144,6 @@
 </div>
 
 <script>
-// ─── FIXED ACTIONS MAP (Não muda com dados, é fixo) ────────────────────────
-const acoesMap = {
-  "CICLO OTTO":          { acao: "Ação \"tanque cheio\" com brinde na loja para aumentar volume por visita." },
-  "MIX V-POWER":         { acao: "Script obrigatório: frentistas perguntam \"posso colocar V-Power?\" antes de cada abastecimento Otto." },
-  "TICKET MÉDIO LOJA":   { acao: "Caixa sugere 1 item complementar em cada atendimento." },
-  "EXTRAS":              { acao: "Equipe oferece extras proativamente — não aguarda o cliente pedir." },
-  "ALAMINUTA":           { acao: "Atendentes mencionam Alaminuta ao fechar todo pedido de refeição (11h–14h)." },
-  "COMBO FARROUPILHA":   { acao: "Equipe oferece o Combo Farroupilha como sugestão padrão no horário do almoço." },
-  "COMBO PÃO DE QUEIJO": { acao: "Reposicionar combo na altura dos olhos, próximo ao caixa." },
-  "PA":                  { acao: "Frentistas indicam 1 produto automotivo durante o abastecimento." },
-  "ARLA":                { acao: "Oferecer Arla proativamente em cada abastecimento de diesel." },
-  "FAT. LOJA":           { acao: "Focar em aumentar ticket médio com combos e sugestão de itens complementares." },
-  "LOJA":                { acao: "Focar em aumentar ticket médio com combos e sugestão de itens complementares." },
-};
-
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const fmtBRL = v => v == null ? '—' : 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
 const fmtNum = (v, d=0) => v == null ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
@@ -226,19 +211,24 @@ fetch('data.json')
     buildTable('table-loja', 'loja');
     buildTable('table-postos', 'postos');
 
-    // ─── AÇÕES SUGERIDAS
+    // ─── AÇÕES SUGERIDAS (geradas pelo Claude via data.json)
+    const acoesIA = data.acoes || [];
+
+    // Monta mapa acelerador → ação gerada
+    const acoesGeradas = {};
+    acoesIA.forEach(a => { acoesGeradas[a.acelerador] = a.acao; });
+
+    // Aceleradores abaixo da meta que têm ação gerada
     const comAcoes = aceleradores
-      .filter(a => a.pct_proj != null && a.pct_proj < 1.0 && acoesMap[a.acelerador])
+      .filter(a => a.pct_proj != null && a.pct_proj < 1.0 && acoesGeradas[a.acelerador])
       .sort((a, b) => a.pct_proj - b.pct_proj);
 
     const criticos = comAcoes.filter(a => a.pct_proj < 0.90);
     const atencao  = comAcoes.filter(a => a.pct_proj >= 0.90);
 
     function renderAcaoCard(a) {
-      const info = acoesMap[a.acelerador];
       const bCls = badgeClass(a.pct_proj);
       const borderCls = a.pct_proj < 0.90 ? 'vermelho-borda' : 'amarelo-borda';
-      // Gera o gap dinamicamente com os valores reais
       const projFmt = a.is_pct ? fmtNum(a.projecao,1)+'%' : a.is_currency ? fmtBRL(a.projecao) : fmtNum(a.projecao);
       const metaFmt = a.is_pct ? fmtNum(a.meta,1)+'%'     : a.is_currency ? fmtBRL(a.meta)     : fmtNum(a.meta);
       const gap = a.projecao && a.meta ? `proj. ${projFmt} vs meta ${metaFmt}` : '';
@@ -248,7 +238,7 @@ fetch('data.json')
           <span class="acao-pct ${bCls}">${fmtPct(a.pct_proj)}</span>
         </div>
         ${gap ? `<div class="acao-gap">${gap}</div>` : ''}
-        <div class="acao-text">${info.acao}</div>
+        <div class="acao-text">${acoesGeradas[a.acelerador]}</div>
       </div>`;
     }
 
