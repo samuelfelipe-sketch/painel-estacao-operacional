@@ -156,7 +156,7 @@ const fmtProjecao = c => c.is_qtd ? fmtNum(c.projecao/1000,1)+' mil L' : fmtBRL(
 const fmtMeta     = c => c.is_qtd ? fmtNum(c.meta/1000,1)+' mil L' : fmtBRL(c.meta);
 
 // ─── INIT FROM DATA.JSON ─────────────────────────────────────────────────────
-fetch('data.json')
+fetch('data.json?v=' + Date.now())
   .then(r => {
     if (!r.ok) throw new Error(`Erro ao carregar data.json: ${r.status}`);
     return r.json();
