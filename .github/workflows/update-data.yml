@@ -2,7 +2,7 @@ name: Update Dashboard Data
 
 on:
   schedule:
-    - cron: '0 8 * * *'  # Executa diariamente às 8:00 AM UTC (5:00 AM Brasília)
+    - cron: '47 6 * * *'  # 6:47 AM UTC / 3:47 AM Brasília — 30min após keepalive, fora do pico
   workflow_dispatch:
 
 permissions:

@@ -2,7 +2,7 @@ name: Keep Alive
 
 on:
   schedule:
-    - cron: '30 7 * * *'  # Roda 30min ANTES do update-data (7:30 AM UTC / 4:30 AM Brasília)
+    - cron: '17 6 * * *'  # 6:17 AM UTC / 3:17 AM Brasília — horário fora do pico
   workflow_dispatch:
 
 permissions:
