@@ -2,7 +2,8 @@ name: Update Dashboard Data
 
 on:
   schedule:
-    - cron: '47 6 * * *'  # 6:47 AM UTC / 3:47 AM Brasília — 30min após keepalive, fora do pico
+    - cron: '47 6 * * *'  # 6:47 AM UTC / 3:47 AM Brasília — primário
+    - cron: '23 9 * * *'  # 9:23 AM UTC / 6:23 AM Brasília — backup caso o primário falhe
   workflow_dispatch:
 
 permissions:
