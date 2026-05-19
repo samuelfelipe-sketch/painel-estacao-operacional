@@ -365,40 +365,52 @@
   },
   "acoes": [
     {
-      "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Reforce script de extras no caixa: queijo, cebola, acompanhamentos. Gap: R$ 12,50/venda."
+      "acelerador": "TICKET MÉDIO LOJA [LOJA]",
+      "acao": "Instrua o atendente no caixa: 'Quer adicionar queijo na sua alaminuta?' — faltam R$ 4.768 no mês."
     },
     {
-      "acelerador": "COMBO FARROUPILHA",
-      "acao": "Destaque combo Farroupilha no PDV e Instagram hoje. Gap: 478 unidades até fim mês."
+      "acelerador": "TICKET MÉDIO LOJA [LOJA]",
+      "acao": "Instrua o caixa a finalizar todo pedido com bomboniere: 'Aproveita e leva um chocolate na promoção?'"
     },
     {
-      "acelerador": "EXTRAS",
-      "acao": "Oriente time caixa: abordagem ativa de extras em todo ticket. Gap: 118 unidades faltando."
+      "acelerador": "EXTRAS [LOJA]",
+      "acao": "Oriente o atendente: 'Posso incluir uma porção de fritas para acompanhar?' — faltam 118 unidades."
     },
     {
-      "acelerador": "ALAMINUTA",
-      "acao": "Posicione Alamínuta em local premium no PDV com preço destacado. Gap: 146 unidades."
+      "acelerador": "ALAMINUTA [LOJA]",
+      "acao": "Destaque alaminuta no PDV com preço visível e instrua: 'Quer adicionar cebola no seu bife?' — faltam 146."
     },
     {
-      "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Intensifique promoção pão de queijo inverno no PDV e redes. Gap: 103 unidades."
+      "acelerador": "COMBO FARROUPILHA [LOJA]",
+      "acao": "Instrua o atendente: 'Aproveita o combo Farroupilha — já vem completo e sai mais em conta.' Faltam 478."
     },
     {
-      "acelerador": "MIX V-POWER",
-      "acao": "Acione frentistas para abordagem ativa V-Power. Cada 1 p.p. = 7.600 litros. Gap: 2,9 p.p."
+      "acelerador": "COMBO FARROUPILHA [LOJA]",
+      "acao": "Reforce comunicação no Instagram amanhã destacando visibilidade e valor do combo Farroupilha."
     },
     {
-      "acelerador": "CICLO OTTO",
-      "acao": "Monitore abastecimentos GNV diariamente. Gap: 72.158 litros até fim mês."
+      "acelerador": "COMBO PÃO DE QUEIJO [LOJA]",
+      "acao": "Instrua o atendente: 'Quer aproveitar e levar um combo Pão de Queijo? Tá quentinho agora.' Faltam 103."
     },
     {
-      "acelerador": "PA",
-      "acao": "Accelere venda óleo Dayton R$ 349 no PDV. Teste até 31/05. Gap: R$ 2.284."
+      "acelerador": "MIX V-POWER [POSTOS]",
+      "acao": "Instrua o frentista: 'Posso colocar V-Power no seu tanque? Ela limpa o motor enquanto abastece.' Faltam 2.9 p.p."
     },
     {
-      "acelerador": "FAT. LOJA",
-      "acao": "Foco combinado: extras + combos Farroupilha + PA. Gap: R$ 4.768 até 31/05."
+      "acelerador": "MIX V-POWER [POSTOS]",
+      "acao": "Instrua o frentista para hesitantes: 'É só uma diferença pequena no valor, mas protege muito mais o motor.'"
+    },
+    {
+      "acelerador": "CICLO OTTO [POSTOS]",
+      "acao": "Monitore disponibilidade de GNV — indisponibilidade impacta volume Otto. Faltam 72.158 litros."
+    },
+    {
+      "acelerador": "PA [POSTOS]",
+      "acao": "Destaque baldes de óleo linha pesada no PDV e instrua caixa a abordar proativamente — faltam R$ 2.284."
+    },
+    {
+      "acelerador": "ARLA",
+      "acao": "Instrua frentista ao atender caminhão: 'Vai precisar de Arla hoje? Já aproveita enquanto está aqui.'"
     }
   ]
 }
