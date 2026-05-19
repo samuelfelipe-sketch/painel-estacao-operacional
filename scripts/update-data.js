@@ -2,6 +2,10 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
+// Contexto operacional para enriquecer as ações do Claude
+const contextPath = path.join(__dirname, '..', 'context.md');
+const CONTEXT = fs.existsSync(contextPath) ? fs.readFileSync(contextPath, 'utf8') : '';
+
 const DASHBOARD_USER = process.env.DASHBOARD_USER;
 const DASHBOARD_PASS = process.env.DASHBOARD_PASS;
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
@@ -158,15 +162,16 @@ async function gerarAcoes(aceleradores) {
       + pct + '% da meta' + gapStr + ritmoStr;
   }).join('\n');
 
-  var prompt = 'Você é o gerente da Estação Sapatão (posto de combustível + loja de conveniência no RS).\n';
-  prompt += 'Hoje é dia ' + DIA_ATUAL + ' de ' + DIAS_MES + ' (' + MONTH + '/' + YEAR + ').\n\n';
+  var prompt = 'Você é consultor operacional da Estação Sapatão. Utilize o contexto abaixo para gerar ações precisas e direcionadas.\n\n';
+  if (CONTEXT) prompt += '## CONTEXTO OPERACIONAL\n' + CONTEXT + '\n\n';
+  prompt += '## SITUAÇÃO HOJE — Dia ' + DIA_ATUAL + ' de ' + DIAS_MES + ' (' + MONTH + '/' + YEAR + ')\n';
   prompt += 'Indicadores abaixo da meta:\n' + linhas + '\n\n';
-  prompt += 'REGRAS para cada ação:\n';
-  prompt += '1. UMA frase curta — máximo 18 palavras\n';
-  prompt += '2. Começar com verbo no imperativo (Acione, Oriente, Destaque, Reduza, Ligue, Posicione...)\n';
-  prompt += '3. Mencionar o número do gap ou a quantidade faltante\n';
-  prompt += '4. Ação executável HOJE na operação\n';
-  prompt += '5. LOJA = conveniência/caixa/atendimento; POSTOS = pista/frentistas/combustível; FIDELIDADE = app/cadastro\n\n';
+  prompt += '## REGRAS PARA CADA AÇÃO\n';
+  prompt += '1. UMA frase curta — máximo 20 palavras\n';
+  prompt += '2. Começar com verbo no imperativo (Oriente, Acione, Peça, Destaque, Ligue, Posicione, Reforce...)\n';
+  prompt += '3. Citar o responsável pelo indicador OU o script/tática específica quando relevante\n';
+  prompt += '4. Mencionar o gap em números absolutos quando possível\n';
+  prompt += '5. Ação executável HOJE, considerando o contexto real da operação\n\n';
   prompt += 'Responda SOMENTE com JSON válido, sem markdown:\n';
   prompt += '[{"acelerador":"NOME_EXATO_DO_INDICADOR","acao":"frase"}]';
 
