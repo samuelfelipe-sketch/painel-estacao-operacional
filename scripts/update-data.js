@@ -133,18 +133,42 @@ async function gerarAcoes(aceleradores) {
   if (!abaixo.length) return [];
 
   const linhas = abaixo.map(function(a) {
-    var proj = fmtVal(a.projecao, a.is_currency, a.is_pct);
-    var meta = fmtVal(a.meta, a.is_currency, a.is_pct);
-    var pct  = Math.round(a.pct_proj * 100);
-    return '- ' + a.acelerador + ' (' + a.grupo + '): proj ' + proj + ' vs meta ' + meta + ' = ' + pct + '%';
+    var pct = Math.round(a.pct_proj * 100);
+
+    // Gap absoluto até a meta (usa projecao para itens com serie temporal, realizado para pct)
+    var gapStr = '';
+    if (!a.is_pct && a.projecao != null && a.meta != null) {
+      var gap = a.meta - a.projecao;
+      gapStr = ', faltam ' + fmtVal(gap, a.is_currency, false) + ' para bater a meta';
+    } else if (a.is_pct && a.realizado != null && a.meta != null) {
+      var gapPct = (a.meta - a.realizado).toFixed(1);
+      gapStr = ', faltam ' + gapPct + ' p.p. para a meta';
+    }
+
+    // Ritmo diário: está acima ou abaixo do necessário?
+    var ritmoStr = '';
+    if (a.media_dia != null && a.meta_dia != null) {
+      var ritmo = Math.round((a.media_dia / a.meta_dia) * 100);
+      var delta = Math.round(a.media_dia - a.meta_dia);
+      var sinal = delta >= 0 ? '+' : '';
+      ritmoStr = ', ritmo/dia: ' + ritmo + '% do necessário (' + sinal + fmtVal(delta, a.is_currency, false) + '/dia)';
+    }
+
+    return '- ' + a.acelerador + ' [' + a.grupo.toUpperCase() + ']: '
+      + pct + '% da meta' + gapStr + ritmoStr;
   }).join('\n');
 
-  var prompt = 'Voce e consultor operacional da Estacao Sapatao (posto + loja no RS).\n\n';
-  prompt += 'Indicadores abaixo da meta em ' + DIA_ATUAL + '/' + MONTH + '/' + YEAR + ':\n';
-  prompt += linhas + '\n\n';
-  prompt += 'Para cada indicador, escreva UMA acao curta (1-2 frases), pratica e especifica para hoje.\n';
-  prompt += 'Use os numeros reais. Responda SOMENTE com JSON (sem markdown):\n';
-  prompt += '[{"acelerador":"NOME_EXATO","acao":"texto"}]';
+  var prompt = 'Você é o gerente da Estação Sapatão (posto de combustível + loja de conveniência no RS).\n';
+  prompt += 'Hoje é dia ' + DIA_ATUAL + ' de ' + DIAS_MES + ' (' + MONTH + '/' + YEAR + ').\n\n';
+  prompt += 'Indicadores abaixo da meta:\n' + linhas + '\n\n';
+  prompt += 'REGRAS para cada ação:\n';
+  prompt += '1. UMA frase curta — máximo 18 palavras\n';
+  prompt += '2. Começar com verbo no imperativo (Acione, Oriente, Destaque, Reduza, Ligue, Posicione...)\n';
+  prompt += '3. Mencionar o número do gap ou a quantidade faltante\n';
+  prompt += '4. Ação executável HOJE na operação\n';
+  prompt += '5. LOJA = conveniência/caixa/atendimento; POSTOS = pista/frentistas/combustível; FIDELIDADE = app/cadastro\n\n';
+  prompt += 'Responda SOMENTE com JSON válido, sem markdown:\n';
+  prompt += '[{"acelerador":"NOME_EXATO_DO_INDICADOR","acao":"frase"}]';
 
   var resp = await claudePost({
     model: 'claude-haiku-4-5',
