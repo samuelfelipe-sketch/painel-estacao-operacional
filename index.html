@@ -258,5 +258,14 @@ fetch('data.json?v=' + Date.now())
     document.getElementById('kpi-cards').innerHTML = '<div style="grid-column:1/-1;padding:20px;color:#dc2626;text-align:center">Erro ao carregar dados. Verifique se data.json existe.</div>';
   });
 </script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .catch(err => console.warn('SW não registrado:', err));
+    });
+  }
+</script>
 </body>
 </html>
