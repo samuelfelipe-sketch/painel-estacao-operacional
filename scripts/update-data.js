@@ -169,7 +169,7 @@ async function gerarAcoes(aceleradores) {
   prompt += '## REGRAS PARA CADA AÇÃO\n';
   prompt += '1. UMA frase curta — máximo 20 palavras\n';
   prompt += '2. Começar com verbo no imperativo (Oriente, Acione, Peça, Destaque, Ligue, Posicione, Reforce...)\n';
-  prompt += '3. Citar o responsável pelo indicador OU o script/tática específica quando relevante\n';
+  prompt += '3. Usar funções/cargos, NUNCA nomes de pessoas (ex: "gestor de loja", "frentista", "time do caixa", "equipe de pista")\n';
   prompt += '4. Mencionar o gap em números absolutos quando possível\n';
   prompt += '5. Ação executável HOJE, considerando o contexto real da operação\n\n';
   prompt += 'Responda SOMENTE com JSON válido, sem markdown:\n';
