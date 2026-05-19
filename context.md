@@ -29,6 +29,7 @@
   - "Quer adicionar cebola no seu bife?"
   - "Posso incluir uma porção de fritas para acompanhar?"
   - "Aproveita e leva uma bebida gelada junto?"
+- **Finalização no caixa**: sempre encerrar com oferta de bomboniere (chocolate, chiclete, bala) — usar o item em promoção do ciclo como âncora
 - A sugestão deve ser específica ao item que o cliente está comprando — nunca genérica
 
 ### COMBO FARROUPILHA
@@ -70,8 +71,11 @@
   - Cliente com alaminuta: "Quer adicionar queijo na sua alaminuta?"
   - Cliente com bife/carne: "Quer adicionar cebola no seu bife?"
   - Cliente com prato no geral: "Posso incluir uma porção de fritas para acompanhar?"
-  - Cliente no caixa: "Aproveita e leva uma bebida gelada junto?"
-- Orientar no início de cada turno qual o script do dia
+- **Finalização no caixa (universal)**: sempre oferecer item de bomboniere ao fechar o pedido
+  - "Aproveita e leva um chocolate? Tá na promoção."
+  - "Quer levar um chiclete ou bala para a viagem?"
+  - Usar o item em promoção do ciclo atual como âncora da sugestão
+- Orientar no início de cada turno qual o script do dia e qual o item de bomboniere em destaque
 
 ### LAVAGEM
 - Acima da meta — manter ritmo; sexta e sábado são dias fortes
