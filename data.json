@@ -366,43 +366,51 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA [LOJA]",
-      "acao": "Instrua o atendente: 'Quer adicionar queijo na sua alaminuta?' e 'Aproveita e leva uma bebida gelada junto?'"
+      "acao": "Instrua atendentes a sugerir extras específicos: 'Quer queijo na alaminuta?' 'Cebola no bife?' 'Fritas para acompanhar?'"
     },
     {
       "acelerador": "TICKET MÉDIO LOJA [LOJA]",
-      "acao": "Oriente a equipe de caixa a finalizar sempre com: 'Aproveita e leva um chocolate? Tá na promoção.'"
-    },
-    {
-      "acelerador": "COMBO FARROUPILHA [LOJA]",
-      "acao": "Destaque o combo Farroupilha no PDV e Instagram hoje; instrua atendente: 'Aproveita o combo Farroupilha — já vem completo e sai mais em conta.'"
+      "acao": "Oriente equipe de caixa a finalizar todo pedido com bomboniere em promoção: 'Aproveita e leva um chocolate?'"
     },
     {
       "acelerador": "EXTRAS [LOJA]",
-      "acao": "Instrua o atendente: 'Posso incluir uma porção de fritas para acompanhar?' — faltam 118 unidades para bater meta."
+      "acao": "Reforce com atendentes scripts de extras por item: alaminuta+queijo, bife+cebola, prato+fritas. Faltam 118 unidades."
     },
     {
       "acelerador": "ALAMINUTA [LOJA]",
-      "acao": "Reforce script no caixa: 'Quer adicionar cebola no seu bife?' — faltam 146 unidades para fechar o mês."
+      "acao": "Destaque alaminuta no PDV com sugestão ativa no caixa. Faltam 146 unidades; ritmo -5/dia."
+    },
+    {
+      "acelerador": "COMBO FARROUPILHA [LOJA]",
+      "acao": "Instrua atendente: 'Aproveita o combo Farroupilha—já vem completo e sai mais em conta.' Faltam 478 unidades."
+    },
+    {
+      "acelerador": "COMBO FARROUPILHA [LOJA]",
+      "acao": "Reforce comunicação PDV e Instagram sobre Combo Farroupilha com 1 dia de antecedência para visibilidade."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO [LOJA]",
-      "acao": "Instrua atendente: 'Quer aproveitar e levar um combo Pão de Queijo? Tá quentinho agora.' — faltam 103 unidades."
+      "acao": "Instrua atendente: 'Quer aproveitar e levar combo Pão de Queijo? Tá quentinho agora.' Faltam 103 unidades."
     },
     {
       "acelerador": "MIX V-POWER [POSTOS]",
-      "acao": "Instrua frentista: 'Posso colocar V-Power no seu tanque? Ela limpa o motor enquanto abastece.' — faltam 2,9 p.p."
+      "acao": "Instrua frentista antes de abastecer: 'Posso colocar V-Power? Limpa o motor enquanto abastece.' Faltam 2,9 p.p."
+    },
+    {
+      "acelerador": "MIX V-POWER [POSTOS]",
+      "acao": "Oriente frentista para hesitantes: 'Diferença pequena no valor, mas protege muito mais o motor.' Intensifique abordagem."
     },
     {
       "acelerador": "CICLO OTTO [POSTOS]",
-      "acao": "Instrua frentista: 'Vai precisar de Arla hoje? Já aproveita enquanto está aqui.' — faltam 72.158 litros."
+      "acao": "Intensifique oferta de V-Power e Arla na pista com abordagem ativa. Faltam 72.158 litros; ritmo -2.328/dia."
     },
     {
       "acelerador": "PA [POSTOS]",
-      "acao": "Destaque óleo linha pesada no PDV; instrua pista a oferecer no caixa — faltam R$ 2.284 para bater meta."
+      "acao": "Destaque baldes de óleo linha pesada no PDV e instrua atendente a oferecer no caixa com foco em ticket."
     },
     {
       "acelerador": "FAT. LOJA [LOJA]",
-      "acao": "Reforce com gestor de loja que faltam apenas R$ 4.768; intensifique scripts de extras e combos até fim do mês."
+      "acao": "Combine ações de ticket médio, extras e combos para recuperar R$ 4.768 faltantes. Ritmo crítico: -R$ 154/dia."
     }
   ]
 }
