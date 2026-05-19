@@ -158,7 +158,7 @@ async function gerarAcoes(aceleradores) {
       ritmoStr = ', ritmo/dia: ' + ritmo + '% do necessário (' + sinal + fmtVal(delta, a.is_currency, false) + '/dia)';
     }
 
-    return '- ' + a.acelerador + ' [' + a.grupo.toUpperCase() + ']: '
+    return '- "' + a.acelerador + '" (' + a.grupo + '): '
       + pct + '% da meta' + gapStr + ritmoStr;
   }).join('\n');
 
@@ -174,8 +174,10 @@ async function gerarAcoes(aceleradores) {
   prompt += '   Exemplo CORRETO: "Instrua o atendente: \'Quer adicionar queijo na sua alaminuta?\'"\n';
   prompt += '   Exemplo ERRADO: "Oriente o time a oferecer extras proativamente"\n';
   prompt += '5. Mencionar o gap em números absolutos quando reforçar o senso de urgência\n\n';
+  prompt += 'CRÍTICO: O campo "acelerador" no JSON deve ser EXATAMENTE o nome entre aspas acima — sem adicionar grupo, colchetes ou qualquer sufixo.\n';
+  prompt += 'CRÍTICO: UMA entrada por indicador — sem duplicatas.\n\n';
   prompt += 'Responda SOMENTE com JSON válido, sem markdown:\n';
-  prompt += '[{"acelerador":"NOME_EXATO_DO_INDICADOR","acao":"frase"}]';
+  prompt += '[{"acelerador":"NOME EXATO","acao":"frase"}]';
 
   var resp = await claudePost({
     model: 'claude-haiku-4-5',
