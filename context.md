@@ -22,36 +22,42 @@
 ## Desafios por Indicador
 
 ### TICKET MÉDIO LOJA
-- Meta é o somatório das duas unidades (provavelmente interpretado errado no painel — verificar com Douglas)
-- Ticket atual ~R$ 24-26; as ações de hamburguer e roleta estão ajudando
-- Time de atendimento já foi orientado; Marcos reforça no caixa
-- Script eficaz: "O senhor gostaria de queijo para acompanhar o peixe?" / "O senhor quer cebola para acompanhar a carne?" / "Posso sugerir um extra?"
+- Meta é o somatório das duas unidades
+- Ticket aumenta com sugestão ativa de itens adicionais no momento do pedido
+- Scripts comerciais validados para o atendente/caixa:
+  - "Quer adicionar queijo na sua alaminuta?"
+  - "Quer adicionar cebola no seu bife?"
+  - "Posso incluir uma porção de fritas para acompanhar?"
+  - "Aproveita e leva uma bebida gelada junto?"
+- A sugestão deve ser específica ao item que o cliente está comprando — nunca genérica
 
 ### COMBO FARROUPILHA
-- Muito abaixo da meta; pouca visibilidade no PDV
-- Roleta pode alavancar se o combo for mencionado na comunicação
-- Considerar incluir no cardápio digital e no Instagram com antecedência
+- Baixa visibilidade é o principal obstáculo — cliente não compra o que não vê
+- Script para atendente/caixa: "Aproveita o combo Farroupilha — já vem completo e sai mais em conta."
+- Reforçar comunicação no PDV e Instagram com antecedência à ação
 
 ### COMBO PÃO DE QUEIJO
-- Frio está ajudando naturalmente — tendência de melhora espontânea com o inverno
-- Destacar no PDV durante o inverno
+- Frio favorece a venda espontânea — explorar sazonalidade na abordagem
+- Script: "Quer aproveitar e levar um combo Pão de Queijo? Tá quentinho agora."
 
 ### MIX V-POWER
-- Cada 1 ponto percentual = ~7.600 litros extras
-- Maicon está fazendo abordagem ativa na pista — esse é o modelo a replicar
-- Script para frentistas: "Posso colocar V-Power antes de começar o abastecimento?"
-- Ainda tímido; comunicação no Instagram pedida (vídeo/post sobre benefícios V-Power)
-- Aguardar aprovação do Sérgio (DM Shell) para ação específica de V-Power
+- Cada 1 ponto percentual de mix = ~7.600 litros extras no mês
+- A abordagem ativa do frentista é o principal motor do mix
+- Scripts comerciais para frentistas:
+  - Antes de iniciar: "Posso colocar V-Power no seu tanque? Ela limpa o motor enquanto abastece."
+  - Para quem hesita: "É só uma diferença pequena no valor, mas protege muito mais o motor."
+- Ações promocionais V-Power dependem de aprovação prévia do DM Shell
 
 ### CICLO OTTO
 - Comparação com ano anterior pode ser prejudicada por guerras de preço sazonais
 - GNV contribui para o ciclo Otto — qualquer indisponibilidade impacta o volume
 
 ### ARLA
-- Diferença entre as unidades: Estância Velha supera meta porque frentistas ofertam ativamente
-- Novo Hamburgo precisa replicar a mesma abordagem ativa dos frentistas de EV
-- "É só isso, essa é a diferença" — proatividade do time
-- Problema de recebimento resolvido (confirmação de pedidos por e-mail)
+- A oferta ativa do frentista é o único diferencial entre bater ou não a meta
+- Scripts comerciais para frentistas ao atender caminhoneiro/truck:
+  - "Vai precisar de Arla hoje? Já aproveita enquanto está aqui."
+  - "Tem Arla disponível aqui — quer completar o tanquinho?"
+- Sem abordagem ativa, o cliente não pede espontaneamente
 
 ### PA (PRODUTOS AUTOMOTIVOS)
 - Principais alavancas: baldes de óleo linha pesada (Dayton e similares) e produtos de maior ticket
@@ -59,8 +65,13 @@
 - Estratégia: destaque no PDV e abordagem ativa no caixa/pista
 
 ### EXTRAS
-- Scripts: "Quer queijo?", "Quer cebola?", "Posso sugerir um extra?"
-- Time já orientado; reforçar no início do turno
+- A sugestão de extra deve ser atrelada ao item principal do cliente — nunca genérica
+- Scripts comerciais por situação:
+  - Cliente com alaminuta: "Quer adicionar queijo na sua alaminuta?"
+  - Cliente com bife/carne: "Quer adicionar cebola no seu bife?"
+  - Cliente com prato no geral: "Posso incluir uma porção de fritas para acompanhar?"
+  - Cliente no caixa: "Aproveita e leva uma bebida gelada junto?"
+- Orientar no início de cada turno qual o script do dia
 
 ### LAVAGEM
 - Acima da meta — manter ritmo; sexta e sábado são dias fortes

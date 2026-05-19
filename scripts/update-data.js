@@ -168,10 +168,12 @@ async function gerarAcoes(aceleradores) {
   prompt += 'Indicadores abaixo da meta:\n' + linhas + '\n\n';
   prompt += '## REGRAS PARA CADA AÇÃO\n';
   prompt += '1. UMA frase curta — máximo 20 palavras\n';
-  prompt += '2. Começar com verbo no imperativo (Oriente, Acione, Peça, Destaque, Ligue, Posicione, Reforce...)\n';
-  prompt += '3. Usar funções/cargos, NUNCA nomes de pessoas (ex: "gestor de loja", "frentista", "time do caixa", "equipe de pista")\n';
-  prompt += '4. Mencionar o gap em números absolutos quando possível\n';
-  prompt += '5. Ação executável HOJE, considerando o contexto real da operação\n\n';
+  prompt += '2. Começar com verbo no imperativo (Oriente, Reforce, Destaque, Instrua, Posicione...)\n';
+  prompt += '3. Usar funções/cargos, NUNCA nomes de pessoas (ex: "frentista", "atendente", "equipe de caixa", "equipe de pista")\n';
+  prompt += '4. Para indicadores de LOJA e POSTOS: incluir o script de abordagem comercial ao cliente — específico ao produto, nunca genérico\n';
+  prompt += '   Exemplo CORRETO: "Instrua o atendente: \'Quer adicionar queijo na sua alaminuta?\'"\n';
+  prompt += '   Exemplo ERRADO: "Oriente o time a oferecer extras proativamente"\n';
+  prompt += '5. Mencionar o gap em números absolutos quando reforçar o senso de urgência\n\n';
   prompt += 'Responda SOMENTE com JSON válido, sem markdown:\n';
   prompt += '[{"acelerador":"NOME_EXATO_DO_INDICADOR","acao":"frase"}]';
 
