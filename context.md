@@ -13,11 +13,11 @@
 - **Sandra** — responsável pela cozinha
 - **Douglas** — TI e integrações do dashboard
 
-## Promoções Ativas (Maio/2026)
-- **Terça Premiada**: roleta toda terça-feira — R$ 50 de compra na loja gira a roleta em Novo Hamburgo, R$ 30 em Estância Velha; brindes definidos toda sexta até 17h30; comunicar no Instagram na segunda-feira
-- **Hamburguer na quinta-feira**: ação especial de hamburguer às quintas; comprovou aumento de ticket médio de R$ 24 para R$ 26,90 e 144 refeições em um único dia
-- **iFood**: campanha inteligente rodando automaticamente — está gerando tráfego incremental na loja
-- **Tank Shake Shell**: ação planejada para Estância Velha — aguardando aprovação do DM Sérgio via grupo Fratini
+## Mecânicas de Promoção Validadas
+- **Roleta (Terça Premiada)**: roleta na loja acima de um valor mínimo de compra gira a roleta e ganha brinde; comprovadamente aumenta ticket médio e refeições; comunicar no Instagram 1 dia antes
+- **Ação de prato especial (ex: hamburguer)**: promoção de item específico em dia fixo da semana aumenta ticket médio e volume de refeições significativamente
+- **iFood**: campanha inteligente gera tráfego incremental — monitorar semanalmente
+- **Ações Shell (Tank Shake, V-Power)**: dependem de aprovação prévia do DM Shell
 
 ## Desafios por Indicador
 
@@ -44,9 +44,8 @@
 - Aguardar aprovação do Sérgio (DM Shell) para ação específica de V-Power
 
 ### CICLO OTTO
-- GNV (gás natural veicular) ficou parado por alguns dias — afetou o ciclo
-- Comparação com ano anterior prejudicada por guerra de preços (2025)
-- Tendência de recuperação nos últimos dias
+- Comparação com ano anterior pode ser prejudicada por guerras de preço sazonais
+- GNV contribui para o ciclo Otto — qualquer indisponibilidade impacta o volume
 
 ### ARLA
 - Diferença entre as unidades: Estância Velha supera meta porque frentistas ofertam ativamente
@@ -55,10 +54,9 @@
 - Problema de recebimento resolvido (confirmação de pedidos por e-mail)
 
 ### PA (PRODUTOS AUTOMOTIVOS)
-- Balde de óleo Dayton (linha pesada) a R$ 349 — 12 unidades em estoque
-- Rafa vai fazer teste de venda até o final do mês
-- Margem de CMV está próxima da meta (~51%); PA não pode piorar margem
-- Estratégia: destaque no PDV e abordagem ativa no caixa
+- Principais alavancas: baldes de óleo linha pesada (Dayton e similares) e produtos de maior ticket
+- Margem de CMV deve ser monitorada — PA não pode piorar a margem geral
+- Estratégia: destaque no PDV e abordagem ativa no caixa/pista
 
 ### EXTRAS
 - Scripts: "Quer queijo?", "Quer cebola?", "Posso sugerir um extra?"
@@ -72,8 +70,8 @@
 - Meta informal de manter ritmo de ~12 novos/dia
 
 ## Contexto Geral
-- Faturamento de loja crescendo bem (+25% vs ano passado)
-- Cozinha precisa de geladeira maior para reduzir frequência de compras
-- Estrogonofe em queda — planejado post "ÚLTIMOS DIAS" no Instagram para liquidar estoque
-- Auditoria de estoque iniciando pelas categorias: tabaco, food e bebidas não alcoólicas
-- Reunião de leads acontecendo toda segunda-feira após reunião de setores
+- Duas unidades com perfis distintos: Novo Hamburgo (maior volume) e Estância Velha
+- Reunião de gestão semanal com Supervisor de Operações, Compras e Marketing
+- Promoções devem ter regras claras e por escrito antes da execução — evitar improvisos no dia
+- Comunicação no Instagram deve sair 1 dia antes da ação para gerar antecipação
+- CMV da loja monitorado de perto — ações promocionais não devem comprometer margem
