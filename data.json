@@ -366,39 +366,39 @@
   "acoes": [
     {
       "acelerador": "FAT. LOJA",
-      "acao": "Revisar precificação e mix de produtos com maior margem para recuperar R$ 4.768 em faturamento. Intensificar promoções nas categorias de maior ticket."
+      "acao": "Acione promoção relâmpago hoje para recuperar R$ 4.768 em vendas."
     },
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Treinar equipe em cross-sell e upsell para aumentar valor médio por transação. Destacar produtos premium e combos nas mãos dos vendedores."
+      "acao": "Oriente caixa a sugerir itens complementares em cada atendimento."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Aumentar oferta de itens adicionais (bebidas, doces, acessórios) nas mãos da equipe e na região de caixa. Meta: 118 unidades extras."
+      "acao": "Destaque extras na entrada e caixa para vender 118 unidades."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Executar 2 ações de reminder visual e verbal para impulsar as 146 unidades faltantes. Posicionar produto em local estratégico próximo ao caixa."
+      "acao": "Posicione Alaminuta no balcão para recuperar 146 unidades."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Investigar barreira (preço, aceitação, conhecimento). Treinar equipe sobre benefícios e oferecer como primeira opção. Meta: 478 unidades adicionais."
+      "acao": "Ligue para fornecedor confirmando stock e execute venda cruzada."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Intensificar oferta do combo para recuperar apenas 103 unidades. Revisar conhecimento do produto com a equipe."
+      "acao": "Acione aquecimento e promoção para vender 103 combos."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Revisar ciclo operacional e eliminar gargalos de abastecimento. Objetivo: 72.158 litros adicionais até final do período."
+      "acao": "Oriente frentistas sobre descontos para atingir 72.158 litros."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Aumentar oferta e incentivo de venda de V-Power nos postos para alcançar 26,6% do mix. Treinar equipe sobre diferenciais do produto."
+      "acao": "Destaque V-Power aos clientes premium para ganhar 2.9 pontos."
     },
     {
       "acelerador": "PA",
-      "acao": "Revisar precificação e estoque de produtos de maior margem em PA. Recuperar R$ 2.284 em faturamento com ações pontuais de promoção."
+      "acao": "Posicione produto na pista com sinalização para R$ 2.284."
     }
   ]
 }
