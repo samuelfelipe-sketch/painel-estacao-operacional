@@ -365,40 +365,40 @@
   },
   "acoes": [
     {
-      "acelerador": "FAT. LOJA",
-      "acao": "Acione promoção relâmpago hoje para recuperar R$ 4.768 em vendas."
-    },
-    {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Oriente caixa a sugerir itens complementares em cada atendimento."
-    },
-    {
-      "acelerador": "EXTRAS",
-      "acao": "Destaque extras na entrada e caixa para vender 118 unidades."
-    },
-    {
-      "acelerador": "ALAMINUTA",
-      "acao": "Posicione Alaminuta no balcão para recuperar 146 unidades."
+      "acao": "Reforce script de extras no caixa: queijo, cebola, acompanhamentos. Gap: R$ 12,50/venda."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Ligue para fornecedor confirmando stock e execute venda cruzada."
+      "acao": "Destaque combo Farroupilha no PDV e Instagram hoje. Gap: 478 unidades até fim mês."
+    },
+    {
+      "acelerador": "EXTRAS",
+      "acao": "Oriente time caixa: abordagem ativa de extras em todo ticket. Gap: 118 unidades faltando."
+    },
+    {
+      "acelerador": "ALAMINUTA",
+      "acao": "Posicione Alamínuta em local premium no PDV com preço destacado. Gap: 146 unidades."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Acione aquecimento e promoção para vender 103 combos."
-    },
-    {
-      "acelerador": "CICLO OTTO",
-      "acao": "Oriente frentistas sobre descontos para atingir 72.158 litros."
+      "acao": "Intensifique promoção pão de queijo inverno no PDV e redes. Gap: 103 unidades."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Destaque V-Power aos clientes premium para ganhar 2.9 pontos."
+      "acao": "Acione frentistas para abordagem ativa V-Power. Cada 1 p.p. = 7.600 litros. Gap: 2,9 p.p."
+    },
+    {
+      "acelerador": "CICLO OTTO",
+      "acao": "Monitore abastecimentos GNV diariamente. Gap: 72.158 litros até fim mês."
     },
     {
       "acelerador": "PA",
-      "acao": "Posicione produto na pista com sinalização para R$ 2.284."
+      "acao": "Accelere venda óleo Dayton R$ 349 no PDV. Teste até 31/05. Gap: R$ 2.284."
+    },
+    {
+      "acelerador": "FAT. LOJA",
+      "acao": "Foco combinado: extras + combos Farroupilha + PA. Gap: R$ 4.768 até 31/05."
     }
   ]
 }
