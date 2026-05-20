@@ -366,43 +366,35 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Frentista: 'Quer adicionar queijo na alaminuta?' Atendente: sempre fecha com bomboniere em promoção — faltam R$ 278/dia."
-    },
-    {
-      "acelerador": "COMBO FARROUPILHA",
-      "acao": "Caixa: 'Aproveita o Farroupilha — já vem completo e sai mais em conta.' PDV destacado + Instagram hoje — faltam 468."
+      "acao": "Equipe de caixa: ofereça item de bomboniere ao fechar pedido — faltam R$ 8.624 em faturamento."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Equipe de caixa: oferta específica por prato + bomboniere no fechamento — faltam 126 extras no mês."
+      "acao": "Atendente, sempre sugerir extra específico ao prato — 'Quer fritas com isso?' — faltam 126 extras."
     },
     {
-      "acelerador": "MIX V-POWER",
-      "acao": "Frentista aborda antes: 'Posso colocar V-Power? Limpa o motor enquanto abastece.' Hesita? 'Diferença mínima, proteção máxima' — faltam 3 p.p."
-    },
-    {
-      "acelerador": "CICLO OTTO",
-      "acao": "Maicon: foco na abordagem ativa V-Power e Arla nos caminhoneiros — faltam 77.395 litros no ciclo."
-    },
-    {
-      "acelerador": "ARLA",
-      "acao": "Frentista ao caminhoneiro: 'Vai precisar de Arla? Aproveita enquanto está aqui.' Sem sugestão ativa, não sai — faltam vendas."
+      "acelerador": "COMBO FARROUPILHA",
+      "acao": "Caixa: 'Aproveita o combo Farroupilha — já vem completo e sai mais em conta.' Faltam 468 combos."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Atendente: 'Quer adicionar queijo na sua alaminuta?' + script no caixa — faltam 134 no mês."
+      "acao": "Atendente: 'Quer adicionar queijo na sua alaminuta?' — sugestão específica no momento do pedido, faltam 134."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Aproveita frio: 'Quer levar combo Pão de Queijo? Tá quentinho agora.' PDV reforçado — faltam 100."
+      "acao": "Caixa: 'Quer aproveitar e levar um combo Pão de Queijo? Tá quentinho agora.' Faltam 100."
+    },
+    {
+      "acelerador": "CICLO OTTO",
+      "acao": "Frentista, abordar antes de abastecer: 'V-Power limpa o motor enquanto abastece — quer colocar?' Faltam 77.395 litros."
+    },
+    {
+      "acelerador": "MIX V-POWER",
+      "acao": "Frentista proativo: ofereça V-Power a cada cliente — diferença pequena protege muito o motor. Faltam 3.0 p.p."
     },
     {
       "acelerador": "PA",
-      "acao": "Equipe de pista + caixa: destaque no PDV de óleo pesada (Dayton) e abordagem ativa — faltam R$ 2.356."
-    },
-    {
-      "acelerador": "FAT. LOJA",
-      "acao": "Marcos: alinha time em sugestão ativa (ticket), combos no PDV e bomboniere no caixa — faltam R$ 8.624 mês."
+      "acao": "Equipe de pista e caixa: destaque óleo linha pesada no PDV e ofereça ativamente — faltam R$ 2.356."
     }
   ]
 }
