@@ -366,35 +366,35 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Orienta caixa: ao fechar, sempre ofereça bomboniere — 'Aproveita e leva um chocolate? Tá na promoção.' Faltam R$ 4.272 em ticket."
+      "acao": "Orienta caixa: ao fechar, sempre ofereça chocolate + chiclete juntos — 'Aproveita e leva?' Faltam R$ 278/dia."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Brief no início de cada turno: scripts específicos por prato + bomboniere no caixa. Faltam 126 extras — cada venda soma."
+      "acao": "Script no início de cada turno: alaminuta → 'Quer queijo?', bife → 'Quer cebola?', geral → 'Fritas para acompanhar?' Faltam 4/dia."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Cavalete na entrada durante almoço com preço visível + atendente: 'Combo Farroupilha — já vem completo e sai mais em conta.' Faltam 468."
-    },
-    {
-      "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Atendente oferece: 'Quer aproveitar e levar um combo Pão de Queijo quentinho com café?' Faltam 100 para meta."
-    },
-    {
-      "acelerador": "MIX V-POWER",
-      "acao": "Frentista antes de abastecer: 'Coloco V-Power? Limpa o motor e tem cashback no app — diferença pequena, proteção grande.' Faltam 3.0 p.p."
-    },
-    {
-      "acelerador": "CICLO OTTO",
-      "acao": "Reforça frentista na abordagem ativa: todo cliente que chega merece a oferta de V-Power. Faltam 77.395 litros — ritmo é essencial."
+      "acao": "Cavalete com preço na entrada durante almoço + orienta atendente: 'Combo Farroupilha sai mais em conta, já vem completo.' Faltam 15/dia."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Responsável pela cozinha acompanha diariamente. Atendente oferece: 'Quer adicionar queijo na sua alaminuta?' Faltam 134 para meta."
+      "acao": "Reforça com frentista no caixa: 'Quer adicionar queijo na alaminuta?' — item em alta margem, fácil venda. Faltam 4/dia."
+    },
+    {
+      "acelerador": "COMBO PÃO DE QUEIJO",
+      "acao": "Comunica no Instagram sexta até 17h30 + orienta atendente: 'Combo Pão de Queijo quentinho agora, aproveita com café?' Faltam 3/dia."
+    },
+    {
+      "acelerador": "CICLO OTTO",
+      "acao": "Frentista oferece antes de abrir: 'Qual octanagem você coloca normalmente?' — conhece preferência e aumenta mix. Faltam R$ 2.497/dia."
+    },
+    {
+      "acelerador": "MIX V-POWER",
+      "acao": "Frentista oferece ativamente: 'V-Power limpa o motor e tem cashback no app — diferença pequena, proteção grande.' Faltam 3.0 p.p."
     },
     {
       "acelerador": "PA",
-      "acao": "Garante etiqueta de preço visível em TODOS os produtos PA. Caixa oferece: 'Vai precisar de óleo ou produto automotivo hoje?' Faltam R$ 2.356."
+      "acao": "Valida preço em todos os produtos antes do turno — sem etiqueta, não vende. Abordagem no caixa: 'Quer óleo ou acessório?' Faltam R$ 76/dia."
     }
   ]
 }
