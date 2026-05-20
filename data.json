@@ -2,9 +2,9 @@
   "meta": {
     "empresa": "Estação Sapatão",
     "periodo": "Maio de 2026",
-    "dia_atual": 18,
+    "dia_atual": 19,
     "dias_no_mes": 31,
-    "atualizado_em": "2026-05-19"
+    "atualizado_em": "2026-05-20"
   },
   "cards": [
     {
@@ -365,52 +365,40 @@
   },
   "acoes": [
     {
-      "acelerador": "TICKET MÉDIO LOJA [LOJA]",
-      "acao": "Instrua atendentes a sugerir extras específicos: 'Quer queijo na alaminuta?' 'Cebola no bife?' 'Fritas para acompanhar?'"
+      "acelerador": "FAT. LOJA",
+      "acao": "Oriente atendente: 'Quer adicionar queijo na sua alaminuta?' — faltam R$ 4.768."
     },
     {
-      "acelerador": "TICKET MÉDIO LOJA [LOJA]",
-      "acao": "Oriente equipe de caixa a finalizar todo pedido com bomboniere em promoção: 'Aproveita e leva um chocolate?'"
+      "acelerador": "TICKET MÉDIO LOJA",
+      "acao": "Instrua equipe de caixa a finalizar todo pedido oferecendo bomboniere em promoção."
     },
     {
-      "acelerador": "EXTRAS [LOJA]",
-      "acao": "Reforce com atendentes scripts de extras por item: alaminuta+queijo, bife+cebola, prato+fritas. Faltam 118 unidades."
+      "acelerador": "EXTRAS",
+      "acao": "Reforce script diário: oferta específica ao item (queijo, cebola, fritas) — faltam 118."
     },
     {
-      "acelerador": "ALAMINUTA [LOJA]",
-      "acao": "Destaque alaminuta no PDV com sugestão ativa no caixa. Faltam 146 unidades; ritmo -5/dia."
+      "acelerador": "ALAMINUTA",
+      "acao": "Destaque alaminuta no PDV e instrua atendente a sugerir adicional de queijo — faltam 146."
     },
     {
-      "acelerador": "COMBO FARROUPILHA [LOJA]",
-      "acao": "Instrua atendente: 'Aproveita o combo Farroupilha—já vem completo e sai mais em conta.' Faltam 478 unidades."
+      "acelerador": "COMBO FARROUPILHA",
+      "acao": "Comunique no Instagram hoje; instrua atendente: 'Combo Farroupilha sai mais em conta' — faltam 478."
     },
     {
-      "acelerador": "COMBO FARROUPILHA [LOJA]",
-      "acao": "Reforce comunicação PDV e Instagram sobre Combo Farroupilha com 1 dia de antecedência para visibilidade."
+      "acelerador": "COMBO PÃO DE QUEIJO",
+      "acao": "Instrua atendente: 'Quer aproveitar combo Pão de Queijo? Tá quentinho agora' — faltam 103."
     },
     {
-      "acelerador": "COMBO PÃO DE QUEIJO [LOJA]",
-      "acao": "Instrua atendente: 'Quer aproveitar e levar combo Pão de Queijo? Tá quentinho agora.' Faltam 103 unidades."
+      "acelerador": "CICLO OTTO",
+      "acao": "Monitore disponibilidade GNV; reforce abordagem ativa frentista — faltam 72.158 litros."
     },
     {
-      "acelerador": "MIX V-POWER [POSTOS]",
-      "acao": "Instrua frentista antes de abastecer: 'Posso colocar V-Power? Limpa o motor enquanto abastece.' Faltam 2,9 p.p."
+      "acelerador": "MIX V-POWER",
+      "acao": "Instrua frentista: 'V-Power limpa o motor enquanto abastece, protege muito mais' — faltam 2.9 p.p."
     },
     {
-      "acelerador": "MIX V-POWER [POSTOS]",
-      "acao": "Oriente frentista para hesitantes: 'Diferença pequena no valor, mas protege muito mais o motor.' Intensifique abordagem."
-    },
-    {
-      "acelerador": "CICLO OTTO [POSTOS]",
-      "acao": "Intensifique oferta de V-Power e Arla na pista com abordagem ativa. Faltam 72.158 litros; ritmo -2.328/dia."
-    },
-    {
-      "acelerador": "PA [POSTOS]",
-      "acao": "Destaque baldes de óleo linha pesada no PDV e instrua atendente a oferecer no caixa com foco em ticket."
-    },
-    {
-      "acelerador": "FAT. LOJA [LOJA]",
-      "acao": "Combine ações de ticket médio, extras e combos para recuperar R$ 4.768 faltantes. Ritmo crítico: -R$ 154/dia."
+      "acelerador": "PA",
+      "acao": "Destaque baldes de óleo no PDV; instrua equipe de pista a abordar ativamente — faltam R$ 2.284."
     }
   ]
 }
