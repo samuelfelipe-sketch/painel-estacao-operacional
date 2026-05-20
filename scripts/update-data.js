@@ -171,7 +171,7 @@ async function gerarAcoes(aceleradores) {
   prompt += 'O gerente vai ler a ação, entender o ponto crítico e repassar para o time de frentistas, atendentes e caixas.\n';
   prompt += 'Esse time tem linguagem simples — a ação precisa ser fácil de explicar e replicar.\n\n';
   prompt += '## REGRAS PARA CADA AÇÃO\n';
-  prompt += '1. UMA frase — máximo 20 palavras\n';
+  prompt += '1. UMA frase — máximo 30 palavras\n';
   prompt += '2. Tom: acolhedor, motivador e direto — estilo "vamos juntos", não "você está errando"\n';
   prompt += '   Reconhece o esforço, indica o próximo passo, deixa o gerente com vontade de agir\n';
   prompt += '3. Incluir SEMPRE um script de fala específico para o time — nunca genérico\n';
