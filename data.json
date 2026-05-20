@@ -366,35 +366,35 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Atendente: 'Quer adicionar queijo no bife?' — faltam R$ 278/dia no ticket."
+      "acao": "Orienta o atendente: 'Quer adicionar queijo?' no bife e 'Coloco um ovo?' na alaminuta — faltam R$ 4.265 no ticket."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Script no início do turno: queijo/cebola nos bifes, ovo na alaminuta — faltam 4/dia."
+      "acao": "Reforça no início de cada turno: queijo/cebola no bife, ovo na alaminuta — faltam 126 extras, 4 por dia."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Cavalete na entrada durante almoço com preço grande — faltam 15 vendas/dia."
+      "acao": "Coloca cavalete na entrada durante almoço com preço grande; atendente oferece: 'Combo já vem completo' — faltam 468."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Atendente oferece na hora do pedido: 'Aproveita o combo, já vem completo' — faltam 3/dia."
+      "acao": "Atendente sugere no pedido: 'Aproveita o combo — sai mais em conta' — faltam 100 para bater a meta."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Divulgar que funciona fora do pico — período da tarde com salão livre — faltam 4/dia."
-    },
-    {
-      "acelerador": "CICLO OTTO",
-      "acao": "Frentista sugere V-Power e cashback do app em todo abastecimento — faltam R$ 2.497/dia."
+      "acao": "Divulga que alaminuta de tarde tá disponível — aproveita capacidade ociosa do salão — faltam 134."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Script frentista: 'V-Power limpa o motor — cashback no app é maior que comum' — faltam 3 p.p."
+      "acao": "Frentista pergunta sempre: 'V-Power? Cashback no app é maior' — faltam 3.0 p.p. para meta."
+    },
+    {
+      "acelerador": "CICLO OTTO",
+      "acao": "Frentista oferece completar o tanque usando cashback como argumento — faltam R$ 77.395 para meta."
     },
     {
       "acelerador": "PA",
-      "acao": "Frentista abre capô durante abastecimento: 'Posso verificar o óleo?' — faltam R$ 76/dia."
+      "acao": "Frentista abre capô durante abastecimento: 'Posso olhar o óleo?' e oferece troca — faltam R$ 2.356."
     }
   ]
 }
