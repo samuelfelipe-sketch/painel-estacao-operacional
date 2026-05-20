@@ -366,35 +366,35 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Orienta o atendente: 'Quer adicionar queijo?' no bife e 'Coloco um ovo?' na alaminuta — faltam R$ 4.265 no ticket."
+      "acao": "Reforça com atendentes no pedido: 'Quer adicionar queijo ou cebola?' — ticket tá em 51% e a gente consegue virar isso juntos."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Reforça no início de cada turno: queijo/cebola no bife, ovo na alaminuta — faltam 126 extras, 4 por dia."
+      "acao": "Script no início de cada turno com atendentes: bife→'Quer queijo?' / alaminuta→'Coloco um ovo?' — faltam 126 para fechar o mês."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Coloca cavalete na entrada durante almoço com preço grande; atendente oferece: 'Combo já vem completo' — faltam 468."
+      "acao": "Posiciona cavalete na entrada no café (6-9h e 15-17h) com preço visível; atendente oferece: 'Aproveita o combo — já vem com café e sai mais em conta.' Faltam 468."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Atendente sugere no pedido: 'Aproveita o combo — sai mais em conta' — faltam 100 para bater a meta."
+      "acao": "Explora o frio — atendente oferece no café: 'Quer o combo Pão de Queijo com café? Tá quentinho agora.' Faltam 100, tá perto!"
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Divulga que alaminuta de tarde tá disponível — aproveita capacidade ociosa do salão — faltam 134."
+      "acao": "Indica clientes indecisos perto do pico: 'Hoje temos alaminuta caprichada, quer?' — faltam 134, ritmo tá bom, só precisa de um empurrão."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Frentista pergunta sempre: 'V-Power? Cashback no app é maior' — faltam 3.0 p.p. para meta."
+      "acao": "Frentista oferece com argumento: 'Posso colocar V-Power? O cashback no app é maior.' Faltam 3 p.p. — pequeno gap, grande oportunidade."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Frentista oferece completar o tanque usando cashback como argumento — faltam R$ 77.395 para meta."
+      "acao": "Frentista complementa abastecimento com cashback: 'Completo o tanquinho? Você ganha cashback no app.' Faltam R$ 77.395, ritmo é consistente."
     },
     {
       "acelerador": "PA",
-      "acao": "Frentista abre capô durante abastecimento: 'Posso olhar o óleo?' e oferece troca — faltam R$ 2.356."
+      "acao": "Frentista abre capô durante abastecimento: 'Deixa eu dar uma olhada no óleo?' — PA tá em 97%, faltam R$ 2.356, pequeno gap pra fechar."
     }
   ]
 }
