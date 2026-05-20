@@ -17,7 +17,7 @@ A Estação Sapatão tem cultura humanizada, com atitude e senso de dono. As aç
 
 **Manifesto:** *"Somos mais do que um posto de combustível. Somos um local para parar, ficar e voltar."*
 
-**Filosofia do time:** Todo mundo remando no mesmo sentido multiplica o resultado exponencialmente. Operação + marketing juntos geram mais do que a soma das partes. Um elemento desalinhado cria atrito e anula o esforço coletivo.
+**Filosofia do time:** Todo mundo remando no mesmo sentido multiplica o resultado exponencialmente. Operação + marketing juntos geram mais do que a soma das partes.
 
 ## Unidades
 - **Novo Hamburgo (NH)** — unidade principal (posto + loja)
@@ -54,87 +54,113 @@ Formato fixo: gerente de loja traz fotografia de vendas → marketing apresenta 
 - Cores vivas nos materiais PDV (laranja, amarelo, branco) chamam atenção de longe
 - CMV da loja monitorado de perto — ações promocionais não devem comprometer margem
 
+---
+
 ## Desafios por Indicador
 
 ### TICKET MÉDIO LOJA
-- Meta é o somatório das duas unidades
-- Ticket aumenta com sugestão ativa de itens adicionais no momento do pedido
-- Scripts comerciais validados para o atendente/caixa:
-  - "Quer adicionar queijo na sua alaminuta?"
+- **Quem converte:** o atendente na hora do pedido é o principal conversor de extras — não o caixa
+- **Compra por impulso:** o cliente compra extra se o CTA for claro e gerar desejo no momento certo
+- **Extras validados:** queijo e cebola nos bifes (gado, frango), ovo ou fritas na alaminuta
+- **Bomboniere no caixa:** é o ponto mais fraco — depende muito de quem está no turno; precisa virar hábito do time inteiro
+- **Regra do caixa:** nunca só chiclete/bala — sempre **chocolate + chiclete ou bala juntos**
+- Scripts para o atendente na hora do pedido:
+  - "Quer adicionar queijo no seu bife?"
   - "Quer adicionar cebola no seu bife?"
+  - "Coloco um ovo na sua alaminuta?"
   - "Posso incluir uma porção de fritas para acompanhar?"
-  - "Aproveita e leva uma bebida gelada junto?"
-- **Finalização no caixa**: sempre encerrar com oferta de bomboniere — nunca só chiclete/bala: precisa ter **chocolate + chiclete ou bala juntos**
+- Scripts de finalização no caixa:
   - "Aproveita e leva um chocolate? Tá na promoção."
   - "Quer levar um chiclete ou bala para a viagem?"
-  - Usar o item em promoção do ciclo atual como âncora
-- A sugestão deve ser específica ao item que o cliente está comprando — nunca genérica
-- App de fidelidade: oferecer no caixa — "tem cashback em todas as compras, quer cadastrar?"
 
-### COMBO FARROUPILHA
-- Baixa visibilidade é o principal obstáculo — cliente não compra o que não vê
-- Cavalete na entrada com preço bem visível durante o horário de almoço
-- Script para atendente/caixa: "Aproveita o combo Farroupilha — já vem completo com café e sai mais em conta."
+### COMBO FARROUPILHA / COMBO PÃO DE QUEIJO
+- **Principal barreira:** desconhecimento — o cliente não sabe que o combo existe
+- **O que converte:** CTA com qualidade + preço visível + oferta ativa do atendente na hora do pedido
+- **Quem converte:** o atendente no momento do pedido — não o caixa, não o visual sozinho
+- **Cavalete na entrada:** preço grande e visível durante o horário de almoço
 - Registrar **sempre o código correto** do combo para medir performance
-- Reforçar comunicação no PDV e Instagram com 1 dia de antecedência
+- Script para o atendente: "Aproveita o combo — já vem completo com café e sai mais em conta."
 
-### COMBO PÃO DE QUEIJO
-- Frio favorece a venda espontânea — explorar sazonalidade na abordagem
-- Script: "Quer aproveitar e levar um combo Pão de Queijo com café? Tá quentinho agora."
-- Registrar **sempre o código correto** do combo para medir performance
-
-### MIX V-POWER
-- A abordagem ativa do frentista é o principal motor do mix
-- V-Power tem cashback disponível no app — usar como argumento de venda
-- Scripts comerciais para frentistas:
-  - Antes de iniciar: "Posso colocar V-Power no seu tanque? Ela limpa o motor enquanto abastece — e ainda tem cashback no app."
-  - Para quem hesita: "É só uma diferença pequena no valor, mas protege muito mais o motor."
-- Ações promocionais V-Power dependem de aprovação prévia do DM Shell
-
-### CICLO OTTO
-- Comparação com ano anterior pode ser prejudicada por guerras de preço sazonais
-- GNV contribui para o ciclo Otto — qualquer indisponibilidade impacta o volume
-
-### ARLA
-- A oferta ativa do frentista é o único diferencial entre bater ou não a meta
-- Scripts comerciais para frentistas ao atender caminhoneiro/truck:
-  - "Vai precisar de Arla hoje? Já aproveita enquanto está aqui."
-  - "Tem Arla disponível aqui — quer completar o tanquinho?"
-- Sem abordagem ativa, o cliente não pede espontaneamente
-
-### PA (PRODUTOS AUTOMOTIVOS)
-- Principais alavancas: baldes de óleo linha pesada e produtos de maior ticket
-- Margem de CMV deve ser monitorada — PA não pode piorar a margem geral
-- **Preço visível** em todos os produtos — produto sem etiqueta não vende
-- Abordagem ativa no caixa e na pista; comunicar troca de óleo no painel
+### REFEIÇÕES / ALAMINUTA
+- **Pico:** horário de almoço — alaminuta, hambúrguer, strogonoff, outros pratos
+- **Perfil do cliente:** às vezes já sabe o que quer, mas próximo do almoço o atendente pode e deve sugerir
+- **Oportunidade:** cliente indeciso perto do horário de pico é o momento ideal para indicar um prato
+- Alaminuta de tarde (fora do pico): aproveitar capacidade ociosa do salão — muitos clientes não sabem que podem vir depois do pico
 
 ### EXTRAS
-- Extras dobraram quando o time passou a acompanhar diariamente e oferecer ativamente
-- Scripts comerciais por situação:
-  - Cliente com alaminuta: "Quer adicionar queijo na sua alaminuta?"
-  - Cliente com bife/carne: "Quer adicionar cebola no seu bife?"
-  - Cliente com prato no geral: "Posso incluir uma porção de fritas para acompanhar?"
-- **Finalização no caixa (universal)**: sempre oferecer bomboniere ao fechar o pedido — chocolate + chiclete ou bala
-  - "Aproveita e leva um chocolate? Tá na promoção."
-  - "Quer levar um chiclete ou bala para a viagem?"
-- Orientar no início de cada turno qual o script do dia e qual item de bomboniere está em destaque
+- **Momento certo:** no pedido, não na finalização — a compra por impulso acontece ali
+- **Extra mais vendido:** queijo no bife, cebola no bife, ovo na alaminuta, fritas
+- **Consistência:** varia muito por turno/pessoa — o gerente deve reforçar o script no início de cada turno
+- Script por situação:
+  - Bife de gado/frango: "Quer adicionar queijo? Quer adicionar cebola?"
+  - Alaminuta: "Coloco um ovo? Posso incluir uma porção de fritas?"
+  - Fechamento do caixa: chocolate + chiclete ou bala
 
-### REFEIÇÕES
-- Alaminuta de tarde (após o horário de pico do almoço): aproveitar capacidade ociosa do salão
-- Muitos clientes não sabem que podem vir comer depois do horário de pico — comunicar isso
-- A responsável pela cozinha acompanha diariamente itens-chave: cafezinho, item de bomboniere, extras e prato do dia
-- Cafezinho no almoço: oferecer sempre a quem está no salão — "Aquele cafezinho depois do almoço?"
+---
+
+### MIX V-POWER
+- **Quem converte:** o frentista — poucos clientes pedem V-Power espontaneamente
+- **Como converter:** mencionar os benefícios (limpa o motor) OU simplesmente perguntar — ambos funcionam
+- **Argumento mais forte:** cashback no app do Sapatão é sempre maior na V-Power do que na comum
+- **Objeções comuns:** "é mais caro" ou "sempre abasteço comum" — responder com o argumento do cashback
+- Scripts para frentistas:
+  - "Posso colocar V-Power? O cashback no app é maior do que na comum."
+  - "V-Power limpa o motor enquanto abastece — quer experimentar?"
+  - Para quem hesita: "A diferença no valor você recupera no cashback do app."
+
+### CICLO OTTO (GASOLINA)
+- **O que fideliza o cliente:** qualidade do atendimento + serviços adicionais — calibragem de pneus, limpeza de para-brisa, esvaziar lixeiro do carro
+- **Tanque cheio:** cliente normalmente pede valor fixo — frentista pode sugerir completar o tanque usando o argumento do cashback no app
+- **Geração de leads:** clientes com frota devem ser abordados para gerar contato para o time comercial — aumenta volume Otto e Diesel
+
+### CICLO DIESEL
+- **Perfil:** caminhoneiro habitual — existe modalidade de fidelidade diesel
+- **Oportunidade de leads:** clientes com frota abordados na pista geram contatos para o comercial
+- Script para frentista: "O senhor tem frota? Posso pegar um contato para o nosso time comercial entrar em contato?"
+
+### ARLA
+- **Gap principal:** falta oferta ativa dos frentistas — o cliente habitual não pede espontaneamente
+- **Oportunidade adicional:** o caixa pode fechar a venda de Arla no final do atendimento de loja
+- Scripts para frentistas: "Vai precisar de Arla? Já aproveita enquanto está aqui."
+- Script para caixa (quando cliente veio da pista): "Aproveitou e completou o tanquinho de Arla?"
+
+### PA (PRODUTOS AUTOMOTIVOS)
+- **Abordagem mais poderosa na pista:** abrir o capô e verificar o nível de óleo durante o abastecimento
+- **Serviço diferencial:** divulgar que a gente faz troca de óleo — gera demanda ativa
+- **Na loja:** estética automotiva e perfumes para carro são os principais itens
+- **Sazonalidade:** dias de chuva são oportunidade para oferecer palhetas de para-brisa
+- **Perfil de cliente:** motorista de passeio e caminhoneiro; comercial está trabalhando frota para convênio de troca
+- **Frentista como consultor:** identificar clientes com oportunidade de troca de óleo e fazer a sugestão na pista
+- Scripts: "Posso dar uma olhada no óleo enquanto abastece?" / "Sabia que a gente faz troca de óleo aqui?"
+
+### SHELLBOX %
+- **Perfil:** maioria dos clientes já tem o app — foco é na ativação, não no download
+- **Gap:** dupla barreira — frentista não oferece e cliente não usa mesmo tendo o app
+- **Ação:** frentista deve perguntar se o cliente tem o app e se quer usar o cashback no abastecimento
+
+### PIX
+- **Contexto:** cartão ainda domina os pagamentos
+- **Alavanca:** oferta padrão de PIX no fechamento — frentista ou caixa pergunta antes de processar o cartão
+- Script: "Vai pagar com PIX? Pode ser direto aqui."
+
+---
+
+### APP NOVOS (FIDELIDADE)
+- **Principal barreira:** o cliente simplesmente não sabe que o app existe nem que gera cashback e desconto
+- **Onde oferecer:** todos os pontos de contato — caixa da loja, pista, e qualquer atendimento
+- **Argumento central:** "tem cashback em todas as compras da loja e cashback maior na V-Power"
+- Script: "Tem o app do Sapatão? Você ganha cashback em tudo que compra aqui."
 
 ### LAVAGEM
-- Acima da meta — manter ritmo; sexta e sábado são dias fortes
+- **Perfil:** cliente habitual — já conhece o serviço, volta regularmente
+- **Alavanca:** divulgar melhor que o serviço existe para quem ainda não usa — sexta e sábado são os dias mais fortes
+- Manter ritmo: não precisa de ação especial, mas comunicação consistente sustenta o volume
 
-### APP NOVOS (fidelidade)
-- Ações de engajamento (como raspadinha) estão gerando cadastros
-- Oferecer no caixa: "Tem o app do Sapatão? Você ganha cashback em todas as compras."
+---
 
 ## Prospecção na Pista
 - Perguntar ao cliente: de onde é, para onde vai, onde costuma abastecer
-- Tentar pegar contato do gestor de frota ou responsável pela empresa para repassar ao time comercial
+- Identificar clientes com frota — pegar contato para o time comercial (aumenta Otto e Diesel)
 - Clientes satisfeitos: pedir indicação de amigos, familiares, empresas
 
 ## Contexto Geral
