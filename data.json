@@ -366,35 +366,35 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Orienta o caixa: 'Aproveita e leva um chocolate? Tá na promoção.' — chocolate + chiclete/bala vendem mais juntos — faltam R$ 4.312/dia."
+      "acao": "Orienta o caixa: 'Aproveita e leva um chocolate? Tá bom demais.' — bomboniere fecha o ticket."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Reforça com o atendente no pedido: 'Quer adicionar queijo no bife?' ou 'Coloco um ovo na alaminuta?' — faltam 126 extras — 4/dia ainda dá pra fechar."
+      "acao": "Reforça com atendente no pedido: 'Quer adicionar queijo no bife?' — faltam 126 extras pra meta."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Posiciona o cavalete na entrada nos horários de café (6-8h / 15-17h) e orienta: 'Aproveita o combo Farroupilha — já vem com café e sai mais em conta.' — faltam 468 combos."
+      "acao": "Posiciona cavalete na entrada pela manhã/tarde e orienta atendente: 'Aproveita o combo Farroupilha — sai mais em conta.' Faltam 468 combos."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Reforça com o atendente no pedido de café: 'Quer o combo Pão de Queijo com café? Tá quentinho agora.' — faltam 100 combos — já tá perto."
+      "acao": "Oferece ativo no café da tarde: atendente pergunta 'Quer aproveitar o combo Pão de Queijo quentinho?' — faltam 100 pra meta."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Conversa com o atendente: cliente indeciso perto do pico é oportunidade — sugira alaminuta. À tarde, aproveita capacidade ociosa do salão — faltam 134."
-    },
-    {
-      "acelerador": "MIX V-POWER",
-      "acao": "Orienta o frentista antes do abastecimento: 'O cashback no app é maior na V-Power do que na comum.' — faltam 3.0 p.p. — argumento do cashback converte."
+      "acao": "Comunica no Instagram hoje que alaminuta de tarde está disponível e sai rápido — aproveita capacidade ociosa. Faltam 134 unidades."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Treina o frentista a abordar clientes habituais: 'O senhor tem frota? Posso pegar um contato para o nosso time comercial?' — gera leads e fideliza — faltam 77.395 litros."
+      "acao": "Frentista aborda cliente na pista: 'V-Power tem cashback maior no app — quer experimentar?' Faltam 77.395L pra meta."
+    },
+    {
+      "acelerador": "MIX V-POWER",
+      "acao": "Treina frentista a oferecer V-Power antes de iniciar abastecimento com argumento do cashback maior — faltam 3 p.p. pra meta."
     },
     {
       "acelerador": "PA",
-      "acao": "Abre o capô durante abastecimento e pergunta: 'Posso dar uma olhada no óleo?' ou 'Sabia que a gente faz troca aqui?' — dias de chuva: ofereça palhetas — faltam R$ 2.356."
+      "acao": "Orienta frentista: abra o capô durante abastecimento e pergunte 'Vou dar uma olhada no óleo?' — gera demanda de troca. Faltam R$ 2.356."
     }
   ]
 }
