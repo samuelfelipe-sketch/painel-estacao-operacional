@@ -366,35 +366,35 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Equipe de caixa: ofereça item de bomboniere ao fechar pedido — faltam R$ 8.624 em faturamento."
+      "acao": "Orienta caixa: ao fechar, sempre ofereça bomboniere — 'Aproveita e leva um chocolate? Tá na promoção.' Faltam R$ 4.272 em ticket."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Atendente, sempre sugerir extra específico ao prato — 'Quer fritas com isso?' — faltam 126 extras."
+      "acao": "Brief no início de cada turno: scripts específicos por prato + bomboniere no caixa. Faltam 126 extras — cada venda soma."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Caixa: 'Aproveita o combo Farroupilha — já vem completo e sai mais em conta.' Faltam 468 combos."
-    },
-    {
-      "acelerador": "ALAMINUTA",
-      "acao": "Atendente: 'Quer adicionar queijo na sua alaminuta?' — sugestão específica no momento do pedido, faltam 134."
+      "acao": "Cavalete na entrada durante almoço com preço visível + atendente: 'Combo Farroupilha — já vem completo e sai mais em conta.' Faltam 468."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Caixa: 'Quer aproveitar e levar um combo Pão de Queijo? Tá quentinho agora.' Faltam 100."
-    },
-    {
-      "acelerador": "CICLO OTTO",
-      "acao": "Frentista, abordar antes de abastecer: 'V-Power limpa o motor enquanto abastece — quer colocar?' Faltam 77.395 litros."
+      "acao": "Atendente oferece: 'Quer aproveitar e levar um combo Pão de Queijo quentinho com café?' Faltam 100 para meta."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Frentista proativo: ofereça V-Power a cada cliente — diferença pequena protege muito o motor. Faltam 3.0 p.p."
+      "acao": "Frentista antes de abastecer: 'Coloco V-Power? Limpa o motor e tem cashback no app — diferença pequena, proteção grande.' Faltam 3.0 p.p."
+    },
+    {
+      "acelerador": "CICLO OTTO",
+      "acao": "Reforça frentista na abordagem ativa: todo cliente que chega merece a oferta de V-Power. Faltam 77.395 litros — ritmo é essencial."
+    },
+    {
+      "acelerador": "ALAMINUTA",
+      "acao": "Responsável pela cozinha acompanha diariamente. Atendente oferece: 'Quer adicionar queijo na sua alaminuta?' Faltam 134 para meta."
     },
     {
       "acelerador": "PA",
-      "acao": "Equipe de pista e caixa: destaque óleo linha pesada no PDV e ofereça ativamente — faltam R$ 2.356."
+      "acao": "Garante etiqueta de preço visível em TODOS os produtos PA. Caixa oferece: 'Vai precisar de óleo ou produto automotivo hoje?' Faltam R$ 2.356."
     }
   ]
 }
