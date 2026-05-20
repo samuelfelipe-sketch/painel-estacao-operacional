@@ -366,35 +366,35 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Reforça com atendentes no pedido: 'Quer adicionar queijo ou cebola?' — ticket tá em 51% e a gente consegue virar isso juntos."
+      "acao": "Orienta o caixa: 'Aproveita e leva um chocolate? Tá na promoção.' — bomboniere é o ponto mais fraco, ainda dá pra fechar R$ 8.6k."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Script no início de cada turno com atendentes: bife→'Quer queijo?' / alaminuta→'Coloco um ovo?' — faltam 126 para fechar o mês."
+      "acao": "Orienta o atendente no pedido: 'Quer adicionar queijo no bife?' ou 'Coloco um ovo na alaminuta?' — faltam 126 extras, a gente fecha isso em 3 dias."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Posiciona cavalete na entrada no café (6-9h e 15-17h) com preço visível; atendente oferece: 'Aproveita o combo — já vem com café e sai mais em conta.' Faltam 468."
+      "acao": "Posiciona o cavalete na entrada nos horários de café (6h-9h e 15h-17h). Orienta atendente: 'Aproveita o combo Farroupilha — já vem com café e sai mais em conta.' Faltam 468 combos."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Explora o frio — atendente oferece no café: 'Quer o combo Pão de Queijo com café? Tá quentinho agora.' Faltam 100, tá perto!"
+      "acao": "Orienta atendente na manhã/tarde: 'Quer aproveitar o combo Pão de Queijo com café? Tá quentinho agora.' Faltam 100 combos — vamo fechar isso rápido."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Indica clientes indecisos perto do pico: 'Hoje temos alaminuta caprichada, quer?' — faltam 134, ritmo tá bom, só precisa de um empurrão."
+      "acao": "Orienta atendente: 'Coloco um ovo na alaminuta?' ou 'Posso incluir uma porção de fritas?' — faltam 134, é impulso no pedido que a gente ganha."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Frentista oferece com argumento: 'Posso colocar V-Power? O cashback no app é maior.' Faltam 3 p.p. — pequeno gap, grande oportunidade."
+      "acao": "Orienta frentista antes de abastecer: 'Posso colocar V-Power? O cashback no app é maior do que na comum.' Faltam 3 pontos percentuais — clientela responde bem ao argumento."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Frentista complementa abastecimento com cashback: 'Completo o tanquinho? Você ganha cashback no app.' Faltam R$ 77.395, ritmo é consistente."
+      "acao": "Orienta frentista a perguntar pra clientes habituais: 'O senhor tem frota? Posso pegar um contato pra gente oferecer a melhor condição?' Gera leads pro time comercial, que fideliza Otto."
     },
     {
       "acelerador": "PA",
-      "acao": "Frentista abre capô durante abastecimento: 'Deixa eu dar uma olhada no óleo?' — PA tá em 97%, faltam R$ 2.356, pequeno gap pra fechar."
+      "acao": "Orienta frentista: abrir o capô durante abastecimento e perguntar 'Posso dar uma olhada no óleo?' — depois sugerir troca se necessário. Faltam R$ 2.3k, é serviço diferencial que vira fidelidade."
     }
   ]
 }
