@@ -365,40 +365,36 @@
   },
   "acoes": [
     {
-      "acelerador": "FAT. LOJA",
-      "acao": "Oriente atendente: 'Quer adicionar queijo na sua alaminuta?' — faltam R$ 4.768."
-    },
-    {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Instrua equipe de caixa a finalizar todo pedido oferecendo bomboniere em promoção."
+      "acao": "Equipe de caixa: sempre fechar com bomboniere. 'Aproveita e leva um chocolate na promoção?' — faltam R$ 4.768."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Reforce script diário: oferta específica ao item (queijo, cebola, fritas) — faltam 118."
-    },
-    {
-      "acelerador": "ALAMINUTA",
-      "acao": "Destaque alaminuta no PDV e instrua atendente a sugerir adicional de queijo — faltam 146."
+      "acao": "Atendente: script específico por prato. 'Quer fritas para acompanhar?' — faltam 118 extras no mês."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Comunique no Instagram hoje; instrua atendente: 'Combo Farroupilha sai mais em conta' — faltam 478."
+      "acao": "Caixa: 'Aproveita o Farroupilha — já vem completo e sai mais em conta.' Faltam 478 combos."
+    },
+    {
+      "acelerador": "ALAMINUTA",
+      "acao": "Atendente: 'Quer adicionar queijo na sua alaminuta?' — faltam 146 unidades para bater a meta."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Instrua atendente: 'Quer aproveitar combo Pão de Queijo? Tá quentinho agora' — faltam 103."
+      "acao": "Caixa: 'Quer aproveitar o combo Pão de Queijo quentinho agora?' — faltam 103 combos."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Monitore disponibilidade GNV; reforce abordagem ativa frentista — faltam 72.158 litros."
+      "acao": "Frentista: abordagem ativa no bombeamento. 'Posso colocar V-Power?' — faltam 72.158 litros no mês."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Instrua frentista: 'V-Power limpa o motor enquanto abastece, protege muito mais' — faltam 2.9 p.p."
+      "acao": "Frentista: 'É só uma diferença pequena, mas protege muito mais o motor.' Faltam 2,9 p.p."
     },
     {
       "acelerador": "PA",
-      "acao": "Destaque baldes de óleo no PDV; instrua equipe de pista a abordar ativamente — faltam R$ 2.284."
+      "acao": "Caixa/pista: destacar óleo pesada no PDV e oferecer ativamente. Faltam R$ 2.284 no mês."
     }
   ]
 }
