@@ -1,5 +1,53 @@
 # Contexto Operacional — Estação Sapatão
 
+---
+
+## Princípios de Geração de Ações
+*Este bloco registra os aprendizados do processo de refinamento das ações e deve orientar todas as gerações futuras.*
+
+### 1. Destinatário é o gerente — não o time operacional
+As ações são lidas pelo **gerente de unidade**, que as repassa ao time (frentistas, atendentes, caixas). A linguagem deve ser simples o suficiente para o gerente entender e replicar de imediato para uma equipe com ensino médio completo. Nunca escrever como se estivesse falando diretamente com o frentista ou atendente.
+
+### 2. Tom: "vamos juntos", nunca "você está errando"
+O gerente precisa chegar ao turno motivado, não constrangido. Reconhecer o esforço, indicar o próximo passo, deixar a ação soar como uma oportunidade — não como uma cobrança. Errado: "o time não está oferecendo extras". Certo: "Orienta o atendente a perguntar: 'Quer adicionar queijo?' — ainda dá pra fechar o gap."
+
+### 3. Uma ação = um momento = uma pessoa
+Cada ação deve focar em **um único momento** do atendimento e em **um único cargo**. Não misturar atendente + caixa na mesma frase. Não misturar pista + loja. Exemplos de corte:
+- Ticket médio tem **dois momentos distintos**: (a) atendente no pedido → extras; (b) caixa no fechamento → bomboniere. São ações separadas.
+- Combo tem um único conversor: o atendente no momento do pedido — não o caixa, não o visual sozinho.
+
+### 4. Script de fala sempre específico — nunca genérico
+Toda ação para loja ou pista deve incluir a frase exata que o funcionário deve dizer ao cliente. Errado: "oriente o time a oferecer extras com mais frequência". Certo: "Orienta o atendente: 'Quer adicionar queijo no bife?' — faltam X extras."
+
+### 5. Horários e contextos dos produtos respeitados
+Cada produto tem seu contexto de consumo — ações fora do contexto geram ruído. Regras validadas:
+- **Combo Farroupilha e Combo Pão de Queijo** = café da manhã e café da tarde — **nunca sugerir como item de almoço**
+- **Alaminuta de tarde** = após o pico do almoço — aproveitar capacidade ociosa do salão
+- **Palhetas (limpador de para-brisa)** = abordagem em dias de chuva
+- **Cavalete na entrada** = posicionar nos horários certos do produto (combos = manhã/tarde; não durante o almoço)
+
+### 6. Sem preços, valores fixos ou nomes de pessoas
+Preços e cashbacks mudam. Nomes de pessoas mudam. O contexto usa apenas **cargos e funções** (frentista, atendente, caixa, equipe de pista) e referências qualitativas ("cashback maior na V-Power", "sai mais em conta") — nunca valores numéricos fixos nas orientações de script.
+
+### 7. Gap numérico para gerar clareza — não ansiedade
+Mencionar o gap em números absolutos dá ao gerente clareza de onde a operação está. O tom ao apresentar o gap deve ser de "ainda dá pra fechar" — não de "estamos atrasados demais". Preferir: "faltam X combos" a "estamos X% abaixo da meta".
+
+### 8. Principais conversores por indicador (aprendizado acumulado)
+| Indicador | Quem converte | Momento certo |
+|---|---|---|
+| Extras | Atendente | Na hora do pedido |
+| Bomboniere | Caixa | Fechamento — sempre chocolate + chiclete/bala |
+| Combos (Farroupilha/PQJ) | Atendente | Pedido de café da manhã ou tarde |
+| V-Power | Frentista | Antes de iniciar o abastecimento |
+| Arla | Frentista + Caixa | Pista (ativa) e fechamento de loja |
+| PA (óleo/troca) | Frentista | Durante abastecimento — abrir capô |
+| ShellBox | Frentista | Ativar quem já tem o app |
+| PIX | Frentista ou Caixa | Antes de processar o cartão |
+| App Novos | Caixa + Pista | Qualquer atendimento — argumento: cashback |
+| Leads de frota | Frentista | Clientes habituais diesel/Otto |
+
+---
+
 ## Para quem é este Painel
 O painel é destinado aos **gerentes de unidade** (Novo Hamburgo e Estância Velha). Eles precisam de ações claras para repassar ao time operacional — frentistas, atendentes e caixas, que em sua maioria têm ensino médio completo. A linguagem deve ser **acolhedora, motivadora e prática** — não desmotiva, não aponta erro, ajuda a fazer. O tom ideal é dialógico, de acompanhamento: reconhece esforço, diz "vamos juntos", não "você está errando".
 
