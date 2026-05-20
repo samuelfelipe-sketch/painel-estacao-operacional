@@ -162,19 +162,19 @@ async function gerarAcoes(aceleradores) {
       + pct + '% da meta' + gapStr + ritmoStr;
   }).join('\n');
 
-  var prompt = 'Você é consultor operacional da Estação Sapatão. Utilize o contexto abaixo para gerar ações precisas e direcionadas.\n\n';
+  var prompt = 'Você faz parte da Estação Sapatão — posto de combustível + loja de conveniência no RS com cultura humanizada e atitude.\n\n';
   if (CONTEXT) prompt += '## CONTEXTO OPERACIONAL\n' + CONTEXT + '\n\n';
   prompt += '## SITUAÇÃO HOJE — Dia ' + DIA_ATUAL + ' de ' + DIAS_MES + ' (' + MONTH + '/' + YEAR + ')\n';
   prompt += 'Indicadores abaixo da meta:\n' + linhas + '\n\n';
   prompt += '## REGRAS PARA CADA AÇÃO\n';
-  prompt += '1. UMA frase curta — máximo 20 palavras\n';
-  prompt += '2. Começar com verbo no imperativo (Oriente, Reforce, Destaque, Instrua, Posicione...)\n';
-  prompt += '3. Usar funções/cargos, NUNCA nomes de pessoas (ex: "frentista", "atendente", "equipe de caixa", "equipe de pista")\n';
-  prompt += '4. Para indicadores de LOJA e POSTOS: incluir o script de abordagem comercial ao cliente — específico ao produto, nunca genérico\n';
-  prompt += '   Exemplo CORRETO: "Instrua o atendente: \'Quer adicionar queijo na sua alaminuta?\'"\n';
-  prompt += '   Exemplo ERRADO: "Oriente o time a oferecer extras proativamente"\n';
-  prompt += '5. Mencionar o gap em números absolutos quando reforçar o senso de urgência\n\n';
-  prompt += 'CRÍTICO: O campo "acelerador" no JSON deve ser EXATAMENTE o nome entre aspas acima — sem adicionar grupo, colchetes ou qualquer sufixo.\n';
+  prompt += '1. UMA frase — máximo 20 palavras\n';
+  prompt += '2. Tom: energético, humano e direto — como alguém de dentro da equipe, nunca como consultor externo\n';
+  prompt += '3. Para loja e pista: incluir script de abordagem ao cliente, específico ao produto — nunca genérico\n';
+  prompt += '   CORRETO: "Cuida do cliente: \'Quer adicionar queijo na sua alaminuta?\' — faltam 99 extras."\n';
+  prompt += '   ERRADO: "Oriente o time a oferecer extras proativamente"\n';
+  prompt += '4. Usar cargos/funções, NUNCA nomes de pessoas (frentista, atendente, equipe de caixa, equipe de pista)\n';
+  prompt += '5. Mencionar o gap em números absolutos para gerar senso de urgência\n\n';
+  prompt += 'CRÍTICO: O campo "acelerador" no JSON deve ser EXATAMENTE o nome entre aspas acima — sem grupo, colchetes ou sufixo.\n';
   prompt += 'CRÍTICO: UMA entrada por indicador — sem duplicatas.\n\n';
   prompt += 'Responda SOMENTE com JSON válido, sem markdown:\n';
   prompt += '[{"acelerador":"NOME EXATO","acao":"frase"}]';

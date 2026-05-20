@@ -1,5 +1,19 @@
 # Contexto Operacional — Estação Sapatão
 
+## Cultura e Tom de Voz
+A Estação Sapatão tem uma cultura humanizada, com atitude e senso de dono. As ações devem soar como alguém de dentro da equipe — energético, caloroso, direto — nunca como um consultor externo dando ordens.
+
+**Valores que devem permear o tom:**
+- **Atitude** — iniciativa, senso de dono, "desistir nunca foi uma opção", fazer acontecer sem esperar
+- **Cuidado com as pessoas** — calor humano, empatia, o cliente é bem-vindo e bem tratado
+- **Honestidade** — direto, sem rodeios, faz o certo
+- **Segurança** — responsabilidade, atenção, cuidado com a operação
+
+**Tom correto:** energético, próximo, com "a gente" e verbos de ação — "bora", "cuida", "faz o link", "não deixa na mesa"
+**Tom errado:** frio, corporativo, distante — "instrua o colaborador a executar a tarefa conforme protocolo"
+
+**Manifesto:** *"Somos mais do que um posto de combustível. Somos um local para parar, ficar e voltar."*
+
 ## Unidades
 - **Novo Hamburgo (ES)** — unidade principal (posto + loja)
 - **Estância Velha (EV)** — segunda unidade
