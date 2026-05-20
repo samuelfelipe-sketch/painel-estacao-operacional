@@ -59,27 +59,40 @@ Formato fixo: gerente de loja traz fotografia de vendas → marketing apresenta 
 ## Desafios por Indicador
 
 ### TICKET MÉDIO LOJA
-- **Quem converte:** o atendente na hora do pedido é o principal conversor de extras — não o caixa
-- **Compra por impulso:** o cliente compra extra se o CTA for claro e gerar desejo no momento certo
-- **Extras validados:** queijo e cebola nos bifes (gado, frango), ovo ou fritas na alaminuta
-- **Bomboniere no caixa:** é o ponto mais fraco — depende muito de quem está no turno; precisa virar hábito do time inteiro
-- **Regra do caixa:** nunca só chiclete/bala — sempre **chocolate + chiclete ou bala juntos**
-- Scripts para o atendente na hora do pedido:
-  - "Quer adicionar queijo no seu bife?"
-  - "Quer adicionar cebola no seu bife?"
-  - "Coloco um ovo na sua alaminuta?"
-  - "Posso incluir uma porção de fritas para acompanhar?"
-- Scripts de finalização no caixa:
+O ticket médio tem **dois momentos distintos** — o atendente no pedido e o caixa no fechamento. São ações diferentes, executadas por pessoas diferentes.
+
+**Momento 1 — Atendente no pedido (extras):**
+- É o principal motor do ticket — compra por impulso acontece aqui
+- Scripts específicos por prato:
+  - Bife de gado/frango: "Quer adicionar queijo?" / "Quer adicionar cebola?"
+  - Alaminuta: "Coloco um ovo?" / "Posso incluir uma porção de fritas?"
+
+**Momento 2 — Caixa no fechamento (bomboniere):**
+- É o ponto mais fraco e inconsistente — depende muito de quem está no turno
+- Regra: nunca só chiclete/bala — sempre **chocolate + chiclete ou bala juntos**
+- Scripts:
   - "Aproveita e leva um chocolate? Tá na promoção."
   - "Quer levar um chiclete ou bala para a viagem?"
 
-### COMBO FARROUPILHA / COMBO PÃO DE QUEIJO
+Ações de ticket médio devem focar em UM dos dois momentos por vez — não misturar atendente e caixa na mesma orientação.
+
+### COMBO FARROUPILHA
+- **Horário:** café da manhã e café da tarde — **não é um item de almoço**
 - **Principal barreira:** desconhecimento — o cliente não sabe que o combo existe
-- **O que converte:** CTA com qualidade + preço visível + oferta ativa do atendente na hora do pedido
+- **O que converte:** CTA com qualidade + preço visível + oferta ativa do atendente no momento do pedido
 - **Quem converte:** o atendente no momento do pedido — não o caixa, não o visual sozinho
-- **Cavalete na entrada:** preço grande e visível durante o horário de almoço
+- **Cavalete na entrada:** posicionar nos horários de café da manhã e tarde — não durante o almoço
 - Registrar **sempre o código correto** do combo para medir performance
-- Script para o atendente: "Aproveita o combo — já vem completo com café e sai mais em conta."
+- Script para o atendente: "Aproveita o combo Farroupilha — já vem com café e sai mais em conta."
+
+### COMBO PÃO DE QUEIJO
+- **Horário:** café da manhã e café da tarde — **não é um item de almoço**
+- **Principal barreira:** desconhecimento — o cliente não sabe que o combo existe
+- **Frio favorece:** temperatura baixa aumenta a venda espontânea — explorar na abordagem
+- **Quem converte:** o atendente no momento do pedido
+- **Cavalete na entrada:** posicionar nos horários de café da manhã e tarde — não durante o almoço
+- Registrar **sempre o código correto** do combo para medir performance
+- Script: "Quer aproveitar o combo Pão de Queijo com café? Tá quentinho agora."
 
 ### REFEIÇÕES / ALAMINUTA
 - **Pico:** horário de almoço — alaminuta, hambúrguer, strogonoff, outros pratos
