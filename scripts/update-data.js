@@ -170,15 +170,16 @@ async function gerarAcoes(aceleradores) {
   prompt += 'Você está escrevendo para os GERENTES DE UNIDADE (não para o time operacional diretamente).\n';
   prompt += 'O gerente vai ler a ação, entender o ponto crítico e repassar para o time de frentistas, atendentes e caixas.\n';
   prompt += 'Esse time tem linguagem simples — a ação precisa ser fácil de explicar e replicar.\n\n';
-  prompt += '## REGRAS PARA CADA AÇÃO\n';
-  prompt += '⚠️ LIMITE ABSOLUTO: 25 PALAVRAS. Conte as palavras antes de finalizar. Se passar de 25, corte.\n';
-  prompt += '1. UMA frase curta — MÁXIMO 25 PALAVRAS, sem exceção\n';
-  prompt += '   EXEMPLO COM 25 PALAVRAS: "Orienta o atendente: \'Fica muito melhor com queijo derretido — quer adicionar?\' — faltam 128 extras."\n';
-  prompt += '2. Tom: acolhedor e direto — "vamos juntos", nunca "você está errando"\n';
-  prompt += '3. Incluir script de fala específico (benefício → pergunta) + gap numérico\n';
-  prompt += '   CERTO: "Orienta o frentista: \'A V-Power limpa e melhora o desempenho — posso colocar?\' — faltam 2,9 p.p."\n';
-  prompt += '   ERRADO: "Peça ao time para oferecer mais" / script que começa com pergunta direta\n';
-  prompt += '4. Cargos/funções apenas — NUNCA nomes próprios\n\n';
+  prompt += '## FORMATO OBRIGATÓRIO — siga exatamente esta estrutura:\n';
+  prompt += '[Cargo]: "[benefício sensorial] — [pergunta curta]?" — faltam [gap].\n\n';
+  prompt += 'EXEMPLOS (copie a estrutura, não o conteúdo):\n';
+  prompt += '- Atendente: "Fica muito melhor com queijo derretido — quer adicionar?" — faltam 128 extras.\n';
+  prompt += '- Frentista: "A V-Power limpa, protege e melhora o desempenho — posso colocar?" — faltam 2,9 p.p.\n';
+  prompt += '- Caixa: "Tem um chocolate na promoção — aproveita?" — gap de R$ 11.859.\n\n';
+  prompt += 'REGRAS:\n';
+  prompt += '1. Máximo 20 palavras por ação — UM script apenas, sem contexto extra\n';
+  prompt += '2. Só cargo, script (benefício→pergunta) e gap — nada mais\n';
+  prompt += '3. Nunca mencionar horário, dia, turno ou produto secundário na frase\n\n';
   prompt += 'CRÍTICO: O campo "acelerador" no JSON deve ser EXATAMENTE o nome entre aspas acima — sem grupo, colchetes ou sufixo.\n';
   prompt += 'CRÍTICO: UMA entrada por indicador — sem duplicatas.\n\n';
   prompt += 'Responda SOMENTE com JSON válido, sem markdown:\n';
@@ -199,25 +200,20 @@ async function gerarAcoes(aceleradores) {
   if (!match) throw new Error('Claude nao retornou JSON: ' + text.substring(0,200));
   var acoes = JSON.parse(match[0]);
 
-  // Validacao e corte: reenvia acoes acima de 25 palavras para encurtamento
-  var longas = acoes.filter(function(a) { return a.acao.split(/\s+/).length > 25; });
-  if (longas.length > 0) {
-    console.log('Encurtando ' + longas.length + ' acao(oes) acima de 25 palavras...');
-    var cortePrompt = 'Encurte cada acao abaixo para no MAXIMO 25 palavras. Mantenha: cargo, script de fala (beneficio+pergunta) e gap numerico. Corte o restante.\n\n';
-    longas.forEach(function(a) { cortePrompt += '- ' + a.acelerador + ': ' + a.acao + '\n'; });
-    cortePrompt += '\nResponda SOMENTE JSON valido: [{"acelerador":"NOME EXATO","acao":"frase curta"}]';
-
-    var corteResp = await claudePost({ model: 'claude-haiku-4-5', max_tokens: 512, messages: [{ role: 'user', content: cortePrompt }] });
-    var corteText = corteResp.content[0].text.trim();
-    var corteMatch = corteText.match(/\[[\s\S]*\]/);
-    if (corteMatch) {
-      var cortadas = JSON.parse(corteMatch[0]);
-      cortadas.forEach(function(c) {
-        var idx = acoes.findIndex(function(a) { return a.acelerador === c.acelerador; });
-        if (idx >= 0) acoes[idx].acao = c.acao;
-      });
+  // Garantia final: trunca em 25 palavras preservando frase completa
+  acoes = acoes.map(function(a) {
+    var words = a.acao.split(/\s+/);
+    if (words.length <= 25) return a;
+    // Tenta cortar em ponto final, travessão ou ponto de interrogação dentro das 25 palavras
+    var truncated = words.slice(0, 25).join(' ');
+    var lastStop = Math.max(truncated.lastIndexOf('?'), truncated.lastIndexOf('.'), truncated.lastIndexOf('—'));
+    if (lastStop > 20) {
+      truncated = truncated.substring(0, lastStop + 1).trim();
     }
-  }
+    a.acao = truncated;
+    console.log('Truncado (' + words.length + '->' + a.acao.split(/\s+/).length + 'p): ' + a.acelerador);
+    return a;
+  });
 
   return acoes;
 }
