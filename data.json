@@ -365,36 +365,32 @@
   },
   "acoes": [
     {
-      "acelerador": "COMBO FARROUPILHA",
-      "acao": "Orienta o atendente no café da manhã e tarde: 'O Farroupilha é pão com queijo e mortadela, já vem com café — sai bem mais em conta no combo, vai querer?' — faltam 471 combos pra meta."
-    },
-    {
       "acelerador": "EXTRAS",
-      "acao": "Reforça no início de cada turno com o atendente: 'Fica muito melhor com queijo derretido — quer adicionar?' no bife; 'Uma polentinha frita deixa o prato completo — coloco?' na alaminuta — faltam 128 extras."
+      "acao": "Orienta o atendente: 'Fica muito melhor com queijo derretido — quer adicionar?' — faltam 128 extras."
     },
     {
-      "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Orienta o caixa no fechamento: 'Tem um chocolate aqui que tá na promoção — aproveita?' — sempre junto com chiclete ou bala — gap de R$ 11.859 ainda tá aberto."
+      "acelerador": "COMBO FARROUPILHA",
+      "acao": "Orienta o atendente: 'Combo sai bem mais em conta — pão, queijo, mortadela e café juntos?' — faltam 471."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Orienta o atendente quando cliente pede café ou pão de queijo avulso: 'O pão saiu agora do forno — no combo com café sai bem mais em conta, vai querer?' — faltam 106 combos."
+      "acao": "Orienta o atendente: 'Pão saiu agora do forno — combo com café sai mais barato, vai querer?' — faltam 106."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Posiciona cavalete na entrada no horário de almoço com destaque de alaminuta; orienta o atendente a sugerir: 'Uma porção de fritas vai bem com esse prato — posso incluir?' — faltam 171 pratos."
+      "acao": "Orienta o atendente: 'Uma frita ou polentinha frita deixa o prato completo — coloco?' — faltam 171 alaminutas."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Orienta o frentista antes de iniciar abastecimento: 'A V-Power limpa, protege e melhora o desempenho — posso colocar?' ou 'Na V-Power o cashback no app é bem maior — aproveita?' — faltam 2.9 p.p. na meta."
+      "acao": "Orienta o frentista: 'V-Power limpa e melhora desempenho do motor — posso colocar?' — faltam 2,9 p.p."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Orienta o frentista a abordar clientes com frota: 'O senhor tem frota? Posso pegar um contato pro time comercial da gente?' — gera leads e fideliza — faltam 78.061 litros no mês."
+      "acao": "Orienta o frentista: 'Completa o tanque no app — cashback volta aqui?' — faltam 78.061 litros até fim do mês."
     },
     {
       "acelerador": "PA",
-      "acao": "Orienta o frentista: abrir capô durante abastecimento e sugerir: 'Sabia que a gente faz troca de óleo aqui?' — diferencial que vende — faltam R$ 3.100 pra fechar a meta."
+      "acao": "Orienta o frentista: abrir capô, verificar óleo, oferecer troca — 'Sabia que fazemos troca aqui?' — faltam R$ 3.100."
     }
   ]
 }
