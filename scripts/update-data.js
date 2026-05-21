@@ -197,7 +197,29 @@ async function gerarAcoes(aceleradores) {
   var text = resp.content[0].text.trim();
   var match = text.match(/\[[\s\S]*\]/);
   if (!match) throw new Error('Claude nao retornou JSON: ' + text.substring(0,200));
-  return JSON.parse(match[0]);
+  var acoes = JSON.parse(match[0]);
+
+  // Validacao e corte: reenvia acoes acima de 25 palavras para encurtamento
+  var longas = acoes.filter(function(a) { return a.acao.split(/\s+/).length > 25; });
+  if (longas.length > 0) {
+    console.log('Encurtando ' + longas.length + ' acao(oes) acima de 25 palavras...');
+    var cortePrompt = 'Encurte cada acao abaixo para no MAXIMO 25 palavras. Mantenha: cargo, script de fala (beneficio+pergunta) e gap numerico. Corte o restante.\n\n';
+    longas.forEach(function(a) { cortePrompt += '- ' + a.acelerador + ': ' + a.acao + '\n'; });
+    cortePrompt += '\nResponda SOMENTE JSON valido: [{"acelerador":"NOME EXATO","acao":"frase curta"}]';
+
+    var corteResp = await claudePost({ model: 'claude-haiku-4-5', max_tokens: 512, messages: [{ role: 'user', content: cortePrompt }] });
+    var corteText = corteResp.content[0].text.trim();
+    var corteMatch = corteText.match(/\[[\s\S]*\]/);
+    if (corteMatch) {
+      var cortadas = JSON.parse(corteMatch[0]);
+      cortadas.forEach(function(c) {
+        var idx = acoes.findIndex(function(a) { return a.acelerador === c.acelerador; });
+        if (idx >= 0) acoes[idx].acao = c.acao;
+      });
+    }
+  }
+
+  return acoes;
 }
 
 (async function() {
