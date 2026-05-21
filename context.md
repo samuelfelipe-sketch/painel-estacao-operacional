@@ -32,11 +32,11 @@ Toda ação para loja ou pista deve incluir a frase exata que o funcionário dev
 Scripts validados por produto:
 - Queijo no bife: *"Fica muito melhor com queijo derretido por cima — quer adicionar?"*
 - Cebola no bife: *"Uma cebola caramelizada deixa o bife no outro nível — coloco?"*
-- Ovo na alaminuta: *"Um ovinho frito por cima deixa a alaminuta completa — quer?"*
-- Fritas: *"Uma porção de fritas vai bem com esse prato — posso incluir?"*
+- Fritas na alaminuta: *"Uma porção de fritas vai bem com esse prato — posso incluir?"*
+- Polenta frita na alaminuta: *"Uma polentinha frita do lado deixa o prato completo — coloco?"*
 - Bomboniere (caixa): *"Tem um chocolate aqui que tá na promoção — aproveita?"*
 - Combo Farroupilha: *"O combo já vem com o café incluído e sai bem mais em conta — vai querer?"*
-- V-Power: *"A V-Power limpa o motor enquanto abastece — posso colocar?"*
+- V-Power: *"A V-Power limpa, protege e melhora o desempenho do veículo — posso colocar?"*
 - Arla: *"Enquanto está aqui, já aproveita e completa o tanquinho de Arla?"*
 - App/cashback: *"Com o app você ganha cashback em tudo aqui — tem o aplicativo?"*
 
@@ -132,9 +132,10 @@ O ticket médio tem **dois momentos distintos** — o atendente no pedido e o ca
 
 **Momento 1 — Atendente no pedido (extras):**
 - É o principal motor do ticket — compra por impulso acontece aqui
+- **Atenção:** a alaminuta já inclui ovo na receita — extras para alaminuta são fritas, polenta frita ou salada
 - Scripts específicos por prato (sempre: benefício/imagem → pergunta):
   - Bife de gado/frango: "Fica muito melhor com queijo derretido por cima — quer adicionar?" / "Uma cebola caramelizada deixa o bife no outro nível — coloco?"
-  - Alaminuta: "Um ovinho frito por cima deixa a alaminuta completa — quer?" / "Uma porção de fritas vai bem com esse prato — posso incluir?"
+  - Alaminuta: "Uma porção de fritas vai bem com esse prato — posso incluir?" / "Uma polentinha frita do lado deixa o prato completo — coloco?"
 
 **Momento 2 — Caixa no fechamento (bomboniere):**
 - É o ponto mais fraco e inconsistente — depende muito de quem está no turno
@@ -146,22 +147,26 @@ O ticket médio tem **dois momentos distintos** — o atendente no pedido e o ca
 Ações de ticket médio devem focar em UM dos dois momentos por vez — não misturar atendente e caixa na mesma orientação.
 
 ### COMBO FARROUPILHA
+- **Produto:** pão cacetinho (pão francês) com queijo e mortadela bolonha + café — clássico gaúcho, todo mundo conhece e gosta
+- **Público:** cliente do dia a dia — conforto, familiaridade, rotina; apela ao hábito e ao afeto regional
 - **Horário:** café da manhã e café da tarde — **não é um item de almoço**
 - **Principal barreira:** desconhecimento — o cliente não sabe que o combo existe
-- **O que converte:** CTA com qualidade + preço visível + oferta ativa do atendente no momento do pedido
+- **O que converte:** CTA que evoca familiaridade + benefício do combo + oferta ativa do atendente no momento do pedido
 - **Quem converte:** o atendente no momento do pedido — não o caixa, não o visual sozinho
 - **Cavalete na entrada:** posicionar nos horários de café da manhã e tarde — não durante o almoço
 - Registrar **sempre o código correto** do combo para medir performance
-- Script para o atendente: "O combo Farroupilha já vem com o café incluído e sai bem mais em conta — vai querer?"
+- Script para o atendente: "O Farroupilha é pão com queijo e mortadela, já vem com o café — sai bem mais em conta no combo, vai querer?"
 
 ### COMBO PÃO DE QUEIJO
+- **Produto:** pão de queijo + café — o pão de queijo é o **item mais vendido de food** da loja, qualidade e aceitação comprovadas
+- **Público:** qualquer cliente que pede café ou pão de queijo avulso — o combo agrega valor ao que ele já iria comprar
 - **Horário:** café da manhã e café da tarde — **não é um item de almoço**
-- **Principal barreira:** desconhecimento — o cliente não sabe que o combo existe
+- **Principal barreira:** desconhecimento — o cliente não sabe que o combo existe nem que sai mais em conta
 - **Frio favorece:** temperatura baixa aumenta a venda espontânea — explorar na abordagem
 - **Quem converte:** o atendente no momento do pedido
 - **Cavalete na entrada:** posicionar nos horários de café da manhã e tarde — não durante o almoço
 - Registrar **sempre o código correto** do combo para medir performance
-- Script: "O pão de queijo saiu agora do forno e tá quentinho — o combo com café sai bem mais em conta, vai querer?"
+- Script: "O pão de queijo saiu agora do forno — no combo com café sai bem mais em conta, vai querer?"
 
 ### REFEIÇÕES / ALAMINUTA
 - **Pico:** horário de almoço — alaminuta, hambúrguer, strogonoff, outros pratos
@@ -171,22 +176,24 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 
 ### EXTRAS
 - **Momento certo:** no pedido, não na finalização — a compra por impulso acontece ali
-- **Extra mais vendido:** queijo no bife, cebola no bife, ovo na alaminuta, fritas
+- **Extra mais vendido:** queijo no bife, cebola no bife, fritas, polenta frita
+- **Atenção:** a alaminuta já inclui ovo na receita — não oferecer ovo como extra; os extras corretos são fritas, polenta frita ou salada
 - **Consistência:** varia muito por turno/pessoa — o gerente deve reforçar o script no início de cada turno
 - Script por situação (sempre: benefício/imagem → pergunta de fechamento):
   - Bife de gado/frango: "Fica muito melhor com queijo derretido — quer adicionar?" / "Uma cebola caramelizada deixa o bife no outro nível — coloco?"
-  - Alaminuta: "Um ovinho frito por cima deixa a alaminuta completa — quer?" / "Uma porção de fritas vai bem com esse prato — posso incluir?"
+  - Alaminuta: "Uma porção de fritas vai bem com esse prato — posso incluir?" / "Uma polentinha frita do lado deixa o prato completo — coloco?"
   - Fechamento do caixa: "Tem um chocolate aqui que tá na promoção — aproveita?" + chiclete ou bala
 
 ---
 
 ### MIX V-POWER
+- **Produto:** Gasolina Aditivada Shell V-Power — limpa, protege e melhora o desempenho do veículo
 - **Quem converte:** o frentista — poucos clientes pedem V-Power espontaneamente
-- **Como converter:** mencionar os benefícios (limpa o motor) OU simplesmente perguntar — ambos funcionam
-- **Argumento mais forte:** cashback no app do Sapatão é sempre maior na V-Power do que na comum
-- **Objeções comuns:** "é mais caro" ou "sempre abasteço comum" — responder com o argumento do cashback
+- **Como converter:** mencionar os três benefícios do produto (limpa, protege, melhora desempenho) — é o argumento técnico mais forte
+- **Argumento de custo-benefício:** cashback no app do Sapatão é sempre maior na V-Power do que na comum
+- **Objeções comuns:** "é mais caro" ou "sempre abasteço comum" — responder com cashback e/ou benefício do produto
 - Scripts para frentistas (sempre: benefício/imagem → pergunta):
-  - "A V-Power limpa o motor enquanto abastece — posso colocar?"
+  - "A V-Power limpa, protege e melhora o desempenho do seu carro — posso colocar?"
   - "Na V-Power o cashback no app é bem maior do que na comum — aproveita?"
   - Para quem hesita: "A diferença no valor você recupera no cashback — fica mais caro não."
 
