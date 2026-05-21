@@ -198,9 +198,14 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
   - Para quem hesita: "A diferença no valor você recupera no cashback — fica mais caro não."
 
 ### CICLO OTTO (GASOLINA)
+- **Foco:** aumentar volume de litros abastecidos — NÃO é o indicador de mix V-Power (que tem seção própria)
 - **O que fideliza o cliente:** qualidade do atendimento + serviços adicionais — calibragem de pneus, limpeza de para-brisa, esvaziar lixeiro do carro
 - **Tanque cheio:** cliente normalmente pede valor fixo — frentista pode sugerir completar o tanque usando o argumento do cashback no app
 - **Geração de leads:** clientes com frota devem ser abordados para gerar contato para o time comercial — aumenta volume Otto e Diesel
+- Scripts para frentistas:
+  - "Completo o tanque? Com o cashback do app a diferença é pequena e você sai com o tanque cheio."
+  - "Posso calibrar os pneus enquanto abastece? É rápido e sem custo."
+  - Para clientes habituais com frota: "O senhor tem frota? Posso pegar um contato pro nosso time comercial?"
 
 ### CICLO DIESEL
 - **Perfil:** caminhoneiro habitual — existe modalidade de fidelidade diesel
