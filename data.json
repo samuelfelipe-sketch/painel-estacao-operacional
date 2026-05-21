@@ -365,20 +365,16 @@
   },
   "acoes": [
     {
-      "acelerador": "FAT. LOJA",
-      "acao": "Caixa: \"Tem um chocolate aqui que tá na promoção — aproveita?\" — faltam R$ 11.859."
-    },
-    {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Atendente: \"Fica muito melhor com queijo derretido — quer adicionar?\" — meta pela metade."
+      "acao": "Atendente: \"Fica muito melhor com queijo derretido — quer adicionar?\" — faltam 128 extras."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Atendente: \"Uma cebola caramelizada deixa o bife no outro nível — coloco?\" — faltam 128 extras."
+      "acao": "Atendente: \"Uma porção de fritas vai bem com esse prato — posso incluir?\" — faltam 128 extras."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Atendente: \"Uma porção de fritas vai bem com esse prato — posso incluir?\" — faltam 171 alamitutas."
+      "acao": "Atendente: \"Uma polentinha frita do lado deixa o prato completo — coloco?\" — faltam 171 alaminutas."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
