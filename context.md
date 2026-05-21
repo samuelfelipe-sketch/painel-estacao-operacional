@@ -39,7 +39,7 @@ Scripts validados por produto:
 - Polenta frita na alaminuta: *"Uma polentinha frita do lado deixa o prato completo — coloco?"*
 - Bomboniere (caixa): *"Tem um chocolate aqui que tá na promoção — aproveita?"*
 - Combo Farroupilha: *"O combo já vem com o café incluído e sai bem mais em conta — vai querer?"*
-- V-Power: *"A V-Power limpa, protege e melhora o desempenho do veículo — posso colocar?"*
+- V-Power: *"A V-Power limpa, protege e melhora o desempenho do motor — quer aproveitar hoje?"*
 - Arla: *"Enquanto está aqui, já aproveita e completa o tanquinho de Arla?"*
 - App/cashback: *"Com o app você ganha cashback em tudo aqui — tem o aplicativo?"*
 

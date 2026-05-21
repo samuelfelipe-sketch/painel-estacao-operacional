@@ -179,7 +179,7 @@ async function gerarAcoes(aceleradores) {
   prompt += '   EVITAR: "posso colocar?" / "quer adicionar?" / "aproveita?" (muito direto ou muito passivo)\n\n';
   prompt += 'EXEMPLOS:\n';
   prompt += '- Atendente: "Esse bife fica incrível com queijo derretido por cima — já experimentou assim?" — faltam 128 extras.\n';
-  prompt += '- Frentista: "A V-Power limpa, protege e melhora o desempenho — faz esse upgrade hoje?" — faltam 2,9 p.p.\n';
+  prompt += '- Frentista: "A V-Power limpa, protege e melhora o desempenho — quer aproveitar hoje?" — faltam 2,9 p.p.\n';
   prompt += '- Caixa: "Esse chocolate combina demais com o café — leva esse também?" — gap de R$ 11.859.\n\n';
   prompt += 'REGRAS:\n';
   prompt += '1. Máximo 25 palavras — UM script por ação, sem contexto extra\n';
