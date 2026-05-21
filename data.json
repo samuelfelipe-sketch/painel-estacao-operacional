@@ -370,27 +370,27 @@
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Orienta o atendente: 'Combo sai bem mais em conta — pão, queijo, mortadela e café juntos?' — faltam 471."
-    },
-    {
-      "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Orienta o atendente: 'Pão saiu agora do forno — combo com café sai mais barato, vai querer?' — faltam 106."
+      "acao": "Orienta o atendente no café da manhã/tarde: 'Sai bem mais em conta no combo — quer o Farroupilha?' — faltam 471."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Orienta o atendente: 'Uma frita ou polentinha frita deixa o prato completo — coloco?' — faltam 171 alaminutas."
+      "acao": "Orienta o atendente: 'Uma polentinha frita deixa o prato completo — coloco?' — faltam 171 alaminutas."
+    },
+    {
+      "acelerador": "COMBO PÃO DE QUEIJO",
+      "acao": "Orienta o atendente: 'Pão quente com café no combo sai mais em conta — quer?' — faltam 106 combos."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Orienta o frentista: 'V-Power limpa e melhora desempenho do motor — posso colocar?' — faltam 2,9 p.p."
+      "acao": "Orienta o frentista: 'V-Power limpa e melhora desempenho — posso colocar?' — faltam 2,9 p.p. de mix."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Orienta o frentista: 'Completa o tanque no app — cashback volta aqui?' — faltam 78.061 litros até fim do mês."
+      "acao": "Orienta o frentista: 'Completa o tanque aqui — cashback no app recupera a diferença?' — faltam 78k litros."
     },
     {
-      "acelerador": "PA",
-      "acao": "Orienta o frentista: abrir capô, verificar óleo, oferecer troca — 'Sabia que fazemos troca aqui?' — faltam R$ 3.100."
+      "acelerador": "TICKET MÉDIO LOJA",
+      "acao": "Caixa: 'Tem chocolate na promoção — aproveita?' — chocolate + bala juntos. Fecha gap do ticket médio."
     }
   ]
 }
