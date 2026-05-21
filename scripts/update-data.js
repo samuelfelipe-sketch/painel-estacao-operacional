@@ -175,8 +175,11 @@ async function gerarAcoes(aceleradores) {
   prompt += '2. Tom: acolhedor, motivador e direto — estilo "vamos juntos", não "você está errando"\n';
   prompt += '   Reconhece o esforço, indica o próximo passo, deixa o gerente com vontade de agir\n';
   prompt += '3. Incluir SEMPRE um script de fala específico para o time — nunca genérico\n';
-  prompt += '   CORRETO: "Orienta o caixa: \'Quer adicionar queijo?\' — faltam 47 extras pra meta."\n';
+  prompt += '   CORRETO: "Orienta o atendente: \'Fica muito melhor com queijo derretido — quer adicionar?\' — faltam 47 extras pra meta."\n';
   prompt += '   ERRADO: "Peça ao time para oferecer extras com mais frequência"\n';
+  prompt += '3a. O script deve PRIMEIRO criar desejo ou imagem mental, DEPOIS fazer a pergunta de fechamento — nunca só perguntar diretamente\n';
+  prompt += '   CERTO: "A V-Power limpa o motor enquanto abastece — posso colocar?" / "O combo já vem com café e sai mais em conta — vai querer?"\n';
+  prompt += '   ERRADO: "Quer V-Power?" / "Aproveita o combo?"\n';
   prompt += '4. Usar cargos/funções, NUNCA nomes próprios (frentista, atendente, caixa, equipe de pista)\n';
   prompt += '5. Mencionar o gap numérico para dar clareza de onde a gente está\n\n';
   prompt += 'CRÍTICO: O campo "acelerador" no JSON deve ser EXATAMENTE o nome entre aspas acima — sem grupo, colchetes ou sufixo.\n';

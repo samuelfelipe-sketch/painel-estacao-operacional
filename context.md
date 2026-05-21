@@ -9,7 +9,7 @@
 As ações são lidas pelo **gerente de unidade**, que as repassa ao time (frentistas, atendentes, caixas). A linguagem deve ser simples o suficiente para o gerente entender e replicar de imediato para uma equipe com ensino médio completo. Nunca escrever como se estivesse falando diretamente com o frentista ou atendente.
 
 ### 2. Tom: "vamos juntos", nunca "você está errando"
-O gerente precisa chegar ao turno motivado, não constrangido. Reconhecer o esforço, indicar o próximo passo, deixar a ação soar como uma oportunidade — não como uma cobrança. Errado: "o time não está oferecendo extras". Certo: "Orienta o atendente a perguntar: 'Quer adicionar queijo?' — ainda dá pra fechar o gap."
+O gerente precisa chegar ao turno motivado, não constrangido. Reconhecer o esforço, indicar o próximo passo, deixar a ação soar como uma oportunidade — não como uma cobrança. Errado: "o time não está oferecendo extras". Certo: "Orienta o atendente: 'Fica muito melhor com queijo derretido — quer adicionar?' — ainda dá pra fechar o gap."
 
 ### 3. Uma ação = um momento = uma pessoa
 Cada ação deve focar em **um único momento** do atendimento e em **um único cargo**. Não misturar atendente + caixa na mesma frase. Não misturar pista + loja. Exemplos de corte:
@@ -17,7 +17,28 @@ Cada ação deve focar em **um único momento** do atendimento e em **um único 
 - Combo tem um único conversor: o atendente no momento do pedido — não o caixa, não o visual sozinho.
 
 ### 4. Script de fala sempre específico — nunca genérico
-Toda ação para loja ou pista deve incluir a frase exata que o funcionário deve dizer ao cliente. Errado: "oriente o time a oferecer extras com mais frequência". Certo: "Orienta o atendente: 'Quer adicionar queijo no bife?' — faltam X extras."
+Toda ação para loja ou pista deve incluir a frase exata que o funcionário deve dizer ao cliente. Errado: "oriente o time a oferecer extras com mais frequência". Certo: "Orienta o atendente: 'Fica incrível com queijo derretido — quer adicionar?' — faltam X extras."
+
+### 4a. CTA comercial: gerar desejo antes de fazer a pergunta
+**Este é o ponto mais importante dos scripts.** A frase não pode ser só uma pergunta direta — precisa primeiro criar uma imagem mental ou despertar desejo, depois fechar com a pergunta. A ordem é: **imagem/benefício → pergunta**.
+
+- ❌ Errado (direto demais, sem desejo): `"Quer queijo?"` / `"Coloco um ovo?"` / `"Quer V-Power?"`
+- ✅ Certo (gera desejo, depois pergunta): `"Fica muito melhor com queijo derretido — quer adicionar?"` / `"Um ovinho frito por cima deixa a alaminuta completa — coloco?"` / `"V-Power limpa o motor enquanto abastece — posso colocar?"`
+
+**Padrão de construção do script:**
+1. Descreve o benefício ou cria a imagem sensorial do produto
+2. Faz a pergunta de fechamento curta e direta
+
+Scripts validados por produto:
+- Queijo no bife: *"Fica muito melhor com queijo derretido por cima — quer adicionar?"*
+- Cebola no bife: *"Uma cebola caramelizada deixa o bife no outro nível — coloco?"*
+- Ovo na alaminuta: *"Um ovinho frito por cima deixa a alaminuta completa — quer?"*
+- Fritas: *"Uma porção de fritas vai bem com esse prato — posso incluir?"*
+- Bomboniere (caixa): *"Tem um chocolate aqui que tá na promoção — aproveita?"*
+- Combo Farroupilha: *"O combo já vem com o café incluído e sai bem mais em conta — vai querer?"*
+- V-Power: *"A V-Power limpa o motor enquanto abastece — posso colocar?"*
+- Arla: *"Enquanto está aqui, já aproveita e completa o tanquinho de Arla?"*
+- App/cashback: *"Com o app você ganha cashback em tudo aqui — tem o aplicativo?"*
 
 ### 5. Horários e contextos dos produtos respeitados
 Cada produto tem seu contexto de consumo — ações fora do contexto geram ruído. Regras validadas:
@@ -111,16 +132,16 @@ O ticket médio tem **dois momentos distintos** — o atendente no pedido e o ca
 
 **Momento 1 — Atendente no pedido (extras):**
 - É o principal motor do ticket — compra por impulso acontece aqui
-- Scripts específicos por prato:
-  - Bife de gado/frango: "Quer adicionar queijo?" / "Quer adicionar cebola?"
-  - Alaminuta: "Coloco um ovo?" / "Posso incluir uma porção de fritas?"
+- Scripts específicos por prato (sempre: benefício/imagem → pergunta):
+  - Bife de gado/frango: "Fica muito melhor com queijo derretido por cima — quer adicionar?" / "Uma cebola caramelizada deixa o bife no outro nível — coloco?"
+  - Alaminuta: "Um ovinho frito por cima deixa a alaminuta completa — quer?" / "Uma porção de fritas vai bem com esse prato — posso incluir?"
 
 **Momento 2 — Caixa no fechamento (bomboniere):**
 - É o ponto mais fraco e inconsistente — depende muito de quem está no turno
 - Regra: nunca só chiclete/bala — sempre **chocolate + chiclete ou bala juntos**
-- Scripts:
-  - "Aproveita e leva um chocolate? Tá na promoção."
-  - "Quer levar um chiclete ou bala para a viagem?"
+- Scripts (sempre: benefício/imagem → pergunta):
+  - "Tem um chocolate aqui que tá na promoção — aproveita?"
+  - "Uma bala ou chiclete pra viagem? Fica aqui no balcão."
 
 Ações de ticket médio devem focar em UM dos dois momentos por vez — não misturar atendente e caixa na mesma orientação.
 
@@ -131,7 +152,7 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 - **Quem converte:** o atendente no momento do pedido — não o caixa, não o visual sozinho
 - **Cavalete na entrada:** posicionar nos horários de café da manhã e tarde — não durante o almoço
 - Registrar **sempre o código correto** do combo para medir performance
-- Script para o atendente: "Aproveita o combo Farroupilha — já vem com café e sai mais em conta."
+- Script para o atendente: "O combo Farroupilha já vem com o café incluído e sai bem mais em conta — vai querer?"
 
 ### COMBO PÃO DE QUEIJO
 - **Horário:** café da manhã e café da tarde — **não é um item de almoço**
@@ -140,7 +161,7 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 - **Quem converte:** o atendente no momento do pedido
 - **Cavalete na entrada:** posicionar nos horários de café da manhã e tarde — não durante o almoço
 - Registrar **sempre o código correto** do combo para medir performance
-- Script: "Quer aproveitar o combo Pão de Queijo com café? Tá quentinho agora."
+- Script: "O pão de queijo saiu agora do forno e tá quentinho — o combo com café sai bem mais em conta, vai querer?"
 
 ### REFEIÇÕES / ALAMINUTA
 - **Pico:** horário de almoço — alaminuta, hambúrguer, strogonoff, outros pratos
@@ -152,10 +173,10 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 - **Momento certo:** no pedido, não na finalização — a compra por impulso acontece ali
 - **Extra mais vendido:** queijo no bife, cebola no bife, ovo na alaminuta, fritas
 - **Consistência:** varia muito por turno/pessoa — o gerente deve reforçar o script no início de cada turno
-- Script por situação:
-  - Bife de gado/frango: "Quer adicionar queijo? Quer adicionar cebola?"
-  - Alaminuta: "Coloco um ovo? Posso incluir uma porção de fritas?"
-  - Fechamento do caixa: chocolate + chiclete ou bala
+- Script por situação (sempre: benefício/imagem → pergunta de fechamento):
+  - Bife de gado/frango: "Fica muito melhor com queijo derretido — quer adicionar?" / "Uma cebola caramelizada deixa o bife no outro nível — coloco?"
+  - Alaminuta: "Um ovinho frito por cima deixa a alaminuta completa — quer?" / "Uma porção de fritas vai bem com esse prato — posso incluir?"
+  - Fechamento do caixa: "Tem um chocolate aqui que tá na promoção — aproveita?" + chiclete ou bala
 
 ---
 
@@ -164,10 +185,10 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 - **Como converter:** mencionar os benefícios (limpa o motor) OU simplesmente perguntar — ambos funcionam
 - **Argumento mais forte:** cashback no app do Sapatão é sempre maior na V-Power do que na comum
 - **Objeções comuns:** "é mais caro" ou "sempre abasteço comum" — responder com o argumento do cashback
-- Scripts para frentistas:
-  - "Posso colocar V-Power? O cashback no app é maior do que na comum."
-  - "V-Power limpa o motor enquanto abastece — quer experimentar?"
-  - Para quem hesita: "A diferença no valor você recupera no cashback do app."
+- Scripts para frentistas (sempre: benefício/imagem → pergunta):
+  - "A V-Power limpa o motor enquanto abastece — posso colocar?"
+  - "Na V-Power o cashback no app é bem maior do que na comum — aproveita?"
+  - Para quem hesita: "A diferença no valor você recupera no cashback — fica mais caro não."
 
 ### CICLO OTTO (GASOLINA)
 - **O que fideliza o cliente:** qualidade do atendimento + serviços adicionais — calibragem de pneus, limpeza de para-brisa, esvaziar lixeiro do carro
@@ -182,8 +203,10 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 ### ARLA
 - **Gap principal:** falta oferta ativa dos frentistas — o cliente habitual não pede espontaneamente
 - **Oportunidade adicional:** o caixa pode fechar a venda de Arla no final do atendimento de loja
-- Scripts para frentistas: "Vai precisar de Arla? Já aproveita enquanto está aqui."
-- Script para caixa (quando cliente veio da pista): "Aproveitou e completou o tanquinho de Arla?"
+- Scripts para frentistas (sempre: benefício/imagem → pergunta):
+  - "Enquanto está aqui, já aproveita e completa o tanquinho de Arla?"
+  - "Arla tá disponível aqui na pista — já aproveita pra não precisar parar depois?"
+- Script para caixa (quando cliente veio da pista): "Já completou o tanquinho de Arla enquanto estava na pista?"
 
 ### PA (PRODUTOS AUTOMOTIVOS)
 - **Abordagem mais poderosa na pista:** abrir o capô e verificar o nível de óleo durante o abastecimento
@@ -210,7 +233,7 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 - **Principal barreira:** o cliente simplesmente não sabe que o app existe nem que gera cashback e desconto
 - **Onde oferecer:** todos os pontos de contato — caixa da loja, pista, e qualquer atendimento
 - **Argumento central:** "tem cashback em todas as compras da loja e cashback maior na V-Power"
-- Script: "Tem o app do Sapatão? Você ganha cashback em tudo que compra aqui."
+- Script: "Com o app do Sapatão você ganha cashback em tudo que compra aqui — tem o aplicativo?"
 
 ### LAVAGEM
 - **Perfil:** cliente habitual — já conhece o serviço, volta regularmente
