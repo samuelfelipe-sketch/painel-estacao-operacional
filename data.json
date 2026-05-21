@@ -370,6 +370,10 @@
     },
     {
       "acelerador": "Atendente",
+      "acao": "Uma porção de fritas vai bem com esse prato — posso incluir? — faltam 171 alaminutas."
+    },
+    {
+      "acelerador": "Atendente",
       "acao": "O Farroupilha é pão com queijo e mortadela, já vem com café — sai bem mais em conta, vai querer? — faltam 471."
     },
     {
@@ -377,24 +381,16 @@
       "acao": "O pão de queijo saiu agora do forno — no combo com café sai bem mais em conta, vai querer? — faltam 106."
     },
     {
-      "acelerador": "Atendente",
-      "acao": "Uma porção de fritas vai bem com esse prato — posso incluir? — faltam 171 alaminutas."
+      "acelerador": "Frentista",
+      "acao": "A V-Power limpa, protege e melhora o desempenho — posso colocar? — faltam 2,9 p.p."
+    },
+    {
+      "acelerador": "Frentista",
+      "acao": "Enquanto está aqui, já aproveita e completa o tanquinho de Arla? — faltam R$ 3.100 em PA."
     },
     {
       "acelerador": "Caixa",
-      "acao": "Tem um chocolate aqui na promoção — aproveita? — faltam R$ 11.859 de ticket médio."
-    },
-    {
-      "acelerador": "Frentista",
-      "acao": "A V-Power limpa, protege e melhora o desempenho — posso colocar? — faltam 2,9 p.p. no mix."
-    },
-    {
-      "acelerador": "Frentista",
-      "acao": "Enquanto está aqui, já completa o tanquinho de Arla? — aproveita de uma vez? — faltam R$ 3.100 em PA."
-    },
-    {
-      "acelerador": "Frentista",
-      "acao": "O senhor tem frota? Posso pegar um contato pro time comercial? — faltam R$ 78.061 em Otto."
+      "acao": "Tem um chocolate aqui que tá na promoção — aproveita? — faltam R$ 11.859 em ticket."
     }
   ]
 }
