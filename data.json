@@ -366,35 +366,39 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Atendente: \"Fica muito melhor com queijo derretido — quer adicionar?\" — faltam 128 extras."
+      "acao": "Atendente: \"Esse bife fica incrível com queijo derretido por cima — já experimentou assim?\" — faltam 50% da meta."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Atendente: \"Uma porção de fritas vai bem com esse prato — posso incluir?\" — faltam 128 extras."
+      "acao": "Atendente: \"Uma polentinha frita do lado deixa o prato completo — coloco?\" — faltam 128 extras."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Atendente: \"Uma polentinha frita do lado deixa o prato completo — coloco?\" — faltam 171 alaminutas."
+      "acao": "Atendente: \"A alaminuta tá pronta rapidinho — vai bem pra esse horário, não é?\" — faltam 171 alaminutas."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Atendente: \"O combo já vem com o café incluído e sai bem mais em conta — vai querer?\" — faltam 471 combos."
+      "acao": "Atendente: \"O Farroupilha com mortadela e queijo já vem com café e sai bem mais em conta — vai querer?\" — faltam 471 combos."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Atendente: \"No combo com café sai bem mais em conta — vai querer?\" — faltam 106 combos."
+      "acao": "Atendente: \"Pão de queijo quentinho com café sai mais em conta no combo — aproveita essa combinação?\" — faltam 106 combos."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Frentista: \"Completo o tanque? Com o cashback a diferença é pequena\" — faltam 78.061 litros."
+      "acao": "Frentista: \"Completo o tanque? Com o cashback do app a diferença é pequena — aproveita?\" — faltam 78.061 litros."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Frentista: \"A V-Power limpa, protege e melhora o desempenho — posso colocar?\" — faltam 2,9 p.p."
+      "acao": "Frentista: \"A V-Power limpa, protege e melhora o desempenho do motor — faz esse upgrade hoje?\" — faltam 2,9 p.p."
     },
     {
       "acelerador": "PA",
-      "acao": "Frentista: \"Posso dar uma olhada no óleo enquanto abastece?\" — faltam R$ 3.100."
+      "acao": "Frentista: \"Posso dar uma olhada no óleo enquanto abastece? É rapidinho.\" — faltam R$ 3.100."
+    },
+    {
+      "acelerador": "FAT. LOJA",
+      "acao": "Caixa: \"Tem um chocolate aqui que combina demais — leva esse também?\" — faltam R$ 11.859."
     }
   ]
 }
