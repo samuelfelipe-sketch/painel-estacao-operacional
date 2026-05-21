@@ -366,27 +366,27 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Atendente: \"Esse bife fica incrível com queijo derretido por cima — já experimentou assim?\" — faltam 50% da meta."
+      "acao": "Atendente: \"Esse bife fica incrível com queijo derretido por cima — já experimentou assim?\" — ainda dá pra fechar o gap."
     },
     {
       "acelerador": "EXTRAS",
-      "acao": "Atendente: \"Uma polentinha frita do lado deixa o prato completo — coloco?\" — faltam 128 extras."
+      "acao": "Atendente: \"Uma cebola caramelizada deixa o bife no outro nível — coloco?\" — faltam 128 extras."
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Atendente: \"A alaminuta tá pronta rapidinho — vai bem pra esse horário, não é?\" — faltam 171 alaminutas."
+      "acao": "Atendente: \"Uma porção de fritas vai bem com esse prato — posso incluir?\" — faltam 171 alaminutas."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Atendente: \"O Farroupilha com mortadela e queijo já vem com café e sai bem mais em conta — vai querer?\" — faltam 471 combos."
+      "acao": "Atendente: \"O Farroupilha é pão com queijo e mortadela, já vem com o café — vai querer?\" — faltam 471 combos."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Atendente: \"Pão de queijo quentinho com café sai mais em conta no combo — aproveita essa combinação?\" — faltam 106 combos."
+      "acao": "Atendente: \"O pão de queijo saiu agora do forno — no combo com café sai mais em conta, vai querer?\" — faltam 106 combos."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Frentista: \"Completo o tanque? Com o cashback do app a diferença é pequena — aproveita?\" — faltam 78.061 litros."
+      "acao": "Frentista: \"Completo o tanque? Com o cashback do app a diferença é pequena e você sai cheio\" — faltam 78.061 litros."
     },
     {
       "acelerador": "MIX V-POWER",
@@ -394,11 +394,11 @@
     },
     {
       "acelerador": "PA",
-      "acao": "Frentista: \"Posso dar uma olhada no óleo enquanto abastece? É rapidinho.\" — faltam R$ 3.100."
+      "acao": "Frentista: \"Posso dar uma olhada no óleo enquanto abastece? É rápido\" — faltam R$ 3.100."
     },
     {
       "acelerador": "FAT. LOJA",
-      "acao": "Caixa: \"Tem um chocolate aqui que combina demais — leva esse também?\" — faltam R$ 11.859."
+      "acao": "Caixa: \"Esse chocolate combina demais com o café — leva esse também?\" — faltam R$ 11.859."
     }
   ]
 }
