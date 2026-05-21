@@ -366,11 +366,11 @@
   "acoes": [
     {
       "acelerador": "FAT. LOJA",
-      "acao": "Caixa: \"Tem um chocolate na promoção — aproveita?\" — faltam R$ 11.859."
+      "acao": "Caixa: \"Tem um chocolate aqui que tá na promoção — aproveita?\" — faltam R$ 11.859."
     },
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Atendente: \"Fica muito melhor com queijo derretido — quer adicionar?\" — faltam 128 extras."
+      "acao": "Atendente: \"Fica muito melhor com queijo derretido — quer adicionar?\" — meta pela metade."
     },
     {
       "acelerador": "EXTRAS",
@@ -378,7 +378,7 @@
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Atendente: \"Uma porção de fritas vai bem com esse prato — posso incluir?\" — faltam 171 alaminutas."
+      "acao": "Atendente: \"Uma porção de fritas vai bem com esse prato — posso incluir?\" — faltam 171 alamitutas."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
@@ -386,15 +386,15 @@
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Atendente: \"O pão de queijo saiu agora do forno — no combo com café sai bem mais em conta, vai querer?\" — faltam 106 combos."
+      "acao": "Atendente: \"No combo com café sai bem mais em conta — vai querer?\" — faltam 106 combos."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Frentista: \"Na V-Power o cashback no app é bem maior — aproveita?\" — faltam 78.061 litros."
+      "acao": "Frentista: \"Completo o tanque? Com o cashback a diferença é pequena\" — faltam 78.061 litros."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Frentista: \"A V-Power limpa, protege e melhora o desempenho do veículo — posso colocar?\" — faltam 2,9 p.p."
+      "acao": "Frentista: \"A V-Power limpa, protege e melhora o desempenho — posso colocar?\" — faltam 2,9 p.p."
     },
     {
       "acelerador": "PA",
