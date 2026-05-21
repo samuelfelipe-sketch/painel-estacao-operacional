@@ -22,12 +22,15 @@ Toda ação para loja ou pista deve incluir a frase exata que o funcionário dev
 ### 4a. CTA comercial: gerar desejo antes de fazer a pergunta
 **Este é o ponto mais importante dos scripts.** A frase não pode ser só uma pergunta direta — precisa primeiro criar uma imagem mental ou despertar desejo, depois fechar com a pergunta. A ordem é: **imagem/benefício → pergunta**.
 
-- ❌ Errado (direto demais, sem desejo): `"Quer queijo?"` / `"Coloco um ovo?"` / `"Quer V-Power?"`
-- ✅ Certo (gera desejo, depois pergunta): `"Fica muito melhor com queijo derretido — quer adicionar?"` / `"Um ovinho frito por cima deixa a alaminuta completa — coloco?"` / `"V-Power limpa o motor enquanto abastece — posso colocar?"`
+- ❌ Errado (pergunta direta, sem desejo): `"Quer queijo?"` / `"Posso colocar V-Power?"`
+- ❌ Evitar (pergunta passiva de permissão): `"Quer adicionar?"` / `"Posso incluir?"`
+- ✅ Certo (benefício consultivo + pergunta gatilho): `"Esse bife fica incrível com queijo derretido — já experimentou assim?"` / `"A V-Power limpa e protege o motor — faz esse upgrade hoje?"`
 
-**Padrão de construção do script:**
-1. Descreve o benefício ou cria a imagem sensorial do produto
-2. Faz a pergunta de fechamento curta e direta
+**Padrão de construção do script (3 partes):**
+1. Benefício consultivo — descreve a experiência como um amigo recomendando, não como pitch de venda
+2. Pergunta gatilho — convida o cliente a se imaginar fazendo a escolha, sem pedir permissão
+   - BOM: "já experimentou assim?" / "faz esse upgrade hoje?" / "aproveita essa combinação?"
+   - EVITAR: "posso colocar?" / "quer adicionar?" / "aproveita?" (passivo demais ou fechamento direto)
 
 Scripts validados por produto:
 - Queijo no bife: *"Fica muito melhor com queijo derretido por cima — quer adicionar?"*
