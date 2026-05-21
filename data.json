@@ -365,40 +365,36 @@
   },
   "acoes": [
     {
-      "acelerador": "EXTRAS",
-      "acao": "Orienta o atendente no pedido: 'Fica muito melhor com queijo derretido — quer adicionar?' / 'Um ovinho frito por cima deixa a alaminuta completa — quer?' Faltam 128 extras — cada uma conta."
-    },
-    {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Orienta o atendente na manhã e à tarde: 'O combo Farroupilha já vem com café incluído e sai bem mais em conta — vai querer?' Faltam 471 combos — é o maior gap."
+      "acao": "Orienta o atendente no café da manhã e tarde: 'O Farroupilha é pão com queijo e mortadela, já vem com café — sai bem mais em conta no combo, vai querer?' — faltam 471 combos pra meta."
     },
     {
-      "acelerador": "ALAMINUTA",
-      "acao": "Foca na alaminuta de tarde (fora do pico): orienta o atendente a sugerir quando o cliente chega indeciso. 'Uma alaminuta quentinha com um ovinho frito por cima deixa completa — quer?' Faltam 171."
-    },
-    {
-      "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Orienta o atendente na manhã/tarde: 'O pão saiu agora do forno e tá quentinho — o combo com café sai bem mais em conta, vai querer?' Faltam 106 combos — tá pertinho da meta."
+      "acelerador": "EXTRAS",
+      "acao": "Reforça no início de cada turno com o atendente: 'Fica muito melhor com queijo derretido — quer adicionar?' no bife; 'Uma polentinha frita deixa o prato completo — coloco?' na alaminuta — faltam 128 extras."
     },
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Reforça o ciclo completo: atendente oferece extras no pedido + caixa oferece bomboniere no fechamento (chocolate + chiclete/bala). Cada extra impacta direto no ticket — tá em 50% da meta."
+      "acao": "Orienta o caixa no fechamento: 'Tem um chocolate aqui que tá na promoção — aproveita?' — sempre junto com chiclete ou bala — gap de R$ 11.859 ainda tá aberto."
     },
     {
-      "acelerador": "FAT. LOJA",
-      "acao": "Bora fechar os R$ 11.859 faltantes combinando extras + combos + bomboniere. O ritmo tá em 98% — faltam só R$ 383/dia. Reforça scripts de atendente e caixa nos turnos."
+      "acelerador": "COMBO PÃO DE QUEIJO",
+      "acao": "Orienta o atendente quando cliente pede café ou pão de queijo avulso: 'O pão saiu agora do forno — no combo com café sai bem mais em conta, vai querer?' — faltam 106 combos."
+    },
+    {
+      "acelerador": "ALAMINUTA",
+      "acao": "Posiciona cavalete na entrada no horário de almoço com destaque de alaminuta; orienta o atendente a sugerir: 'Uma porção de fritas vai bem com esse prato — posso incluir?' — faltam 171 pratos."
     },
     {
       "acelerador": "MIX V-POWER",
-      "acao": "Orienta o frentista antes de abastecer: 'A V-Power limpa o motor enquanto abastece — e o cashback no app é bem maior — posso colocar?' Faltam 2,9 p.p. — pressiona só mais um pouquinho."
+      "acao": "Orienta o frentista antes de iniciar abastecimento: 'A V-Power limpa, protege e melhora o desempenho — posso colocar?' ou 'Na V-Power o cashback no app é bem maior — aproveita?' — faltam 2.9 p.p. na meta."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Orienta o frentista a sugerir completar o tanque: 'Completa o tanque? Recupera a diferença no cashback do app.' Faltam R$ 78.061 — tá em 90%, consegue fechar."
+      "acao": "Orienta o frentista a abordar clientes com frota: 'O senhor tem frota? Posso pegar um contato pro time comercial da gente?' — gera leads e fideliza — faltam 78.061 litros no mês."
     },
     {
       "acelerador": "PA",
-      "acao": "Orienta o frentista: abrir o capô durante o abastecimento e verificar óleo. 'Posso dar uma olhada no óleo enquanto abastece?' Faltam R$ 3.100 — tá pertinho."
+      "acao": "Orienta o frentista: abrir capô durante abastecimento e sugerir: 'Sabia que a gente faz troca de óleo aqui?' — diferencial que vende — faltam R$ 3.100 pra fechar a meta."
     }
   ]
 }
