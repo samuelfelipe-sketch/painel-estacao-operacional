@@ -186,7 +186,7 @@ async function gerarAcoes(aceleradores) {
   prompt += '[{"acelerador":"NOME EXATO","acao":"frase"}]';
 
   var resp = await claudePost({
-    model: 'claude-haiku-4-5',
+    model: 'claude-sonnet-4-5',
     max_tokens: 1024,
     messages: [{ role: 'user', content: prompt }]
   });
