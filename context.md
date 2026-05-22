@@ -38,7 +38,7 @@ Scripts validados por produto:
 - Fritas na alaminuta: *"Uma porção de fritas vai bem com esse prato — posso incluir?"*
 - Polenta frita na alaminuta: *"Uma polentinha frita do lado deixa o prato completo — coloco?"*
 - Bomboniere (caixa): *"Tem um chocolate aqui que tá na promoção — aproveita?"*
-- Combo Farroupilha: *"O combo já vem com o café incluído e sai bem mais em conta — vai querer?"*
+- Combo Farroupilha: *"O combo já vem com o café incluído e sai bem mais em conta — quer aproveitar?"*
 - V-Power: *"A V-Power limpa, protege e melhora o desempenho do motor — quer aproveitar hoje?"*
 - Arla: *"Enquanto está aqui, já aproveita e completa o tanquinho de Arla?"*
 - App/cashback: *"Com o app você ganha cashback em tudo aqui — tem o aplicativo?"*
@@ -158,7 +158,7 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 - **Quem converte:** o atendente no momento do pedido — não o caixa, não o visual sozinho
 - **Cavalete na entrada:** posicionar nos horários de café da manhã e tarde — não durante o almoço
 - Registrar **sempre o código correto** do combo para medir performance
-- Script para o atendente: "O Farroupilha é pão com queijo e mortadela, já vem com o café — sai bem mais em conta no combo, vai querer?"
+- Script para o atendente: "O Farroupilha é pão com queijo e mortadela, já vem com o café — sai bem mais em conta no combo, quer aproveitar?"
 
 ### COMBO PÃO DE QUEIJO
 - **Produto:** pão de queijo + café — o pão de queijo é o **item mais vendido de food** da loja, qualidade e aceitação comprovadas
@@ -169,7 +169,7 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 - **Quem converte:** o atendente no momento do pedido
 - **Cavalete na entrada:** posicionar nos horários de café da manhã e tarde — não durante o almoço
 - Registrar **sempre o código correto** do combo para medir performance
-- Script: "O pão de queijo saiu agora do forno — no combo com café sai bem mais em conta, vai querer?"
+- Script: "O pão de queijo saiu agora do forno — no combo com café sai bem mais em conta, quer aproveitar?"
 
 ### REFEIÇÕES / ALAMINUTA
 - **Pico:** horário de almoço — alaminuta, hambúrguer, strogonoff, outros pratos
@@ -179,12 +179,12 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 
 ### EXTRAS
 - **Momento certo:** no pedido, não na finalização — a compra por impulso acontece ali
-- **Extra mais vendido:** queijo no bife, cebola no bife, fritas, polenta frita
-- **Atenção:** a alaminuta já inclui ovo na receita — não oferecer ovo como extra; os extras corretos são fritas, polenta frita ou salada
+- **Foco principal:** queijo e cebola adicionais no bife — são os extras mais vendidos e de maior impacto no ticket
+- **Atenção:** a alaminuta já inclui ovo na receita — não oferecer ovo como extra
 - **Consistência:** varia muito por turno/pessoa — o gerente deve reforçar o script no início de cada turno
-- Script por situação (sempre: benefício/imagem → pergunta de fechamento):
-  - Bife de gado/frango: "Fica muito melhor com queijo derretido — quer adicionar?" / "Uma cebola caramelizada deixa o bife no outro nível — coloco?"
-  - Alaminuta: "Uma porção de fritas vai bem com esse prato — posso incluir?" / "Uma polentinha frita do lado deixa o prato completo — coloco?"
+- Script por situação (benefício consultivo → pergunta gatilho):
+  - Bife de gado/frango: "Esse bife fica incrível com queijo derretido por cima — já experimentou assim?" / "Uma cebola caramelizada deixa o bife no outro nível — quer adicionar?"
+  - Alaminuta: "Uma porção de fritas vai bem com esse prato — posso incluir?"
   - Fechamento do caixa: "Tem um chocolate aqui que tá na promoção — aproveita?" + chiclete ou bala
 
 ---
@@ -195,10 +195,10 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 - **Como converter:** mencionar os três benefícios do produto (limpa, protege, melhora desempenho) — é o argumento técnico mais forte
 - **Argumento de custo-benefício:** cashback no app do Sapatão é sempre maior na V-Power do que na comum
 - **Objeções comuns:** "é mais caro" ou "sempre abasteço comum" — responder com cashback e/ou benefício do produto
-- Scripts para frentistas (sempre: benefício/imagem → pergunta):
-  - "A V-Power limpa, protege e melhora o desempenho do seu carro — posso colocar?"
-  - "Na V-Power o cashback no app é bem maior do que na comum — aproveita?"
-  - Para quem hesita: "A diferença no valor você recupera no cashback — fica mais caro não."
+- Scripts para frentistas (benefício consultivo → pergunta gatilho + cashback):
+  - "A V-Power limpa, protege e melhora o desempenho — quer aproveitar hoje? Se usar o app do Sapatão ainda ganha cashback."
+  - Para quem hesita: "A diferença no valor você recupera no cashback do app — fica mais caro não."
+- **CRÍTICO:** sempre mencionar o cashback do app do Sapatão como argumento de custo-benefício
 
 ### CICLO OTTO (GASOLINA)
 - **Foco:** aumentar volume de litros abastecidos — NÃO é o indicador de mix V-Power (que tem seção própria)
@@ -224,13 +224,14 @@ Ações de ticket médio devem focar em UM dos dois momentos por vez — não mi
 - Script para caixa (quando cliente veio da pista): "Já completou o tanquinho de Arla enquanto estava na pista?"
 
 ### PA (PRODUTOS AUTOMOTIVOS)
-- **Abordagem mais poderosa na pista:** abrir o capô e verificar o nível de óleo durante o abastecimento
+- **Dois conversores principais — revezar entre eles:**
+  1. **Frentista na pista:** abrir o capô e verificar o nível de óleo durante o abastecimento — gera venda de óleo e troca
+  2. **Caixa na loja:** oferecer perfume automotivo no fechamento — item de impulso, fácil de sugerir
 - **Serviço diferencial:** divulgar que a gente faz troca de óleo — gera demanda ativa
-- **Na loja:** estética automotiva e perfumes para carro são os principais itens
 - **Sazonalidade:** dias de chuva são oportunidade para oferecer palhetas de para-brisa
 - **Perfil de cliente:** motorista de passeio e caminhoneiro; comercial está trabalhando frota para convênio de troca
-- **Frentista como consultor:** identificar clientes com oportunidade de troca de óleo e fazer a sugestão na pista
-- Scripts: "Posso dar uma olhada no óleo enquanto abastece?" / "Sabia que a gente faz troca de óleo aqui?"
+- Scripts frentista: "Posso dar uma olhada no óleo enquanto abastece? É rapidinho." / "Sabia que a gente faz troca de óleo aqui?"
+- Scripts caixa: "Tem um perfume automotivo aqui que é muito bom — quer dar uma olhada?" / "Esse perfume de carro tá fazendo muito sucesso — aproveita?"
 
 ### SHELLBOX %
 - **Perfil:** maioria dos clientes já tem o app — foco é na ativação, não no download
