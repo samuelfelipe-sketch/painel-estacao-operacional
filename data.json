@@ -366,7 +366,7 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Caixa: \"Temos uma promoção de chocolate agora — aproveita pra complementar?\" — faltam R$ 12.344."
+      "acao": "Caixa: \"Tem um chocolate aqui que tá na promoção — aproveita?\" — faltam R$ 398/dia."
     },
     {
       "acelerador": "EXTRAS",
@@ -374,7 +374,7 @@
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Atendente: \"A alaminuta sai rapidinho e é perfeita pra quem tem pressa — quer aproveitar?\" — faltam 175 pratos."
+      "acao": "Atendente: \"A alaminuta tá saindo quentinha agora — quer aproveitar?\" — faltam 175 pratos."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
