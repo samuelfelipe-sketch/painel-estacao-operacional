@@ -366,7 +366,7 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Caixa: \"Tem um chocolate aqui que tá na promoção — aproveita?\" — faltam R$ 398/dia."
+      "acao": "Caixa: \"Tem um chocolate aqui que tá na promoção — aproveita?\" — faltam R$ 3.200 no ticket médio."
     },
     {
       "acelerador": "EXTRAS",
@@ -374,7 +374,7 @@
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Atendente: \"A alaminuta tá saindo quentinha agora — quer aproveitar?\" — faltam 175 pratos."
+      "acao": "Atendente: \"A alaminuta com polentinha frita do lado deixa o prato completo — coloco?\" — faltam 175 alamitunas."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
@@ -386,7 +386,7 @@
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Frentista: \"Completo o tanque? Com o cashback do app a diferença é pequena — quer aproveitar?\" — faltam 81.267 litros."
+      "acao": "Frentista: \"Completo o tanque? Com o cashback do app a diferença é pequena e você sai tranquilo — aproveita?\" — faltam 81.267 litros."
     },
     {
       "acelerador": "MIX V-POWER",
@@ -394,7 +394,11 @@
     },
     {
       "acelerador": "PA",
-      "acao": "Frentista: \"Posso dar uma olhada no óleo enquanto abastece? É rapidinho.\" — faltam R$ 3.514."
+      "acao": "Caixa: \"Esse perfume automotivo tá fazendo muito sucesso — aproveita?\" — faltam R$ 3.514."
+    },
+    {
+      "acelerador": "FAT. LOJA",
+      "acao": "Caixa: \"Temos uma promoção de chocolate agora — aproveita pra complementar?\" — faltam R$ 12.344."
     }
   ]
 }
