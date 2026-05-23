@@ -77,14 +77,23 @@
   .bloco-atencao .acoes-bloco-titulo  { background: #fef9c3; color: #92400e; }
   .acoes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
   .acoes-grid-atencao { grid-template-columns: repeat(5, 1fr); }
-  .acao-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; border-top: 3px solid #ef4444; }
+  .acao-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; border-top: 3px solid #ef4444; display: flex; flex-direction: column; gap: 0; }
   .acao-card.amarelo-borda { border-top-color: #f59e0b; }
   .acao-card.vermelho-borda { border-top-color: #ef4444; }
   .acao-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .acao-canal { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #1a1a1a; }
   .acao-pct { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
   .acao-gap { font-size: 10px; color: #999; margin-bottom: 8px; }
-  .acao-text { font-size: 12px; color: #333; line-height: 1.5; border-left: 2px solid #e0e0d8; padding-left: 8px; }
+  .acao-text { font-size: 12px; color: #333; line-height: 1.5; border-left: 2px solid #e0e0d8; padding-left: 8px; margin-bottom: 0; }
+  /* Camadas novas — só aparecem quando o campo existe no data.json */
+  .acao-meta { margin-top: 8px; font-size: 11px; font-weight: 600; color: #1e40af; background: #eff6ff; border-radius: 5px; padding: 5px 8px; line-height: 1.4; }
+  .acao-alternativo { margin-top: 7px; font-size: 11px; color: #555; background: #f8f8f4; border-radius: 5px; padding: 5px 8px; line-height: 1.4; }
+  .acao-alternativo::before { content: "↩ "; font-weight: 700; color: #888; }
+  .acao-objecao { margin-top: 7px; font-size: 11px; color: #78350f; background: #fffbeb; border-left: 2px solid #f59e0b; padding: 5px 8px; border-radius: 0 5px 5px 0; line-height: 1.4; }
+  .acao-gerencial { margin-top: 7px; font-size: 11px; color: #1a3a2a; background: #f0fdf4; border-left: 2px solid #16a34a; padding: 5px 8px; border-radius: 0 5px 5px 0; line-height: 1.4; font-weight: 600; }
+  .acao-gerencial::before { content: "👔 "; }
+  .acao-validacao { margin-top: 7px; font-size: 10px; color: #aaa; padding-top: 6px; border-top: 1px solid #f0f0ea; line-height: 1.4; }
+  .acao-validacao::before { content: "✓ amanhã: "; font-weight: 600; color: #ccc; }
 
   /* FOOTER */
   .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e0e0d8; display: flex; justify-content: space-between; font-size: 11px; color: #aaa; }
@@ -214,31 +223,49 @@ fetch('data.json?v=' + Date.now())
     // ─── AÇÕES SUGERIDAS (geradas pelo Claude via data.json)
     const acoesIA = data.acoes || [];
 
-    // Monta mapa acelerador → ação gerada
-    const acoesGeradas = {};
-    acoesIA.forEach(a => { acoesGeradas[a.acelerador] = a.acao; });
+    // Monta mapa acelerador → objeto completo da ação (backward compatible)
+    const acoesMap = {};
+    acoesIA.forEach(a => { acoesMap[a.acelerador] = a; });
 
     // Aceleradores abaixo da meta que têm ação gerada
     const comAcoes = aceleradores
-      .filter(a => a.pct_proj != null && a.pct_proj < 1.0 && acoesGeradas[a.acelerador])
+      .filter(a => a.pct_proj != null && a.pct_proj < 1.0 && acoesMap[a.acelerador])
       .sort((a, b) => a.pct_proj - b.pct_proj);
 
-    const criticos = comAcoes.filter(a => a.pct_proj < 0.90);
-    const atencao  = comAcoes.filter(a => a.pct_proj >= 0.90);
+    // Usa severidade do objeto se disponível; senão deriva do pct_proj
+    const getSev = (acelerador, pct) => {
+      const obj = acoesMap[acelerador];
+      if (obj && obj.severidade) return obj.severidade;
+      return pct < 0.90 ? 'VERMELHO' : 'AMARELO';
+    };
+
+    const criticos = comAcoes.filter(a => getSev(a.acelerador, a.pct_proj) === 'VERMELHO');
+    const atencao  = comAcoes.filter(a => getSev(a.acelerador, a.pct_proj) !== 'VERMELHO');
 
     function renderAcaoCard(a) {
-      const bCls = badgeClass(a.pct_proj);
-      const borderCls = a.pct_proj < 0.90 ? 'vermelho-borda' : 'amarelo-borda';
+      const obj = acoesMap[a.acelerador];
+      const sev = getSev(a.acelerador, a.pct_proj);
+      const bCls = sev === 'VERMELHO' ? 'badge-vermelho' : 'badge-amarelo';
+      const borderCls = sev === 'VERMELHO' ? 'vermelho-borda' : 'amarelo-borda';
       const projFmt = a.is_pct ? fmtNum(a.projecao,1)+'%' : a.is_currency ? fmtBRL(a.projecao) : fmtNum(a.projecao);
       const metaFmt = a.is_pct ? fmtNum(a.meta,1)+'%'     : a.is_currency ? fmtBRL(a.meta)     : fmtNum(a.meta);
       const gap = a.projecao && a.meta ? `proj. ${projFmt} vs meta ${metaFmt}` : '';
+
+      // Camadas novas (só renderiza se o campo existir no objeto)
+      const metaOp   = obj.meta_operacional   ? `<div class="acao-meta">📊 ${obj.meta_operacional}</div>` : '';
+      const altScript = obj.script_alternativo ? `<div class="acao-alternativo">${obj.script_alternativo}</div>` : '';
+      const objecao  = obj.objecao            ? `<div class="acao-objecao">💬 ${obj.objecao}</div>` : '';
+      const gerencial = obj.acao_gerencial     ? `<div class="acao-gerencial">${obj.acao_gerencial}</div>` : '';
+      const validacao = obj.validacao          ? `<div class="acao-validacao">${obj.validacao}</div>` : '';
+
       return `<div class="acao-card ${borderCls}">
         <div class="acao-header">
           <span class="acao-canal">${a.acelerador}</span>
           <span class="acao-pct ${bCls}">${fmtPct(a.pct_proj)}</span>
         </div>
         ${gap ? `<div class="acao-gap">${gap}</div>` : ''}
-        <div class="acao-text">${acoesGeradas[a.acelerador]}</div>
+        <div class="acao-text">${obj.acao}</div>
+        ${metaOp}${altScript}${objecao}${gerencial}${validacao}
       </div>`;
     }
 
