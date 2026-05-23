@@ -366,35 +366,35 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Caixa: \"Temos uma promoção de chocolate agora — aproveita pra complementar?\" — faltam extras e bomboniere."
+      "acao": "Caixa: \"Tem um chocolate aqui que tá na promoção — aproveita pra complementar?\" — faltam 50% da meta."
     },
     {
       "acelerador": "EXTRAS",
       "acao": "Atendente: \"Esse bife fica incrível com queijo derretido — já experimentou assim?\" — faltam 113 extras."
     },
     {
+      "acelerador": "ALAMINUTA",
+      "acao": "Atendente: \"A alaminuta sai rapidinho e vem completa — aproveita pro almoço?\" — faltam 183 alaminutas."
+    },
+    {
       "acelerador": "COMBO FARROUPILHA",
-      "acao": "Atendente: \"O Farroupilha já vem com café e sai bem mais em conta — quer aproveitar?\" — faltam 437 combos."
+      "acao": "Atendente: \"O Farroupilha já vem com café incluído e sai bem mais em conta — quer aproveitar?\" — faltam 437 combos."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Atendente: \"O pão de queijo saiu agora — no combo com café sai mais em conta, quer aproveitar?\" — faltam 107 combos."
-    },
-    {
-      "acelerador": "ALAMINUTA",
-      "acao": "Atendente: \"A alaminuta tá saindo rapidinho agora — aproveita essa combinação?\" — faltam 183 alamnutas."
-    },
-    {
-      "acelerador": "MIX V-POWER",
-      "acao": "Frentista: \"A V-Power limpa, protege e melhora o desempenho — quer aproveitar hoje? Com o app ainda ganha cashback.\" — faltam 3.1 p.p."
+      "acao": "Atendente: \"O pão de queijo no combo com café sai bem mais em conta — quer aproveitar?\" — faltam 107 combos."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Frentista: \"Completo o tanque? Com cashback do app a diferença é pequena — quer aproveitar?\" — faltam 79.385 litros."
+      "acao": "Frentista: \"Completo o tanque? Com o cashback do app a diferença é pequena — quer aproveitar?\" — faltam 79.385 litros."
+    },
+    {
+      "acelerador": "MIX V-POWER",
+      "acao": "Frentista: \"A V-Power limpa, protege e melhora o desempenho — quer aproveitar hoje? Com o app do Sapatão ainda ganha cashback.\" — faltam 3,1 p.p."
     },
     {
       "acelerador": "PA",
-      "acao": "Frentista: \"Posso dar uma olhada no óleo enquanto abastece? É rapidinho.\" — faltam R$ 1.347."
+      "acao": "Frentista: \"Posso dar uma olhada no óleo enquanto abastece? É rapidinho e evita problema depois.\" — faltam R$ 1.347."
     }
   ]
 }
