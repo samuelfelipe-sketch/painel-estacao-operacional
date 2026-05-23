@@ -360,6 +360,8 @@ async function gerarAcoes(aceleradores) {
   }
 
   var text = resp.content[0].text.trim();
+  // Remove markdown code fences that Claude sometimes adds (```json ... ```)
+  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
   var match = text.match(/\[[\s\S]*\]/);
   if (!match) throw new Error('Claude nao retornou JSON: ' + text.substring(0,200));
   var acoes = JSON.parse(match[0]);
