@@ -366,93 +366,93 @@
   "acoes": [
     {
       "acelerador": "FAT. LOJA",
-      "severidade": "VERDE",
-      "acao": "Orienta o caixa: 'Tem um chocolate aqui que tá na promoção — aproveita?' — sempre chocolate + chiclete ou bala juntos.",
-      "meta_operacional": "Faltam R$ 656/dia — aproximadamente 1 chocolate a mais a cada 3 atendimentos no caixa.",
-      "script_alternativo": "Para cliente habitual: 'Uma bala ou chiclete pra viagem? Fica aqui no balcão.'",
-      "objecao": "Se ouvir 'só isso mesmo': 'Tranquilo — então uma bala pra viagem, fica fácil de levar.'",
-      "acao_gerencial": "Auditar visual do balcão — bomboniere no campo de visão direto no fechamento.",
-      "validacao": "Contar itens de bomboniere vendidos amanhã por turno."
+      "severidade": "AMARELO",
+      "acao": "Tem um chocolate aqui que tá na promoção — aproveita pra complementar?",
+      "meta_operacional": "Faltam R$ 5.903 — uns 8 chocolates a mais por dia nos próximos 9 dias fecha o gap.",
+      "script_alternativo": "Uma bala ou chiclete pra viagem? Fica aqui no balcão.",
+      "objecao": "Se ouvir 'só isso mesmo': Tranquilo — então uma bala pra viagem, fica fácil de levar.",
+      "acao_gerencial": "Audita visual do balcão — bomboniere no campo de visão direto no fechamento.",
+      "validacao": "Bomboniere no fechamento em 8 de cada 10 atendimentos."
     },
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "severidade": "AMARELO",
-      "acao": "Orienta o atendente: 'Esse bife fica incrível com queijo derretido — já experimentou assim?' — no momento do pedido.",
-      "meta_operacional": "Faltam extras — focar em queijo e cebola caramelizada no bife, 1 extra a cada 2 pedidos.",
-      "script_alternativo": "Para cliente indeciso: 'Uma cebola caramelizada deixa o bife no outro nível — coloco?'",
-      "objecao": "Se ouvir 'fica muito caro': 'O queijo costuma ser o que mais agrada — só ele já transforma o prato. Coloco?'",
-      "acao_gerencial": "Briefing 3 min pré-turno com script — observar quem converte mais.",
-      "validacao": "Contar extras vendidos amanhã por atendente."
+      "severidade": "VERMELHO",
+      "acao": "Esse bife fica incrível com queijo derretido — já experimentou assim?",
+      "meta_operacional": "Foco no atendente — oferecer queijo ou cebola em cada pedido de bife nos próximos 9 dias.",
+      "script_alternativo": "Uma cebola caramelizada deixa o bife no outro nível — coloco?",
+      "objecao": "Se ouvir 'é muito caro': Entendo — o queijo costuma ser o que mais agrada, só ele já transforma. Coloco?",
+      "acao_gerencial": "Identifica atendente com maior conversão de extras — usa como referência no briefing.",
+      "validacao": "Extra oferecido em 7 de cada 10 pedidos de bife."
     },
     {
       "acelerador": "EXTRAS",
-      "severidade": "AMARELO",
-      "acao": "Orienta o atendente: 'Fica muito melhor com queijo derretido por cima — quer adicionar?' — sempre no momento do pedido.",
-      "meta_operacional": "Faltam 13 extras/dia — aproximadamente 1 extra a cada 4 pedidos de bife ou alaminuta.",
-      "script_alternativo": "Para alaminuta: 'Uma porção de fritas vai bem com esse prato — posso incluir?'",
-      "objecao": "Se ouvir 'vai engordar': 'Tranquilo — então uma cebola caramelizada que não pesa e dá um sabor incrível, coloco?'",
-      "acao_gerencial": "Identificar atendente com maior conversão de extras — usar como referência no briefing.",
-      "validacao": "Contar extras de queijo e cebola vendidos amanhã."
+      "severidade": "VERMELHO",
+      "acao": "Esse bife fica incrível com queijo derretido por cima — quer adicionar?",
+      "meta_operacional": "Faltam 113 extras — uns 13 por dia, ou 1 extra a cada 3 pedidos de bife nos próximos 9 dias.",
+      "script_alternativo": "Uma cebola caramelizada deixa o bife no outro nível — coloco?",
+      "objecao": "Se ouvir 'vou engordar': Tranquilo — cebola caramelizada não pesa e dá sabor incrível, coloco?",
+      "acao_gerencial": "Briefing de 3 min no início do turno — script de queijo e cebola.",
+      "validacao": "13 extras vendidos por dia nos próximos 9 dias."
     },
     {
       "acelerador": "ALAMINUTA",
       "severidade": "AMARELO",
-      "acao": "Orienta o atendente: 'A alaminuta tá saindo rapidinho hoje — quer aproveitar?' — sugerir para cliente indeciso no horário de almoço.",
-      "meta_operacional": "Faltam 20 alaminiutas/dia — aproximadamente 1 alaminuta a mais a cada 6 atendimentos de almoço.",
-      "script_alternativo": "Para tarde: 'Alaminuta sai o dia todo — aproveita que o salão tá tranquilo agora.'",
-      "objecao": "Se ouvir 'não conheço': 'É o prato mais pedido aqui — carne, ovo, arroz e feijão, sai rapidinho. Vale experimentar.'",
-      "acao_gerencial": "Reforçar com atendente que alaminuta pode ser oferecida fora do pico.",
-      "validacao": "Contar alaminiutas vendidas amanhã por turno."
+      "acao": "A alaminuta sai rapidinho e é bem completa — quer aproveitar?",
+      "meta_operacional": "Faltam 183 alaminuta — umas 20 por dia, ou sugerir em 1 a cada 4 atendimentos indecisos.",
+      "script_alternativo": "Alaminuta hoje? Sai rápido e você já sai satisfeito.",
+      "objecao": "Se ouvir 'demora muito': A alaminuta sai em 10 minutos — é o prato mais rápido do cardápio.",
+      "acao_gerencial": "Reforça com atendente — cliente indeciso perto do almoço = sugestão ativa de alaminuta.",
+      "validacao": "20 alaminuta vendidas por dia nos próximos 9 dias."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
       "severidade": "VERMELHO",
-      "acao": "Orienta o atendente: 'O Farroupilha é pão com queijo e mortadela, já vem com o café —",
-      "meta_operacional": "Faltam 49 Farroupilhas/dia — 1 combo a cada 2 pedidos de café manhã/tarde por atendente.",
-      "script_alternativo": "Para cliente habitual: 'Hoje o Farroupilha tá fresquinho — vai no combo de novo?'",
-      "objecao": "Se ouvir 'só quero café': 'Tranquilo. Mas no combo o pão sai por bem pouco a mais — quer aproveitar?'",
-      "acao_gerencial": "Cavalete do combo posicionado manhã e tarde — nunca no almoço.",
-      "validacao": "Contar combos Farroupilha registrados com código correto amanhã."
+      "acao": "O Farroupilha é pão com queijo e mortadela, já vem com café — sai bem mais em conta, quer aproveitar?",
+      "meta_operacional": "Faltam 437 combos — uns 49 por dia, ou oferecer em cada pedido de café de manhã e tarde.",
+      "script_alternativo": "Hoje o Farroupilha tá fresquinho — vai no combo de novo?",
+      "objecao": "Se ouvir 'não conheço': É o clássico gaúcho — pão com queijo e mortadela bolonha + café, vale experimentar.",
+      "acao_gerencial": "Cavalete do Farroupilha na entrada durante manhã e tarde — nunca no almoço.",
+      "validacao": "Combo oferecido em 9 de cada 10 pedidos de café."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
       "severidade": "AMARELO",
-      "acao": "Orienta o atendente: 'O pão de queijo saiu agora do forno — no combo com café sai bem mais em conta, quer aproveitar?'",
-      "meta_operacional": "Faltam 12 combos/dia — 1 combo a cada 3 pedidos de café manhã/tarde por atendente.",
-      "script_alternativo": "Para cliente habitual: 'Pão de queijo no combo de novo? Saiu fresco há pouco.'",
-      "objecao": "Se ouvir 'já comi': 'Tranquilo — guarda pra depois. No combo já sai por bem menos.'",
-      "acao_gerencial": "Confirmar frescor do pão durante o dia — fornadas regulares em manhã e tarde.",
-      "validacao": "Contar combos pão de queijo registrados corretamente amanhã."
+      "acao": "O pão de queijo saiu agora do forno — no combo com café sai bem mais em conta, quer aproveitar?",
+      "meta_operacional": "Faltam 107 combos — uns 12 por dia, ou oferecer em cada pedido de café de manhã e tarde.",
+      "script_alternativo": "Pão de queijo no combo de novo? Saiu fresco há pouco.",
+      "objecao": "Se ouvir 'só quero café': Show — mas no combo com pão de queijo sai por pouco a mais, fresquinho.",
+      "acao_gerencial": "Confirma frescor do pão durante o dia — fornadas regulares em manhã e tarde.",
+      "validacao": "12 combos vendidos por dia nos próximos 9 dias."
     },
     {
       "acelerador": "CICLO OTTO",
       "severidade": "VERMELHO",
-      "acao": "Orienta o frentista: 'Completo o tanque? Com o cashback do app a diferença é pequena e você sai com tanque cheio.'",
-      "meta_operacional": "Faltam 8.821 litros/dia — aproximadamente completar tanque em 1 a cada 3 abastecimentos por frentista.",
-      "script_alternativo": "Para cliente habitual com carro empresarial: 'O senhor tem frota? A gente tem condição especial — posso pegar um contato?'",
-      "objecao": "Se ouvir 'só R$ 50 mesmo': 'Tranquilo. Mas se quiser, completo — sai bem mais em conta por litro do que parar de novo.'",
-      "acao_gerencial": "Garantir serviços adicionais ativos — calibrador e água disponíveis em todos os turnos.",
-      "validacao": "Contar abastecimentos com tanque completo amanhã por turno."
+      "acao": "Completo o tanque? Com o cashback do app a diferença é pequena e você sai com tanque cheio.",
+      "meta_operacional": "Faltam 79.385 litros — uns 8.821 por dia, ou completar tanque em 1 a cada 3 abastecimentos.",
+      "script_alternativo": "Posso calibrar os pneus enquanto abastece? É rápido e sem custo.",
+      "objecao": "Se ouvir 'só R$ 50 mesmo': Tranquilo — mas completar sai mais em conta por litro do que parar de novo.",
+      "acao_gerencial": "Garante serviços adicionais ativos — calibrador e água disponíveis no turno.",
+      "validacao": "Tanque completo oferecido em 8 de cada 10 abastecimentos."
     },
     {
       "acelerador": "MIX V-POWER",
-      "severidade": "AMARELO",
-      "acao": "Orienta o frentista: 'A V-Power limpa, protege e melhora o desempenho — quer aproveitar hoje? Com o app do Sapatão ainda ganha cashback maior.'",
-      "meta_operacional": "Faltam 3.1 p.p. — aproximadamente 1 V-Power a cada 10 abastecimentos de gasolina por frentista.",
-      "script_alternativo": "Para cliente recorrente: 'Hoje tem cashback turbinado na V-Power pelo app — vale a pena nessa.'",
-      "objecao": "Se ouvir 'é muito caro': 'A diferença você recupera no cashback do app — no fim sai quase igual e o motor ganha. Coloco?'",
-      "acao_gerencial": "Briefing pré-turno 3 min com script — alocar frentista de maior conversão no pico 17h-19h.",
-      "validacao": "Contar abastecimentos V-Power amanhã por frentista."
+      "severidade": "VERMELHO",
+      "acao": "A V-Power limpa, protege e melhora o desempenho — quer aproveitar hoje? Com o app do Sapatão ainda ganha cashback maior nessa.",
+      "meta_operacional": "Faltam 3.1 p.p. — oferecer V-Power em todo abastecimento, converter 1 a cada 8 nos próximos 9 dias.",
+      "script_alternativo": "Hoje tem cashback turbinado na V-Power pelo app — vale a pena nessa.",
+      "objecao": "Se ouvir 'é mais caro': A diferença você recupera no cashback do app — no fim sai quase igual e o motor ganha.",
+      "acao_gerencial": "Briefing de 3 min pré-turno — script V-Power + argumento cashback app.",
+      "validacao": "V-Power oferecida em 10 de cada 10 abastecimentos de gasolina."
     },
     {
       "acelerador": "PA",
-      "severidade": "VERDE",
-      "acao": "Orienta o frentista: 'Posso dar uma olhada no óleo enquanto abastece? É rapidinho.' — abrir capô durante abastecimento.",
-      "meta_operacional": "Faltam R$ 150/dia — aproximadamente 1 produto automotivo a cada 15 atendimentos na pista.",
-      "script_alternativo": "Caixa no fechamento: 'Tem um perfume automotivo aqui que tá fazendo muito sucesso — quer dar uma olhada?'",
-      "objecao": "Se ouvir 'já troquei': 'Tranquilo. Posso só conferir o nível pra garantir? Em 30 segundos.'",
-      "acao_gerencial": "Revezar: hoje foco em óleo na pista, amanhã perfume no caixa.",
-      "validacao": "Contar produtos automotivos vendidos amanhã por conversor."
+      "severidade": "AMARELO",
+      "acao": "Posso dar uma olhada no óleo enquanto abastece? É rapidinho.",
+      "meta_operacional": "Faltam R$ 1.347 — uns R$ 150 por dia, ou 1 PA a cada 12 abastecimentos nos próximos 9 dias.",
+      "script_alternativo": "Tem um perfume automotivo aqui que tá fazendo muito sucesso — quer dar uma olhada?",
+      "objecao": "Se ouvir 'já troquei': Tranquilo — posso só conferir o nível pra garantir? Em 30 segundos.",
+      "acao_gerencial": "Reveza ação — hoje frentista foca em óleo, amanhã caixa oferece perfume no fechamento.",
+      "validacao": "Nível de óleo verificado em 1 de cada 3 abastecimentos."
     }
   ]
 }
