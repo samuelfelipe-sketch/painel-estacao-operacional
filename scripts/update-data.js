@@ -92,41 +92,13 @@ function claudePost(body) {
 }
 
 // ─── Severidade por indicador ────────────────────────────────────────────────
-// tipo 'pp'  = gap em pontos percentuais (meta% - realizado%)
-// tipo 'pct' = gap relativo em % (projeção - realizado / projeção)
-const SEVERITY_CONFIG = {
-  'MIX V-POWER':         { tipo: 'pp',  verde: 1.5, amarelo: 4.0 },
-  'ARLA':                { tipo: 'pct', verde: 8,   amarelo: 20  },
-  'EXTRAS':              { tipo: 'pct', verde: 5,   amarelo: 15  },
-  'FAT. LOJA':           { tipo: 'pct', verde: 5,   amarelo: 15  },
-  'COMBO FARROUPILHA':   { tipo: 'pct', verde: 8,   amarelo: 20  },
-  'COMBO PAO DE QUEIJO': { tipo: 'pct', verde: 8,   amarelo: 20  },
-  'PA':                  { tipo: 'pct', verde: 8,   amarelo: 20  },
-  'SHELLBOX %':          { tipo: 'pp',  verde: 2,   amarelo: 5   },
-  'APP NOVOS':           { tipo: 'pct', verde: 10,  amarelo: 25  },
-  'PIX':                 { tipo: 'pp',  verde: 3,   amarelo: 7   },
-  'CICLO OTTO':          { tipo: 'pct', verde: 3,   amarelo: 10  },
-};
-
+// CRÍTICO  (VERMELHO): pct_proj < 90%   — abaixo de 89% da meta
+// ATENÇÃO  (AMARELO) : 90% ≤ pct_proj < 100% — entre 90% e 99% da meta
 function calcularSeveridade(acelerador, a) {
-  var cfg = SEVERITY_CONFIG[normalize(acelerador)] || SEVERITY_CONFIG[acelerador];
-  // tenta match normalizado
-  if (!cfg) {
-    for (var k of Object.keys(SEVERITY_CONFIG)) {
-      if (normalize(k) === normalize(acelerador)) { cfg = SEVERITY_CONFIG[k]; break; }
-    }
-  }
-  if (!cfg) return 'AMARELO';
-  var gap;
-  if (cfg.tipo === 'pp') {
-    gap = (a.meta != null && a.realizado != null) ? (a.meta - a.realizado) : (1 - (a.pct_proj || 0.85)) * 100;
-  } else {
-    gap = a.pct_proj != null ? (1 - a.pct_proj) * 100 : 15;
-  }
-  if (gap <= 0)            return 'VERDE';
-  if (gap <= cfg.verde)    return 'VERDE';
-  if (gap <= cfg.amarelo)  return 'AMARELO';
-  return 'VERMELHO';
+  var pct = a.pct_proj != null ? a.pct_proj : 0;
+  if (pct < 0.90) return 'VERMELHO';
+  if (pct < 1.00) return 'AMARELO';
+  return 'VERDE';
 }
 
 // ─── Treinamento completo da IA ──────────────────────────────────────────────

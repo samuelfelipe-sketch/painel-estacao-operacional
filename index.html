@@ -157,9 +157,11 @@
 const fmtBRL = v => v == null ? '—' : 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
 const fmtNum = (v, d=0) => v == null ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
 const fmtPct = v => v == null ? '—' : Math.round(v * 100) + '%';
-const badgeClass = p => p == null ? '' : p >= 1 ? 'badge-verde' : p >= 0.9 ? 'badge-amarelo' : 'badge-vermelho';
-const cardClass  = p => p >= 1 ? 'verde' : p >= 0.9 ? 'amarelo' : 'vermelho';
-const fillClass  = p => p >= 1 ? 'fill-verde' : p >= 0.9 ? 'fill-amarelo' : 'fill-vermelho';
+// Crítico (vermelho): pct_proj < 90%  — abaixo de 89% da meta
+// Atenção (amarelo) : 90% ≤ pct_proj < 100% — entre 90% e 99% da meta
+const badgeClass = p => p == null ? '' : p >= 1.0 ? 'badge-verde' : p >= 0.90 ? 'badge-amarelo' : 'badge-vermelho';
+const cardClass  = p => p >= 1.0 ? 'verde' : p >= 0.90 ? 'amarelo' : 'vermelho';
+const fillClass  = p => p >= 1.0 ? 'fill-verde' : p >= 0.90 ? 'fill-amarelo' : 'fill-vermelho';
 const fmtMetrica  = c => c.is_qtd ? fmtNum(c.metrica/1000,1)+' mil L' : fmtBRL(c.metrica);
 const fmtProjecao = c => c.is_qtd ? fmtNum(c.projecao/1000,1)+' mil L' : fmtBRL(c.projecao);
 const fmtMeta     = c => c.is_qtd ? fmtNum(c.meta/1000,1)+' mil L' : fmtBRL(c.meta);
@@ -232,7 +234,8 @@ fetch('data.json?v=' + Date.now())
       .filter(a => a.pct_proj != null && a.pct_proj < 1.0 && acoesMap[a.acelerador])
       .sort((a, b) => a.pct_proj - b.pct_proj);
 
-    // Usa severidade do objeto se disponível; senão deriva do pct_proj
+    // Usa severidade do objeto (calculada no update-data.js); senão deriva do pct_proj
+    // Crítico (VERMELHO): < 90%  |  Atenção (AMARELO): 90–99%
     const getSev = (acelerador, pct) => {
       const obj = acoesMap[acelerador];
       if (obj && obj.severidade) return obj.severidade;
