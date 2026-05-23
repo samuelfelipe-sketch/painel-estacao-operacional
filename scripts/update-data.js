@@ -351,7 +351,7 @@ async function gerarAcoes(aceleradores) {
 
   var resp = await claudePost({
     model: 'claude-sonnet-4-5',
-    max_tokens: 2000,
+    max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }]
   });
 
