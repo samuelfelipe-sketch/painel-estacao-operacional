@@ -366,7 +366,7 @@
   "acoes": [
     {
       "acelerador": "TICKET MÉDIO LOJA",
-      "acao": "Caixa: \"Tem um chocolate aqui que tá na promoção — aproveita pra complementar?\" — faltam 50% da meta."
+      "acao": "Caixa: \"Tem um chocolate aqui que tá na promoção — aproveita?\" — faltam R$ 5.903."
     },
     {
       "acelerador": "EXTRAS",
@@ -374,19 +374,19 @@
     },
     {
       "acelerador": "ALAMINUTA",
-      "acao": "Atendente: \"A alaminuta sai rapidinho e vem completa — aproveita pro almoço?\" — faltam 183 alaminutas."
+      "acao": "Atendente: \"A alaminuta é rapidinha e perfeita pro horário — quer aproveitar?\" — faltam 183 pratos."
     },
     {
-      "acelerador": "COMBO FARROUPILHA",
-      "acao": "Atendente: \"O Farroupilha já vem com café incluído e sai bem mais em conta — quer aproveitar?\" — faltam 437 combos."
+      "acalerador": "COMBO FARROUPILHA",
+      "acao": "Atendente: \"O Farroupilha já vem com café e sai bem mais em conta — quer aproveitar?\" — faltam 437 combos."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "acao": "Atendente: \"O pão de queijo no combo com café sai bem mais em conta — quer aproveitar?\" — faltam 107 combos."
+      "acao": "Atendente: \"O pão de queijo com café sai bem mais em conta no combo — quer aproveitar?\" — faltam 107 combos."
     },
     {
       "acelerador": "CICLO OTTO",
-      "acao": "Frentista: \"Completo o tanque? Com o cashback do app a diferença é pequena — quer aproveitar?\" — faltam 79.385 litros."
+      "acao": "Frentista: \"Completo o tanque? Com o cashback do app a diferença é pequena.\" — faltam 79.385 litros."
     },
     {
       "acelerador": "MIX V-POWER",
@@ -394,7 +394,7 @@
     },
     {
       "acelerador": "PA",
-      "acao": "Frentista: \"Posso dar uma olhada no óleo enquanto abastece? É rapidinho e evita problema depois.\" — faltam R$ 1.347."
+      "acao": "Frentista: \"Posso dar uma olhada no óleo enquanto abastece? É rapidinho.\" — faltam R$ 1.347."
     }
   ]
 }
