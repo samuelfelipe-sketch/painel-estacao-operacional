@@ -10,56 +10,56 @@
     {
       "canal": "OTTO",
       "is_qtd": true,
-      "metrica": 501762.61,
-      "projecao": 676288.73,
+      "metrica": 518795.36,
+      "projecao": 670110.67,
       "meta": 758258,
-      "pct_proj": 0.8919,
-      "mix_vpower": 23.6,
-      "dia_atual": 23,
+      "pct_proj": 0.8838,
+      "mix_vpower": 23.7,
+      "dia_atual": 24,
       "dias_no_mes": 31
     },
     {
       "canal": "DIESEL",
       "is_qtd": true,
-      "metrica": 456745.46,
-      "projecao": 615613.45,
+      "metrica": 462795.47,
+      "projecao": 597777.48,
       "meta": 564761,
-      "pct_proj": 1.09,
+      "pct_proj": 1.0585,
       "mix_vpower": null,
-      "dia_atual": 23,
+      "dia_atual": 24,
       "dias_no_mes": 31
     },
     {
       "canal": "LOJA",
       "is_qtd": false,
-      "metrica": 426942.4,
-      "projecao": 575444.1,
+      "metrica": 443524.19,
+      "projecao": 572885.41,
       "meta": 578267,
-      "pct_proj": 0.9951,
+      "pct_proj": 0.9907,
       "mix_vpower": null,
-      "dia_atual": 23,
+      "dia_atual": 24,
       "dias_no_mes": 31
     },
     {
       "canal": "ARLA",
       "is_qtd": true,
-      "metrica": 7020.6,
-      "projecao": 9462.55,
+      "metrica": 7081.61,
+      "projecao": 9147.09,
       "meta": 8900,
-      "pct_proj": 1.0632,
+      "pct_proj": 1.0278,
       "mix_vpower": null,
-      "dia_atual": 23,
+      "dia_atual": 24,
       "dias_no_mes": 31
     },
     {
       "canal": "PROD. AUTO",
       "is_qtd": false,
-      "metrica": 55793.47,
-      "projecao": 75199.89,
+      "metrica": 56903.42,
+      "projecao": 73500.25,
       "meta": 76065,
-      "pct_proj": 0.9886,
+      "pct_proj": 0.9663,
       "mix_vpower": null,
-      "dia_atual": 23,
+      "dia_atual": 24,
       "dias_no_mes": 31
     }
   ],
@@ -67,175 +67,175 @@
     {
       "grupo": "loja",
       "acelerador": "FAT. LOJA",
-      "realizado": 426942.4,
+      "realizado": 443524.19,
       "meta": 578267,
       "meta_dia": 18653.77,
-      "media_dia": 18562.71,
-      "projecao": 575444.1,
-      "pct_proj": 0.9951,
+      "media_dia": 18480.17,
+      "projecao": 572885.41,
+      "pct_proj": 0.9907,
       "is_currency": true,
       "is_pct": false
     },
     {
       "grupo": "loja",
       "acelerador": "CLIENTES",
-      "realizado": 17919,
+      "realizado": 18556,
       "meta": 23239,
       "meta_dia": 749.65,
-      "media_dia": 779.1,
-      "projecao": 24152,
-      "pct_proj": 1.0393,
+      "media_dia": 773.2,
+      "projecao": 23968,
+      "pct_proj": 1.0314,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "loja",
       "acelerador": "TICKET MÉDIO LOJA",
-      "realizado": 23.83,
+      "realizado": 23.9,
       "meta": 47,
       "meta_dia": null,
       "media_dia": null,
       "projecao": null,
-      "pct_proj": 0.5069,
+      "pct_proj": 0.5086,
       "is_currency": true,
       "is_pct": false
     },
     {
       "grupo": "loja",
       "acelerador": "REFEIÇÕES",
-      "realizado": 2436,
+      "realizado": 2522,
       "meta": 3150,
       "meta_dia": 101.61,
-      "media_dia": 105.9,
-      "projecao": 3283,
-      "pct_proj": 1.0422,
+      "media_dia": 105.1,
+      "projecao": 3258,
+      "pct_proj": 1.0343,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "loja",
       "acelerador": "EXTRAS",
-      "realizado": 552,
+      "realizado": 575,
       "meta": 850,
       "meta_dia": 27.42,
       "media_dia": 24,
-      "projecao": 744,
-      "pct_proj": 0.8753,
+      "projecao": 743,
+      "pct_proj": 0.8741,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "loja",
       "acelerador": "ALAMINUTA",
-      "realizado": 1776,
+      "realizado": 1850,
       "meta": 2550,
       "meta_dia": 82.26,
-      "media_dia": 77.2,
-      "projecao": 2394,
-      "pct_proj": 0.9388,
+      "media_dia": 77.1,
+      "projecao": 2390,
+      "pct_proj": 0.9373,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "loja",
       "acelerador": "COMBO FARROUPILHA",
-      "realizado": 533,
+      "realizado": 553,
       "meta": 1150,
       "meta_dia": 37.1,
-      "media_dia": 23.2,
-      "projecao": 718,
-      "pct_proj": 0.6243,
+      "media_dia": 23,
+      "projecao": 714,
+      "pct_proj": 0.6209,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "loja",
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "realizado": 741,
+      "realizado": 762,
       "meta": 1100,
       "meta_dia": 35.48,
-      "media_dia": 32.2,
-      "projecao": 999,
-      "pct_proj": 0.9082,
+      "media_dia": 31.8,
+      "projecao": 984,
+      "pct_proj": 0.8945,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "postos",
       "acelerador": "CICLO OTTO",
-      "realizado": 501763,
+      "realizado": 518795,
       "meta": 758258,
       "meta_dia": 24459.94,
-      "media_dia": 21815.8,
-      "projecao": 676288.73,
-      "pct_proj": 0.8919,
+      "media_dia": 21616.5,
+      "projecao": 670110.67,
+      "pct_proj": 0.8838,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "postos",
       "acelerador": "MIX V-POWER",
-      "realizado": 23.6,
+      "realizado": 23.67,
       "meta": 26.577803333430044,
       "meta_dia": null,
       "media_dia": null,
       "projecao": null,
-      "pct_proj": 0.888,
+      "pct_proj": 0.8906,
       "is_currency": false,
       "is_pct": true
     },
     {
       "grupo": "postos",
       "acelerador": "CICLO DIESEL",
-      "realizado": 456745,
+      "realizado": 462795,
       "meta": 564761,
       "meta_dia": 18218.1,
-      "media_dia": 19858.5,
-      "projecao": 615613.45,
-      "pct_proj": 1.09,
+      "media_dia": 19283.1,
+      "projecao": 597777.48,
+      "pct_proj": 1.0585,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "postos",
       "acelerador": "ARLA",
-      "realizado": 7021,
+      "realizado": 7082,
       "meta": 8900,
       "meta_dia": 287.1,
-      "media_dia": 305.2,
-      "projecao": 9462.55,
-      "pct_proj": 1.0632,
+      "media_dia": 295.1,
+      "projecao": 9147.09,
+      "pct_proj": 1.0278,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "postos",
       "acelerador": "PA",
-      "realizado": 55793.47,
+      "realizado": 56903.42,
       "meta": 76065,
       "meta_dia": 2453.71,
-      "media_dia": 2425.8,
-      "projecao": 75199.89,
-      "pct_proj": 0.9886,
+      "media_dia": 2370.98,
+      "projecao": 73500.25,
+      "pct_proj": 0.9663,
       "is_currency": true,
       "is_pct": false
     },
     {
       "grupo": "postos",
       "acelerador": "LAVAGEM - CUPONS",
-      "realizado": 1297,
+      "realizado": 1349,
       "meta": 1650,
       "meta_dia": 53.23,
-      "media_dia": 56.4,
-      "projecao": 1748,
-      "pct_proj": 1.0594,
+      "media_dia": 56.2,
+      "projecao": 1742,
+      "pct_proj": 1.0558,
       "is_currency": false,
       "is_pct": false
     },
     {
       "grupo": "postos",
       "acelerador": "PIX",
-      "realizado": 9.94,
+      "realizado": 10,
       "meta": null,
       "meta_dia": null,
       "media_dia": null,
@@ -247,7 +247,7 @@
     {
       "grupo": "postos",
       "acelerador": "SHELLBOX %",
-      "realizado": 16.1,
+      "realizado": 16.49,
       "meta": null,
       "meta_dia": null,
       "media_dia": null,
@@ -259,11 +259,11 @@
     {
       "grupo": "fidelidade",
       "acelerador": "APP NOVOS",
-      "realizado": 178,
+      "realizado": 188,
       "meta": null,
       "meta_dia": null,
-      "media_dia": 7.7,
-      "projecao": 240,
+      "media_dia": 7.8,
+      "projecao": 243,
       "pct_proj": null,
       "is_currency": false,
       "is_pct": false
@@ -273,44 +273,44 @@
     {
       "rank": 1,
       "produto": "GASOLINA COMUM",
-      "qtd": 363112.287,
-      "faturamento": 2325486.1854
+      "qtd": 374974.916,
+      "faturamento": 2403528.11041
     },
     {
       "rank": 2,
       "produto": "DIESEL S-10 ADITIVADO V-POWER",
-      "qtd": 323477.923,
-      "faturamento": 2089034.41781
+      "qtd": 327816.553,
+      "faturamento": 2116769.00281
     },
     {
       "rank": 3,
       "produto": "DIESEL S-500",
-      "qtd": 133267.538,
-      "faturamento": 848901.10779
+      "qtd": 134978.915,
+      "faturamento": 859719.56572
     },
     {
       "rank": 4,
       "produto": "GASOLINA ADITIVADA V-POWER",
-      "qtd": 112142.322,
-      "faturamento": 749381.68698
+      "qtd": 116261.315,
+      "faturamento": 777669.52875
     },
     {
       "rank": 5,
       "produto": "ETANOL COMUM",
-      "qtd": 14740.079,
-      "faturamento": 70129.68851
+      "qtd": 15356.009,
+      "faturamento": 73011.58021
     },
     {
       "rank": 6,
       "produto": "GÁS NATURAL VEICULAR",
-      "qtd": 11767.919,
-      "faturamento": 54597.53806
+      "qtd": 12203.119,
+      "faturamento": 56664.73806
     },
     {
       "rank": 7,
       "produto": "REFEIÇÃO ALAMINUTA GADO",
-      "qtd": 1216,
-      "faturamento": 39443.43
+      "qtd": 1270,
+      "faturamento": 41220.03
     },
     {
       "rank": 8,
@@ -320,27 +320,27 @@
     },
     {
       "rank": 9,
-      "produto": "ARLA",
-      "qtd": 5473.02,
-      "faturamento": 17535.2348
+      "produto": "SALGADO PÃO DE QUEIJO SELECT 90GR (4)",
+      "qtd": 3195,
+      "faturamento": 18152.58
     },
     {
       "rank": 10,
-      "produto": "SALGADO PÃO DE QUEIJO SELECT 90GR (4)",
-      "qtd": 3085,
-      "faturamento": 17527.13
+      "produto": "ARLA",
+      "qtd": 5534.03,
+      "faturamento": 17720.6577
     },
     {
       "rank": 11,
       "produto": "CIGARRO DUNHILL CARLTON RED BOX",
-      "qtd": 993,
-      "faturamento": 12412.14
+      "qtd": 1023,
+      "faturamento": 12787.14
     },
     {
       "rank": 12,
       "produto": "CAFÉ COADO",
-      "qtd": 2081,
-      "faturamento": 12183.01
+      "qtd": 2137,
+      "faturamento": 12513.41
     }
   ],
   "unidades": [
@@ -368,91 +368,91 @@
       "acelerador": "FAT. LOJA",
       "severidade": "AMARELO",
       "acao": "Tem um chocolate aqui que tá na promoção — aproveita pra complementar?",
-      "meta_operacional": "Faltam R$ 2.823 — cerca de R$ 403/dia nos próximos 7 dias",
+      "meta_operacional": "Faltam R$ 769/dia — ~1 chocolate a mais a cada 3 atendimentos no caixa",
       "script_alternativo": "Uma bala ou chiclete pra viagem? Fica aqui no balcão.",
-      "objecao": "Se ouvir 'tô de passagem': Tranquilo — então uma bala pra viagem, fica fácil de levar.",
-      "acao_gerencial": "Reforça no briefing: caixa oferece chocolate + bala em todo fechamento.",
-      "validacao": "Auditar 20 atendimentos — quantos tiveram oferta ativa."
+      "objecao": "Se ouvir 'estou de passagem': Tranquilo — então uma bala pra viagem, fica fácil de levar.",
+      "acao_gerencial": "Auditar balcão — bomboniere no campo de visão direto do caixa.",
+      "validacao": "Conferir venda de bomboniere por turno amanhã."
     },
     {
       "acelerador": "TICKET MÉDIO LOJA",
       "severidade": "VERMELHO",
       "acao": "Esse bife fica incrível com queijo derretido — já experimentou assim?",
-      "meta_operacional": "Focar extras no pedido: queijo ou cebola em 1 a cada 3 bifes",
+      "meta_operacional": "Cada extra adicional fecha ~R$ 6 no ticket — foco total no atendente",
       "script_alternativo": "Uma cebola caramelizada deixa o bife no outro nível — coloco?",
-      "objecao": "Se ouvir 'é caro': Entendo. O queijo é o que mais agrada — só ele já transforma. Coloco?",
-      "acao_gerencial": "Orienta atendente: extras no pedido, não no fechamento — ali converte mais.",
-      "validacao": "Medir quantos extras saíram hoje vs ontem."
+      "objecao": "Se ouvir 'é muito caro': Entendo. O queijo costuma ser o que mais agrada — só ele já transforma o prato. Coloco?",
+      "acao_gerencial": "Briefing 3 min no turno: script de extras antes de registrar pedido.",
+      "validacao": "Auditar % de pedidos com extras por atendente amanhã."
     },
     {
       "acelerador": "EXTRAS",
       "severidade": "VERMELHO",
-      "acao": "Esse bife fica incrível com queijo derretido por cima — quer adicionar?",
-      "meta_operacional": "Faltam 106 extras — cerca de 15/dia: 1 extra a cada 4 pedidos de bife",
-      "script_alternativo": "Uma cebola caramelizada deixa o bife no outro nível — coloco?",
-      "objecao": "Se ouvir 'engorda muito': Tranquilo — então cebola caramelizada, não pesa e dá sabor incrível.",
-      "acao_gerencial": "Briefing 3 min no turno: reforça script de queijo e cebola no pedido.",
-      "validacao": "Conferir quantos extras no sistema ao fim do turno."
+      "acao": "Aproveita essa combinação — queijo e cebola caramelizada juntos? Sai bem mais em conta no combinado.",
+      "meta_operacional": "Faltam 107 extras — ~15 por dia (~1 a cada 4 pedidos de bife)",
+      "script_alternativo": "Fica muito melhor com queijo derretido por cima — quer adicionar?",
+      "objecao": "Se ouvir 'vai engordar': Tranquilo — então uma cebola caramelizada que não pesa e dá sabor incrível, coloco?",
+      "acao_gerencial": "Identificar atendente com maior conversão de extras — usar como referência no briefing.",
+      "validacao": "Comparar venda de extras por atendente amanhã."
     },
     {
       "acelerador": "ALAMINUTA",
       "severidade": "AMARELO",
-      "acao": "A alaminuta tá quentinha e sai rapidinho — quer aproveitar hoje?",
-      "meta_operacional": "Faltam 156 alamiutas — cerca de 22/dia nos próximos 7 dias",
-      "script_alternativo": "Alaminuta de novo hoje? Sai fresquinha e rápida.",
-      "objecao": "Se ouvir 'demora muito': Sai em 8 minutos — mais rápido que muita coisa aqui.",
-      "acao_gerencial": "Reforça: atendente sugere alaminuta pra cliente indeciso perto do almoço.",
-      "validacao": "Contar quantas alamiutas saíram no almoço de hoje."
+      "acao": "A alaminuta é rápida e saborosa — quer aproveitar hoje?",
+      "meta_operacional": "Faltam 160 alamiutas — ~23/dia (~1 a cada 3 atendimentos de almoço)",
+      "script_alternativo": "Sabia que você pode vir de tarde também? Alaminuta disponível o dia todo.",
+      "objecao": "Se ouvir 'demora muito': É o prato mais rápido aqui — sai em menos de 10 minutos.",
+      "acao_gerencial": "Reforçar no briefing: oferta ativa da alaminuta antes do cliente escolher.",
+      "validacao": "Conferir quantidade de alamiutas vendidas por turno amanhã."
     },
     {
       "acelerador": "COMBO FARROUPILHA",
       "severidade": "VERMELHO",
       "acao": "O Farroupilha é pão com queijo e mortadela, já vem com o café — sai bem mais em conta no combo, quer aproveitar?",
-      "meta_operacional": "Faltam 432 combos — cerca de 62/dia: oferecer em todo pedido de café manhã/tarde",
+      "meta_operacional": "Faltam 436 combos — ~62/dia (~1 a cada 2 pedidos de café manhã/tarde)",
       "script_alternativo": "Hoje o Farroupilha tá fresquinho — vai no combo de novo?",
-      "objecao": "Se ouvir 'não conheço': É o clássico gaúcho — pão com queijo e mortadela + café. Vale experimentar.",
-      "acao_gerencial": "Cavalete do Farroupilha na entrada de manhã e tarde — não no almoço.",
-      "validacao": "Verificar quantos Farroupilhas registrados com código correto do combo."
+      "objecao": "Se ouvir 'não conheço': É o clássico gaúcho — pão cacetinho com queijo e mortadela bolonha + café. Vale experimentar.",
+      "acao_gerencial": "Garantir cavalete do combo em manhã e tarde — nunca no almoço.",
+      "validacao": "Verificar registro correto do código do combo por turno."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
-      "severidade": "AMARELO",
+      "severidade": "VERMELHO",
       "acao": "O pão de queijo saiu agora do forno — no combo com café sai bem mais em conta, quer aproveitar?",
-      "meta_operacional": "Faltam 101 combos — cerca de 14/dia: oferecer em todo pedido de café manhã/tarde",
+      "meta_operacional": "Faltam 116 combos — ~17/dia (~1 a cada 3 pedidos de café manhã/tarde)",
       "script_alternativo": "Pão de queijo no combo de novo? Saiu fresco há pouco.",
-      "objecao": "Se ouvir 'só quero café': Show. Mas no combo com pão de queijo sai pouco a mais — fresquinho.",
-      "acao_gerencial": "Confirma fornadas regulares — pão frio não converte. Cavalete manhã e tarde.",
-      "validacao": "Verificar quantos combos registrados com código correto hoje."
+      "objecao": "Se ouvir 'só quero café': Show. Mas no combo com pão de queijo sai por pouco a mais — fresquinho.",
+      "acao_gerencial": "Confirmar fornadas regulares — produto frio derruba venda. Cavalete manhã/tarde.",
+      "validacao": "Auditar frescor do pão de queijo em 3 momentos amanhã."
     },
     {
       "acelerador": "CICLO OTTO",
       "severidade": "VERMELHO",
       "acao": "Completo o tanque? Com o cashback do app a diferença é pequena e você sai com tanque cheio.",
-      "meta_operacional": "Faltam 81.969 litros — cerca de 11.710 litros/dia: completar tanque em mais abastecimentos",
+      "meta_operacional": "Faltam 88.147 litros — ~12.592/dia (~completar tanque em 1 a cada 3 abastecimentos)",
       "script_alternativo": "Posso calibrar os pneus enquanto abastece? É rápido e sem custo.",
-      "objecao": "Se ouvir 'só R$ 50 mesmo': Tranquilo. Mas completar sai mais em conta por litro — fica a dica.",
-      "acao_gerencial": "Frentistas focam em completar tanque — usar argumento do cashback no app.",
-      "validacao": "Contar quantos abastecimentos completaram tanque hoje vs média."
+      "objecao": "Se ouvir 'só 50 reais': Tranquilo. Mas se quiser, completo — sai bem mais em conta por litro do que parar de novo.",
+      "acao_gerencial": "Garantir calibrador ativo e frentista oferecendo serviços adicionais no turno.",
+      "validacao": "Medir % de tanques completos vs valor fixo amanhã."
     },
     {
       "acelerador": "MIX V-POWER",
       "severidade": "VERMELHO",
       "acao": "A V-Power limpa, protege e melhora o desempenho — quer aproveitar hoje? Com o app do Sapatão ainda ganha cashback maior nessa.",
-      "meta_operacional": "Faltam 3.0 p.p. — oferecer V-Power ANTES de encaixar o bico em todo abastecimento",
+      "meta_operacional": "Faltam 2.9 p.p. — ~1 V-Power a cada 10 abastecimentos por frentista",
       "script_alternativo": "Hoje tem cashback turbinado na V-Power pelo app — vale a pena nessa.",
-      "objecao": "Se ouvir 'é mais caro': A diferença você recupera no cashback do app — sai quase igual e o motor ganha.",
-      "acao_gerencial": "Briefing 3 min: script V-Power + mencionar SEMPRE cashback maior no app.",
-      "validacao": "Auditar 15 abastecimentos — quantos tiveram oferta ativa de V-Power."
+      "objecao": "Se ouvir 'é muito caro': A diferença você recupera no cashback do app — no fim sai quase igual e o motor ganha. Coloco?",
+      "acao_gerencial": "Briefing 3 min: script V-Power ANTES de encaixar bico. Alocar melhor conversor no pico 17h-19h.",
+      "validacao": "Auditar oferta de V-Power nos primeiros 20 abastecimentos amanhã."
     },
     {
       "acelerador": "PA",
       "severidade": "AMARELO",
       "acao": "Posso dar uma olhada no óleo enquanto abastece? É rapidinho.",
-      "meta_operacional": "Faltam R$ 865 — cerca de R$ 124/dia: verificar óleo em metade dos abastecimentos",
+      "meta_operacional": "Faltam R$ 2.565 — ~R$ 366/dia (~1 produto a cada 8 abastecimentos)",
       "script_alternativo": "Tem um perfume automotivo aqui que tá fazendo muito sucesso — quer dar uma olhada?",
       "objecao": "Se ouvir 'já troquei': Tranquilo. Posso só conferir o nível pra garantir? Em 30 segundos.",
-      "acao_gerencial": "Reveza: turno manhã foco óleo na pista, tarde foco perfume no caixa.",
-      "validacao": "Contar quantas verificações de óleo e ofertas de perfume hoje."
+      "acao_gerencial": "Revezar foco: frentista em óleo hoje, caixa em perfume automotivo amanhã.",
+      "validacao": "Conferir venda de óleo e perfume automotivo por turno."
     }
   ]
 }
