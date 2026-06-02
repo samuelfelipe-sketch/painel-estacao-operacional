@@ -379,62 +379,62 @@
     {
       "acelerador": "REFEIÇÕES",
       "severidade": "AMARELO",
-      "acao": "Orienta o atendente: 'Tá próximo do horário de almoço — a alaminuta sai rapidinho e é uma delícia, quer aproveitar?'",
-      "meta_operacional": "Faltam 9 refeições/dia — 1 alaminuta a cada ~7 atendimentos no pico 11h-14h",
-      "script_alternativo": "Pro cliente que já conhece: 'Alaminuta de novo hoje? Tá fresquinha como sempre.'",
-      "objecao": "Se ouvir 'não tenho tempo': 'Sai em 8 minutos — mais rápido que fast food e muito melhor.'",
-      "acao_gerencial": "Briefing 3 min no pré-turno —Script + tempo de preparo",
-      "validacao": "Conferir quantas refeições saíram até 15h"
+      "acao": "Orienta o atendente: 'O prato do dia tá saindo bastante hoje — quer aproveitar?' — próximo de 11h30 para cliente indeciso.",
+      "meta_operacional": "Faltam 260 refeições — 9 a mais por dia, ou 1 a cada 3 atendimentos no horário de pico do almoço.",
+      "script_alternativo": "Para cliente habitual: 'Hoje vai no prato do dia de novo? Tá saindo bastante.'",
+      "objecao": "Se ouvir 'Tá caro': 'O prato já vem completo — sai mais em conta que montar na hora. Vale experimentar.'",
+      "acao_gerencial": "Briefing 3 min no turno das 11h — reforçar oferta ativa do prato do dia.",
+      "validacao": "Contar refeições vendidas no pico 11h30-13h30 amanhã."
     },
     {
       "acelerador": "EXTRAS",
       "severidade": "VERMELHO",
-      "acao": "Orienta o atendente: 'Esse bife fica incrível com queijo derretido — já experimentou assim?'",
-      "meta_operacional": "Faltam 6 extras/dia — 1 queijo ou cebola a cada ~3 pedidos de bife",
-      "script_alternativo": "Pro cliente recorrente: 'Queijo derretido de novo no bife? Fica perfeito como sempre.'",
-      "objecao": "Se ouvir 'é caro': 'O queijo costuma ser o favorito — só ele já transforma o prato, coloco?'",
-      "acao_gerencial": "Auditar atendente com maior conversão — replicar técnica no briefing",
-      "validacao": "Contar extras vendidos por turno hoje"
+      "acao": "Orienta o atendente: 'Esse bife fica incrível com queijo derretido — já experimentou assim?' — na hora do pedido, antes de fechar.",
+      "meta_operacional": "Faltam 170 extras — 6 por dia, ou 1 queijo/cebola a cada 4 pedidos de bife no almoço.",
+      "script_alternativo": "Se cliente hesitar: 'Uma cebola caramelizada deixa o bife no outro nível — coloco?'",
+      "objecao": "Se ouvir 'Fica caro': 'O queijo é o que mais agrada — só ele já transforma o prato. Coloco só esse?'",
+      "acao_gerencial": "Observar turno do almoço — quem converte mais extras vira referência no próximo briefing.",
+      "validacao": "Contar extras vendidos no turno 11h30-14h amanhã."
     },
     {
       "acelerador": "ALAMINUTA",
       "severidade": "AMARELO",
-      "acao": "Orienta o atendente: 'A alaminuta sai rapidinho e vem bem temperada — quer aproveitar hoje?'",
-      "meta_operacional": "Faltam 7 alaminutas/dia — 1 a cada ~6 atendimentos no horário de almoço",
-      "script_alternativo": "Cliente habitual: 'Alaminuta hoje de novo? Tá no ponto como você gosta.'",
-      "objecao": "Se ouvir 'demora muito': 'Sai em 8 minutos — fresquinha na hora, vale a pena.'",
-      "acao_gerencial": "Confirmar tempo real de preparo — comunicar pro atendente",
-      "validacao": "Medir quantas alaminutas saíram até 14h"
+      "acao": "Orienta o atendente: 'A alaminuta sai rápido e é bem completa — quer aproveitar?' — próximo de 11h45 para cliente com pressa.",
+      "meta_operacional": "Faltam 220 alaminutas — 7 a mais por dia, ou 1 a cada 5 atendimentos no horário do almoço.",
+      "script_alternativo": "Tarde (15h-17h): 'A alaminuta tá disponível agora também — aproveita que o salão tá tranquilo.'",
+      "objecao": "Se ouvir 'Demora muito?': 'Sai em 10 minutos — é o prato mais rápido que a gente tem.'",
+      "acao_gerencial": "Cavalete na entrada no almoço com destaque para alaminuta — comunicação visual reforçada.",
+      "validacao": "Contar alaminutas vendidas 11h30-14h e 15h-17h amanhã."
     },
     {
       "acelerador": "COMBO PÃO DE QUEIJO",
       "severidade": "VERMELHO",
       "acao": "Orienta o atendente: 'O pão de queijo saiu agora do forno — no combo com café sai bem mais em conta, quer aproveitar?'",
-      "meta_operacional": "Faltam 8 combos/dia — 1 a cada ~4 pedidos de café manhã/tarde",
-      "script_alternativo": "Cliente que já conhece: 'Combo de pão de queijo de novo? Saiu fresco há pouco.'",
-      "objecao": "Se ouvir 'só quero café': 'Show. Mas no combo sai por pouco a mais — fresquinho agora.'",
-      "acao_gerencial": "Cavalete na entrada nos horários 6-10h e 15-18h — não no almoço",
-      "validacao": "Contar combos vendidos até 10h e após 15h"
+      "meta_operacional": "Faltam 250 combos — 8 por dia, ou 1 combo a cada 3 pedidos de café nas janelas 6h-10h e 15h-18h.",
+      "script_alternativo": "Dia frio: 'Pão de queijo quentinho com café — combo completo, faz?'",
+      "objecao": "Se ouvir 'Só quero café': 'Show. Mas no combo com pão de queijo sai por pouco a mais — fresquinho.'",
+      "acao_gerencial": "Cavalete na entrada nos horários 6h-10h e 15h-18h — nunca durante almoço.",
+      "validacao": "Contar combos vendidos nas janelas de café amanhã."
     },
     {
       "acelerador": "MIX V-POWER",
       "severidade": "VERMELHO",
-      "acao": "Orienta o frentista: 'A V-Power limpa, protege e melhora o desempenho — quer aproveitar hoje? Com o app do Sapatão ainda ganha cashback maior nessa.'",
-      "meta_operacional": "Faltam 6.5 p.p. — 1 V-Power a cada ~12 abastecimentos por frentista/turno",
-      "script_alternativo": "Cliente recorrente: 'Hoje tem cashback turbinado na V-Power pelo app — vale a pena nessa.'",
-      "objecao": "Se ouvir 'é mais caro': 'A diferença você recupera no cashback do app — no fim sai quase igual e o motor ganha. Coloco?'",
-      "acao_gerencial": "Alocar frentista de maior conversão no pico 17h-19h hoje",
-      "validacao": "Conferir mix V-Power do turno da tarde"
+      "acao": "Orienta o frentista: 'A V-Power limpa, protege e melhora o desempenho — quer aproveitar hoje? Com o app do Sapatão ainda ganha cashback maior.'",
+      "meta_operacional": "Faltam 6.5 p.p. — oferecer V-Power em 1 a cada 10 abastecimentos por frentista no turno.",
+      "script_alternativo": "Para cliente recorrente: 'Hoje tem cashback turbinado na V-Power pelo app — vale a pena nessa.'",
+      "objecao": "Se ouvir 'É caro': 'A diferença você recupera no cashback do app — no fim sai quase igual e o motor ganha. Coloco?'",
+      "acao_gerencial": "Briefing 3 min no início do turno — reforçar argumento de cashback do app.",
+      "validacao": "Medir % de V-Power no turno 7h-13h amanhã."
     },
     {
       "acelerador": "LAVAGEM - CUPONS",
       "severidade": "VERMELHO",
-      "acao": "Orienta o frentista: 'Temos lavagem aqui — o senhor conhece? Tá com 20% de desconto pro primeiro serviço, quer aproveitar?'",
-      "meta_operacional": "Faltam 53 cupons/dia — 1 lavagem a cada ~2 abastecimentos (oferta ativa urgente)",
-      "script_alternativo": "Cliente habitual: 'Faz tempo que não lava o carro aqui — aproveita o desconto de 20% hoje?'",
-      "objecao": "Se ouvir 'não tenho tempo': 'Pode agendar pra sexta ou sábado — já deixa marcado e aproveita o desconto.'",
-      "acao_gerencial": "Banner de lavagem na entrada hoje — garantir visibilidade total",
-      "validacao": "Contar cupons emitidos até fim do dia"
+      "acao": "Orienta o frentista: 'Sexta ou sábado vem lavar o carro aqui? Já deixo o cupom separado pra você.'",
+      "meta_operacional": "Faltam 1.590 cupons — 53 por dia, ou 1 cupom a cada 2 abastecimentos durante toda a operação da pista.",
+      "script_alternativo": "Para cliente habitual: 'Aproveita e já deixa o cupom de lavagem garantido pro fim de semana.'",
+      "objecao": "Se ouvir 'Não preciso agora': 'Fica com o cupom — usa quando quiser, não tem validade curta.'",
+      "acao_gerencial": "Comunicação visual reforçada na pista — banner de lavagem visível nas bombas.",
+      "validacao": "Contar cupons entregues no turno da manhã amanhã."
     }
   ]
 }
