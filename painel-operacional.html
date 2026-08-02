@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Painel ES">
+<meta name="theme-color" content="#1a3a2a">
+<title>Painel Operacional — Estação Sapatão</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='white' width='100' height='100' rx='20'/><text x='50' y='72' font-size='80' font-weight='900' fill='%23e87722' text-anchor='middle' font-family='system-ui,-apple-system,sans-serif'>S</text></svg>" type="image/svg+xml">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='white' width='100' height='100' rx='20'/><text x='50' y='72' font-size='80' font-weight='900' fill='%23e87722' text-anchor='middle' font-family='system-ui,-apple-system,sans-serif'>S</text></svg>" type="image/svg+xml">
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f0; color: #1a1a1a; min-height: 100vh; padding: 24px;
+  }
+
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e0e0d8; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-circle { width: 44px; height: 44px; border-radius: 50%; background: #1a3a2a; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: #fff; }
+  .header-title { font-size: 20px; font-weight: 700; }
+  .header-sub { font-size: 13px; color: #666; margin-top: 2px; }
+  .period-badge { background: #1a3a2a; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .day-indicator { font-size: 12px; color: #888; margin-top: 4px; text-align: right; }
+
+  /* SECTION */
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #888; margin: 24px 0 12px; }
+
+  /* KPI CARDS */
+  .cards-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .kpi-card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e8e8e0; position: relative; overflow: hidden; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .kpi-card.verde::before { background: #22c55e; }
+  .kpi-card.amarelo::before { background: #f59e0b; }
+  .kpi-card.vermelho::before { background: #ef4444; }
+  .kpi-canal { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+  .kpi-unit { font-size: 11px; color: #666; margin-bottom: 10px; }
+  .kpi-pct-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+  .badge-verde { background: #dcfce7; color: #16a34a; }
+  .badge-amarelo { background: #fef9c3; color: #b45309; }
+  .badge-vermelho { background: #fee2e2; color: #dc2626; }
+  .kpi-row { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: 4px; }
+  .kpi-row span:last-child { font-weight: 600; color: #333; }
+  .progress-bar-bg { background: #f0f0ea; border-radius: 4px; height: 5px; margin-top: 10px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 4px; }
+  .fill-verde { background: #22c55e; }
+  .fill-amarelo { background: #f59e0b; }
+  .fill-vermelho { background: #ef4444; }
+
+  /* ACELERADORES TABLE */
+  .acel-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .table-card { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8e8e0; }
+  .table-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .table-sub { font-size: 12px; color: #888; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #888; padding: 6px 8px; border-bottom: 2px solid #f0f0ea; }
+  td { padding: 7px 8px; border-bottom: 1px solid #f5f5f0; color: #333; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  .td-canal { font-weight: 600; color: #1a1a1a; }
+  .pct-badge { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; min-width: 44px; text-align: center; }
+  .num-right { text-align: right; }
+
+  /* AÇÕES SUGERIDAS */
+  .acoes-bloco { margin-bottom: 16px; }
+  .acoes-bloco-titulo {
+    font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 6px; display: inline-block; margin-bottom: 10px;
+  }
+  .bloco-critico .acoes-bloco-titulo  { background: #fee2e2; color: #b91c1c; }
+  .bloco-atencao .acoes-bloco-titulo  { background: #fef9c3; color: #92400e; }
+  .acoes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .acoes-grid-atencao { grid-template-columns: repeat(5, 1fr); }
+  .acao-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #e8e8e0; border-top: 3px solid #ef4444; display: flex; flex-direction: column; gap: 0; }
+  .acao-card.amarelo-borda { border-top-color: #f59e0b; }
+  .acao-card.vermelho-borda { border-top-color: #ef4444; }
+  .acao-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .acao-canal { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #1a1a1a; }
+  .acao-pct { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
+  .acao-gap { font-size: 10px; color: #999; margin-bottom: 8px; }
+  .acao-text { font-size: 12px; color: #333; line-height: 1.5; border-left: 2px solid #e0e0d8; padding-left: 8px; margin-bottom: 0; }
+  /* Camadas novas — só aparecem quando o campo existe no data.json */
+  .acao-meta { margin-top: 8px; font-size: 11px; font-weight: 600; color: #1e40af; background: #eff6ff; border-radius: 5px; padding: 5px 8px; line-height: 1.4; }
+  .acao-alternativo { margin-top: 7px; font-size: 11px; color: #555; background: #f8f8f4; border-radius: 5px; padding: 5px 8px; line-height: 1.4; }
+  .acao-alternativo::before { content: "↩ "; font-weight: 700; color: #888; }
+  .acao-objecao { margin-top: 7px; font-size: 11px; color: #78350f; background: #fffbeb; border-left: 2px solid #f59e0b; padding: 5px 8px; border-radius: 0 5px 5px 0; line-height: 1.4; }
+  .acao-gerencial { margin-top: 7px; font-size: 11px; color: #1a3a2a; background: #f0fdf4; border-left: 2px solid #16a34a; padding: 5px 8px; border-radius: 0 5px 5px 0; line-height: 1.4; font-weight: 600; }
+  .acao-gerencial::before { content: "👔 "; }
+  .acao-validacao { margin-top: 7px; font-size: 10px; color: #aaa; padding-top: 6px; border-top: 1px solid #f0f0ea; line-height: 1.4; }
+  .acao-validacao::before { content: "✓ amanhã: "; font-weight: 600; color: #ccc; }
+
+  /* FOOTER */
+  .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e0e0d8; display: flex; justify-content: space-between; font-size: 11px; color: #aaa; }
+  .footer strong { color: #555; }
+
+  @media (max-width: 1100px) { .acoes-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 900px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } .acel-section, .acoes-grid { grid-template-columns: 1fr; } }
+
+  /* PRINT */
+  @media print {
+    body { background: #fff; padding: 0; }
+    .header { margin-bottom: 16px; padding-bottom: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo-circle">ES</div>
+    <div>
+      <div class="header-title">Painel Operacional</div>
+      <div class="header-sub">Estação Sapatão · Faturamento & Aceleradores</div>
+    </div>
+  </div>
+  <div style="text-align:right">
+    <div class="period-badge">Maio 2026</div>
+    <div class="day-indicator">Dia 16 de 31 · 51,6% do mês</div>
+    <div style="margin-top:8px"><a href="index.html" style="font-size:12px;color:#1a3a2a;font-weight:600;text-decoration:none;border-bottom:1px solid #1a3a2a">📘 Guia de Execução — Roadmap Comercial</a></div>
+  </div>
+</div>
+
+<div class="section-label">Performance por Canal</div>
+<div class="cards-grid" id="kpi-cards"></div>
+
+
+<div class="section-label">Aceleradores</div>
+<div class="acel-section">
+  <div class="table-card">
+    <div class="table-title">Loja</div>
+    <div class="table-sub">Realizados, meta e projeção</div>
+    <table id="table-loja"></table>
+  </div>
+  <div class="table-card">
+    <div class="table-title">Postos</div>
+    <div class="table-sub">Realizados, meta e projeção</div>
+    <table id="table-postos"></table>
+  </div>
+</div>
+
+<div class="section-label">⚡ Ações Sugeridas — Metas Abaixo da Projeção</div>
+<div id="acoes-critico" class="acoes-bloco bloco-critico"></div>
+<div id="acoes-atencao" class="acoes-bloco bloco-atencao"></div>
+
+<div class="footer">
+  <span>Estação Sapatão · dashboard.estacaosapatao.com.br</span>
+  <span>Snapshot <strong>Maio 2026 · Dia 16/31</strong> — atualizado em 17/05/2026</span>
+</div>
+
+<script>
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const fmtBRL = v => v == null ? '—' : 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
+const fmtNum = (v, d=0) => v == null ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
+const fmtPct = v => v == null ? '—' : Math.round(v * 100) + '%';
+// Crítico (vermelho): pct_proj < 90%  — abaixo de 89% da meta
+// Atenção (amarelo) : 90% ≤ pct_proj < 100% — entre 90% e 99% da meta
+const badgeClass = p => p == null ? '' : p >= 1.0 ? 'badge-verde' : p >= 0.90 ? 'badge-amarelo' : 'badge-vermelho';
+const cardClass  = p => p >= 1.0 ? 'verde' : p >= 0.90 ? 'amarelo' : 'vermelho';
+const fillClass  = p => p >= 1.0 ? 'fill-verde' : p >= 0.90 ? 'fill-amarelo' : 'fill-vermelho';
+const fmtMetrica  = c => c.is_qtd ? fmtNum(c.metrica/1000,1)+' mil L' : fmtBRL(c.metrica);
+const fmtProjecao = c => c.is_qtd ? fmtNum(c.projecao/1000,1)+' mil L' : fmtBRL(c.projecao);
+const fmtMeta     = c => c.is_qtd ? fmtNum(c.meta/1000,1)+' mil L' : fmtBRL(c.meta);
+
+// ─── INIT FROM DATA.JSON ─────────────────────────────────────────────────────
+fetch('data.json?v=' + Date.now())
+  .then(r => {
+    if (!r.ok) throw new Error(`Erro ao carregar data.json: ${r.status}`);
+    return r.json();
+  })
+  .then(data => {
+    const { meta, cards, aceleradores, top_produtos: topProdutos } = data;
+
+    // Update header
+    if (meta) {
+      document.querySelector('.period-badge').textContent = meta.periodo;
+      const pct = (meta.dia_atual / meta.dias_no_mes * 100).toFixed(1);
+      document.querySelector('.day-indicator').textContent = `Dia ${meta.dia_atual} de ${meta.dias_no_mes} · ${pct}% do mês`;
+      document.querySelector('.footer span:last-child').textContent = `Snapshot ${meta.periodo} · Dia ${meta.dia_atual}/${meta.dias_no_mes} — atualizado em ${meta.atualizado_em}`;
+    }
+
+    // ─── KPI CARDS
+    document.getElementById('kpi-cards').innerHTML = cards.map(c => {
+      const cls = cardClass(c.pct_proj), bCls = badgeClass(c.pct_proj), fCls = fillClass(c.pct_proj);
+      const w = Math.min(c.pct_proj*100, 100).toFixed(1);
+      const extra = c.mix_vpower ? `<div class="kpi-row"><span>V-Power Mix</span><span>${c.mix_vpower.toFixed(1)}%</span></div>` : '';
+      return `<div class="kpi-card ${cls}">
+        <div class="kpi-canal">${c.canal}</div>
+        <div class="kpi-value">${fmtMetrica(c)}</div>
+        <div class="kpi-unit">realizado · dia ${c.dia_atual||meta.dia_atual}/${c.dias_no_mes||meta.dias_no_mes}</div>
+        <span class="kpi-pct-badge ${bCls}">${fmtPct(c.pct_proj)} da meta</span>
+        <div class="progress-bar-bg"><div class="progress-bar-fill ${fCls}" style="width:${w}%"></div></div>
+        <div class="kpi-row" style="margin-top:8px"><span>Projeção</span><span>${fmtProjecao(c)}</span></div>
+        <div class="kpi-row"><span>Meta</span><span>${fmtMeta(c)}</span></div>
+        ${extra}
+      </div>`;
+    }).join('');
+
+    // ─── ACELERADORES TABLES
+    function buildTable(id, grupo) {
+      const rows = aceleradores.filter(a => a.grupo === grupo);
+      document.getElementById(id).innerHTML = `
+        <thead><tr>
+          <th>Canal</th><th class="num-right">Realizado</th><th class="num-right">Meta</th><th class="num-right">Méd/Dia</th><th style="text-align:center">Proj %</th>
+        </tr></thead>
+        <tbody>${rows.map(r => {
+          const bCls = r.pct_proj != null ? badgeClass(r.pct_proj) : '';
+          const real = r.is_pct ? r.realizado.toFixed(2)+'%' : r.is_currency ? fmtBRL(r.realizado) : fmtNum(r.realizado);
+          const meta = r.meta ? (r.is_currency ? fmtBRL(r.meta) : fmtNum(r.meta)) : '—';
+          const med  = r.media_dia ? (r.is_currency ? fmtBRL(r.media_dia) : fmtNum(r.media_dia,1)) : '—';
+          return `<tr>
+            <td class="td-canal">${r.acelerador}</td>
+            <td class="num-right">${real}</td><td class="num-right">${meta}</td><td class="num-right">${med}</td>
+            <td style="text-align:center"><span class="pct-badge ${bCls}">${r.pct_proj != null ? fmtPct(r.pct_proj) : '—'}</span></td>
+          </tr>`;
+        }).join('')}</tbody>`;
+    }
+    buildTable('table-loja', 'loja');
+    buildTable('table-postos', 'postos');
+
+    // ─── AÇÕES SUGERIDAS (geradas pelo Claude via data.json)
+    const acoesIA = data.acoes || [];
+
+    // Monta mapa acelerador → objeto completo da ação (backward compatible)
+    const acoesMap = {};
+    acoesIA.forEach(a => { acoesMap[a.acelerador] = a; });
+
+    // Aceleradores abaixo da meta que têm ação gerada
+    const comAcoes = aceleradores
+      .filter(a => a.pct_proj != null && a.pct_proj < 1.0 && acoesMap[a.acelerador])
+      .sort((a, b) => a.pct_proj - b.pct_proj);
+
+    // Usa severidade do objeto (calculada no update-data.js); senão deriva do pct_proj
+    // Crítico (VERMELHO): < 90%  |  Atenção (AMARELO): 90–99%
+    const getSev = (acelerador, pct) => {
+      const obj = acoesMap[acelerador];
+      if (obj && obj.severidade) return obj.severidade;
+      return pct < 0.90 ? 'VERMELHO' : 'AMARELO';
+    };
+
+    const criticos = comAcoes.filter(a => getSev(a.acelerador, a.pct_proj) === 'VERMELHO');
+    const atencao  = comAcoes.filter(a => getSev(a.acelerador, a.pct_proj) !== 'VERMELHO');
+
+    function renderAcaoCard(a) {
+      const obj = acoesMap[a.acelerador];
+      const sev = getSev(a.acelerador, a.pct_proj);
+      const bCls = sev === 'VERMELHO' ? 'badge-vermelho' : 'badge-amarelo';
+      const borderCls = sev === 'VERMELHO' ? 'vermelho-borda' : 'amarelo-borda';
+      const projFmt = a.is_pct ? fmtNum(a.projecao,1)+'%' : a.is_currency ? fmtBRL(a.projecao) : fmtNum(a.projecao);
+      const metaFmt = a.is_pct ? fmtNum(a.meta,1)+'%'     : a.is_currency ? fmtBRL(a.meta)     : fmtNum(a.meta);
+      const gap = a.projecao && a.meta ? `proj. ${projFmt} vs meta ${metaFmt}` : '';
+
+      // Camadas novas (só renderiza se o campo existir no objeto)
+      const metaOp   = obj.meta_operacional   ? `<div class="acao-meta">📊 ${obj.meta_operacional}</div>` : '';
+      const altScript = obj.script_alternativo ? `<div class="acao-alternativo">${obj.script_alternativo}</div>` : '';
+      const objecao  = obj.objecao            ? `<div class="acao-objecao">💬 ${obj.objecao}</div>` : '';
+      const gerencial = obj.acao_gerencial     ? `<div class="acao-gerencial">${obj.acao_gerencial}</div>` : '';
+      const validacao = obj.validacao          ? `<div class="acao-validacao">${obj.validacao}</div>` : '';
+
+      return `<div class="acao-card ${borderCls}">
+        <div class="acao-header">
+          <span class="acao-canal">${a.acelerador}</span>
+          <span class="acao-pct ${bCls}">${fmtPct(a.pct_proj)}</span>
+        </div>
+        ${gap ? `<div class="acao-gap">${gap}</div>` : ''}
+        <div class="acao-text">${obj.acao}</div>
+        ${metaOp}${altScript}${objecao}${gerencial}${validacao}
+      </div>`;
+    }
+
+    if (criticos.length) {
+      document.getElementById('acoes-critico').innerHTML =
+        `<div class="acoes-bloco-titulo">🔴 Crítico</div>
+         <div class="acoes-grid">${criticos.map(renderAcaoCard).join('')}</div>`;
+    }
+    if (atencao.length) {
+      document.getElementById('acoes-atencao').innerHTML =
+        `<div class="acoes-bloco-titulo">🟡 Atenção</div>
+         <div class="acoes-grid acoes-grid-atencao">${atencao.map(renderAcaoCard).join('')}</div>`;
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById('kpi-cards').innerHTML = '<div style="grid-column:1/-1;padding:20px;color:#dc2626;text-align:center">Erro ao carregar dados. Verifique se data.json existe.</div>';
+  });
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .catch(err => console.warn('SW não registrado:', err));
+    });
+  }
+</script>
+</body>
+</html>
