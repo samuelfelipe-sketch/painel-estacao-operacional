@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fluxo de Caixa Pessoal — Samuel Fuhr</title>
+<!-- fonte carregada sem bloquear a página: se o CDN estiver lento/fora, a ferramenta abre normal -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;900&display=swap" media="print" onload="this.media='all'">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;900&display=swap');
 :root{
   --verde:#004438; --laranja:#EC6C22; --vermelho:#B73D24; --petroleo:#10312B;
   --papel:#F5F3EC; --card:#FFFFFF; --borda:#E4E0D5; --muted:#6E7570; --tinta:#1C2A24;
@@ -545,6 +547,10 @@ function startApp(){
 
 (async function(){
   const msg = document.getElementById('login-msg');
+  if (sessionStorage.getItem('fp-atualizado')){
+    sessionStorage.removeItem('fp-atualizado');
+    msg.textContent = 'A ferramenta foi atualizada — por segurança, todos os acessos foram desconectados. Entre novamente.';
+  }
   const st = await Vault.loadStore();
   if (!st){
     msg.textContent = 'Arquivo de dados (dados.enc.json) não encontrado. Se você abriu o arquivo direto do computador, sirva a pasta com um servidor local ou acesse pela hospedagem.';
