@@ -173,7 +173,7 @@ function selPer(v){ const [t,n]=v.split(':'); setPer({t, v:+n}); }
 let page='fluxo';
 function showPage(p){
   page=p;
-  for (const k of ['fluxo','plano','patri','estr','pend','docs','acessos'])
+  for (const k of ['fluxo','plano','patri','estr','pend','docs','config'])
     document.getElementById('page-'+k).style.display = k===p?'':'none';
   document.querySelectorAll('#ptabs span').forEach(t=>t.classList.toggle('on', t.dataset.p===p));
 }
@@ -303,21 +303,24 @@ async function p27Salvar(){
   const num = id => { const v = parseFloat(document.getElementById(id).value.replace(',','.')); return isNaN(v) ? 0 : v; };
   D.proj27 = { renda: num('p27-renda'), desp: num('p27-desp') };
   await Vault.save();
+  const msg = document.getElementById('p27-msg');
+  if (msg) msg.textContent = '✓ Premissas aplicadas — a visão "2027 — projeção" já reflete os novos percentuais.';
   render();
+}
+// preenche os formulários de Configurações com o que está guardado no cofre
+function renderConfigForms(){
+  const p = proj27Cfg(), m = metasCfg();
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  set('p27-renda', p.renda); set('p27-desp', p.desp);
+  set('mt-meses', m.emerg_meses); set('mt-alvo', m.alvo); set('mt-rend', m.rend_aa);
 }
 function renderAno27(){
   const meses = [1,2,3,4,5,6,7,8,9,10,11,12];
   const cs = contasAtivas();
   const cfg = proj27Cfg();
-  // premissas ficam fora do contêiner que rola na horizontal
-  document.getElementById('fcontrols').innerHTML = `<div class="formgrid" style="margin-bottom:4px">
-    <label>Crescimento da renda (% ao ano) <input id="p27-renda" type="text" inputmode="decimal" value="${cfg.renda}"></label>
-    <label>Reajuste das despesas (% ao ano) <input id="p27-desp" type="text" inputmode="decimal" value="${cfg.desp}"></label>
-  </div>
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
-    <button class="btn sm" onclick="p27Salvar()">Aplicar premissas</button>
-    <span class="mini">ficam guardadas no cofre, criptografadas</span>
-  </div>`;
+  // premissas em modo leitura — o ajuste vive na aba Configurações
+  document.getElementById('fcontrols').innerHTML =
+    `<div class="mini" style="margin-bottom:10px">Premissas: renda <b>${cfg.renda>=0?'+':''}${cfg.renda}%</b> · despesas <b>${cfg.desp>=0?'+':''}${cfg.desp}%</b> ao ano — ajuste na aba <b>Configurações</b>.</div>`;
   let h = `<table><thead><tr><th class="lab"></th>${meses.map(m=>`<th>${MN[m]}*</th>`).join('')}<th>Ano</th></tr></thead><tbody>`;
   const linha27 = (nome, ids, cls, extra, labExtra) => {
     const vm = ids.reduce((s,c)=>s+prev27(c.id),0);
@@ -549,6 +552,8 @@ async function metasSalvar(){
   const num = id => { const v = parseFloat(document.getElementById(id).value.replace(/\./g,'').replace(',','.')); return isNaN(v) ? 0 : v; };
   D.metas = { emerg_meses: num('mt-meses') || 6, alvo: num('mt-alvo') || 1000000, rend_aa: num('mt-rend') };
   await Vault.save();
+  const msg = document.getElementById('mt-msg');
+  if (msg) msg.textContent = '✓ Metas aplicadas — o progresso atualizado está na aba Patrimônio.';
   renderMetas();
 }
 function renderMetas(){
@@ -595,16 +600,8 @@ function renderMetas(){
     <div class="row" style="display:flex;align-items:center;gap:10px;margin:4px 0 14px">${barra(pctE, pctE>=100?'#0E5C46':'var(--laranja)')}<span class="mini" style="white-space:nowrap">${fmt(liq)} de ${fmt(alvoE)} (alvo ${cfg.emerg_meses} meses) · ${pctE.toFixed(0)}%</span></div>`;
   h += `<div class="kv tt"><span class="k">1º milhão<small>caixa + reservas hoje: ${fmt(P0)} · ritmo projetado: ${fmt(ritmo)}/mês${cfg.rend_aa?` · rendimento ${cfg.rend_aa}% a.a.`:''}</small></span><span class="v">${pctM.toFixed(1)}%</span></div>
     <div class="row" style="display:flex;align-items:center;gap:10px;margin:4px 0 6px">${barra(pctM)}<span class="mini" style="white-space:nowrap">${fmt(P0)} de ${fmt(cfg.alvo)}</span></div>`;
-  h += `<div class="mini" style="margin-bottom:14px">${quando ? 'Chegada estimada: <b>'+quando+'</b>' : 'No ritmo projetado atual a meta não é atingida — ajuste o ritmo ou a premissa de rendimento.'}</div>`;
-  h += `<div class="formgrid">
-      <label>Alvo da emergência (meses) <input id="mt-meses" type="text" inputmode="decimal" value="${cfg.emerg_meses}"></label>
-      <label>Meta de patrimônio (R$) <input id="mt-alvo" type="text" inputmode="decimal" value="${cfg.alvo}"></label>
-      <label>Rendimento das reservas (% a.a.) <input id="mt-rend" type="text" inputmode="decimal" value="${cfg.rend_aa}"></label>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
-      <button class="btn sm" onclick="metasSalvar()">Aplicar metas</button>
-      <span class="mini">ficam guardadas no cofre, criptografadas</span>
-    </div>`;
+  h += `<div class="mini" style="margin-bottom:6px">${quando ? 'Chegada estimada: <b>'+quando+'</b>' : 'No ritmo projetado atual a meta não é atingida — ajuste o ritmo ou a premissa de rendimento.'}</div>`;
+  h += `<div class="mini" style="color:var(--muted)">Alvos ajustáveis na aba <b>Configurações</b>.</div>`;
   el.innerHTML = h;
 }
 
@@ -972,7 +969,7 @@ function renderDocs(){
   const docs = Vault.data.docs || [];
   const pend = D.fat_pend || [];
   const el = document.getElementById('doc-lista');
-  if (!docs.length && !pend.length){ el.innerHTML = '<p class="mini">Nenhum documento guardado ainda — importe o primeiro extrato OFX ou fatura acima; eles serão arquivados aqui automaticamente.</p>'; renderSync(); return; }
+  if (!docs.length && !pend.length){ el.innerHTML = '<p class="mini">Nenhum documento guardado ainda — importe o primeiro extrato OFX ou fatura na aba Configurações; eles serão arquivados aqui automaticamente.</p>'; renderSync(); return; }
   let h = '<table><thead><tr><th class="lab">Documento</th><th>Tipo</th><th>Referência</th><th>Tamanho</th><th>Adicionado</th><th></th></tr></thead><tbody>';
   for (const p of [...pend].sort((a,b)=> (b.ref||'').localeCompare(a.ref||''))){
     const ref = p.ref ? p.ref.slice(5,7)+'/'+p.ref.slice(0,4) : '·';
@@ -1669,6 +1666,9 @@ renderGh();
 document.getElementById('ia-save').addEventListener('click', iaAtivar);
 document.getElementById('ia-off').addEventListener('click', iaDesativar);
 renderIa();
+document.getElementById('p27-aplicar').addEventListener('click', p27Salvar);
+document.getElementById('mt-aplicar').addEventListener('click', metasSalvar);
+renderConfigForms();
 if (Vault.dirtyLocal) Vault.autoPublish();   // descarrega pendências antigas ao entrar
 document.getElementById('ac-add').addEventListener('click', acCriar);
 document.getElementById('pw-change').addEventListener('click', pwTrocar);
