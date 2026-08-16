@@ -653,6 +653,11 @@ function render(){
     : per.t==='m'
     ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–${MN[FECHADOS].toLowerCase()})${per.v>CORTE_M?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: extratos${per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]?' até '+D.corte.slice(8,10)+'/'+D.corte.slice(5,7):''}</span><span>Toque em Recebimentos/Pagamentos abre os grupos; no grupo, as contas; na conta, os lançamentos</span>`
     : `<span>Jan–${MN[FECHADOS]}: realizado fechado${FECHADOS<CORTE_M?` · ${MN[CORTE_M]}¹: realizado até ${D.corte.slice(8,10)+'/'+D.corte.slice(5,7)}`:''}${CORTE_M<12?` · ${MN[CORTE_M+1]}–Dez*: previsto`:''}</span>`;
+  // cards de contexto de 2026 (agenda set–dez e saldos bancários) não valem para a visão 2027
+  for (const id of ['card-agenda','card-contas']){
+    const el = document.getElementById(id);
+    if (el) el.style.display = per.t==='y27' ? 'none' : '';
+  }
   document.getElementById('fcontrols').innerHTML = '';
   if (per.t==='y27') renderAno27();
   else if (per.t!=='m') renderMeses(meses);
