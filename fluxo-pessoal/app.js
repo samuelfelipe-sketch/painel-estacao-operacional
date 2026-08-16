@@ -161,7 +161,7 @@ function pills(){
     for (let m=1;m<=12;m++) h += `<option value="m:${m}">${MFULL[m][0].toUpperCase()+MFULL[m].slice(1)}</option>`;
     h += '</optgroup><optgroup label="Trimestres">';
     for (let t=1;t<=4;t++) h += `<option value="t:${t}">${t}º trimestre</option>`;
-    h += '</optgroup><optgroup label="Ano"><option value="y:0">2026 completo</option></optgroup>';
+    h += '</optgroup><optgroup label="Ano"><option value="y:0">2026 completo</option><option value="y27:0">2027 — projeção</option></optgroup>';
     sel.innerHTML = h;
   }
   sel.value = per.t+':'+per.v;
@@ -277,6 +277,63 @@ function renderMeses(meses){
   if (secs.has('P')) bloco(GRUPOS_P, pagIds);
   h += linhaM('FLUXO DE CAIXA', cs, 'fluxo');
   h += `<tr class="caixa"><td class="lab">Caixa no fim</td>${meses.map(m=>cell(saldoNoFim(m), m>CORTE_M?'prevcol':'')).join('')}<td>·</td></tr>`;
+  h += '</tbody></table>';
+  document.getElementById('ftabela').innerHTML = h;
+}
+
+// ---------- 2027: projeção com premissas de crescimento ----------
+// Base: mediana dos meses fechados de 2026, com as políticas dos agendados
+// (contas zeradas e valores fixos como o DCA). Sobre a base, aplicam-se as
+// premissas guardadas no cofre: crescimento da renda (grupo Renda) e
+// reajuste das demais receitas/despesas. Extras pontuais de 2026 não repetem.
+function proj27Cfg(){ return D.proj27 || { renda: 10, desp: 5 }; }
+function prev27(cid){
+  let v = MED[cid];
+  const ag = D.agendados;
+  if (ag){
+    if ((ag.zerar||[]).includes(cid)) return 0;
+    if (ag.fixos && cid in ag.fixos) return ag.fixos[cid];
+  }
+  const cfg = proj27Cfg(), c = CM[cid];
+  if (c.tipo === 'R' && c.grupo === 'Renda') return v * (1 + (cfg.renda||0)/100);
+  if (c.tipo === 'P') return v * (1 + (cfg.desp||0)/100);
+  return v;
+}
+async function p27Salvar(){
+  const num = id => { const v = parseFloat(document.getElementById(id).value.replace(',','.')); return isNaN(v) ? 0 : v; };
+  D.proj27 = { renda: num('p27-renda'), desp: num('p27-desp') };
+  await Vault.save();
+  render();
+}
+function renderAno27(){
+  const meses = [1,2,3,4,5,6,7,8,9,10,11,12];
+  const cs = contasAtivas();
+  const cfg = proj27Cfg();
+  const inp = (id,v) => `<input id="${id}" type="text" inputmode="decimal" value="${v}" style="width:56px;font:inherit;border:1px solid var(--borda);border-radius:6px;padding:3px 6px;text-align:right">`;
+  let h = `<div class="mini" style="margin-bottom:10px">Premissas — crescimento da renda: ${inp('p27-renda',cfg.renda)} % ao ano · reajuste das despesas: ${inp('p27-desp',cfg.desp)} % <button class="btn sm" onclick="p27Salvar()">aplicar</button> <span style="color:var(--muted)">(ficam guardadas no cofre)</span></div>`;
+  h += `<table><thead><tr><th class="lab"></th>${meses.map(m=>`<th>${MN[m]}*</th>`).join('')}<th>Ano</th></tr></thead><tbody>`;
+  const linha27 = (nome, ids, cls, extra, labExtra) => {
+    const vm = ids.reduce((s,c)=>s+prev27(c.id),0);
+    if (cls==='sub' && Math.round(Math.abs(vm*12))===0) return '';
+    return `<tr class="${cls}" ${extra||''}><td class="lab" ${labExtra||''}>${nome}</td>${meses.map(()=>cell(vm,'prevcol')).join('')}${cell(vm*12,'prevcol')}</tr>`;
+  };
+  const iniAno = saldoProj[12];
+  const fluxoTot = D.contas.reduce((s,c)=>s+prev27(c.id),0);
+  h += `<tr class="caixa"><td class="lab">Caixa no início</td>${meses.map((m,i)=>cell(iniAno + fluxoTot*i, 'prevcol')).join('')}<td>·</td></tr>`;
+  const recIds = cs.filter(c=>c.tipo==='R'), pagIds = cs.filter(c=>c.tipo==='P');
+  const bloco = (grupos, pool) => {
+    for (const g of grupos){
+      const ids = pool.filter(c=>c.grupo===g); if (!ids.length) continue;
+      h += linha27(g, ids, 'grp'+(abertos.has(g)?' open':''), `onclick="tg('${g}')"`);
+      if (abertos.has(g)) for (const c of ids) h += linha27(c.nome, [c], 'sub', '', '');
+    }
+  };
+  h += linha27('Recebimentos', recIds, 'tot sec'+(secs.has('R')?' open':''), `onclick="tgSec('R')"`);
+  if (secs.has('R')) bloco(GRUPOS_R, recIds);
+  h += linha27('Pagamentos', pagIds, 'tot sec'+(secs.has('P')?' open':''), `onclick="tgSec('P')"`);
+  if (secs.has('P')) bloco(GRUPOS_P, pagIds);
+  h += linha27('FLUXO DE CAIXA', cs, 'fluxo');
+  h += `<tr class="caixa"><td class="lab">Caixa no fim</td>${meses.map(m=>cell(iniAno + fluxoTot*m, 'prevcol')).join('')}<td>·</td></tr>`;
   h += '</tbody></table>';
   document.getElementById('ftabela').innerHTML = h;
 }
@@ -445,10 +502,12 @@ function verLanc(cid){
 
 // ---------- barras ----------
 function renderBarras(meses){
-  const temReal = meses.some(m=>m<=CORTE_M);
+  const ano27 = per.t==='y27';
+  const temReal = !ano27 && meses.some(m=>m<=CORTE_M);
   const gs = GRUPOS_P.map(g=>{
     const ids = contasAtivas().filter(c=>c.grupo===g&&c.tipo==='P');
-    const v = temReal ? ids.reduce((s,c)=>s+realPer(c.id,meses),0) : ids.reduce((s,c)=>s+prevPer(c.id,meses),0);
+    const v = ano27 ? ids.reduce((s,c)=>s+12*prev27(c.id),0)
+      : temReal ? ids.reduce((s,c)=>s+realPer(c.id,meses),0) : ids.reduce((s,c)=>s+prevPer(c.id,meses),0);
     return {g, v:-v};
   }).filter(x=>x.v>0.5).sort((a,b)=>b.v-a.v);
   const max = gs[0]?gs[0].v:1;
@@ -496,11 +555,12 @@ function renderPend(){
 function tituloPer(){
   if (per.t==='m') return MFULL[per.v]+' 2026';
   if (per.t==='t') return per.v+'º trimestre 2026';
+  if (per.t==='y27') return 'ano 2027 — projeção';
   return 'ano 2026';
 }
 function render(){
   pills();
-  const noNav = per.t==='y';
+  const noNav = per.t==='y' || per.t==='y27';
   const atMin = (per.t==='m'&&per.v===1)||(per.t==='t'&&per.v===1);
   const atMax = (per.t==='m'&&per.v===12)||(per.t==='t'&&per.v===4);
   document.getElementById('nprev').classList.toggle('off', noNav||atMin);
@@ -513,10 +573,13 @@ function render(){
   st.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.v===sub));
   const temReal = per.t==='m' && per.v<=CORTE_M;
   document.getElementById('flegend').innerHTML =
-    per.t==='m'
+    per.t==='y27'
+    ? `<span><b>2027 inteiro é projeção</b>: mediana dos meses fechados de 2026 + premissas de crescimento (ajustáveis acima da tabela). O caixa parte do fim projetado de 2026.</span>`
+    : per.t==='m'
     ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–${MN[FECHADOS].toLowerCase()})${per.v>CORTE_M?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: extratos${per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]?' até '+D.corte.slice(8,10)+'/'+D.corte.slice(5,7):''}</span><span>Toque em Recebimentos/Pagamentos abre os grupos; no grupo, as contas; na conta, os lançamentos</span>`
     : `<span>Jan–${MN[FECHADOS]}: realizado fechado${FECHADOS<CORTE_M?` · ${MN[CORTE_M]}¹: realizado até ${D.corte.slice(8,10)+'/'+D.corte.slice(5,7)}`:''}${CORTE_M<12?` · ${MN[CORTE_M+1]}–Dez*: previsto`:''}</span>`;
-  if (per.t!=='m') renderMeses(meses);
+  if (per.t==='y27') renderAno27();
+  else if (per.t!=='m') renderMeses(meses);
   else if (sub==='semanas') renderSemanas(per.v);
   else if (sub==='dias') renderDias(per.v);
   else renderResumo(meses);
