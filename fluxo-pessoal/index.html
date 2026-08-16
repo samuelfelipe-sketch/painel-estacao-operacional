@@ -368,6 +368,19 @@ body.is-admin .admin-only{display:block}
     <div class="mini" id="gh-msg" style="margin-top:8px"></div>
     <div class="note">Com isso ativo, toda alteração (acessos, importações, documentos) vai sozinha para a base — em ~1 minuto vale em todos os aparelhos. Como gerar a chave (2 min): github.com → foto de perfil → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens → Fine-grained tokens</b> → Generate new token → Repository access: <b>Only select repositories</b> → <i>painel-estacao-operacional</i> → Permissions → <b>Contents: Read and write</b> → Generate → cole aqui. A chave fica guardada <b>criptografada</b> dentro do cofre, nunca em texto aberto.</div>
   </div>
+  <div class="card admin-only">
+    <h2>Classificação inteligente (IA)</h2>
+    <div class="mini" id="ia-status" style="margin-bottom:8px"></div>
+    <div class="formgrid" id="ia-form">
+      <label class="full">Chave da API da Anthropic <input type="password" id="ia-key" autocomplete="off" placeholder="sk-ant-…"></label>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" id="ia-save">Ativar classificação com IA</button>
+      <button class="btn sm danger" id="ia-off" style="display:none">desativar</button>
+    </div>
+    <div class="mini" id="ia-msg" style="margin-top:8px"></div>
+    <div class="note">Com isso ativo, o site chama o <b>Claude</b> (a mesma IA daqui do Cowork) ao ler extratos e faturas: o que as regras fixas não reconhecem é classificado pela IA seguindo a tua metodologia, marcado com ✨ para conferência — e dá até para ler faturas coladas em formato bagunçado (texto de PDF, por exemplo). Como obter a chave (2 min): <b>console.anthropic.com</b> → API Keys → Create Key → cole aqui. Ela fica guardada <b>criptografada</b> no cofre. Apenas descrições e valores dos lançamentos são enviados para classificar; custo típico: centavos por fatura.</div>
+  </div>
   <div class="card" id="sync-card"></div>
   </section>
 

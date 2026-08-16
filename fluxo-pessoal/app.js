@@ -456,6 +456,212 @@ async function ghDesativar(){
   renderGh(); renderSync();
 }
 
+// ================================================================
+// Classificação inteligente (IA) — Claude direto no navegador.
+// A chave fica criptografada no cofre (Vault.data.ia). Só descrições
+// e valores dos lançamentos em revisão são enviados — nunca saldos,
+// documentos ou o restante da base.
+// ================================================================
+const IA_MODEL = 'claude-opus-5';
+function iaCfg(){ return (Vault.data.ia && Vault.data.ia.key) ? Vault.data.ia : null; }
+
+async function iaChamar(sistema, texto, schema, maxTokens){
+  const cfg = iaCfg(); if (!cfg) throw new Error('IA não ativada');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': cfg.key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: IA_MODEL,
+      max_tokens: maxTokens || 8000,
+      output_config: { effort: 'medium', format: { type: 'json_schema', schema } },
+      system: [{ type: 'text', text: sistema }],
+      messages: [{ role: 'user', content: texto }]
+    })
+  });
+  if (!resp.ok){
+    let m = 'HTTP ' + resp.status;
+    try { const j = await resp.json(); if (j.error && j.error.message) m = j.error.message; } catch(e){}
+    throw new Error(m);
+  }
+  const j = await resp.json();
+  if (j.stop_reason === 'refusal') throw new Error('a IA recusou a solicitação');
+  const bloco = (j.content || []).find(b => b.type === 'text');
+  if (!bloco) throw new Error('resposta sem conteúdo');
+  return JSON.parse(bloco.text);
+}
+
+function iaSistemaClassificacao(permitirGiro){
+  const contas = D.contas.map(c => `${c.id} = ${c.nome} (${c.tipo==='R'?'entrada':'saída'} · ${c.grupo})`).join('\n');
+  const regra = r => {
+    const alvo = r.sf ? 'entrada parecida com o pró-labore de referência → prolabore; outra entrada → lucros; saída → GIRO'
+      : r.limiar ? `acima de R$${r.limiar} → ${r.cAcima}; até R$${r.limiar} → ${r.cAbaixo}`
+      : r.cPos ? `entrada → ${r.cPos}; saída → ${r.cNeg}`
+      : `→ ${r.c}`;
+    return `- contém ${r.match.map(m=>'"'+m+'"').join(' ou ')}: ${alvo}`;
+  };
+  return [
+    'Você classifica lançamentos financeiros pessoais (Brasil) nas categorias do fluxo de caixa do usuário.',
+    'Categorias válidas (responda exatamente com o id):',
+    contas,
+    permitirGiro ? 'GIRO = transferência entre contas do próprio dono, fica fora dos totais. Use GIRO para PIX/TED/transferências entre contas próprias e aplicações/resgates espelhados.' : '',
+    'Diretrizes da metodologia:',
+    '- Posto de combustível: até R$180 costuma ser conveniência (mercado); acima disso, combustível.',
+    '- Devoluções e estornos de compras → casa_mov. IOF, juros, tarifas e anuidades → fin.',
+    '- Restaurantes, delivery (iFood) e cafés → restaurantes. Supermercados e empórios → mercado.',
+    '- Assinaturas digitais (streaming, apps, telefonia) → assinaturas.',
+    '- Na dúvida, escolha a categoria mais provável pelo nome do estabelecimento.',
+    'Regras pessoais já conhecidas (têm prioridade sobre as diretrizes):',
+    ...(D.regras_card||[]).map(regra),
+    ...(D.regras_bank||[]).map(regra),
+    'Responda somente com o JSON pedido.'
+  ].filter(Boolean).join('\n');
+}
+
+async function iaClassificarItens(itens, permitirGiro){
+  const ids = D.contas.map(c=>c.id);
+  if (permitirGiro) ids.push('GIRO');
+  const schema = {
+    type:'object', additionalProperties:false, required:['itens'],
+    properties:{ itens:{ type:'array', items:{
+      type:'object', additionalProperties:false, required:['i','c'],
+      properties:{ i:{type:'integer'}, c:{type:'string', enum:ids} } } } }
+  };
+  const linhas = itens.map(it => `${it.i}\t${it.desc}\t${it.val.toFixed(2)}`).join('\n');
+  const out = await iaChamar(iaSistemaClassificacao(permitirGiro),
+    'Classifique cada lançamento (formato: i<TAB>descrição<TAB>valor; valor negativo = saída):\n'+linhas, schema, 8000);
+  const mapa = {};
+  for (const o of (out.itens||[])) if (ids.includes(o.c)) mapa[o.i] = o.c;
+  return mapa;
+}
+
+// refina itens de fatura que caíram no genérico "servicos" (fallback das regras fixas)
+async function iaRefinarFatura(items, rerender){
+  if (!iaCfg()) return;
+  const alvo = items.map((it,j)=>({i:j, desc:it.desc, val:-Math.abs(it.val)}))
+    .filter(x => items[x.i].c === 'servicos');
+  if (!alvo.length) return;
+  try {
+    const mapa = await iaClassificarItens(alvo, false);
+    let mudou = false;
+    for (const k in mapa){
+      const it = items[+k];
+      if (it && it.c === 'servicos'){ it.c = mapa[k]; it.ia = true; mudou = true; }
+    }
+    if (mudou) rerender();
+  } catch(e){ console.warn('IA (fatura):', e.message); }
+}
+
+// refina lançamentos do extrato que ficaram incertos (diversos / conferir)
+async function iaRefinarExtrato(imp){
+  if (!iaCfg()) return;
+  const alvo = imp.rows.map((r,i)=>({i, r}))
+    .filter(x => x.r.kind === 'conta' && (x.r.incerto || x.r.c === 'diversos'));
+  if (!alvo.length) return;
+  try {
+    const mapa = await iaClassificarItens(alvo.map(x=>({i:x.i, desc:x.r.m, val:x.r.v})), true);
+    let mudou = false;
+    for (const k in mapa){
+      const r = imp.rows[+k];
+      if (r && r.kind === 'conta' && (r.incerto || r.c === 'diversos')){
+        r.c = mapa[k]; r.incerto = false; r.ia = true; mudou = true;
+      }
+    }
+    if (mudou && IMP === imp) impRender();
+  } catch(e){ console.warn('IA (extrato):', e.message); }
+}
+
+// leitura de fatura em texto livre/bagunçado quando o parser fixo não entende
+async function iaExtrairItens(texto){
+  const schema = { type:'object', additionalProperties:false, required:['itens'], properties:{
+    itens:{ type:'array', items:{ type:'object', additionalProperties:false, required:['desc','val'],
+      properties:{ desc:{type:'string'}, val:{type:'number'} } } } } };
+  const sis = 'Você extrai as compras de faturas de cartão de crédito coladas em texto livre, possivelmente bagunçado (Brasil). ' +
+    'Retorne cada compra com a descrição e o valor em reais: positivo para compra, negativo para estorno/crédito. ' +
+    'Ignore totais, saldos, limites, pagamentos de fatura, juros informativos, cabeçalhos e rodapés. Responda somente com o JSON pedido.';
+  const out = await iaChamar(sis, texto.slice(0, 30000), schema, 12000);
+  return (out.itens||[]).filter(x => x.desc && typeof x.val === 'number' && x.val)
+    .map(x => ({ desc: String(x.desc).slice(0,60), val: round2(x.val), c: catCard(x.desc, x.val), ia: true }));
+}
+
+async function iaLerFaturaTxt(){
+  const msg = document.getElementById('imp-msg');
+  const f = document.getElementById('fat-file').files[0];
+  const texto = f ? await f.text() : document.getElementById('fat-txt').value.trim();
+  msg.textContent = '✨ Lendo a fatura com IA…';
+  try {
+    const items = await iaExtrairItens(texto);
+    if (!items.length){ msg.textContent = 'A IA não encontrou compras neste texto.'; return; }
+    FIMP = { cartao: document.getElementById('fat-cartao').value, items,
+      total: round2(items.reduce((s,it)=>s+it.val,0)), ignoradas: 0, viaIA: true };
+    msg.textContent = '';
+    fatRender();
+    const ref = FIMP;
+    iaRefinarFatura(ref.items, () => { if (FIMP === ref) fatRender(); });
+  } catch(e){ msg.textContent = 'Falha na leitura com IA: ' + e.message; }
+}
+
+async function iaLerFaturaImp(i){
+  const r = IMP.rows[i];
+  const msg = document.getElementById('imp-fat-msg-'+i);
+  const texto = document.getElementById('imp-fat-'+i).value;
+  msg.textContent = '✨ Lendo a fatura com IA…';
+  try {
+    const items = await iaExtrairItens(texto);
+    if (!items.length){ msg.textContent = 'A IA não encontrou compras neste texto.'; return; }
+    const soma = round2(items.reduce((s,it)=>s+it.val,0));
+    const dif = round2(Math.abs(r.v) - soma);
+    if (Math.abs(dif) > 1.00){
+      msg.textContent = `A IA leu ${items.length} item(ns), mas a soma (${fmtMoeda(soma)}) não bate com o pagamento (${fmtMoeda(Math.abs(r.v))}) — diferença de ${fmtMoeda(dif)}. Confira se o texto traz a fatura completa.`;
+      return;
+    }
+    r.fat = { items, ok: true, ajuste: Math.abs(dif) >= 0.01 ? dif : 0, ignoradas: 0 };
+    impRender();
+  } catch(e){ msg.textContent = 'Falha na leitura com IA: ' + e.message; }
+}
+
+function renderIa(){
+  const on = !!iaCfg();
+  const st = document.getElementById('ia-status'); if (!st) return;
+  st.innerHTML = on
+    ? '<b style="color:#0E5C46">✓ Ativa</b> — o que as regras fixas não reconhecerem é classificado pelo Claude, e faturas em formato bagunçado podem ser lidas por ele.'
+    : '<b>Inativa</b> — a classificação usa somente as regras fixas; o que não for reconhecido cai em "conferir".';
+  document.getElementById('ia-off').style.display = on ? '' : 'none';
+  document.getElementById('ia-form').style.display = on ? 'none' : '';
+  document.getElementById('ia-save').style.display = on ? 'none' : '';
+}
+
+async function iaAtivar(){
+  const msg = document.getElementById('ia-msg');
+  const key = document.getElementById('ia-key').value.trim();
+  if (!key){ msg.textContent = 'Cole a chave criada no console da Anthropic.'; return; }
+  msg.textContent = 'Testando a chave…';
+  Vault.data.ia = { key };
+  try {
+    const schema = { type:'object', additionalProperties:false, required:['ok'], properties:{ ok:{type:'boolean'} } };
+    await iaChamar('Responda somente com o JSON pedido.', 'Retorne {"ok": true}.', schema, 4000);
+    await Vault.save();
+    document.getElementById('ia-key').value = '';
+    msg.textContent = '✓ Classificação com IA ativada — a chave ficou guardada criptografada no cofre.';
+  } catch(e){
+    delete Vault.data.ia;
+    msg.textContent = 'A chave não funcionou (' + e.message + '). Confira em console.anthropic.com → API Keys e tente de novo.';
+  }
+  renderIa();
+}
+
+async function iaDesativar(){
+  if (!confirm('Desativar a classificação com IA? A chave será removida do cofre.')) return;
+  delete Vault.data.ia;
+  await Vault.save();
+  document.getElementById('ia-msg').textContent = 'Desativada — a chave foi removida do cofre.';
+  renderIa();
+}
+
 function renderDocs(){
   const docs = Vault.data.docs || [];
   const pend = D.fat_pend || [];
@@ -742,10 +948,15 @@ async function fatLer(){
   const text = f ? await f.text() : colado;
   if (!text){ msg.textContent = 'Anexe o CSV da fatura ou cole os itens.'; return; }
   const res = parseFaturaItens(text);
-  if (res.erro){ msg.textContent = res.erro; return; }
+  if (res.erro){
+    msg.innerHTML = esc(res.erro) + (iaCfg() ? ' <button class="btn sm" onclick="iaLerFaturaTxt()">✨ Tentar ler com IA</button>' : '');
+    return;
+  }
   FIMP = { cartao: document.getElementById('fat-cartao').value, items: res.items,
     total: round2(res.items.reduce((s,it)=>s+it.val,0)), ignoradas: res.ignoradas.length };
   fatRender();
+  const ref = FIMP;
+  iaRefinarFatura(ref.items, () => { if (FIMP === ref) fatRender(); });
 }
 
 function fatRender(){
@@ -753,7 +964,7 @@ function fatRender(){
   let h = `<div class="note" style="margin-bottom:10px"><b>Fatura ${CARTAO_NOME[FIMP.cartao]}</b> · ${FIMP.items.length} item(ns) · total ${fmtMoeda(FIMP.total)}${FIMP.ignoradas?` · ${FIMP.ignoradas} linha(s) de cabeçalho/total ignorada(s)`:''}</div>`;
   h += '<div class="tbl-wrap"><table><thead><tr><th class="lab">Compra</th><th>Valor</th><th style="text-align:left">Categoria</th></tr></thead><tbody>';
   FIMP.items.forEach((it,j)=>{
-    h += `<tr><td class="lab" style="white-space:normal">${esc(it.desc.slice(0,50))}</td>${cellM(-it.val)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="FIMP.items[${j}].c=this.value">${optsConta(it.c)}</select></td></tr>`;
+    h += `<tr><td class="lab" style="white-space:normal">${esc(it.desc.slice(0,50))}${it.ia?' <span title="classificado pela IA — confira">✨</span>':''}</td>${cellM(-it.val)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="FIMP.items[${j}].c=this.value">${optsConta(it.c)}</select></td></tr>`;
   });
   h += '</tbody></table></div>';
   h += `<div class="note" style="margin-top:10px">Regime de caixa: esta fatura <b>não mexe nos números agora</b>. Ela fica guardada (criptografada) e entra no caixa no dia do pagamento — quando o débito da fatura aparecer na importação do extrato, é só clicar em "usar fatura guardada". Pode reenviar uma versão mais completa depois: a nova substitui a anterior do mesmo cartão/mês.</div>`;
@@ -842,6 +1053,7 @@ async function impLer(){
   });
   IMP = { acc, rows, ledger: p.ledger, fimData, ignorados, arquivo: file.name, texto: text };
   impRender();
+  iaRefinarExtrato(IMP);
 }
 
 function optsConta(sel){
@@ -891,12 +1103,12 @@ function impRender(){
           <div class="mini" id="imp-fat-msg-${i}" style="margin-top:4px"></div>`;
       } else {
         h += `<table style="margin:4px 0">` + r.fat.items.map((it,j)=>
-          `<tr><td class="lab" style="position:static;font-size:.78rem">${esc(it.desc.slice(0,45))}</td>${cellM(-it.val)}<td style="text-align:left"><select style="font-size:.75rem" onchange="IMP.rows[${i}].fat.items[${j}].c=this.value">${optsConta(it.c)}</select></td></tr>`).join('') +
+          `<tr><td class="lab" style="position:static;font-size:.78rem">${esc(it.desc.slice(0,45))}${it.ia?' <span title="classificado pela IA — confira">✨</span>':''}</td>${cellM(-it.val)}<td style="text-align:left"><select style="font-size:.75rem" onchange="IMP.rows[${i}].fat.items[${j}].c=this.value">${optsConta(it.c)}</select></td></tr>`).join('') +
           `</table><div style="margin-top:4px"><button class="btn sm" onclick="IMP.rows[${i}].fat=null;impRender()">refazer itens</button></div>`;
       }
       h += `</td></tr>`;
     } else {
-      h += `<tr${r.kind==='giro'||r.c==='GIRO'?' style="opacity:.65"':''}><td class="lab" style="white-space:normal">${r.d.slice(8,10)}/${r.d.slice(5,7)} · ${esc(r.m.slice(0,60))}${r.incerto?' <span style="color:var(--laranja)">● conferir</span>':''}</td>${cellM(r.v)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="IMP.rows[${i}].c=this.value">${optsConta(r.c)}</select></td></tr>`;
+      h += `<tr${r.kind==='giro'||r.c==='GIRO'?' style="opacity:.65"':''}><td class="lab" style="white-space:normal">${r.d.slice(8,10)}/${r.d.slice(5,7)} · ${esc(r.m.slice(0,60))}${r.ia?' <span style="color:#7C5CBF">✨ IA — confira</span>':(r.incerto?' <span style="color:var(--laranja)">● conferir</span>':'')}</td>${cellM(r.v)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="IMP.rows[${i}].c=this.value">${optsConta(r.c)}</select></td></tr>`;
     }
   });
   h += '</tbody></table></div>';
@@ -957,7 +1169,10 @@ function impFatura(i){
   const r = IMP.rows[i];
   const res = parseFaturaItens(document.getElementById('imp-fat-'+i).value);
   const msg = document.getElementById('imp-fat-msg-'+i);
-  if (res.erro){ msg.textContent = res.erro; return; }
+  if (res.erro){
+    msg.innerHTML = esc(res.erro) + (iaCfg() ? ` <button class="btn sm" onclick="iaLerFaturaImp(${i})">✨ Tentar ler com IA</button>` : '');
+    return;
+  }
   const soma = round2(res.items.reduce((s,it)=>s+it.val,0));
   const dif = round2(Math.abs(r.v) - soma);   // pago − itens (residual de centavos vira Despesas financeiras)
   if (Math.abs(dif) > 1.00){
@@ -966,6 +1181,8 @@ function impFatura(i){
   }
   r.fat = { items: res.items, ok: true, ajuste: Math.abs(dif) >= 0.01 ? dif : 0, ignoradas: res.ignoradas.length };
   impRender();
+  const impRef = IMP, fatRef = r.fat;
+  iaRefinarFatura(fatRef.items, () => { if (IMP === impRef && r.fat === fatRef) impRender(); });
 }
 
 function impConfirmar(){
@@ -1048,6 +1265,9 @@ document.getElementById('imp-tipo').addEventListener('change', e => {
 document.getElementById('gh-save').addEventListener('click', ghAtivar);
 document.getElementById('gh-off').addEventListener('click', ghDesativar);
 renderGh();
+document.getElementById('ia-save').addEventListener('click', iaAtivar);
+document.getElementById('ia-off').addEventListener('click', iaDesativar);
+renderIa();
 if (Vault.dirtyLocal) Vault.autoPublish();   // descarrega pendências antigas ao entrar
 document.getElementById('ac-add').addEventListener('click', acCriar);
 document.getElementById('pw-change').addEventListener('click', pwTrocar);
