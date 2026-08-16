@@ -458,9 +458,17 @@ async function ghDesativar(){
 
 function renderDocs(){
   const docs = Vault.data.docs || [];
+  const pend = D.fat_pend || [];
   const el = document.getElementById('doc-lista');
-  if (!docs.length){ el.innerHTML = '<p class="mini">Nenhum documento guardado ainda — importe o primeiro extrato OFX acima; ele será arquivado aqui automaticamente.</p>'; renderSync(); return; }
+  if (!docs.length && !pend.length){ el.innerHTML = '<p class="mini">Nenhum documento guardado ainda — importe o primeiro extrato OFX ou fatura acima; eles serão arquivados aqui automaticamente.</p>'; renderSync(); return; }
   let h = '<table><thead><tr><th class="lab">Documento</th><th>Tipo</th><th>Referência</th><th>Tamanho</th><th>Adicionado</th><th></th></tr></thead><tbody>';
+  for (const p of [...pend].sort((a,b)=> (b.ref||'').localeCompare(a.ref||''))){
+    const ref = p.ref ? p.ref.slice(5,7)+'/'+p.ref.slice(0,4) : '·';
+    h += `<tr style="background:#FBF4EC"><td class="lab" style="background:#FBF4EC">Fatura ${CARTAO_NOME[p.cartao]} — ${fmtMoeda(p.total)} · ${p.items.length} itens</td>
+      <td>⏳ Aguardando pagamento</td><td>${ref}</td><td>·</td><td>${p.add?p.add.slice(8,10)+'/'+p.add.slice(5,7)+'/'+p.add.slice(2,4):'·'}</td>
+      <td style="white-space:nowrap"><button class="btn sm" onclick="fatPendVer('${p.id}')">ver</button>
+      <button class="btn sm danger" onclick="fatPendExcluir('${p.id}')">excluir</button></td></tr>`;
+  }
   for (const d of [...docs].sort((a,b)=> (b.ref||'').localeCompare(a.ref||'') || (b.add||'').localeCompare(a.add||''))){
     const ref = d.ref ? d.ref.slice(5,7)+'/'+d.ref.slice(0,4) : '·';
     h += `<tr><td class="lab">${esc(d.desc)||esc(d.nome)||'(sem descrição)'}${d.nome?`<div style="font-size:.68rem;color:var(--muted)">${esc(d.nome)}</div>`:''}</td>
@@ -710,6 +718,8 @@ function parseFaturaItens(text){
 
 // ---- estado da importação em revisão ----
 let IMP = null;
+let FIMP = null;   // fatura em revisão (fluxo "Fatura de cartão")
+const genId = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random().toString(16).slice(2);
 const cellM = v => `<td class="${v<0?'neg':''}">${fmtMoeda(v)}</td>`;
 const CARTAO_NOME = { visa:'Visa Infinite', nucard:'Cartão Nubank', master:'Mastercard' };
 const ACC_NOME = { sicredi:'Sicredi CC', nubank:'Nubank' };
@@ -717,6 +727,87 @@ const ACC_NOME = { sicredi:'Sicredi CC', nubank:'Nubank' };
 function cobertura(){
   if (!D.cobertura) D.cobertura = { sicredi: D.corte, nubank: D.corte };
   return D.cobertura;
+}
+
+// ================================================================
+// Fatura de cartão enviada a qualquer momento (antes do pagamento):
+// fica guardada criptografada em D.fat_pend e entra no caixa quando o
+// débito da fatura aparecer na importação do extrato.
+// ================================================================
+async function fatLer(){
+  const msg = document.getElementById('imp-msg');
+  msg.textContent = ''; document.getElementById('imp-review').innerHTML = ''; FIMP = null;
+  const f = document.getElementById('fat-file').files[0];
+  const colado = document.getElementById('fat-txt').value.trim();
+  const text = f ? await f.text() : colado;
+  if (!text){ msg.textContent = 'Anexe o CSV da fatura ou cole os itens.'; return; }
+  const res = parseFaturaItens(text);
+  if (res.erro){ msg.textContent = res.erro; return; }
+  FIMP = { cartao: document.getElementById('fat-cartao').value, items: res.items,
+    total: round2(res.items.reduce((s,it)=>s+it.val,0)), ignoradas: res.ignoradas.length };
+  fatRender();
+}
+
+function fatRender(){
+  const el = document.getElementById('imp-review');
+  let h = `<div class="note" style="margin-bottom:10px"><b>Fatura ${CARTAO_NOME[FIMP.cartao]}</b> · ${FIMP.items.length} item(ns) · total ${fmtMoeda(FIMP.total)}${FIMP.ignoradas?` · ${FIMP.ignoradas} linha(s) de cabeçalho/total ignorada(s)`:''}</div>`;
+  h += '<div class="tbl-wrap"><table><thead><tr><th class="lab">Compra</th><th>Valor</th><th style="text-align:left">Categoria</th></tr></thead><tbody>';
+  FIMP.items.forEach((it,j)=>{
+    h += `<tr><td class="lab" style="white-space:normal">${esc(it.desc.slice(0,50))}</td>${cellM(-it.val)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="FIMP.items[${j}].c=this.value">${optsConta(it.c)}</select></td></tr>`;
+  });
+  h += '</tbody></table></div>';
+  h += `<div class="note" style="margin-top:10px">Regime de caixa: esta fatura <b>não mexe nos números agora</b>. Ela fica guardada (criptografada) e entra no caixa no dia do pagamento — quando o débito da fatura aparecer na importação do extrato, é só clicar em "usar fatura guardada". Pode reenviar uma versão mais completa depois: a nova substitui a anterior do mesmo cartão/mês.</div>`;
+  h += `<div style="margin-top:10px;display:flex;gap:8px">
+    <button class="btn" onclick="fatGuardar()">Guardar fatura</button>
+    <button class="btn sm" onclick="FIMP=null;document.getElementById('imp-review').innerHTML='';document.getElementById('imp-msg').textContent='Fatura descartada.'">descartar</button>
+  </div>`;
+  el.innerHTML = h;
+}
+
+async function fatGuardar(){
+  if (!FIMP) return;
+  const ref = document.getElementById('fat-ref').value;
+  const ex = (D.fat_pend||[]).find(p => p.cartao === FIMP.cartao && p.ref === ref);
+  if (ex && !confirm('Já existe uma fatura guardada deste cartão para este mês. Substituir pela versão nova?')) return;
+  D.fat_pend = (D.fat_pend||[]).filter(p => !(p.cartao === FIMP.cartao && p.ref === ref));
+  D.fat_pend.push({ id: genId(), cartao: FIMP.cartao, ref, total: FIMP.total, items: FIMP.items,
+    add: new Date().toISOString().slice(0,10) });
+  await Vault.save();
+  FIMP = null;
+  document.getElementById('imp-review').innerHTML = '';
+  document.getElementById('fat-file').value = ''; document.getElementById('fat-txt').value = '';
+  document.getElementById('imp-msg').textContent = '✓ Fatura guardada (criptografada). Ela entra no caixa no dia do pagamento — ao importar o extrato com o débito da fatura, use o botão "usar fatura guardada".';
+  renderDocs();
+}
+
+function fatPendVer(id){
+  const p = (D.fat_pend||[]).find(x=>x.id===id); if (!p) return;
+  document.getElementById('mtit').textContent = `Fatura ${CARTAO_NOME[p.cartao]} — aguardando pagamento`;
+  document.getElementById('msub').textContent = `${p.ref? p.ref.slice(5,7)+'/'+p.ref.slice(0,4)+' · ':''}${p.items.length} item(ns) · total ${fmtMoeda(p.total)}`;
+  document.getElementById('mlist').innerHTML = p.items.map(it =>
+    `<li><span class="q">${esc(it.desc.slice(0,44))}<span class="f">${esc((CM[it.c]||{}).nome||it.c)}</span></span><span class="v${it.val>0?' neg':''}">${fmt(-it.val)}</span></li>`).join('');
+  document.getElementById('modal').classList.add('on');
+}
+
+async function fatPendExcluir(id){
+  const p = (D.fat_pend||[]).find(x=>x.id===id); if (!p) return;
+  if (!confirm(`Excluir a fatura guardada (${CARTAO_NOME[p.cartao]}${p.ref?' · '+p.ref.slice(5,7)+'/'+p.ref.slice(0,4):''})?`)) return;
+  D.fat_pend = D.fat_pend.filter(x=>x.id!==id);
+  await Vault.save(); renderDocs();
+}
+
+function impUsarFatPend(i, id){
+  const r = IMP.rows[i];
+  const p = (D.fat_pend||[]).find(x=>x.id===id); if (!p) return;
+  const dif = round2(Math.abs(r.v) - p.total);
+  const msg = () => document.getElementById('imp-fat-msg-'+i);
+  if (Math.abs(dif) > 1.00){
+    msg().textContent = `A fatura guardada soma ${fmtMoeda(p.total)}, mas o pagamento é de ${fmtMoeda(Math.abs(r.v))} — diferença de ${fmtMoeda(dif)}. Se a fatura guardada estiver incompleta (foi enviada antes de fechar), anexe/cole a versão final abaixo.`;
+    return;
+  }
+  r.fat = { items: JSON.parse(JSON.stringify(p.items)), ok: true,
+    ajuste: Math.abs(dif) >= 0.01 ? dif : 0, ignoradas: 0, fromPend: id };
+  impRender();
 }
 
 async function impLer(){
@@ -788,7 +879,12 @@ function impRender(){
       h += `<tr><td class="lab" style="white-space:normal">${r.d.slice(8,10)}/${r.d.slice(5,7)} · ${esc(r.m.slice(0,60))}</td>${cellM(r.v)}<td style="text-align:left;font-size:.78rem">Fatura ${CARTAO_NOME[r.cartao]} — ${status}</td></tr>`;
       h += `<tr><td colspan="3" style="text-align:left;white-space:normal;background:#FBF9F2">`;
       if (!(r.fat && r.fat.ok)){
-        h += `<div class="mini" style="margin:4px 0 6px">Regime de caixa: as compras desta fatura entram hoje (${r.d.slice(8,10)}/${r.d.slice(5,7)}), abertas por categoria. <b>Anexe o arquivo da fatura (CSV do banco)</b> ou cole os itens — uma linha por compra, valor no fim (ex.: <i>POSTO SAPATAO  81,40</i>). A soma deve bater com o pagamento (${fmtMoeda(-r.v)}).</div>
+        const pends = (D.fat_pend||[]).filter(p => p.cartao === r.cartao);
+        if (pends.length){
+          h += `<div class="mini" style="margin:4px 0 4px"><b>Você já guardou fatura(s) deste cartão:</b></div><div style="margin-bottom:8px">` +
+            pends.map(p => `<button class="btn sm" style="background:var(--verde);color:#fff" onclick="impUsarFatPend(${i},'${p.id}')">usar fatura ${p.ref? p.ref.slice(5,7)+'/'+p.ref.slice(0,4)+' ' : ''}· ${fmtMoeda(p.total)} · ${p.items.length} itens</button>`).join(' ') + `</div>`;
+        }
+        h += `<div class="mini" style="margin:4px 0 6px">Regime de caixa: as compras desta fatura entram hoje (${r.d.slice(8,10)}/${r.d.slice(5,7)}), abertas por categoria. ${pends.length?'Ou a':'A'}nexe o arquivo da fatura (CSV do banco) ou cole os itens — uma linha por compra, valor no fim (ex.: <i>POSTO SAPATAO  81,40</i>). A soma deve bater com o pagamento (${fmtMoeda(-r.v)}).</div>
           <input type="file" id="imp-fatfile-${i}" onchange="impFatArquivo(${i}, this)" style="margin:2px 0 8px;font-size:.8rem;max-width:100%">
           <textarea id="imp-fat-${i}" rows="5" style="width:100%;font:inherit;font-size:.8rem;border:1px solid var(--borda);border-radius:8px;padding:8px" placeholder="ou cole os itens aqui"></textarea>
           <div style="margin-top:6px"><button class="btn sm" onclick="impFatura(${i})">Processar itens</button></div>
@@ -903,6 +999,10 @@ function impConfirmar(){
     SB[acc].fim[mkey(m)] = bal;
   }
 
+  // faturas guardadas que foram usadas saem da fila de pendentes
+  const usadas = IMP.rows.filter(r => r.fat && r.fat.fromPend).map(r => r.fat.fromPend);
+  if (usadas.length) D.fat_pend = (D.fat_pend||[]).filter(p => !usadas.includes(p.id));
+
   cob[acc] = IMP.fimData;
   const novoCorte = [cob.sicredi, cob.nubank].sort()[0];
   if (novoCorte > D.corte) D.corte = novoCorte;
@@ -935,7 +1035,16 @@ function impConfirmar(){
   });
 }
 
-document.getElementById('imp-ler').addEventListener('click', impLer);
+document.getElementById('imp-ler').addEventListener('click', () =>
+  document.getElementById('imp-tipo').value === 'fatura' ? fatLer() : impLer());
+document.getElementById('imp-tipo').addEventListener('change', e => {
+  const fat = e.target.value === 'fatura';
+  document.getElementById('imp-extrato-campos').style.display = fat ? 'none' : '';
+  document.getElementById('imp-fatura-campos').style.display = fat ? '' : 'none';
+  document.getElementById('imp-msg').textContent = '';
+  document.getElementById('imp-review').innerHTML = '';
+  IMP = null; FIMP = null;
+});
 document.getElementById('gh-save').addEventListener('click', ghAtivar);
 document.getElementById('gh-off').addEventListener('click', ghDesativar);
 renderGh();
