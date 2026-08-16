@@ -894,32 +894,44 @@ function parseOFX(text){
 }
 
 // ---- fatura: parser de itens (texto colado ou CSV exportado do banco) ----
-// Tolerante: pula cabeçalhos, linhas de total/saldo/pagamento e linhas sem valor,
-// reportando quantas foram ignoradas — a trava real é a soma bater com o pagamento.
-const FAT_META = /^(TOTAL|SALDO|LIMITE|VENCIMENTO|PAGAMENTO|PAG\b|PGTO|CREDITO DE PAGAMENTO|DEB\.?\s?CTA|FATURA)/i;
+// Criterioso: só aceita como valor algo em formato de dinheiro (vírgula e
+// centavos), descarta linhas de cabeçalho/estruturais (cooperativa, conta,
+// número do cartão, vencimento, totais) e aproveita o "Valor Total" declarado
+// no arquivo como conferência da soma. A trava real segue no pagamento.
+const FAT_META = /^(TOTAL|VALOR TOTAL|VALOR M|SALDO|LIMITE|VENCIMENTO|DATA DE|PAGAMENTO|PAG\b|PGTO|CREDITO DE PAGAMENTO|DEB\.?\s?CTA|FATURA|COOPERATIVA|CONTA CORRENTE|AG[ÊE]NCIA|AGENCIA\b|TITULAR|PORTADOR|ASSOCIADO|CPF|CART[ÃA]O|MELHOR DIA|PARCELAMENTO)/i;
+const FAT_VAL = /-?\s?(?:R\$\s*)?\d[\d.]*,\d{2}/g;
 function parseFaturaItens(text){
-  const items = []; const ignoradas = [];
+  const items = []; const ignoradas = []; let declTotal = null;
   for (const raw of text.split(/\n/)){
     const line = raw.trim().replace(/"/g,'').replace(/[;,\t]+$/,'');
     if (!line) continue;
-    const m = line.match(/(-?\s*(?:R\$\s*)?[\d][\d.,]*)\s*([DC])?\s*$/i);
-    if (!m){ ignoradas.push(line); continue; }
-    let vs = m[1].replace(/\s|R\$/g,''), neg = vs.startsWith('-');
-    vs = vs.replace('-','');
-    if (vs.includes(',') && vs.includes('.')) vs = vs.replace(/\./g,'').replace(',','.');
-    else if (vs.includes(',')) vs = vs.replace(',','.');
+    // último valor em formato monetário da linha (ignorando colunas em US$)
+    let tok = null;
+    for (const m of line.matchAll(FAT_VAL)){
+      const antes = line.slice(Math.max(0, m.index-4), m.index).toUpperCase();
+      if (antes.includes('US$') || antes.includes('U$')) continue;
+      tok = m;
+    }
+    if (!tok){ ignoradas.push(line); continue; }
+    let vs = tok[0].replace(/[R$\s]/g,''), neg = vs.startsWith('-');
+    vs = vs.replace('-','').replace(/\./g,'').replace(',','.');
     const val = parseFloat(vs);
     if (isNaN(val)){ ignoradas.push(line); continue; }
-    if (m[2] && m[2].toUpperCase() === 'C') neg = !neg;   // sufixo C = crédito/estorno
-    let desc = line.slice(0, m.index).replace(/[;,\t]+\s*$/,'').trim()
+    const depois = line.slice(tok.index + tok[0].length).replace(/^[;,\t\s]+/,'');
+    if (/^C(\b|$)/i.test(depois)) neg = !neg;   // sufixo C = crédito/estorno
+    let desc = line.slice(0, tok.index).replace(/[;,\t]+\s*$/,'').trim()
       .replace(/^\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*[-–]?\s*/,'').replace(/^\d{4}-\d{2}-\d{2}\s*/,'')
-      .replace(/^[;,\t]+\s*/,'').trim();
-    if (FAT_META.test(desc)){ ignoradas.push(line); continue; }
-    if (!desc) desc = '(sem descrição)';
+      .replace(/^[;,\t]+\s*/,'').replace(/[;,\t]+/g,' · ').trim();
+    if (!desc) desc = depois.replace(/^[DC](\b|$)\s*/i,'').replace(/^[;,\t]+\s*/,'').trim();
+    if (FAT_META.test(desc)){
+      if (/^(VALOR\s+)?TOTAL/i.test(desc)) declTotal = Math.abs(val);
+      ignoradas.push(line); continue;
+    }
+    if (!/[A-Za-zÀ-ÿ]/.test(desc)){ ignoradas.push(line); continue; }   // linha sem descrição de verdade
     const v = neg ? -val : val;
-    items.push({ desc, val: round2(v), c: catCard(desc, v) });
+    items.push({ desc: desc.slice(0,60), val: round2(v), c: catCard(desc, v) });
   }
-  return items.length ? { items, ignoradas }
+  return items.length ? { items, ignoradas, declTotal }
     : { erro: 'Não encontrei itens com valor. Anexe o CSV da fatura ou cole uma linha por compra, com o valor no fim.' };
 }
 
@@ -963,8 +975,15 @@ function detectCartao(text){
   return null;
 }
 function detectRef(text){
-  const m = text.match(/(?:VENCIMENTO|REFER[ÊE]NCIA|FATURA DE)[^\d]{0,20}(\d{1,2})\/(\d{4})/i);
+  let m = text.match(/(?:REFER[ÊE]NCIA|FATURA DE)[^\d]{0,20}(\d{1,2})\/(\d{4})/i);
   if (m) return `${m[2]}-${String(+m[1]).padStart(2,'0')}`;
+  // vencimento em dd/mm/aaaa: a fatura é do mês anterior ao vencimento
+  m = text.match(/VENCIMENTO[^\d]{0,20}(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i);
+  if (m){
+    let aa = m[3].length === 2 ? 2000 + +m[3] : +m[3], mm = +m[2] - 1;
+    if (mm === 0){ mm = 12; aa--; }
+    if (mm >= 1 && mm <= 12) return `${aa}-${String(mm).padStart(2,'0')}`;
+  }
   const meses = {};
   for (const dm of text.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/g)){
     const ano = dm[3].length === 2 ? '20'+dm[3] : dm[3], mn = +dm[2];
@@ -985,7 +1004,7 @@ async function fatLer(texto){
   }
   const cartao = detectCartao(texto);
   FIMP = { cartao: cartao || 'visa', cartaoAuto: !!cartao, ref: detectRef(texto), items: res.items,
-    total: round2(res.items.reduce((s,it)=>s+it.val,0)), ignoradas: res.ignoradas.length };
+    total: round2(res.items.reduce((s,it)=>s+it.val,0)), ignoradas: res.ignoradas.length, declTotal: res.declTotal };
   fatRender();
   const ref = FIMP;
   iaRefinarFatura(ref.items, () => { if (FIMP === ref) fatRender(); });
@@ -994,6 +1013,12 @@ async function fatLer(texto){
 function fatRender(){
   const el = document.getElementById('imp-review');
   let h = `<div class="note" style="margin-bottom:10px"><b>Fatura de cartão</b> · ${FIMP.items.length} item(ns) · total ${fmtMoeda(FIMP.total)}${FIMP.ignoradas?` · ${FIMP.ignoradas} linha(s) de cabeçalho/total ignorada(s)`:''}</div>`;
+  if (FIMP.declTotal != null){
+    const difT = round2(FIMP.declTotal - FIMP.total);
+    h += Math.abs(difT) <= 1
+      ? `<div class="mini" style="margin-bottom:10px;color:#0E5C46"><b>✓ Confere com o arquivo:</b> o total declarado na fatura (${fmtMoeda(FIMP.declTotal)}) bate com a soma dos itens lidos.</div>`
+      : `<div class="mini" style="margin-bottom:10px;color:var(--laranja)"><b>⚠ Atenção:</b> o arquivo declara total de ${fmtMoeda(FIMP.declTotal)}, mas a soma dos itens lidos dá ${fmtMoeda(FIMP.total)} (diferença de ${fmtMoeda(difT)}). Pode ser fatura ainda aberta ou linha não lida — confira a lista abaixo. A trava final continua no dia do pagamento.</div>`;
+  }
   h += `<div class="formgrid" style="margin-bottom:10px">
     <label>Cartão${FIMP.cartaoAuto?' <span class="mini" style="font-weight:400">(detectado)</span>':' <span class="mini" style="color:var(--laranja);font-weight:400">(confira)</span>'}
       <select id="fat-sel-cartao" onchange="FIMP.cartao=this.value">${Object.entries(CARTAO_NOME).map(([k,n])=>`<option value="${k}" ${FIMP.cartao===k?'selected':''}>${n}</option>`).join('')}</select></label>
