@@ -338,6 +338,19 @@ body.is-admin .admin-only{display:block}
     <button class="btn" id="pw-change">Alterar senha</button>
     <div class="mini" id="pw-msg" style="margin-top:8px"></div>
   </div>
+  <div class="card admin-only">
+    <h2>Publicação automática na base</h2>
+    <div class="mini" id="gh-status" style="margin-bottom:8px"></div>
+    <div class="formgrid" id="gh-form">
+      <label class="full">Chave do GitHub <input type="password" id="gh-token" autocomplete="off" placeholder="github_pat_…"></label>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" id="gh-save">Ativar publicação automática</button>
+      <button class="btn sm danger" id="gh-off" style="display:none">desativar</button>
+    </div>
+    <div class="mini" id="gh-msg" style="margin-top:8px"></div>
+    <div class="note">Com isso ativo, toda alteração (acessos, importações, documentos) vai sozinha para a base — em ~1 minuto vale em todos os aparelhos. Como gerar a chave (2 min): github.com → foto de perfil → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens → Fine-grained tokens</b> → Generate new token → Repository access: <b>Only select repositories</b> → <i>painel-estacao-operacional</i> → Permissions → <b>Contents: Read and write</b> → Generate → cole aqui. A chave fica guardada <b>criptografada</b> dentro do cofre, nunca em texto aberto.</div>
+  </div>
   <div class="card" id="sync-card"></div>
   </section>
 
@@ -424,6 +437,44 @@ const Vault = {
     this.dirtyLocal = true;
     try { localStorage.setItem(LS_KEY, JSON.stringify(this.store)); }
     catch(e){ alert('O navegador ficou sem espaço para guardar as alterações localmente. Baixe agora o dados.enc.json atualizado (aba Acessos) para não perdê-las.'); }
+    this.autoPublish();
+  },
+
+  // Publicação automática: envia o dados.enc.json atualizado para a base
+  // via API do GitHub. A chave vive criptografada dentro do próprio cofre.
+  pubStatus: null, pubHora: null, pubErro: null, _pubBusy: false, _pubAgain: false,
+  async autoPublish(){
+    const cfg = this.data && this.data.sync;
+    if (!cfg || !cfg.token || !this.dirtyLocal) { if (window.renderSync) renderSync(); return; }
+    if (this._pubBusy){ this._pubAgain = true; return; }
+    this._pubBusy = true;
+    this.pubStatus = 'publicando'; if (window.renderSync) renderSync();
+    try {
+      const api = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
+      const hdr = { Authorization: 'Bearer ' + cfg.token, Accept: 'application/vnd.github+json' };
+      const getSha = async () => {
+        const g = await fetch(`${api}?ref=${cfg.branch}`, { headers: hdr });
+        if (g.ok) return (await g.json()).sha;
+        if (g.status === 404) return null;
+        throw new Error('leitura da base: HTTP ' + g.status);
+      };
+      const body = { message: 'chore: sincroniza dados.enc.json (publicação automática)', branch: cfg.branch,
+        content: this.b64e(new TextEncoder().encode(JSON.stringify(this.store))) };
+      const sha = await getSha(); if (sha) body.sha = sha;
+      let r = await fetch(api, { method:'PUT', headers:{...hdr,'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      if (r.status === 409 || r.status === 422){
+        const s2 = await getSha(); if (s2) body.sha = s2; else delete body.sha;
+        r = await fetch(api, { method:'PUT', headers:{...hdr,'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      }
+      if (!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — chave inválida ou sem permissão' : ''));
+      this.dirtyLocal = false; this.pubStatus = 'ok'; this.pubErro = null;
+      this.pubHora = new Date().toTimeString().slice(0,5);
+    } catch(e){
+      this.pubStatus = 'erro'; this.pubErro = e.message;
+    }
+    this._pubBusy = false;
+    if (window.renderSync) renderSync();
+    if (this._pubAgain){ this._pubAgain = false; this.autoPublish(); }
   },
 
   exportFile(){
