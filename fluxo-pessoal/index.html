@@ -284,35 +284,13 @@ body.is-admin .admin-only{display:block}
   <div class="card">
     <h2>Importar para os lançamentos</h2>
     <div class="formgrid">
-      <label>O que importar
-        <select id="imp-tipo">
-          <option value="extrato">Extrato bancário (OFX)</option>
-          <option value="fatura">Fatura de cartão (CSV ou texto)</option>
-        </select></label>
+      <label class="full">Arquivo — extrato do banco (OFX) ou fatura do cartão (CSV) <input type="file" id="imp-file"></label>
+      <label class="full">ou cole aqui o texto da fatura <textarea id="imp-txt" rows="3" placeholder="uma linha por compra, valor no fim — ex.: POSTO SAPATAO  81,40"></textarea></label>
     </div>
-    <div class="formgrid" id="imp-extrato-campos">
-      <label>Arquivo OFX do banco <input type="file" id="imp-file"></label>
-      <label>Conta
-        <select id="imp-acc">
-          <option value="">Detectar automaticamente</option>
-          <option value="sicredi">Sicredi CC</option>
-          <option value="nubank">Nubank</option>
-        </select></label>
-    </div>
-    <div class="formgrid" id="imp-fatura-campos" style="display:none">
-      <label>Cartão
-        <select id="fat-cartao">
-          <option value="visa">Visa Infinite</option>
-          <option value="nucard">Cartão Nubank</option>
-        </select></label>
-      <label>Mês de referência <input type="month" id="fat-ref"></label>
-      <label class="full">Arquivo da fatura (CSV) <input type="file" id="fat-file"></label>
-      <label class="full">ou cole os itens aqui <textarea id="fat-txt" rows="4" placeholder="uma linha por compra, valor no fim — ex.: POSTO SAPATAO  81,40"></textarea></label>
-    </div>
-    <button class="btn" id="imp-ler">Ler e classificar</button>
+    <button class="btn" id="imp-ler">Enviar</button>
     <div class="mini" id="imp-msg" style="margin-top:8px"></div>
     <div id="imp-review" style="margin-top:12px"></div>
-    <div class="note"><b>Extrato (OFX)</b>: a ferramenta ignora o que já está conciliado, classifica cada lançamento pelas regras do teu pipeline e nada entra sem a conciliação no centavo fechar. <b>Fatura de cartão</b>: pode ser enviada a qualquer momento, mesmo antes de fechar — fica guardada criptografada, já classificada, e entra no caixa <b>no dia do pagamento</b>: quando o débito da fatura aparecer na importação do extrato, a ferramenta oferece a fatura guardada com um clique.</div>
+    <div class="note">Só anexar e enviar — a ferramenta reconhece sozinha se é <b>extrato</b> (Sicredi ou Nubank) ou <b>fatura de cartão</b>, e no caso da fatura identifica também o cartão e o mês (dá para corrigir na revisão, se precisar). <b>Extrato</b>: ignora o que já está conciliado, classifica pelas regras do teu pipeline e nada entra sem a conciliação no centavo fechar. <b>Fatura</b>: pode ser enviada a qualquer momento, mesmo antes de fechar — fica guardada criptografada, já classificada, e entra no caixa <b>no dia do pagamento</b>, quando o débito aparecer na importação do extrato.</div>
   </div>
   <div class="card">
     <h2>Documentos guardados</h2>
