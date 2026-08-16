@@ -27,9 +27,19 @@ ficam no `dados.enc.json`, criptografado com AES-256-GCM. A senha de cada usuár
 
 ## Abas novas
 
-- **Documentos** — vá adicionando extratos (OFX/CSV/PDF), faturas e comprovantes conforme
-  chegam, por upload ou colando o texto. Ficam guardados criptografados junto com os dados,
-  prontos para a próxima atualização da ferramenta. Limite: 3 MB por arquivo.
+- **Documentos** — duas funções:
+  1. **Importador de extratos OFX** (Sicredi e Nubank): a ferramenta lê o arquivo, ignora o
+     que já está conciliado, classifica cada lançamento pelas regras do pipeline
+     (`p3_pipeline.py` portado para o navegador) e mostra tudo para conferência, com a
+     categoria editável. Pagamentos de fatura pedem os itens da fatura (regime de caixa:
+     compras entram no dia do pagamento, abertas por categoria pelo classificador de cartão).
+     **Nada entra sem a conciliação no centavo fechar** contra o saldo do extrato; diferenças
+     pequenas (≤ R$ 50) podem virar ajuste explícito (Rendimentos/Despesas financeiras),
+     diferenças maiores bloqueiam. O corte geral só avança quando as duas contas estão
+     cobertas; os saldos de fim de mês e todas as telas se recalculam sozinhos.
+  2. **Arquivo de documentos** — extratos, faturas e comprovantes guardados criptografados
+     (upload ou texto colado). OFX importados são arquivados automaticamente.
+     Limite: 3 MB por arquivo.
 - **Acessos** — o administrador cria e exclui usuários; qualquer usuário troca a própria
   senha. Papéis: *Administrador* (gerencia acessos) e *Usuário* (só consulta e documentos).
 
@@ -55,9 +65,13 @@ Para testar localmente, não abra o `index.html` com clique duplo (o navegador b
 carregamento do `dados.enc.json`); sirva a pasta: `python3 -m http.server` e acesse
 `http://localhost:8000`.
 
-## Atualizar os dados (nova versão dos lançamentos)
+## Atualizar os dados
 
-Quando gerar uma nova versão dos dados (novos extratos processados pelo pipeline):
+**Fluxo mensal normal — sem sair da ferramenta:** aba Documentos → *Importar extrato (OFX)*
+para cada conta → conferir categorias → confirmar → baixar o `dados.enc.json` atualizado
+(card Sincronização) e substituir na hospedagem.
+
+**Reconstrução completa do cofre** (raro — ex.: refazer a base pelo pipeline Python):
 
 ```bash
 node tools/build-dados.js \

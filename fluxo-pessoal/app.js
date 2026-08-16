@@ -4,23 +4,21 @@ const D = window.__VAULT_DATA__.D;
 const MN = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MFULL = ['','janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const DIM = [0,31,28,31,30,31,30,31,31,30,31,30,31];
-const CORTE_M = 8, CORTE_D = 14, FECHADOS = 7;
+const ANO = +D.corte.slice(0,4);
 const CM = {}; D.contas.forEach(c => CM[c.id] = c);
 const GRUPOS_R = [...new Set(D.contas.filter(c=>c.tipo==='R').map(c=>c.grupo))];
 const GRUPOS_P = [...new Set(D.contas.filter(c=>c.tipo==='P').map(c=>c.grupo))];
+const mkey = m => ANO + '-' + String(m).padStart(2,'0');
+const dbr = iso => iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4);
 
 // ---------- agregações a partir dos lançamentos ----------
-const R = {};           // R[conta][mes] = realizado
-D.contas.forEach(c => R[c.id] = Array(13).fill(0));
-for (const l of D.lanc) {
-  if (l.c === 'GIRO') continue;
-  R[l.c][+l.d.slice(5,7)] += l.v;
-}
+// Recalculadas em recalcBase() — no boot e após cada importação de extrato.
+let CORTE_M, CORTE_D, FECHADOS, R, MED, SB, saldoFim, saldoIniAno, saldoProj;
+
 function mediana(arr){ const a=[...arr].sort((x,y)=>x-y); const n=a.length; return n%2? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2; }
-const MED = {}; D.contas.forEach(c => { MED[c.id] = mediana(R[c.id].slice(1, FECHADOS+1)); });
 function prev(cid, m){
   let v = MED[cid];
-  if (m >= 9) {
+  if (m > CORTE_M) {
     if (['captacao','resgates'].includes(cid)) v = 0;               // zerado até decisão
     if (cid==='aplic') v = -1500;                                    // DCA Bitcoin agendado (política Samuel)
     if (cid === 'viagens' && (m===9||m===10||m===11)) v = Math.min(v, 0) - 10000; // lua de mel escalonada 10k set/out/nov
@@ -28,17 +26,34 @@ function prev(cid, m){
   }
   return v;
 }
-function agoRestante(cid){ return prev(cid, 9) * (31 - CORTE_D) / 31; }
+// previsão proporcional para o restante do mês parcial (corte D-1)
+function mesRestante(cid){
+  if (CORTE_D >= DIM[CORTE_M]) return 0;
+  return prev(cid, Math.min(CORTE_M+1, 12)) * (DIM[CORTE_M] - CORTE_D) / DIM[CORTE_M];
+}
 
-// saldo total (contas monitoradas) no fim de cada mês
-const saldoFim = Array(13).fill(0);
-const SB = D.saldos;
-for (let m=1; m<=CORTE_M; m++) saldoFim[m] = SB.sicredi.fim['2026-0'+m] + SB.nubank.fim['2026-0'+m];
-const saldoIniAno = SB.sicredi.ini_ano + SB.nubank.ini_ano;
-let projAgo = saldoFim[CORTE_M] + D.contas.reduce((s,c)=>s+agoRestante(c.id),0);
-const saldoProj = Array(13).fill(null);
-saldoProj[CORTE_M] = projAgo;
-for (let m=9; m<=12; m++) saldoProj[m] = saldoProj[m-1] + D.contas.reduce((s,c)=>s+prev(c.id,m),0);
+function recalcBase(){
+  CORTE_M = +D.corte.slice(5,7); CORTE_D = +D.corte.slice(8,10);
+  FECHADOS = CORTE_D >= DIM[CORTE_M] ? CORTE_M : CORTE_M - 1;
+  R = {};           // R[conta][mes] = realizado
+  D.contas.forEach(c => R[c.id] = Array(13).fill(0));
+  for (const l of D.lanc) {
+    if (l.c === 'GIRO') continue;
+    R[l.c][+l.d.slice(5,7)] += l.v;
+  }
+  MED = {}; D.contas.forEach(c => { MED[c.id] = mediana(R[c.id].slice(1, FECHADOS+1)); });
+
+  // saldo total (contas monitoradas) no fim de cada mês
+  SB = D.saldos;
+  saldoFim = Array(13).fill(0);
+  for (let m=1; m<=CORTE_M; m++) saldoFim[m] = (SB.sicredi.fim[mkey(m)]||0) + (SB.nubank.fim[mkey(m)]||0);
+  saldoIniAno = SB.sicredi.ini_ano + SB.nubank.ini_ano;
+  saldoProj = Array(13).fill(null);
+  saldoProj[CORTE_M] = saldoFim[CORTE_M] + D.contas.reduce((s,c)=>s+mesRestante(c.id),0);
+  for (let m=CORTE_M+1; m<=12; m++) saldoProj[m] = saldoProj[m-1] + D.contas.reduce((s,c)=>s+prev(c.id,m),0);
+}
+recalcBase();
+
 function saldoNoFim(m){ return m < CORTE_M ? saldoFim[m] : saldoProj[m]; }
 function saldoNoInicio(m){ return m===1 ? saldoIniAno : saldoNoFim(m-1); }
 
@@ -280,8 +295,8 @@ function renderBarras(meses){
 // ---------- cards estáticos ----------
 function renderContas(){
   let h = `<table><thead><tr><th class="lab">Conta</th>${Array.from({length:CORTE_M},(_,i)=>`<th>${MN[i+1]}</th>`).join('')}</tr></thead><tbody>`;
-  h += `<tr><td class="lab">Sicredi CC</td>${Array.from({length:CORTE_M},(_,i)=>cell(SB.sicredi.fim['2026-0'+(i+1)])).join('')}</tr>`;
-  h += `<tr><td class="lab">Nubank</td>${Array.from({length:CORTE_M},(_,i)=>cell(SB.nubank.fim['2026-0'+(i+1)])).join('')}</tr>`;
+  h += `<tr><td class="lab">Sicredi CC</td>${Array.from({length:CORTE_M},(_,i)=>cell(SB.sicredi.fim[mkey(i+1)])).join('')}</tr>`;
+  h += `<tr><td class="lab">Nubank</td>${Array.from({length:CORTE_M},(_,i)=>cell(SB.nubank.fim[mkey(i+1)])).join('')}</tr>`;
   h += `<tr class="tot"><td class="lab">Total</td>${Array.from({length:CORTE_M},(_,i)=>cell(saldoFim[i+1])).join('')}</tr>`;
   h += '</tbody></table>';
   document.getElementById('contas').innerHTML = h;
@@ -335,14 +350,14 @@ function render(){
   st.querySelectorAll('.tab').forEach(t=>{ if(t.dataset.v!=='resumo') t.style.display = temReal?'':'none'; });
   document.getElementById('flegend').innerHTML =
     per.t==='m'
-    ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–jul)${per.v>=9?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: extratos${per.v===CORTE_M?' até 14/08':''}</span><span>Toque em Recebimentos/Pagamentos abre os grupos; no grupo, as contas; na conta, os lançamentos</span>`
-    : `<span>Jan–Jul: realizado fechado · Ago¹: realizado até 14/08 · Set–Dez*: previsto</span>`;
+    ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–${MN[FECHADOS].toLowerCase()})${per.v>CORTE_M?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: extratos${per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]?' até '+D.corte.slice(8,10)+'/'+D.corte.slice(5,7):''}</span><span>Toque em Recebimentos/Pagamentos abre os grupos; no grupo, as contas; na conta, os lançamentos</span>`
+    : `<span>Jan–${MN[FECHADOS]}: realizado fechado${FECHADOS<CORTE_M?` · ${MN[CORTE_M]}¹: realizado até ${D.corte.slice(8,10)+'/'+D.corte.slice(5,7)}`:''}${CORTE_M<12?` · ${MN[CORTE_M+1]}–Dez*: previsto`:''}</span>`;
   if (per.t!=='m') renderMeses(meses);
   else if (sub==='semanas' && temReal) renderSemanas(per.v);
   else if (sub==='dias' && temReal) renderDias(per.v);
   else renderResumo(meses);
   document.getElementById('fnota').innerHTML =
-    (per.t==='m'&&per.v===CORTE_M? 'Agosto parcial: realizado até 14/08; o caixa no fim do mês mostrado é projeção (realizado + previsto proporcional dos dias restantes). ':'')+
+    (per.t==='m'&&per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]? `${MFULL[CORTE_M][0].toUpperCase()+MFULL[CORTE_M].slice(1)} parcial: realizado até ${D.corte.slice(8,10)}/${D.corte.slice(5,7)}; o caixa no fim do mês mostrado é projeção (realizado + previsto proporcional dos dias restantes). `:'')+
     ((per.t==='m'&&[9,10,11].includes(per.v))? 'A lua de mel está escalonada na previsão: ~R$ 10 mil em set (hotéis), ~10 mil em out e ~10 mil em nov (gastos da viagem na fatura). O casamento é por conta dos pais. ':'')+
     'Faturas de cartão entram no dia do pagamento, abertas por categoria conforme a fatura; o Mastercard (encerrado, substituído pelo Visa) foi aberto por estimativa usando o mix de categorias do Visa de jan–mar. Captação e resgates estão zerados na previsão; aplicações carregam o DCA de Bitcoin (R$ 1,5 mil/mês, política de reserva de futuro).';
   renderBarras(meses);
@@ -354,9 +369,14 @@ document.getElementById('ptabs').addEventListener('click', e=>{
 document.getElementById('subtabs').addEventListener('click', e=>{
   if (e.target.dataset.v){ sub = e.target.dataset.v; render(); }
 });
-document.getElementById('hcorte').textContent = '14/08/2026';
-document.getElementById('fontes').innerHTML =
-  `<b>Fontes:</b> extratos OFX Sicredi CC e Nubank (jan–14/ago/2026) · 7 faturas Visa Infinite (venc. fev–ago) e 8 faturas do cartão Nubank, todas conferidas contra o total declarado · IRPF 2026 (ano-base 2025). Regra de ouro: saldo inicial + recebimentos − pagamentos = saldo final real de cada conta, conciliado no centavo em 16 de 16 conta-mês. Transferências entre contas próprias são giro e ficam fora dos totais. Ferramenta gerada em 15/08/2026 — nenhum valor é digitado aqui; tudo deriva dos lançamentos embutidos.`;
+function renderCabecalho(){
+  document.getElementById('hcorte').textContent = dbr(D.corte);
+  const nCM = Object.keys(SB.sicredi.fim).length + Object.keys(SB.nubank.fim).length;
+  const hb = document.getElementById('hbadge'); if (hb) hb.textContent = `✓ Conciliado no centavo — ${nCM}/${nCM} conta-mês`;
+  document.getElementById('fontes').innerHTML =
+    `<b>Fontes:</b> extratos OFX Sicredi CC e Nubank (jan–${D.corte.slice(8,10)}/${MN[CORTE_M].toLowerCase()}/${ANO}) · faturas Visa Infinite e do cartão Nubank conferidas contra o total declarado · IRPF ${ANO} (ano-base ${ANO-1}). Regra de ouro: saldo inicial + recebimentos − pagamentos = saldo final real de cada conta, conciliado no centavo em ${nCM} de ${nCM} conta-mês. Transferências entre contas próprias são giro e ficam fora dos totais. Nenhum valor é digitado aqui; tudo deriva dos lançamentos e das importações conciliadas.`;
+}
+renderCabecalho();
 // ================================================================
 // Documentos — extratos, faturas e outros arquivos guardados no cofre
 // ================================================================
@@ -498,6 +518,359 @@ async function pwTrocar(){
   } catch(e){ msg.textContent = e.message; }
 }
 
+// ================================================================
+// Importador de extratos OFX — classifica, concilia e incorpora
+// Regras portadas de pipeline/p3_pipeline.py (fonte da verdade).
+// ================================================================
+const round2 = v => Math.round(v*100)/100;
+
+// ---- classificador: itens de cartão (cat_card) ----
+function catCard(desc, val){
+  const d = String(desc).toUpperCase();
+  const has = (...ks) => ks.some(k => d.includes(k));
+  if (has('IOF','ANUIDADE','TRANSACAO')) return 'fin';
+  if (has('DEVOLUCAO')) return 'casa_mov';                    // devoluções ML/compras
+  if (has('BENNU')) return 'restaurantes';                    // Estação Bennu = restaurante (não é posto)
+  if (has('POSTO','SAPATAO','SAFYR','ABASTECEDORA','COMERCIAL DE COMBUST','SHELL','4 COLONIAS'))
+    return (val == null || val > 180) ? 'combustivel' : 'mercado';  // ≤R$180 = conveniência (regra Samuel)
+  if (has('RISSUL','BOURBON','MARANADOCE','QUEIJARIA','EMPORIO','BECKER HAUS','CACAU','KOPENHAGEN','VISTAMONTES','GROWTH')) return 'mercado';
+  if (has('ZP NOBLE')) return 'casamento';
+  if (has('JIM')) return 'vestuario';
+  if (has('IFD','LOCATELLI','TOAST','GRILL','RESTAUR','ACAI','ALABAMA','BURGER','SUSHI','MAGATTA','MOKAI','CAFE','COFFEE','FEIJOADA','KACHURRASCO','CHURRASCARIA','AMECHICKEN','OH BRUDER','DI PAOLO','IL CAMPANAR','LEAO DO VALE','WJD','MERIDIANO','VIDEIRAS','ADEGA','BODEGA','PIZZAENTREVINHOS','CLANDESTINA','SCHWANTES','FERDAS','LUGU')) return 'restaurantes';
+  if (has('APPLE','GOOGLE','YOUTUBE','MICROSOFT','SETAPP','PADDLE','HBO','MELIMAIS','LINKTREE','VIVO','ANTHROPIC','CLAUDE','AMAZON','TEMU','NOAR','HBL','SHELL BOX','EVINO','OLYMPIKUS','CPQ','LINKER','ATGF','ZARCOIN','MAQU','MERCADOLIVRE','MAGALU','QMS','CONECTC'))
+    return has('APPLE','GOOGLE','YOUTUBE','MICROSOFT','SETAPP','PADDLE','HBO','MELIMAIS','LINKTREE','VIVO','ANTHROPIC','CLAUDE','AMAZON PRIME','HBL','SHELL BOX') ? 'assinaturas' : 'casa_mov';
+  if (has('SAINT PAUL','COURSIV','KIWIFY','GREENN','GAL CONTEUDOS','AUDITHORIUM')) return 'educacao';
+  if (has('PANVEL','FARMACIA','DROGARIA','LABORAT','DR PETTERSON','SANTE SPA','RDO','IMUNI','LILIANABEATRIZ')) return 'saude';
+  if (has('PRUDENTIAL','PRUDENT')) return 'seguros';
+  if (has('BROOKSFIELD','ARAMIS','CALCADOS','NORDWEG','LUPO','MINIMALCLUB','MISS PIJAMA','CASA ALBERTO','FRATEX','ANJINHOS','TNF','NORTH FACE')) return 'vestuario';
+  if (has('ARMAZEM DO SOFA','IND','FORMAS','SCS','PETZ','COBASI','NATIVA','AGROPECUARIA','MAGO DAS CHAVES','HARTMANN','MAGALU')) return 'casa_mov';
+  if (has('LBTRAVEL','BOOKING','HOTEL','MERCURE','WI FI','ONBOARD','DPSSA','VISTA IBIRAPUERA','SKYLINE','BUSLOG','RIO HOTEL','MICHELON','MICHEL','QMS','SMILES')) return 'viagens';
+  if (has('UBER','ESTAPAR','PARK','PARE CERTO','INDIGO','ESTACIONAMENTO','AGE ','LYON','PEDAGIO','MONTE BIANCO','VOLTARE')) return 'pedagio';
+  if (has('WEISS','PRO BIKE','VIC CENTER','ANDGO','LGND','CLICRUN','QUADRAS','TIKETO','TKTR','CLOVIS PIRES')) return 'esportes';
+  if (has('RHEMA')) return 'doacoes';
+  if (has('VEROO')) return 'mercado';
+  if (has('CONSORCIO EMPREENDED')) return 'fin';
+  if (has('KALITYCHI')) return 'esportes';                    // equipamentos bike/triathlon
+  if (has('LUCIANA BORGES','FILIPEJESKE','ROSEMERI','ASSINY','LENDA VIVA')) return 'servicos';
+  return 'servicos';
+}
+
+// ---- classificador: lançamentos bancários (cat_bank) ----
+// retorna {kind:'giro'|'conta'|'fatura', c, cartao}
+function catBank(memo, amt){
+  const m = String(memo).toUpperCase();
+  const has = (...ks) => ks.some(k => m.includes(k));
+  if (m.includes('DEBITO TED/IB') && has('SAMUEL F')) return {kind:'conta', c:'aplic'};   // TED p/ conta própria não monitorada (XP)
+  if (has('SAMUEL FE','SAMUEL F') && has('PIX','TED','TRANSF')) return {kind:'giro'};
+  if (has('DEB TRANSF CC/PP','TRANSFERENCIA DA POUPANCA')) return {kind:'giro'};
+  if (m.includes('PAGAMENTO DE FATURA')) return {kind:'fatura', cartao:'nucard'};
+  if (m.includes('DEB.CTA.FATURA')) return {kind:'fatura', cartao:'visa'};
+  if (has('PAGTO FATURA MASTER','EST PAGTO FATURA MASTER')) return {kind:'fatura', cartao:'master'};
+  if (has('44245623000108','DORA ENOTURIS','VISTA VIGNETI','49256547000141','BELLMONTE','50567595000130')) return {kind:'conta', c:'casamento'};
+  if (has('00273563025','30505111000110','24740724000130','08834195990','30595294000102')) return {kind:'conta', c:'casamento'};
+  if (m.includes('52424421153')) return {kind:'conta', c:'impostos'};        // Eliana = cartório da compra do apto financiado
+  if (m.includes('02335383051') || m.includes('HANGAR')) return {kind:'conta', c:'esportes'};
+  if (m.includes('POSTO SAPATAO') || m.includes('43510250000184'))
+    return {kind:'conta', c: Math.abs(amt) > 180 ? 'combustivel' : 'mercado'};
+  if (m.includes('52109749000175')) return {kind:'conta', c:'casa_mov'};     // BBX Vidros = casa
+  if (m.includes('00492547076')) return {kind:'conta', c:'restaurantes'};    // Marcelo Scheeren = chef
+  if (m.includes('43403222000168')){                                          // SF Consultoria
+    if (amt > 0) return {kind:'conta', c: Math.abs(amt-3341) < 2 ? 'prolabore' : 'lucros'};
+    return {kind:'giro'};
+  }
+  if (has('APLIC. FINANC','APLIC FUNDOS')) return {kind:'conta', c:'aplic'};
+  if (has('RESGATE APLIC')) return {kind:'conta', c:'resgates'};
+  if (m.includes('PLANO INT CAPITAL')) return {kind:'conta', c:'aplic'};
+  if (has('CREDITO CONSORCIO','LIBERACAO CREDITO')) return {kind:'conta', c:'captacao'};
+  if (has('LIQUIDACAO DE PARCELA','LIQUIDACAO CONTRATO','DEBITO CONVENIOS-CONSORCIO')) return {kind:'conta', c:'amort'};
+  if (m.includes('07808907') && amt < 0) return {kind:'conta', c:'amort'};   // boleto Adm Consórcio
+  if (has('IOF','JUROS UTILIZ','TARIFA','ENC0')) return {kind:'conta', c:'fin'};
+  if (m.includes('RGE')) return {kind:'conta', c:'energia'};
+  if (has('26887377','BRWEB','05489384')) return {kind:'conta', c:'condominio'};
+  if (has('DEFFERRARI','TELEF','08190344')) return {kind:'conta', c:'internet'};
+  if (has('PMDOISI','88254883','ARRECADACAO ESTADUAL','GADE','DARF','GNRE')) return {kind:'conta', c:'impostos'};
+  if (has('MAPFRE','TOKIOM')) return {kind:'conta', c:'seguros'};
+  if (has('RHEMA','MINIS')) return {kind:'conta', c:'doacoes'};
+  if (m.includes('26608804091') || m.includes('SERGIO') || m.includes('32961723000') || m.replace(/Ã/g,'').includes('IVANA'))
+    return {kind:'conta', c: amt > 0 ? 'casamento' : 'familia'};             // créditos = ressarcimento casamento; débitos = empréstimo pai
+  if (m.includes('33630661000150')) return {kind:'conta', c:'aplic'};        // Gowd/Latam Gateway = Pix p/ Binance (BTC)
+  if (m.includes('78220394072')) return {kind:'conta', c:'esportes'};        // personal trainer
+  if (has('PASSAGEM PEDAGIO','STAR PARK','ESTACI')) return {kind:'conta', c:'pedagio'};
+  if (has('BIKE','VIC CENTER','WEISS')) return {kind:'conta', c:'esportes'};
+  if (has('POUSADA','CAMILA MILANI')) return {kind:'conta', c:'viagens'};
+  if (has('CAMISARIA')) return {kind:'conta', c:'vestuario'};
+  if (has('VINHO')) return {kind:'conta', c:'restaurantes'};
+  if (has('CLINI','IMUNI','NUTRI','GUEDES','44350888')) return {kind:'conta', c:'saude'};
+  if (has('KIWIFY','EDUZZ','GREENN','ECOSS')) return {kind:'conta', c:'educacao'};
+  if (has('SICREDI CASHB')) return {kind:'conta', c:'outras_ent'};
+  if (has('RECEITA C','SECR. DA')) return {kind:'conta', c:'outras_ent'};
+  if (amt > 0) return {kind:'conta', c:'outras_ent'};
+  return {kind:'conta', c:'diversos', incerto:true};
+}
+
+// ---- parser OFX (SGML 1.x e XML 2.x — Sicredi e Nubank) ----
+function parseOFX(text){
+  const tag = (block, name) => {
+    const m = block.match(new RegExp('<'+name+'>\\s*([^<\\r\\n]*)','i'));
+    return m ? m[1].trim() : null;
+  };
+  const num = s => {
+    if (s == null) return null;
+    s = s.replace(/[^\d.,-]/g,'');
+    if (s.includes(',') && s.includes('.')) s = s.replace(/\./g,'').replace(',','.');
+    else if (s.includes(',')) s = s.replace(',','.');
+    const v = parseFloat(s); return isNaN(v) ? null : v;
+  };
+  const dt = s => { const m = s && s.match(/(\d{4})(\d{2})(\d{2})/); return m ? `${m[1]}-${m[2]}-${m[3]}` : null; };
+
+  const txs = [];
+  for (const chunk0 of text.split(/<STMTTRN>/i).slice(1)){
+    const chunk = chunk0.split(/<\/STMTTRN>|<\/BANKTRANLIST>|<LEDGERBAL>/i)[0];
+    const d = dt(tag(chunk,'DTPOSTED')), v = num(tag(chunk,'TRNAMT'));
+    if (d == null || v == null) continue;
+    txs.push({ d, v: round2(v), m: tag(chunk,'MEMO') || tag(chunk,'NAME') || '', f: tag(chunk,'FITID') || null });
+  }
+  const ledgerBlock = (text.split(/<LEDGERBAL>/i)[1] || '');
+  const ledger = num(tag(ledgerBlock,'BALAMT'));
+  const dtasof = dt(tag(ledgerBlock,'DTASOF'));
+  const dtend = dt(tag(text,'DTEND'));
+  const bankid = tag(text,'BANKID') || '', org = (tag(text,'ORG') || '').toUpperCase();
+  let acc = null;
+  if (bankid.includes('748') || org.includes('SICREDI')) acc = 'sicredi';
+  else if (bankid.includes('260') || org.includes('NU ') || org.includes('NUBANK') || org.includes('NU PAGAMENTOS')) acc = 'nubank';
+  return { txs, ledger, dtasof, dtend, acc };
+}
+
+// ---- fatura: parser de itens colados (uma linha por compra, valor no fim) ----
+function parseFaturaItens(text){
+  const items = [];
+  for (const raw of text.split(/\n/)){
+    const line = raw.trim().replace(/[;,\t]+$/,'');
+    if (!line) continue;
+    const m = line.match(/(-?\s*(?:R\$\s*)?[\d][\d.,]*)\s*$/);
+    if (!m) return { erro: `Não achei o valor no fim da linha: "${line.slice(0,50)}"` };
+    let vs = m[1].replace(/\s|R\$/g,''), neg = vs.startsWith('-');
+    vs = vs.replace('-','');
+    if (vs.includes(',') && vs.includes('.')) vs = vs.replace(/\./g,'').replace(',','.');
+    else if (vs.includes(',')) vs = vs.replace(',','.');
+    const val = parseFloat(vs);
+    if (isNaN(val)) return { erro: `Valor inválido na linha: "${line.slice(0,50)}"` };
+    let desc = line.slice(0, m.index).replace(/[;,\t]+\s*$/,'').trim()
+      .replace(/^\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*[-–]?\s*/,'').replace(/^\d{4}-\d{2}-\d{2}\s*/,'');
+    if (!desc) desc = '(sem descrição)';
+    const v = neg ? -val : val;
+    items.push({ desc, val: round2(v), c: catCard(desc, v) });
+  }
+  return items.length ? { items } : { erro: 'Cole ao menos uma linha (descrição e valor).' };
+}
+
+// ---- estado da importação em revisão ----
+let IMP = null;
+const cellM = v => `<td class="${v<0?'neg':''}">${fmtMoeda(v)}</td>`;
+const CARTAO_NOME = { visa:'Visa Infinite', nucard:'Cartão Nubank', master:'Mastercard' };
+const ACC_NOME = { sicredi:'Sicredi CC', nubank:'Nubank' };
+
+function cobertura(){
+  if (!D.cobertura) D.cobertura = { sicredi: D.corte, nubank: D.corte };
+  return D.cobertura;
+}
+
+async function impLer(){
+  const msg = document.getElementById('imp-msg');
+  const file = document.getElementById('imp-file').files[0];
+  msg.textContent = ''; document.getElementById('imp-review').innerHTML = ''; IMP = null;
+  if (!file){ msg.textContent = 'Escolha o arquivo OFX do extrato.'; return; }
+  const text = await file.text();
+  const p = parseOFX(text);
+  const acc = document.getElementById('imp-acc').value || p.acc;
+  if (!acc){ msg.textContent = 'Não reconheci o banco — escolha a conta (Sicredi ou Nubank) e tente de novo.'; return; }
+  if (!p.txs.length){ msg.textContent = 'Nenhum lançamento encontrado no arquivo. É um OFX de extrato?'; return; }
+  if (p.txs.some(t => +t.d.slice(0,4) !== ANO)){ msg.textContent = `Este arquivo tem lançamentos fora de ${ANO} — a ferramenta cobre ${ANO}.`; return; }
+
+  const cob = cobertura()[acc];
+  const fitsExist = new Set(D.lanc.map(l => l.f).filter(Boolean));
+  const novos = p.txs.filter(t => t.d > cob && !(t.f && fitsExist.has(t.f))).sort((a,b)=>a.d.localeCompare(b.d));
+  const ignorados = p.txs.length - novos.length;
+  if (!novos.length){ msg.textContent = `Nada novo: os ${ignorados} lançamentos do arquivo já estão conciliados (cobertura da conta ${ACC_NOME[acc]} vai até ${dbr(cob)}).`; return; }
+
+  const maxTx = novos[novos.length-1].d;
+  const fimData = [p.dtend, p.dtasof, maxTx].filter(Boolean).sort().pop();
+  const rows = novos.map(t => {
+    const cl = catBank(t.m, t.v);
+    return { ...t, kind: cl.kind, c: cl.kind==='giro' ? 'GIRO' : cl.c, cartao: cl.cartao || null, incerto: !!cl.incerto, fat: null };
+  });
+  IMP = { acc, rows, ledger: p.ledger, fimData, ignorados, arquivo: file.name, texto: text };
+  impRender();
+}
+
+function optsConta(sel){
+  let h = `<option value="GIRO" ${sel==='GIRO'?'selected':''}>— Giro entre contas (fora dos totais)</option>`;
+  for (const tipo of ['R','P']){
+    for (const g of (tipo==='R'?GRUPOS_R:GRUPOS_P)){
+      const cs = D.contas.filter(c=>c.grupo===g && c.tipo===tipo);
+      if (!cs.length) continue;
+      h += `<optgroup label="${esc(g)}">` + cs.map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${esc(c.nome)}</option>`).join('') + '</optgroup>';
+    }
+  }
+  return h;
+}
+
+function impConciliacao(){
+  const somaNovos = round2(IMP.rows.reduce((s,r)=>s+r.v,0));
+  const base = SB[IMP.acc].fim[mkey(+cobertura()[IMP.acc].slice(5,7))];
+  const esperado = round2(base + somaNovos);
+  const dif = IMP.ledger == null ? null : round2(IMP.ledger - esperado);
+  return { somaNovos, base, esperado, dif };
+}
+
+function impRender(){
+  const el = document.getElementById('imp-review');
+  const faturasPendentes = IMP.rows.filter(r=>r.kind==='fatura' && !(r.fat && r.fat.ok)).length;
+  let h = `<div class="note" style="margin-bottom:10px"><b>${ACC_NOME[IMP.acc]}</b> · ${esc(IMP.arquivo)} · ${IMP.rows.length} lançamento(s) novo(s)` +
+    (IMP.ignorados ? ` · ${IMP.ignorados} já conciliado(s), ignorado(s)` : '') +
+    ` · cobertura passa a ${dbr(IMP.fimData)}</div>`;
+  h += '<div class="tbl-wrap"><table><thead><tr><th class="lab">Data · Descrição</th><th>Valor</th><th style="text-align:left">Categoria</th></tr></thead><tbody>';
+  IMP.rows.forEach((r,i)=>{
+    if (r.kind === 'fatura'){
+      const status = r.fat && r.fat.ok
+        ? `✓ ${r.fat.items.length} itens conferem${r.fat.ajuste?` (ajuste de ${fmtMoeda(r.fat.ajuste)} em Despesas financeiras)`:''}`
+        : 'itens da fatura pendentes';
+      h += `<tr><td class="lab" style="white-space:normal">${r.d.slice(8,10)}/${r.d.slice(5,7)} · ${esc(r.m.slice(0,60))}</td>${cellM(r.v)}<td style="text-align:left;font-size:.78rem">Fatura ${CARTAO_NOME[r.cartao]} — ${status}</td></tr>`;
+      h += `<tr><td colspan="3" style="text-align:left;white-space:normal;background:#FBF9F2">`;
+      if (!(r.fat && r.fat.ok)){
+        h += `<div class="mini" style="margin:4px 0 6px">Regime de caixa: as compras desta fatura entram hoje (${r.d.slice(8,10)}/${r.d.slice(5,7)}), abertas por categoria. Cole abaixo os itens — uma linha por compra, valor no fim (ex.: <i>POSTO SAPATAO  81,40</i>). A soma deve bater com o pagamento (${fmtMoeda(-r.v)}).</div>
+          <textarea id="imp-fat-${i}" rows="5" style="width:100%;font:inherit;font-size:.8rem;border:1px solid var(--borda);border-radius:8px;padding:8px"></textarea>
+          <div style="margin-top:6px"><button class="btn sm" onclick="impFatura(${i})">Processar itens</button></div>
+          <div class="mini" id="imp-fat-msg-${i}" style="margin-top:4px"></div>`;
+      } else {
+        h += `<table style="margin:4px 0">` + r.fat.items.map((it,j)=>
+          `<tr><td class="lab" style="position:static;font-size:.78rem">${esc(it.desc.slice(0,45))}</td>${cellM(-it.val)}<td style="text-align:left"><select style="font-size:.75rem" onchange="IMP.rows[${i}].fat.items[${j}].c=this.value">${optsConta(it.c)}</select></td></tr>`).join('') +
+          `</table><div style="margin-top:4px"><button class="btn sm" onclick="IMP.rows[${i}].fat=null;impRender()">refazer itens</button></div>`;
+      }
+      h += `</td></tr>`;
+    } else {
+      h += `<tr${r.kind==='giro'||r.c==='GIRO'?' style="opacity:.65"':''}><td class="lab" style="white-space:normal">${r.d.slice(8,10)}/${r.d.slice(5,7)} · ${esc(r.m.slice(0,60))}${r.incerto?' <span style="color:var(--laranja)">● conferir</span>':''}</td>${cellM(r.v)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="IMP.rows[${i}].c=this.value">${optsConta(r.c)}</select></td></tr>`;
+    }
+  });
+  h += '</tbody></table></div>';
+
+  // conciliação no centavo
+  const c = impConciliacao();
+  h += `<div class="note" style="margin-top:10px"><b>Conciliação no centavo — ${ACC_NOME[IMP.acc]}</b><br>
+    Saldo conciliado em ${dbr(cobertura()[IMP.acc])}: <b>${fmtMoeda(c.base)}</b> · movimento novo: <b>${fmtMoeda(c.somaNovos)}</b> · saldo esperado em ${dbr(IMP.fimData)}: <b>${fmtMoeda(c.esperado)}</b><br>`;
+  if (c.dif == null){
+    h += `O arquivo não traz o saldo final. Informe o saldo da conta em ${dbr(IMP.fimData)}: <input id="imp-saldo" type="text" inputmode="decimal" style="width:130px;font:inherit;border:1px solid var(--borda);border-radius:6px;padding:4px 8px" placeholder="ex.: 22.242,34"> <button class="btn sm" onclick="impSaldoManual()">verificar</button></div>`;
+  } else if (Math.abs(c.dif) < 0.01){
+    h += `Saldo do extrato: <b>${fmtMoeda(IMP.ledger)}</b> — <b style="color:#0E5C46">✓ conciliado no centavo</b>.</div>`;
+  } else {
+    h += `Saldo do extrato: <b>${fmtMoeda(IMP.ledger)}</b> — <b style="color:var(--vermelho)">diferença de ${fmtMoeda(c.dif)}</b>.<br>`;
+    if (Math.abs(c.dif) <= 50){
+      h += `<label style="font-weight:400"><input type="checkbox" id="imp-ajuste" onchange="impRenderBotao()"> Lançar a diferença como ${c.dif>0?'<b>Rendimentos</b> (ex.: rendimento NuConta sem linha no OFX)':'<b>Despesas financeiras</b>'} — ajuste de conciliação</label></div>`;
+    } else {
+      h += `Diferença grande demais para ajuste automático. Confira se não falta um extrato anterior (a cobertura desta conta vai até ${dbr(cobertura()[IMP.acc])}) ou se alguma categoria/fatura ficou de fora. A importação fica bloqueada até fechar no centavo.</div>`;
+    }
+  }
+  h += `<div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+    <button class="btn" id="imp-conf" onclick="impConfirmar()">Confirmar importação</button>
+    <button class="btn sm" onclick="IMP=null;document.getElementById('imp-review').innerHTML='';document.getElementById('imp-msg').textContent='Importação descartada.'">descartar</button>
+  </div>`;
+  el.innerHTML = h;
+  IMP.podeBase = faturasPendentes === 0;
+  impRenderBotao();
+}
+
+function fmtMoeda(v){ return (v<0?'−':'') + 'R$ ' + Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function impRenderBotao(){
+  const btn = document.getElementById('imp-conf'); if (!btn || !IMP) return;
+  const c = impConciliacao();
+  const ajusteOk = c.dif != null && Math.abs(c.dif) >= 0.01 && Math.abs(c.dif) <= 50 && document.getElementById('imp-ajuste') && document.getElementById('imp-ajuste').checked;
+  const concOk = c.dif != null && (Math.abs(c.dif) < 0.01 || ajusteOk);
+  btn.disabled = !(IMP.podeBase && concOk);
+}
+
+function impSaldoManual(){
+  const s = document.getElementById('imp-saldo').value.trim();
+  let vs = s.replace(/\s|R\$/g,'');
+  if (vs.includes(',') && vs.includes('.')) vs = vs.replace(/\./g,'').replace(',','.');
+  else if (vs.includes(',')) vs = vs.replace(',','.');
+  const v = parseFloat(vs);
+  if (isNaN(v)){ alert('Valor inválido.'); return; }
+  IMP.ledger = round2(v);
+  impRender();
+}
+
+function impFatura(i){
+  const r = IMP.rows[i];
+  const res = parseFaturaItens(document.getElementById('imp-fat-'+i).value);
+  const msg = document.getElementById('imp-fat-msg-'+i);
+  if (res.erro){ msg.textContent = res.erro; return; }
+  const soma = round2(res.items.reduce((s,it)=>s+it.val,0));
+  const dif = round2(Math.abs(r.v) - soma);   // pago − itens (residual de centavos vira Despesas financeiras)
+  if (Math.abs(dif) > 1.00){
+    msg.textContent = `A soma dos itens (${fmtMoeda(soma)}) não bate com o pagamento (${fmtMoeda(Math.abs(r.v))}) — diferença de ${fmtMoeda(dif)}. Confira as linhas.`;
+    return;
+  }
+  r.fat = { items: res.items, ok: true, ajuste: Math.abs(dif) >= 0.01 ? dif : 0 };
+  impRender();
+}
+
+function impConfirmar(){
+  if (!IMP) return;
+  const acc = IMP.acc, cob = cobertura();
+  const antes = cob[acc];
+  const c = impConciliacao();
+
+  for (const r of IMP.rows){
+    if (r.kind === 'fatura' && r.fat && r.fat.ok){
+      for (const it of r.fat.items)
+        D.lanc.push({ d:r.d, v:round2(-it.val), c:it.c, o:r.cartao, m:it.desc.slice(0,60) });
+      if (r.fat.ajuste) D.lanc.push({ d:r.d, v:round2(-r.fat.ajuste), c:'fin', o:r.cartao, m:'Ajuste centavos fatura' });
+    } else {
+      D.lanc.push({ d:r.d, v:r.v, c:r.c, o:acc, m:r.m.slice(0,60), ...(r.f?{f:r.f}:{}) });
+    }
+  }
+  if (c.dif != null && Math.abs(c.dif) >= 0.01){
+    D.lanc.push({ d:IMP.fimData, v:c.dif, c: c.dif>0?'rendimentos':'fin', o:acc,
+      m:'Ajuste de conciliação (importação '+dbr(IMP.fimData)+')' });
+  }
+  D.lanc.sort((a,b)=>a.d.localeCompare(b.d));
+
+  // saldos de fim de mês da conta, rolando do último ponto conciliado até a nova cobertura
+  const mapAcc = l => l.o===acc || (acc==='sicredi' && (l.o==='visa'||l.o==='master')) || (acc==='nubank' && l.o==='nucard');
+  let bal = SB[acc].fim[mkey(+antes.slice(5,7))];
+  for (let m = +antes.slice(5,7); m <= +IMP.fimData.slice(5,7); m++){
+    const soma = D.lanc.filter(l => mapAcc(l) && +l.d.slice(5,7)===m && l.d > antes && l.d <= IMP.fimData)
+      .reduce((s,l)=>s+l.v, 0);
+    bal = round2(bal + soma);
+    SB[acc].fim[mkey(m)] = bal;
+  }
+
+  cob[acc] = IMP.fimData;
+  const novoCorte = [cob.sicredi, cob.nubank].sort()[0];
+  if (novoCorte > D.corte) D.corte = novoCorte;
+
+  // guarda o próprio OFX no arquivo de documentos (criptografado)
+  (D.docs = D.docs||[]).push({ id:(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)),
+    t:'Extrato bancário (OFX)', ref:IMP.fimData.slice(0,7), desc:`Extrato ${ACC_NOME[acc]} importado até ${dbr(IMP.fimData)}`,
+    txt:IMP.texto, size:new Blob([IMP.texto]).size, add:D.corte });
+
+  const resumo = `✓ ${IMP.rows.length} lançamento(s) incorporados e conciliados no centavo. Cobertura ${ACC_NOME[acc]}: ${dbr(cob[acc])}. ` +
+    (cob.sicredi !== cob.nubank
+      ? `O corte geral segue em ${dbr(D.corte)} — importe também o extrato da outra conta (${cob.sicredi < cob.nubank ? 'Sicredi' : 'Nubank'}) para avançar.`
+      : `Corte geral atualizado para ${dbr(D.corte)}.`);
+  IMP = null;
+  document.getElementById('imp-review').innerHTML = '';
+  document.getElementById('imp-file').value = '';
+  document.getElementById('imp-msg').textContent = resumo + ' Baixe o dados.enc.json atualizado (card Sincronização) para valer em todos os aparelhos.';
+
+  Vault.save().then(()=>{
+    recalcBase();
+    renderCabecalho(); renderContas(); renderDocs(); render();
+  });
+}
+
+document.getElementById('imp-ler').addEventListener('click', impLer);
 document.getElementById('doc-add').addEventListener('click', docAdd);
 document.getElementById('ac-add').addEventListener('click', acCriar);
 document.getElementById('pw-change').addEventListener('click', pwTrocar);
