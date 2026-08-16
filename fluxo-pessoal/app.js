@@ -678,27 +678,34 @@ function parseOFX(text){
   return { txs, ledger, dtasof, dtend, acc };
 }
 
-// ---- fatura: parser de itens colados (uma linha por compra, valor no fim) ----
+// ---- fatura: parser de itens (texto colado ou CSV exportado do banco) ----
+// Tolerante: pula cabeçalhos, linhas de total/saldo/pagamento e linhas sem valor,
+// reportando quantas foram ignoradas — a trava real é a soma bater com o pagamento.
+const FAT_META = /^(TOTAL|SALDO|LIMITE|VENCIMENTO|PAGAMENTO|PAG\b|PGTO|CREDITO DE PAGAMENTO|DEB\.?\s?CTA|FATURA)/i;
 function parseFaturaItens(text){
-  const items = [];
+  const items = []; const ignoradas = [];
   for (const raw of text.split(/\n/)){
-    const line = raw.trim().replace(/[;,\t]+$/,'');
+    const line = raw.trim().replace(/"/g,'').replace(/[;,\t]+$/,'');
     if (!line) continue;
-    const m = line.match(/(-?\s*(?:R\$\s*)?[\d][\d.,]*)\s*$/);
-    if (!m) return { erro: `Não achei o valor no fim da linha: "${line.slice(0,50)}"` };
+    const m = line.match(/(-?\s*(?:R\$\s*)?[\d][\d.,]*)\s*([DC])?\s*$/i);
+    if (!m){ ignoradas.push(line); continue; }
     let vs = m[1].replace(/\s|R\$/g,''), neg = vs.startsWith('-');
     vs = vs.replace('-','');
     if (vs.includes(',') && vs.includes('.')) vs = vs.replace(/\./g,'').replace(',','.');
     else if (vs.includes(',')) vs = vs.replace(',','.');
     const val = parseFloat(vs);
-    if (isNaN(val)) return { erro: `Valor inválido na linha: "${line.slice(0,50)}"` };
+    if (isNaN(val)){ ignoradas.push(line); continue; }
+    if (m[2] && m[2].toUpperCase() === 'C') neg = !neg;   // sufixo C = crédito/estorno
     let desc = line.slice(0, m.index).replace(/[;,\t]+\s*$/,'').trim()
-      .replace(/^\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*[-–]?\s*/,'').replace(/^\d{4}-\d{2}-\d{2}\s*/,'');
+      .replace(/^\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*[-–]?\s*/,'').replace(/^\d{4}-\d{2}-\d{2}\s*/,'')
+      .replace(/^[;,\t]+\s*/,'').trim();
+    if (FAT_META.test(desc)){ ignoradas.push(line); continue; }
     if (!desc) desc = '(sem descrição)';
     const v = neg ? -val : val;
     items.push({ desc, val: round2(v), c: catCard(desc, v) });
   }
-  return items.length ? { items } : { erro: 'Cole ao menos uma linha (descrição e valor).' };
+  return items.length ? { items, ignoradas }
+    : { erro: 'Não encontrei itens com valor. Anexe o CSV da fatura ou cole uma linha por compra, com o valor no fim.' };
 }
 
 // ---- estado da importação em revisão ----
@@ -719,9 +726,15 @@ async function impLer(){
   if (!file){ msg.textContent = 'Escolha o arquivo OFX do extrato.'; return; }
   const text = await file.text();
   const p = parseOFX(text);
+  if (!p.txs.length){
+    const pareceFatura = /\.csv$/i.test(file.name) || (!/<OFX|OFXHEADER/i.test(text) && /[;,]\s*-?[\d.]+,\d\d/.test(text));
+    msg.textContent = pareceFatura
+      ? 'Este arquivo parece ser a fatura do cartão (CSV). A fatura entra no dia do pagamento: importe aqui o extrato OFX da conta e, quando o pagamento da fatura aparecer na revisão, anexe este CSV nele — a ferramenta abre as compras por categoria.'
+      : 'Nenhum lançamento encontrado no arquivo. É um OFX de extrato?';
+    return;
+  }
   const acc = document.getElementById('imp-acc').value || p.acc;
   if (!acc){ msg.textContent = 'Não reconheci o banco — escolha a conta (Sicredi ou Nubank) e tente de novo.'; return; }
-  if (!p.txs.length){ msg.textContent = 'Nenhum lançamento encontrado no arquivo. É um OFX de extrato?'; return; }
   if (p.txs.some(t => +t.d.slice(0,4) !== ANO)){ msg.textContent = `Este arquivo tem lançamentos fora de ${ANO} — a ferramenta cobre ${ANO}.`; return; }
 
   const cob = cobertura()[acc];
@@ -770,13 +783,14 @@ function impRender(){
   IMP.rows.forEach((r,i)=>{
     if (r.kind === 'fatura'){
       const status = r.fat && r.fat.ok
-        ? `✓ ${r.fat.items.length} itens conferem${r.fat.ajuste?` (ajuste de ${fmtMoeda(r.fat.ajuste)} em Despesas financeiras)`:''}`
+        ? `✓ ${r.fat.items.length} itens conferem${r.fat.ignoradas?` · ${r.fat.ignoradas} linha(s) de cabeçalho/total ignorada(s)`:''}${r.fat.ajuste?` (ajuste de ${fmtMoeda(r.fat.ajuste)} em Despesas financeiras)`:''}`
         : 'itens da fatura pendentes';
       h += `<tr><td class="lab" style="white-space:normal">${r.d.slice(8,10)}/${r.d.slice(5,7)} · ${esc(r.m.slice(0,60))}</td>${cellM(r.v)}<td style="text-align:left;font-size:.78rem">Fatura ${CARTAO_NOME[r.cartao]} — ${status}</td></tr>`;
       h += `<tr><td colspan="3" style="text-align:left;white-space:normal;background:#FBF9F2">`;
       if (!(r.fat && r.fat.ok)){
-        h += `<div class="mini" style="margin:4px 0 6px">Regime de caixa: as compras desta fatura entram hoje (${r.d.slice(8,10)}/${r.d.slice(5,7)}), abertas por categoria. Cole abaixo os itens — uma linha por compra, valor no fim (ex.: <i>POSTO SAPATAO  81,40</i>). A soma deve bater com o pagamento (${fmtMoeda(-r.v)}).</div>
-          <textarea id="imp-fat-${i}" rows="5" style="width:100%;font:inherit;font-size:.8rem;border:1px solid var(--borda);border-radius:8px;padding:8px"></textarea>
+        h += `<div class="mini" style="margin:4px 0 6px">Regime de caixa: as compras desta fatura entram hoje (${r.d.slice(8,10)}/${r.d.slice(5,7)}), abertas por categoria. <b>Anexe o arquivo da fatura (CSV do banco)</b> ou cole os itens — uma linha por compra, valor no fim (ex.: <i>POSTO SAPATAO  81,40</i>). A soma deve bater com o pagamento (${fmtMoeda(-r.v)}).</div>
+          <input type="file" id="imp-fatfile-${i}" onchange="impFatArquivo(${i}, this)" style="margin:2px 0 8px;font-size:.8rem;max-width:100%">
+          <textarea id="imp-fat-${i}" rows="5" style="width:100%;font:inherit;font-size:.8rem;border:1px solid var(--borda);border-radius:8px;padding:8px" placeholder="ou cole os itens aqui"></textarea>
           <div style="margin-top:6px"><button class="btn sm" onclick="impFatura(${i})">Processar itens</button></div>
           <div class="mini" id="imp-fat-msg-${i}" style="margin-top:4px"></div>`;
       } else {
@@ -837,6 +851,12 @@ function impSaldoManual(){
   impRender();
 }
 
+async function impFatArquivo(i, inp){
+  const f = inp.files[0]; if (!f) return;
+  document.getElementById('imp-fat-'+i).value = await f.text();
+  impFatura(i);
+}
+
 function impFatura(i){
   const r = IMP.rows[i];
   const res = parseFaturaItens(document.getElementById('imp-fat-'+i).value);
@@ -845,10 +865,10 @@ function impFatura(i){
   const soma = round2(res.items.reduce((s,it)=>s+it.val,0));
   const dif = round2(Math.abs(r.v) - soma);   // pago − itens (residual de centavos vira Despesas financeiras)
   if (Math.abs(dif) > 1.00){
-    msg.textContent = `A soma dos itens (${fmtMoeda(soma)}) não bate com o pagamento (${fmtMoeda(Math.abs(r.v))}) — diferença de ${fmtMoeda(dif)}. Confira as linhas.`;
+    msg.textContent = `Li ${res.items.length} item(ns)${res.ignoradas.length?` (${res.ignoradas.length} linha(s) ignorada(s))`:''}, mas a soma (${fmtMoeda(soma)}) não bate com o pagamento (${fmtMoeda(Math.abs(r.v))}) — diferença de ${fmtMoeda(dif)}. Confira se este é o CSV da fatura certa e se nenhuma compra ficou de fora.`;
     return;
   }
-  r.fat = { items: res.items, ok: true, ajuste: Math.abs(dif) >= 0.01 ? dif : 0 };
+  r.fat = { items: res.items, ok: true, ajuste: Math.abs(dif) >= 0.01 ? dif : 0, ignoradas: res.ignoradas.length };
   impRender();
 }
 
