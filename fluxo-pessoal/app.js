@@ -13,18 +13,42 @@ const dbr = iso => iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4);
 
 // ---------- agregações a partir dos lançamentos ----------
 // Recalculadas em recalcBase() — no boot e após cada importação de extrato.
-let CORTE_M, CORTE_D, FECHADOS, R, MED, SB, saldoFim, saldoIniAno, saldoProj;
+let CORTE_M, CORTE_D, FECHADOS, R, MED, MEDC, FPROJ, SB, saldoFim, saldoIniAno, saldoProj;
 
 function mediana(arr){ const a=[...arr].sort((x,y)=>x-y); const n=a.length; return n%2? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2; }
-function prev(cid, m){
+
+// marcador de parcela nas descrições de cartão: "01/03", "PARC 2/6", "(1/3)"…
+function parseParcela(txt){
+  let best = null;
+  for (const m of String(txt).matchAll(/\b(\d{1,2})\s*\/\s*(\d{1,2})\b/g)){
+    const k = +m[1], n = +m[2];
+    if (k >= 1 && n >= 2 && k <= n && n <= 24) best = { k, n };
+  }
+  return best;
+}
+
+const CARDS = ['visa','nucard','master'];
+// tipico=true ignora faturas guardadas/parcelas (usado no rateio do mês parcial)
+function prev(cid, m, tipico){
   let v = MED[cid];
   if (m > CORTE_M) {
     // agendados da previsão vêm do cofre criptografado (D.agendados)
-    const ag = D.agendados;
+    const ag = D.agendados; let travado = false;
     if (ag){
-      if ((ag.zerar||[]).includes(cid)) v = 0;
-      if (ag.fixos && cid in ag.fixos) v = ag.fixos[cid];
+      if ((ag.zerar||[]).includes(cid)){ v = 0; travado = true; }
+      if (ag.fixos && cid in ag.fixos){ v = ag.fixos[cid]; travado = true; }
       for (const e of (ag.extras||[])) if (e.c === cid && e.meses.includes(m)) v = Math.min(v, 0) + e.v;
+    }
+    // compromissos conhecidos dos cartões: fatura guardada substitui o componente
+    // típico do cartão no mês do pagamento; parcelas futuras garantem piso conhecido
+    if (!tipico && !travado && FPROJ){
+      for (const card of CARDS){
+        const full = FPROJ.full[m] && FPROJ.full[m][card];
+        const parc = FPROJ.parc[m] && FPROJ.parc[m][card];
+        const tip = (MEDC[card] && MEDC[card][cid]) || 0;
+        if (full) v = v - tip + (full[cid] || 0);
+        else if (parc && parc[cid] != null) v = v - tip + Math.min(tip, parc[cid]);
+      }
     }
   }
   return v;
@@ -32,7 +56,7 @@ function prev(cid, m){
 // previsão proporcional para o restante do mês parcial (corte D-1)
 function mesRestante(cid){
   if (CORTE_D >= DIM[CORTE_M]) return 0;
-  return prev(cid, Math.min(CORTE_M+1, 12)) * (DIM[CORTE_M] - CORTE_D) / DIM[CORTE_M];
+  return prev(cid, Math.min(CORTE_M+1, 12), true) * (DIM[CORTE_M] - CORTE_D) / DIM[CORTE_M];
 }
 
 function recalcBase(){
@@ -45,6 +69,45 @@ function recalcBase(){
     R[l.c][+l.d.slice(5,7)] += l.v;
   }
   MED = {}; D.contas.forEach(c => { MED[c.id] = mediana(R[c.id].slice(1, FECHADOS+1)); });
+
+  // mediana do componente de cada cartão por categoria (p/ trocar típico por conhecido)
+  const RC = {}; CARDS.forEach(cd => { RC[cd] = {}; D.contas.forEach(c => RC[cd][c.id] = Array(13).fill(0)); });
+  for (const l of D.lanc){
+    if (l.c === 'GIRO' || !RC[l.o]) continue;
+    RC[l.o][l.c][+l.d.slice(5,7)] += l.v;
+  }
+  MEDC = {}; CARDS.forEach(cd => { MEDC[cd] = {}; D.contas.forEach(c => {
+    MEDC[cd][c.id] = FECHADOS > 0 ? mediana(RC[cd][c.id].slice(1, FECHADOS+1)) : 0; }); });
+
+  // compromissos conhecidos: fatura guardada projeta o pagamento no mês seguinte
+  // ao de referência; parcelas k/n projetam as próximas nos meses subsequentes
+  FPROJ = { full:{}, parc:{} };
+  const addF = (bag, m, card, cid, v) => {
+    if (m < 1 || m > 12) return;
+    (bag[m] = bag[m] || {}); (bag[m][card] = bag[m][card] || {});
+    bag[m][card][cid] = (bag[m][card][cid] || 0) + v;
+  };
+  for (const p of (D.fat_pend || [])){
+    if (!p.ref || +p.ref.slice(0,4) !== ANO) continue;
+    const P = +p.ref.slice(5,7) + 1;   // pagamento no mês seguinte ao de referência
+    for (const it of p.items){
+      addF(FPROJ.full, P, p.cartao, it.c, -it.val);
+      const pc = it.parc || parseParcela(it.desc);
+      if (pc) for (let j = 1; j <= pc.n - pc.k; j++) addF(FPROJ.parc, P + j, p.cartao, it.c, -it.val);
+    }
+  }
+  // parcelas de faturas já incorporadas (lançamentos de cartão com marcador k/n)
+  for (const l of D.lanc){
+    if (l.c === 'GIRO' || !MEDC[l.o]) continue;
+    const pc = parseParcela(l.m || '');
+    if (!pc) continue;
+    const m0 = +l.d.slice(5,7);
+    for (let j = 1; j <= pc.n - pc.k; j++){
+      const mj = m0 + j;
+      if (FPROJ.full[mj] && FPROJ.full[mj][l.o]) continue;   // fatura guardada desse mês é a fonte
+      addF(FPROJ.parc, mj, l.o, l.c, l.v);
+    }
+  }
 
   // saldo total (contas monitoradas) no fim de cada mês
   SB = D.saldos;
@@ -929,7 +992,8 @@ function parseFaturaItens(text){
     }
     if (!/[A-Za-zÀ-ÿ]/.test(desc)){ ignoradas.push(line); continue; }   // linha sem descrição de verdade
     const v = neg ? -val : val;
-    items.push({ desc: desc.slice(0,60), val: round2(v), c: catCard(desc, v) });
+    const pc = parseParcela(desc);
+    items.push({ desc: desc.slice(0,60), val: round2(v), c: catCard(desc, v), ...(pc ? {parc: pc} : {}) });
   }
   return items.length ? { items, ignoradas, declTotal }
     : { erro: 'Não encontrei itens com valor. Anexe o CSV da fatura ou cole uma linha por compra, com o valor no fim.' };
@@ -1030,7 +1094,12 @@ function fatRender(){
     h += `<tr><td class="lab" style="white-space:normal">${esc(it.desc.slice(0,50))}${it.ia?' <span title="classificado pela IA — confira">✨</span>':''}</td>${cellM(-it.val)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="FIMP.items[${j}].c=this.value">${optsConta(it.c)}</select></td></tr>`;
   });
   h += '</tbody></table></div>';
-  h += `<div class="note" style="margin-top:10px">Regime de caixa: esta fatura <b>não mexe nos números agora</b>. Ela fica guardada (criptografada) e entra no caixa no dia do pagamento — quando o débito da fatura aparecer na importação do extrato, é só clicar em "usar fatura guardada". Pode reenviar uma versão mais completa depois: a nova substitui a anterior do mesmo cartão/mês.</div>`;
+  const mesPg = +FIMP.ref.slice(5,7) + 1;
+  const nParc = FIMP.items.filter(it => it.parc && it.parc.k < it.parc.n).length;
+  h += `<div class="note" style="margin-top:10px">Regime de caixa: esta fatura <b>não mexe nos números agora</b>. Ela fica guardada (criptografada) e entra no caixa no dia do pagamento — quando o débito da fatura aparecer na importação do extrato, é só clicar em "usar fatura guardada".` +
+    (mesPg <= 12 ? ` Ao guardar, o pagamento (${fmtMoeda(-FIMP.total)}) já entra <b>projetado</b> no fluxo de ${MFULL[mesPg]}, categoria por categoria.` : '') +
+    (nParc ? ` Encontrei <b>${nParc} compra(s) parcelada(s)</b> — as próximas parcelas entram na projeção dos meses seguintes.` : '') +
+    ` Pode reenviar uma versão mais completa depois: a nova substitui a anterior do mesmo cartão/mês.</div>`;
   h += `<div style="margin-top:10px;display:flex;gap:8px">
     <button class="btn" onclick="fatGuardar()">Guardar fatura</button>
     <button class="btn sm" onclick="FIMP=null;document.getElementById('imp-review').innerHTML='';document.getElementById('imp-msg').textContent='Fatura descartada.'">descartar</button>
@@ -1047,11 +1116,14 @@ async function fatGuardar(){
   D.fat_pend.push({ id: genId(), cartao: FIMP.cartao, ref, total: FIMP.total, items: FIMP.items,
     add: new Date().toISOString().slice(0,10) });
   await Vault.save();
+  const mesPg = ref ? +ref.slice(5,7) + 1 : 13;
   FIMP = null;
   document.getElementById('imp-review').innerHTML = '';
   document.getElementById('imp-file').value = ''; document.getElementById('imp-txt').value = '';
-  document.getElementById('imp-msg').textContent = '✓ Fatura guardada (criptografada). Ela entra no caixa no dia do pagamento — ao importar o extrato com o débito da fatura, use o botão "usar fatura guardada".';
-  renderDocs();
+  document.getElementById('imp-msg').textContent = '✓ Fatura guardada (criptografada). Ela entra no caixa no dia do pagamento — ao importar o extrato com o débito da fatura, use o botão "usar fatura guardada".' +
+    (mesPg <= 12 ? ` O pagamento já está projetado no fluxo de ${MFULL[mesPg]}.` : '');
+  recalcBase();
+  renderCabecalho(); renderDocs(); render();
 }
 
 function fatPendVer(id){
@@ -1067,7 +1139,9 @@ async function fatPendExcluir(id){
   const p = (D.fat_pend||[]).find(x=>x.id===id); if (!p) return;
   if (!confirm(`Excluir a fatura guardada (${CARTAO_NOME[p.cartao]}${p.ref?' · '+p.ref.slice(5,7)+'/'+p.ref.slice(0,4):''})?`)) return;
   D.fat_pend = D.fat_pend.filter(x=>x.id!==id);
-  await Vault.save(); renderDocs();
+  await Vault.save();
+  recalcBase();
+  renderCabecalho(); renderDocs(); render();
 }
 
 function impUsarFatPend(i, id){
