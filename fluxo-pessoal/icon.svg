@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B5748"/>
+      <stop offset="1" stop-color="#00332A"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- área sob a curva do fluxo -->
+  <path d="M92 356 C 150 350, 178 302, 230 292 C 282 282, 302 240, 348 214 C 380 196, 402 180, 420 164 L 420 408 L 92 408 Z"
+        fill="#F5F3EC" opacity="0.13"/>
+  <!-- linha base -->
+  <line x1="92" y1="408" x2="420" y2="408" stroke="#F5F3EC" stroke-opacity="0.35" stroke-width="10" stroke-linecap="round"/>
+  <!-- curva do fluxo de caixa -->
+  <path d="M92 356 C 150 350, 178 302, 230 292 C 282 282, 302 240, 348 214 C 380 196, 402 180, 420 164"
+        fill="none" stroke="#F5F3EC" stroke-width="30" stroke-linecap="round"/>
+  <!-- ponto de hoje -->
+  <circle cx="420" cy="164" r="30" fill="#EC6C22"/>
+  <circle cx="420" cy="164" r="13" fill="#F5F3EC"/>
+</svg>
