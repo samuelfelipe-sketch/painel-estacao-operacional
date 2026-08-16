@@ -19,10 +19,13 @@ function mediana(arr){ const a=[...arr].sort((x,y)=>x-y); const n=a.length; retu
 function prev(cid, m){
   let v = MED[cid];
   if (m > CORTE_M) {
-    if (['captacao','resgates'].includes(cid)) v = 0;               // zerado até decisão
-    if (cid==='aplic') v = -1500;                                    // DCA Bitcoin agendado (política Samuel)
-    if (cid === 'viagens' && (m===9||m===10||m===11)) v = Math.min(v, 0) - 10000; // lua de mel escalonada 10k set/out/nov
-    if (cid === 'master') v = MED['master'];
+    // agendados da previsão vêm do cofre criptografado (D.agendados)
+    const ag = D.agendados;
+    if (ag){
+      if ((ag.zerar||[]).includes(cid)) v = 0;
+      if (ag.fixos && cid in ag.fixos) v = ag.fixos[cid];
+      for (const e of (ag.extras||[])) if (e.c === cid && e.meses.includes(m)) v = Math.min(v, 0) + e.v;
+    }
   }
   return v;
 }
@@ -356,10 +359,11 @@ function render(){
   else if (sub==='semanas' && temReal) renderSemanas(per.v);
   else if (sub==='dias' && temReal) renderDias(per.v);
   else renderResumo(meses);
+  const mesesAg = ((D.agendados||{}).extras||[]).flatMap(e=>e.meses);
   document.getElementById('fnota').innerHTML =
     (per.t==='m'&&per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]? `${MFULL[CORTE_M][0].toUpperCase()+MFULL[CORTE_M].slice(1)} parcial: realizado até ${D.corte.slice(8,10)}/${D.corte.slice(5,7)}; o caixa no fim do mês mostrado é projeção (realizado + previsto proporcional dos dias restantes). `:'')+
-    ((per.t==='m'&&[9,10,11].includes(per.v))? 'A lua de mel está escalonada na previsão: ~R$ 10 mil em set (hotéis), ~10 mil em out e ~10 mil em nov (gastos da viagem na fatura). O casamento é por conta dos pais. ':'')+
-    'Faturas de cartão entram no dia do pagamento, abertas por categoria conforme a fatura; o Mastercard (encerrado, substituído pelo Visa) foi aberto por estimativa usando o mix de categorias do Visa de jan–mar. Captação e resgates estão zerados na previsão; aplicações carregam o DCA de Bitcoin (R$ 1,5 mil/mês, política de reserva de futuro).';
+    ((per.t==='m'&&mesesAg.includes(per.v)&&D.notas&&D.notas.agendado)? D.notas.agendado+' ':'')+
+    ((D.notas&&D.notas.geral) || 'Faturas de cartão entram no dia do pagamento, abertas por categoria conforme a fatura.');
   renderBarras(meses);
 }
 document.getElementById('ptabs').addEventListener('click', e=>{
@@ -371,12 +375,18 @@ document.getElementById('subtabs').addEventListener('click', e=>{
 });
 function renderCabecalho(){
   document.getElementById('hcorte').textContent = dbr(D.corte);
+  // notas pessoais vêm do cofre criptografado
+  const N = D.notas || {};
+  if (N.contas) document.getElementById('nota-contas').innerHTML = 'Giro entre contas próprias fica fora do fluxo. ' + esc(N.contas);
+  for (const [id, key] of [['nota-reservas','reservas'],['nota-estrategia','estrategia']]){
+    const el = document.getElementById(id);
+    if (el && N[key]){ el.textContent = N[key]; el.style.display = ''; }
+  }
   const nCM = Object.keys(SB.sicredi.fim).length + Object.keys(SB.nubank.fim).length;
   const hb = document.getElementById('hbadge'); if (hb) hb.textContent = `✓ Conciliado no centavo — ${nCM}/${nCM} conta-mês`;
   document.getElementById('fontes').innerHTML =
     `<b>Fontes:</b> extratos OFX Sicredi CC e Nubank (jan–${D.corte.slice(8,10)}/${MN[CORTE_M].toLowerCase()}/${ANO}) · faturas Visa Infinite e do cartão Nubank conferidas contra o total declarado · IRPF ${ANO} (ano-base ${ANO-1}). Regra de ouro: saldo inicial + recebimentos − pagamentos = saldo final real de cada conta, conciliado no centavo em ${nCM} de ${nCM} conta-mês. Transferências entre contas próprias são giro e ficam fora dos totais. Nenhum valor é digitado aqui; tudo deriva dos lançamentos e das importações conciliadas.`;
 }
-renderCabecalho();
 // ================================================================
 // Documentos — extratos, faturas e outros arquivos guardados no cofre
 // ================================================================
@@ -399,7 +409,7 @@ function renderSync(){
 function renderDocs(){
   const docs = Vault.data.docs || [];
   const el = document.getElementById('doc-lista');
-  if (!docs.length){ el.innerHTML = '<p class="mini">Nenhum documento guardado ainda. Adicione o primeiro extrato acima.</p>'; renderSync(); return; }
+  if (!docs.length){ el.innerHTML = '<p class="mini">Nenhum documento guardado ainda — importe o primeiro extrato OFX acima; ele será arquivado aqui automaticamente.</p>'; renderSync(); return; }
   let h = '<table><thead><tr><th class="lab">Documento</th><th>Tipo</th><th>Referência</th><th>Tamanho</th><th>Adicionado</th><th></th></tr></thead><tbody>';
   for (const d of [...docs].sort((a,b)=> (b.ref||'').localeCompare(a.ref||'') || (b.add||'').localeCompare(a.add||''))){
     const ref = d.ref ? d.ref.slice(5,7)+'/'+d.ref.slice(0,4) : '·';
@@ -411,31 +421,6 @@ function renderDocs(){
   }
   el.innerHTML = h + '</tbody></table>';
   renderSync();
-}
-
-async function docAdd(){
-  const msg = document.getElementById('doc-msg');
-  const tipo = document.getElementById('doc-tipo').value;
-  const ref  = document.getElementById('doc-ref').value;
-  const desc = document.getElementById('doc-desc').value.trim();
-  const file = document.getElementById('doc-file').files[0];
-  const txt  = document.getElementById('doc-txt').value.trim();
-  msg.textContent = '';
-  if (!file && !txt){ msg.textContent = 'Anexe um arquivo ou cole o conteúdo do documento.'; return; }
-  if (file && file.size > TAM_MAX_ARQ){ msg.textContent = `Arquivo muito grande (${fmtBytes(file.size)}). O limite é ${fmtBytes(TAM_MAX_ARQ)} — para arquivos maiores, guarde fora da ferramenta.`; return; }
-  const doc = { id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random().toString(16).slice(2)),
-    t: tipo, ref, desc, add: new Date().toISOString().slice(0,10) };
-  if (file){
-    doc.nome = file.name; doc.mime = file.type || 'application/octet-stream'; doc.size = file.size;
-    doc.b64 = Vault.b64e(await file.arrayBuffer());
-  } else {
-    doc.txt = txt; doc.size = new Blob([txt]).size;
-  }
-  (Vault.data.docs = Vault.data.docs || []).push(doc);
-  await Vault.save();
-  document.getElementById('doc-desc').value = ''; document.getElementById('doc-file').value = ''; document.getElementById('doc-txt').value = '';
-  msg.textContent = '✓ Documento guardado (criptografado). Baixe o dados.enc.json atualizado para sincronizar com a hospedagem.';
-  renderDocs();
 }
 
 function docBaixar(id){
@@ -524,83 +509,85 @@ async function pwTrocar(){
 // ================================================================
 const round2 = v => Math.round(v*100)/100;
 
-// ---- classificador: itens de cartão (cat_card) ----
+// ---- classificadores ----
+// Duas camadas: regras PESSOAIS (contrapartes, documentos, valores de referência)
+// vêm do cofre criptografado (D.regras_card / D.regras_bank) e nunca aparecem
+// neste arquivo público; aqui ficam só regras genéricas de estabelecimentos.
+function regraPessoal(regras, texto, amt){
+  for (const r of (regras || [])){
+    if (!r.match.some(k => texto.includes(k))) continue;
+    if (r.amtNeg && !(amt < 0)) continue;
+    if (r.sf){
+      if (amt > 0) return {kind:'conta', c: Math.abs(amt - r.ref) < 2 ? 'prolabore' : 'lucros'};
+      return {kind:'giro'};
+    }
+    if (r.limiar) return {kind:'conta', c: Math.abs(amt) > r.limiar ? r.cAcima : r.cAbaixo};
+    if (r.cPos) return {kind:'conta', c: amt > 0 ? r.cPos : r.cNeg};
+    return {kind:'conta', c: r.c};
+  }
+  return null;
+}
+
 function catCard(desc, val){
   const d = String(desc).toUpperCase();
   const has = (...ks) => ks.some(k => d.includes(k));
+  const rp = regraPessoal(D.regras_card, d, -(val==null?1:val));
+  if (rp) return rp.c;
   if (has('IOF','ANUIDADE','TRANSACAO')) return 'fin';
-  if (has('DEVOLUCAO')) return 'casa_mov';                    // devoluções ML/compras
-  if (has('BENNU')) return 'restaurantes';                    // Estação Bennu = restaurante (não é posto)
+  if (has('DEVOLUCAO')) return 'casa_mov';
+  if (has('BENNU')) return 'restaurantes';
   if (has('POSTO','SAPATAO','SAFYR','ABASTECEDORA','COMERCIAL DE COMBUST','SHELL','4 COLONIAS'))
-    return (val == null || val > 180) ? 'combustivel' : 'mercado';  // ≤R$180 = conveniência (regra Samuel)
+    return (val == null || val > 180) ? 'combustivel' : 'mercado';  // ≤R$180 = conveniência
   if (has('RISSUL','BOURBON','MARANADOCE','QUEIJARIA','EMPORIO','BECKER HAUS','CACAU','KOPENHAGEN','VISTAMONTES','GROWTH')) return 'mercado';
-  if (has('ZP NOBLE')) return 'casamento';
   if (has('JIM')) return 'vestuario';
   if (has('IFD','LOCATELLI','TOAST','GRILL','RESTAUR','ACAI','ALABAMA','BURGER','SUSHI','MAGATTA','MOKAI','CAFE','COFFEE','FEIJOADA','KACHURRASCO','CHURRASCARIA','AMECHICKEN','OH BRUDER','DI PAOLO','IL CAMPANAR','LEAO DO VALE','WJD','MERIDIANO','VIDEIRAS','ADEGA','BODEGA','PIZZAENTREVINHOS','CLANDESTINA','SCHWANTES','FERDAS','LUGU')) return 'restaurantes';
   if (has('APPLE','GOOGLE','YOUTUBE','MICROSOFT','SETAPP','PADDLE','HBO','MELIMAIS','LINKTREE','VIVO','ANTHROPIC','CLAUDE','AMAZON','TEMU','NOAR','HBL','SHELL BOX','EVINO','OLYMPIKUS','CPQ','LINKER','ATGF','ZARCOIN','MAQU','MERCADOLIVRE','MAGALU','QMS','CONECTC'))
     return has('APPLE','GOOGLE','YOUTUBE','MICROSOFT','SETAPP','PADDLE','HBO','MELIMAIS','LINKTREE','VIVO','ANTHROPIC','CLAUDE','AMAZON PRIME','HBL','SHELL BOX') ? 'assinaturas' : 'casa_mov';
   if (has('SAINT PAUL','COURSIV','KIWIFY','GREENN','GAL CONTEUDOS','AUDITHORIUM')) return 'educacao';
-  if (has('PANVEL','FARMACIA','DROGARIA','LABORAT','DR PETTERSON','SANTE SPA','RDO','IMUNI','LILIANABEATRIZ')) return 'saude';
+  if (has('PANVEL','FARMACIA','DROGARIA','LABORAT','SANTE SPA','RDO','IMUNI')) return 'saude';
   if (has('PRUDENTIAL','PRUDENT')) return 'seguros';
   if (has('BROOKSFIELD','ARAMIS','CALCADOS','NORDWEG','LUPO','MINIMALCLUB','MISS PIJAMA','CASA ALBERTO','FRATEX','ANJINHOS','TNF','NORTH FACE')) return 'vestuario';
   if (has('ARMAZEM DO SOFA','IND','FORMAS','SCS','PETZ','COBASI','NATIVA','AGROPECUARIA','MAGO DAS CHAVES','HARTMANN','MAGALU')) return 'casa_mov';
   if (has('LBTRAVEL','BOOKING','HOTEL','MERCURE','WI FI','ONBOARD','DPSSA','VISTA IBIRAPUERA','SKYLINE','BUSLOG','RIO HOTEL','MICHELON','MICHEL','QMS','SMILES')) return 'viagens';
   if (has('UBER','ESTAPAR','PARK','PARE CERTO','INDIGO','ESTACIONAMENTO','AGE ','LYON','PEDAGIO','MONTE BIANCO','VOLTARE')) return 'pedagio';
-  if (has('WEISS','PRO BIKE','VIC CENTER','ANDGO','LGND','CLICRUN','QUADRAS','TIKETO','TKTR','CLOVIS PIRES')) return 'esportes';
+  if (has('WEISS','PRO BIKE','VIC CENTER','ANDGO','LGND','CLICRUN','QUADRAS','TIKETO','TKTR')) return 'esportes';
   if (has('RHEMA')) return 'doacoes';
   if (has('VEROO')) return 'mercado';
   if (has('CONSORCIO EMPREENDED')) return 'fin';
-  if (has('KALITYCHI')) return 'esportes';                    // equipamentos bike/triathlon
-  if (has('LUCIANA BORGES','FILIPEJESKE','ROSEMERI','ASSINY','LENDA VIVA')) return 'servicos';
   return 'servicos';
 }
 
-// ---- classificador: lançamentos bancários (cat_bank) ----
 // retorna {kind:'giro'|'conta'|'fatura', c, cartao}
 function catBank(memo, amt){
   const m = String(memo).toUpperCase();
   const has = (...ks) => ks.some(k => m.includes(k));
-  if (m.includes('DEBITO TED/IB') && has('SAMUEL F')) return {kind:'conta', c:'aplic'};   // TED p/ conta própria não monitorada (XP)
+  if (m.includes('DEBITO TED/IB') && has('SAMUEL F')) return {kind:'conta', c:'aplic'};   // TED p/ conta própria não monitorada
   if (has('SAMUEL FE','SAMUEL F') && has('PIX','TED','TRANSF')) return {kind:'giro'};
   if (has('DEB TRANSF CC/PP','TRANSFERENCIA DA POUPANCA')) return {kind:'giro'};
   if (m.includes('PAGAMENTO DE FATURA')) return {kind:'fatura', cartao:'nucard'};
   if (m.includes('DEB.CTA.FATURA')) return {kind:'fatura', cartao:'visa'};
   if (has('PAGTO FATURA MASTER','EST PAGTO FATURA MASTER')) return {kind:'fatura', cartao:'master'};
-  if (has('44245623000108','DORA ENOTURIS','VISTA VIGNETI','49256547000141','BELLMONTE','50567595000130')) return {kind:'conta', c:'casamento'};
-  if (has('00273563025','30505111000110','24740724000130','08834195990','30595294000102')) return {kind:'conta', c:'casamento'};
-  if (m.includes('52424421153')) return {kind:'conta', c:'impostos'};        // Eliana = cartório da compra do apto financiado
-  if (m.includes('02335383051') || m.includes('HANGAR')) return {kind:'conta', c:'esportes'};
-  if (m.includes('POSTO SAPATAO') || m.includes('43510250000184'))
+  const rp = regraPessoal(D.regras_bank, m.replace(/Ã/g,''), amt);
+  if (rp) return rp;
+  if (m.includes('POSTO SAPATAO'))
     return {kind:'conta', c: Math.abs(amt) > 180 ? 'combustivel' : 'mercado'};
-  if (m.includes('52109749000175')) return {kind:'conta', c:'casa_mov'};     // BBX Vidros = casa
-  if (m.includes('00492547076')) return {kind:'conta', c:'restaurantes'};    // Marcelo Scheeren = chef
-  if (m.includes('43403222000168')){                                          // SF Consultoria
-    if (amt > 0) return {kind:'conta', c: Math.abs(amt-3341) < 2 ? 'prolabore' : 'lucros'};
-    return {kind:'giro'};
-  }
   if (has('APLIC. FINANC','APLIC FUNDOS')) return {kind:'conta', c:'aplic'};
   if (has('RESGATE APLIC')) return {kind:'conta', c:'resgates'};
   if (m.includes('PLANO INT CAPITAL')) return {kind:'conta', c:'aplic'};
   if (has('CREDITO CONSORCIO','LIBERACAO CREDITO')) return {kind:'conta', c:'captacao'};
   if (has('LIQUIDACAO DE PARCELA','LIQUIDACAO CONTRATO','DEBITO CONVENIOS-CONSORCIO')) return {kind:'conta', c:'amort'};
-  if (m.includes('07808907') && amt < 0) return {kind:'conta', c:'amort'};   // boleto Adm Consórcio
   if (has('IOF','JUROS UTILIZ','TARIFA','ENC0')) return {kind:'conta', c:'fin'};
   if (m.includes('RGE')) return {kind:'conta', c:'energia'};
-  if (has('26887377','BRWEB','05489384')) return {kind:'conta', c:'condominio'};
-  if (has('DEFFERRARI','TELEF','08190344')) return {kind:'conta', c:'internet'};
-  if (has('PMDOISI','88254883','ARRECADACAO ESTADUAL','GADE','DARF','GNRE')) return {kind:'conta', c:'impostos'};
+  if (has('DEFFERRARI','TELEF')) return {kind:'conta', c:'internet'};
+  if (has('PMDOISI','ARRECADACAO ESTADUAL','GADE','DARF','GNRE')) return {kind:'conta', c:'impostos'};
   if (has('MAPFRE','TOKIOM')) return {kind:'conta', c:'seguros'};
   if (has('RHEMA','MINIS')) return {kind:'conta', c:'doacoes'};
-  if (m.includes('26608804091') || m.includes('SERGIO') || m.includes('32961723000') || m.replace(/Ã/g,'').includes('IVANA'))
-    return {kind:'conta', c: amt > 0 ? 'casamento' : 'familia'};             // créditos = ressarcimento casamento; débitos = empréstimo pai
-  if (m.includes('33630661000150')) return {kind:'conta', c:'aplic'};        // Gowd/Latam Gateway = Pix p/ Binance (BTC)
-  if (m.includes('78220394072')) return {kind:'conta', c:'esportes'};        // personal trainer
   if (has('PASSAGEM PEDAGIO','STAR PARK','ESTACI')) return {kind:'conta', c:'pedagio'};
   if (has('BIKE','VIC CENTER','WEISS')) return {kind:'conta', c:'esportes'};
-  if (has('POUSADA','CAMILA MILANI')) return {kind:'conta', c:'viagens'};
+  if (has('POUSADA')) return {kind:'conta', c:'viagens'};
   if (has('CAMISARIA')) return {kind:'conta', c:'vestuario'};
   if (has('VINHO')) return {kind:'conta', c:'restaurantes'};
-  if (has('CLINI','IMUNI','NUTRI','GUEDES','44350888')) return {kind:'conta', c:'saude'};
+  if (has('CLINI','IMUNI','NUTRI')) return {kind:'conta', c:'saude'};
   if (has('KIWIFY','EDUZZ','GREENN','ECOSS')) return {kind:'conta', c:'educacao'};
   if (has('SICREDI CASHB')) return {kind:'conta', c:'outras_ent'};
   if (has('RECEITA C','SECR. DA')) return {kind:'conta', c:'outras_ent'};
@@ -850,10 +837,18 @@ function impConfirmar(){
   const novoCorte = [cob.sicredi, cob.nubank].sort()[0];
   if (novoCorte > D.corte) D.corte = novoCorte;
 
-  // guarda o próprio OFX no arquivo de documentos (criptografado)
-  (D.docs = D.docs||[]).push({ id:(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)),
+  // guarda o próprio OFX (e as faturas processadas) no arquivo de documentos criptografado
+  const novoId = () => crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2);
+  (D.docs = D.docs||[]).push({ id:novoId(),
     t:'Extrato bancário (OFX)', ref:IMP.fimData.slice(0,7), desc:`Extrato ${ACC_NOME[acc]} importado até ${dbr(IMP.fimData)}`,
     txt:IMP.texto, size:new Blob([IMP.texto]).size, add:D.corte });
+  for (const r of IMP.rows){
+    if (r.kind !== 'fatura' || !(r.fat && r.fat.ok)) continue;
+    const txt = r.fat.items.map(it => `${it.desc}  ${it.val.toFixed(2)}`).join('\n');
+    D.docs.push({ id:novoId(), t:'Fatura de cartão', ref:r.d.slice(0,7),
+      desc:`Fatura ${CARTAO_NOME[r.cartao]} paga em ${dbr(r.d)} (${r.fat.items.length} itens)`,
+      txt, size:new Blob([txt]).size, add:D.corte });
+  }
 
   const resumo = `✓ ${IMP.rows.length} lançamento(s) incorporados e conciliados no centavo. Cobertura ${ACC_NOME[acc]}: ${dbr(cob[acc])}. ` +
     (cob.sicredi !== cob.nubank
@@ -871,10 +866,10 @@ function impConfirmar(){
 }
 
 document.getElementById('imp-ler').addEventListener('click', impLer);
-document.getElementById('doc-add').addEventListener('click', docAdd);
 document.getElementById('ac-add').addEventListener('click', acCriar);
 document.getElementById('pw-change').addEventListener('click', pwTrocar);
 
+renderCabecalho();
 renderContas(); renderReservas(); renderPatrimonio(); renderAgenda(); renderPend(); renderEstrategia(); renderPlano();
 renderDocs(); renderAcessos();
 render();

@@ -199,12 +199,12 @@ body.is-admin .admin-only{display:block}
   <section id="page-fluxo">
   <div class="selbar">
     <select id="selper" onchange="selPer(this.value)"></select>
-    <div class="pills" id="centros" style="flex:1"></div>
+    <div class="fnav"><span class="nbtn" id="nprev" onclick="navPer(-1)">‹</span><span class="nbtn" id="nnext" onclick="navPer(1)">›</span></div>
   </div>
+  <div class="pills" id="centros" style="margin-bottom:10px"></div>
 
   <div class="card">
-    <div class="fhead"><h2 style="margin-bottom:0"><b>Fluxo de caixa</b> · <span id="ftitulo"></span></h2>
-    <div class="fnav"><span class="nbtn" id="nprev" onclick="navPer(-1)">‹</span><span class="nbtn" id="nnext" onclick="navPer(1)">›</span></div></div>
+    <div class="fhead"><h2 style="margin-bottom:0"><b>Fluxo de caixa</b> · <span id="ftitulo"></span></h2></div>
     <div style="height:10px"></div>
     <div class="tabs" id="subtabs">
       <span class="tab on" data-v="resumo">Resumo</span>
@@ -229,7 +229,7 @@ body.is-admin .admin-only{display:block}
   <div class="card">
     <h2>Contas bancárias · saldo no fim de cada mês</h2>
     <div class="tbl-wrap" id="contas"></div>
-    <div class="mini">Giro entre contas próprias fica fora do fluxo. TEDs de R$ 15 mil para a XP estão em <b>Aplicações e aportes</b>.</div>
+    <div class="mini" id="nota-contas">Giro entre contas próprias fica fora do fluxo.</div>
   </div>
   </section>
 
@@ -254,7 +254,7 @@ body.is-admin .admin-only{display:block}
     <div class="card">
       <h2>Reservas e investimentos</h2>
       <div id="reservas"></div>
-      <div class="note">XP e fundos atualizados em 15/08/26. Bitcoin a valor de mercado (cotação de 15/08 — oscila); a política é reserva de futuro: sem resgate, com DCA mensal.</div>
+      <div class="note" id="nota-reservas" style="display:none"></div>
     </div>
     <div class="card">
       <h2>Patrimônio · foto do IR + eventos 2026</h2>
@@ -268,7 +268,7 @@ body.is-admin .admin-only{display:block}
   <div class="card estr">
     <h2>Estratégia — decisões de capital</h2>
     <div id="estrategia"></div>
-    <div class="note">Estimativas com premissas declaradas — a taxa real do financiamento e o parecer do contador fecham as contas. Nada aqui é recomendação de investimento; é a tua situação em números.</div>
+    <div class="note" id="nota-estrategia" style="display:none"></div>
   </div>
 
   </section>
@@ -298,28 +298,9 @@ body.is-admin .admin-only{display:block}
     <div class="note">A ferramenta lê o OFX, ignora o que já está conciliado, classifica cada lançamento pelas regras do teu pipeline e mostra tudo para você conferir e ajustar. Pagamentos de fatura pedem os itens da fatura (regime de caixa: as compras entram no dia do pagamento, abertas por categoria). <b>Nada entra sem a conciliação no centavo fechar</b> — e o corte geral só avança quando as duas contas (Sicredi e Nubank) estiverem cobertas.</div>
   </div>
   <div class="card">
-    <h2>Adicionar extrato ou documento</h2>
-    <div class="formgrid">
-      <label>Tipo
-        <select id="doc-tipo">
-          <option>Extrato bancário (OFX)</option>
-          <option>Extrato bancário (PDF/CSV)</option>
-          <option>Fatura de cartão</option>
-          <option>Comprovante</option>
-          <option>Outro documento</option>
-        </select></label>
-      <label>Mês de referência <input type="month" id="doc-ref"></label>
-      <label class="full">Descrição <input type="text" id="doc-desc" placeholder="ex.: Extrato Sicredi — agosto/2026"></label>
-      <label class="full">Arquivo (OFX, CSV, PDF…) <input type="file" id="doc-file"></label>
-      <label class="full">ou cole o conteúdo aqui (texto do extrato, CSV…) <textarea id="doc-txt" rows="4" placeholder="Cole aqui o texto do extrato, se preferir não anexar arquivo"></textarea></label>
-    </div>
-    <button class="btn" id="doc-add">Adicionar documento</button>
-    <div class="mini" id="doc-msg" style="margin-top:8px"></div>
-    <div class="note">Os documentos ficam guardados <b>criptografados</b> junto com os dados — ninguém acessa sem login. Vá adicionando os extratos conforme chegam; na próxima atualização da ferramenta eles são a matéria-prima para atualizar os lançamentos. Limite de 3 MB por arquivo.</div>
-  </div>
-  <div class="card">
     <h2>Documentos guardados</h2>
     <div class="tbl-wrap" id="doc-lista"></div>
+    <div class="mini">Extratos importados e itens de fatura processados são arquivados aqui automaticamente, criptografados junto com os dados.</div>
   </div>
   <div class="card" id="sync-docs"></div>
   </section>
