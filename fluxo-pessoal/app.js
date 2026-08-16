@@ -348,7 +348,8 @@ function render(){
   renderBarras(meses);
 }
 document.getElementById('ptabs').addEventListener('click', e=>{
-  if (e.target.dataset.p) showPage(e.target.dataset.p);
+  const it = e.target.closest('[data-p]');
+  if (it){ showPage(it.dataset.p); document.body.classList.remove('sb-open'); window.scrollTo(0,0); }
 });
 document.getElementById('subtabs').addEventListener('click', e=>{
   if (e.target.dataset.v){ sub = e.target.dataset.v; render(); }
