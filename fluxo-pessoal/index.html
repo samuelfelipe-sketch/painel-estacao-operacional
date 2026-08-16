@@ -193,7 +193,7 @@ body.is-admin .admin-only{display:block}
     <span data-p="estr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>Estratégia</span>
     <span data-p="pend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Pendências</span>
     <span data-p="docs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Documentos</span>
-    <span data-p="acessos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Acessos</span>
+    <span data-p="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</span>
   </nav>
   <div id="hnav-user">
     <span class="chip" id="uchip"></span>
@@ -295,6 +295,14 @@ body.is-admin .admin-only{display:block}
 
   <section id="page-docs" style="display:none">
   <div class="card">
+    <h2>Documentos guardados</h2>
+    <div class="tbl-wrap" id="doc-lista"></div>
+    <div class="mini">Extratos importados e itens de fatura processados são arquivados aqui automaticamente, criptografados junto com os dados. Para enviar um novo extrato ou fatura, use a aba <b>Configurações</b>.</div>
+  </div>
+  </section>
+
+  <section id="page-config" style="display:none">
+  <div class="card">
     <h2>Importar para os lançamentos</h2>
     <div class="formgrid">
       <label class="full">Arquivo — extrato do banco (OFX) ou fatura do cartão (CSV) <input type="file" id="imp-file"></label>
@@ -306,14 +314,26 @@ body.is-admin .admin-only{display:block}
     <div class="note">Só anexar e enviar — a ferramenta reconhece sozinha se é <b>extrato</b> (Sicredi ou Nubank) ou <b>fatura de cartão</b>, e no caso da fatura identifica também o cartão e o mês (dá para corrigir na revisão, se precisar). <b>Extrato</b>: ignora o que já está conciliado, classifica pelas regras do teu pipeline e nada entra sem a conciliação no centavo fechar. <b>Fatura</b>: pode ser enviada a qualquer momento, mesmo antes de fechar — fica guardada criptografada, já classificada, e entra no caixa <b>no dia do pagamento</b>, quando o débito aparecer na importação do extrato.</div>
   </div>
   <div class="card">
-    <h2>Documentos guardados</h2>
-    <div class="tbl-wrap" id="doc-lista"></div>
-    <div class="mini">Extratos importados e itens de fatura processados são arquivados aqui automaticamente, criptografados junto com os dados.</div>
+    <h2>Projeção 2027 — premissas</h2>
+    <div class="formgrid">
+      <label>Crescimento da renda (% ao ano) <input id="p27-renda" type="text" inputmode="decimal"></label>
+      <label>Reajuste das despesas (% ao ano) <input id="p27-desp" type="text" inputmode="decimal"></label>
+    </div>
+    <button class="btn" id="p27-aplicar">Aplicar premissas</button>
+    <div class="mini" id="p27-msg" style="margin-top:8px"></div>
+    <div class="note">Valem para a visão "2027 — projeção" no Fluxo. Ficam guardadas criptografadas no cofre e sincronizadas entre os aparelhos.</div>
   </div>
-  <div class="card" id="sync-docs"></div>
-  </section>
-
-  <section id="page-acessos" style="display:none">
+  <div class="card">
+    <h2>Metas — alvos</h2>
+    <div class="formgrid">
+      <label>Reserva de emergência (meses) <input id="mt-meses" type="text" inputmode="decimal"></label>
+      <label>Meta de patrimônio (R$) <input id="mt-alvo" type="text" inputmode="decimal"></label>
+      <label>Rendimento das reservas (% a.a.) <input id="mt-rend" type="text" inputmode="decimal"></label>
+    </div>
+    <button class="btn" id="mt-aplicar">Aplicar metas</button>
+    <div class="mini" id="mt-msg" style="margin-top:8px"></div>
+    <div class="note">O progresso das metas aparece na aba <b>Patrimônio</b>.</div>
+  </div>
   <div class="card">
     <h2>Usuários com acesso</h2>
     <div class="tbl-wrap" id="ac-lista"></div>
