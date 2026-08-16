@@ -1,0 +1,11 @@
+# Dados pessoais em texto puro NUNCA entram no repositório (que é público).
+# Só o cofre criptografado dados.enc.json pode ser commitado.
+*.ofx
+*.OFX
+*.csv
+*.CSV
+data.json
+dados-plain*.json
+D-plain*.json
+*-plain.json
+node_modules/
