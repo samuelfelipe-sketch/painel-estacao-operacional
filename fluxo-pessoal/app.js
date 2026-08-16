@@ -395,15 +395,65 @@ const fmtBytes = n => n > 1048576 ? (n/1048576).toFixed(1)+' MB' : n > 1024 ? Ma
 const TAM_MAX_ARQ = 3 * 1048576; // documentos maiores que isso estouram o armazenamento do navegador
 
 function renderSync(){
-  const h = Vault.dirtyLocal
-    ? `<h2>Sincronização</h2>
-       <p class="mini" style="margin-bottom:10px">Há alterações salvas <b>somente neste navegador</b> (usuários e/ou documentos).
-       Para que valham em todos os dispositivos, baixe o arquivo atualizado e substitua o <b>dados.enc.json</b> na hospedagem.</p>
-       <button class="btn" onclick="Vault.exportFile()">⬇ Baixar dados.enc.json atualizado</button>`
-    : `<h2>Sincronização</h2>
-       <p class="mini">Nenhuma alteração pendente — este navegador está igual ao arquivo publicado.
-       Sempre que criar usuários ou adicionar documentos, aparece aqui o botão para baixar o arquivo atualizado.</p>`;
+  const auto = !!(Vault.data.sync && Vault.data.sync.token);
+  let h = '<h2>Sincronização</h2>';
+  if (auto){
+    if (Vault.pubStatus === 'publicando' || (Vault.dirtyLocal && Vault.pubStatus !== 'erro'))
+      h += `<p class="mini">⏳ Publicando alterações na base…</p>`;
+    else if (Vault.pubStatus === 'erro')
+      h += `<p class="mini" style="color:var(--vermelho);margin-bottom:10px">Falha ao publicar automaticamente (${esc(Vault.pubErro||'')}). Confira a internet ou a chave na aba Acessos — ou baixe o arquivo e substitua manualmente:</p>
+        <button class="btn" onclick="Vault.exportFile()">⬇ Baixar dados.enc.json</button>
+        <button class="btn sm" onclick="Vault.autoPublish()">tentar de novo</button>`;
+    else
+      h += `<p class="mini" style="color:#0E5C46">✓ Publicação automática ativa${Vault.pubHora ? ` — última publicação às ${Vault.pubHora}` : ' — nenhuma alteração pendente'}. Toda alteração vai sozinha para a base (~1 min para valer nos outros aparelhos).</p>`;
+  } else if (Vault.dirtyLocal){
+    h += `<p class="mini" style="margin-bottom:10px">Há alterações salvas <b>somente neste navegador</b> (usuários, importações e/ou documentos).
+      Para que valham em todos os dispositivos, baixe o arquivo atualizado e substitua o <b>dados.enc.json</b> na hospedagem — ou ative a publicação automática na aba Acessos.</p>
+      <button class="btn" onclick="Vault.exportFile()">⬇ Baixar dados.enc.json atualizado</button>`;
+  } else {
+    h += `<p class="mini">Nenhuma alteração pendente — este navegador está igual ao arquivo publicado.
+      Dica: na aba Acessos dá para ativar a <b>publicação automática</b>, que dispensa este passo manual.</p>`;
+  }
   for (const id of ['sync-card','sync-docs']){ const el = document.getElementById(id); if (el) el.innerHTML = h; }
+}
+
+// ---- publicação automática (config no card da aba Acessos) ----
+function renderGh(){
+  const on = !!(Vault.data.sync && Vault.data.sync.token);
+  const st = document.getElementById('gh-status'); if (!st) return;
+  st.innerHTML = on
+    ? '<b style="color:#0E5C46">✓ Ativa</b> — as alterações desta ferramenta são publicadas sozinhas na base.'
+    : '<b>Inativa</b> — alterações precisam ser baixadas e substituídas manualmente na hospedagem.';
+  document.getElementById('gh-off').style.display = on ? '' : 'none';
+  document.getElementById('gh-form').style.display = on ? 'none' : '';
+  document.getElementById('gh-save').style.display = on ? 'none' : '';
+}
+
+async function ghAtivar(){
+  const msg = document.getElementById('gh-msg');
+  const token = document.getElementById('gh-token').value.trim();
+  if (!token){ msg.textContent = 'Cole a chave gerada no GitHub.'; return; }
+  msg.textContent = 'Ativando e publicando…';
+  Vault.data.sync = { token, repo:'samuelfelipe-sketch/painel-estacao-operacional', branch:'main', path:'fluxo-pessoal/dados.enc.json' };
+  await Vault.save();
+  document.getElementById('gh-token').value = '';
+  const espera = () => new Promise(r=>setTimeout(r,400));
+  for (let i=0;i<25 && Vault.pubStatus==='publicando';i++) await espera();
+  if (Vault.pubStatus === 'erro'){
+    msg.textContent = `A chave não funcionou (${Vault.pubErro||'erro'}). Confira as permissões (Contents: Read and write, só neste repositório) e tente de novo.`;
+    delete Vault.data.sync; await Vault.save();
+  } else {
+    msg.textContent = '✓ Publicação automática ativada — esta alteração já foi publicada na base.';
+  }
+  renderGh(); renderSync();
+}
+
+async function ghDesativar(){
+  if (!confirm('Desativar a publicação automática? As próximas alterações voltarão a exigir o download manual do dados.enc.json.')) return;
+  delete Vault.data.sync;
+  await Vault.save();
+  document.getElementById('gh-msg').textContent = 'Desativada. Baixe o dados.enc.json atualizado (abaixo) para a base ficar sem a chave.';
+  renderGh(); renderSync();
 }
 
 function renderDocs(){
@@ -866,6 +916,10 @@ function impConfirmar(){
 }
 
 document.getElementById('imp-ler').addEventListener('click', impLer);
+document.getElementById('gh-save').addEventListener('click', ghAtivar);
+document.getElementById('gh-off').addEventListener('click', ghDesativar);
+renderGh();
+if (Vault.dirtyLocal) Vault.autoPublish();   // descarrega pendências antigas ao entrar
 document.getElementById('ac-add').addEventListener('click', acCriar);
 document.getElementById('pw-change').addEventListener('click', pwTrocar);
 
