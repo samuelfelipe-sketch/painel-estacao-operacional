@@ -542,6 +542,71 @@ function renderReservas(){
     '<div style="height:10px"></div>' +
     D.reservas_lp.map(kv).join('') + sub('Reserva de futuro (sem resgate)', D.reservas_lp);
 }
+// ---------- metas: reserva de emergência e 1º milhão ----------
+function metasCfg(){ return D.metas || { emerg_meses: 6, alvo: 1000000, rend_aa: 0 }; }
+async function metasSalvar(){
+  const num = id => { const v = parseFloat(document.getElementById(id).value.replace(/\./g,'').replace(',','.')); return isNaN(v) ? 0 : v; };
+  D.metas = { emerg_meses: num('mt-meses') || 6, alvo: num('mt-alvo') || 1000000, rend_aa: num('mt-rend') };
+  await Vault.save();
+  renderMetas();
+}
+function renderMetas(){
+  const el = document.getElementById('metas'); if (!el) return;
+  const cfg = metasCfg();
+  // custo de vida mensal de referência: mediana dos meses fechados, sem aplicações
+  const desp = [];
+  for (let mm = 1; mm <= FECHADOS; mm++){
+    let s = 0;
+    for (const c of D.contas) if (c.tipo === 'P' && c.id !== 'aplic') s += R[c.id][mm];
+    desp.push(-s);
+  }
+  const despRef = desp.length ? mediana(desp) : 0;
+  const liq = D.reservas_liq.reduce((s,x)=>s+x[1],0);
+  const lp = D.reservas_lp.reduce((s,x)=>s+x[1],0);
+  const caixa = saldoFim[CORTE_M] || 0;
+
+  // reserva de emergência: cobertura = reservas resgatáveis / custo de vida
+  const alvoE = cfg.emerg_meses * despRef;
+  const mesesCob = despRef > 0 ? liq / despRef : 0;
+  const pctE = alvoE > 0 ? Math.min(100, 100 * liq / alvoE) : 0;
+
+  // 1º milhão: patrimônio financeiro (caixa + reservas) crescendo no ritmo projetado
+  const fluxoTipico = D.contas.reduce((s,c)=>s+prev(c.id, Math.min(CORTE_M+1,12), true),0);
+  const aplicMes = -(((D.agendados||{}).fixos||{}).aplic || 0);
+  const ritmo = fluxoTipico + aplicMes;   // sobra de caixa + o que já vai para a reserva
+  const P0 = caixa + liq + lp;
+  const pctM = Math.min(100, 100 * P0 / cfg.alvo);
+  let quando = null, faltam = null;
+  if (P0 >= cfg.alvo) quando = 'meta já atingida ✓';
+  else if (ritmo > 0){
+    const i = cfg.rend_aa > 0 ? Math.pow(1 + cfg.rend_aa/100, 1/12) - 1 : 0;
+    let P = P0, n = 0;
+    while (P < cfg.alvo && n < 600){ P = P * (1 + i) + ritmo; n++; }
+    if (n < 600){
+      faltam = n;
+      const mAbs = CORTE_M - 1 + n, ano = ANO + Math.floor(mAbs / 12), mes = (mAbs % 12) + 1;
+      quando = `~${MN[mes].toLowerCase()}/${ano} (${n >= 12 ? Math.floor(n/12)+' ano'+(n>=24?'s':'')+(n%12?' e '+(n%12)+' mes'+(n%12>1?'es':''):'') : n+' meses'})`;
+    }
+  }
+  const barra = (pct, cor) => `<span style="flex:1;height:16px;background:#F0EDE4;border-radius:4px;overflow:hidden;display:block"><span style="display:block;height:100%;width:${pct.toFixed(1)}%;background:${cor||'var(--laranja)'};border-radius:4px;min-width:2px"></span></span>`;
+
+  let h = `<div class="kv tt"><span class="k">Reserva de emergência<small>reservas resgatáveis ÷ custo de vida (mediana ${ANO}, sem aplicações: ${fmt(-despRef)}/mês)</small></span><span class="v">${mesesCob.toFixed(1)} meses</span></div>
+    <div class="row" style="display:flex;align-items:center;gap:10px;margin:4px 0 14px">${barra(pctE, pctE>=100?'#0E5C46':'var(--laranja)')}<span class="mini" style="white-space:nowrap">${fmt(liq)} de ${fmt(alvoE)} (alvo ${cfg.emerg_meses} meses) · ${pctE.toFixed(0)}%</span></div>`;
+  h += `<div class="kv tt"><span class="k">1º milhão<small>caixa + reservas hoje: ${fmt(P0)} · ritmo projetado: ${fmt(ritmo)}/mês${cfg.rend_aa?` · rendimento ${cfg.rend_aa}% a.a.`:''}</small></span><span class="v">${pctM.toFixed(1)}%</span></div>
+    <div class="row" style="display:flex;align-items:center;gap:10px;margin:4px 0 6px">${barra(pctM)}<span class="mini" style="white-space:nowrap">${fmt(P0)} de ${fmt(cfg.alvo)}</span></div>`;
+  h += `<div class="mini" style="margin-bottom:14px">${quando ? 'Chegada estimada: <b>'+quando+'</b>' : 'No ritmo projetado atual a meta não é atingida — ajuste o ritmo ou a premissa de rendimento.'}</div>`;
+  h += `<div class="formgrid">
+      <label>Alvo da emergência (meses) <input id="mt-meses" type="text" inputmode="decimal" value="${cfg.emerg_meses}"></label>
+      <label>Meta de patrimônio (R$) <input id="mt-alvo" type="text" inputmode="decimal" value="${cfg.alvo}"></label>
+      <label>Rendimento das reservas (% a.a.) <input id="mt-rend" type="text" inputmode="decimal" value="${cfg.rend_aa}"></label>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
+      <button class="btn sm" onclick="metasSalvar()">Aplicar metas</button>
+      <span class="mini">ficam guardadas no cofre, criptografadas</span>
+    </div>`;
+  el.innerHTML = h;
+}
+
 function renderPatrimonio(){
   const P = D.patrimonio;
   let h = P.bens.map(x=>`<div class="kv"><span class="k">${x[0]}<small>${x[2]||''}</small></span><span class="v">${fmt(x[1])}</span></div>`).join('');
@@ -1562,7 +1627,7 @@ function impConfirmar(){
 
   Vault.save().then(()=>{
     recalcBase();
-    renderCabecalho(); renderContas(); renderDocs(); render();
+    renderCabecalho(); renderContas(); renderMetas(); renderDocs(); render();
   });
 }
 
@@ -1603,6 +1668,6 @@ document.getElementById('ac-add').addEventListener('click', acCriar);
 document.getElementById('pw-change').addEventListener('click', pwTrocar);
 
 renderCabecalho();
-renderContas(); renderReservas(); renderPatrimonio(); renderAgenda(); renderPend(); renderEstrategia(); renderPlano();
+renderContas(); renderReservas(); renderMetas(); renderPatrimonio(); renderAgenda(); renderPend(); renderEstrategia(); renderPlano();
 renderDocs(); renderAcessos();
 render();
