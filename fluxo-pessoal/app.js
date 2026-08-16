@@ -590,13 +590,14 @@ async function iaExtrairItens(texto){
 
 async function iaLerFaturaTxt(){
   const msg = document.getElementById('imp-msg');
-  const f = document.getElementById('fat-file').files[0];
-  const texto = f ? await f.text() : document.getElementById('fat-txt').value.trim();
+  const f = document.getElementById('imp-file').files[0];
+  const texto = f ? await f.text() : document.getElementById('imp-txt').value.trim();
   msg.textContent = '✨ Lendo a fatura com IA…';
   try {
     const items = await iaExtrairItens(texto);
     if (!items.length){ msg.textContent = 'A IA não encontrou compras neste texto.'; return; }
-    FIMP = { cartao: document.getElementById('fat-cartao').value, items,
+    const cartao = detectCartao(texto);
+    FIMP = { cartao: cartao || 'visa', cartaoAuto: !!cartao, ref: detectRef(texto), items,
       total: round2(items.reduce((s,it)=>s+it.val,0)), ignoradas: 0, viaIA: true };
     msg.textContent = '';
     fatRender();
@@ -940,19 +941,50 @@ function cobertura(){
 // fica guardada criptografada em D.fat_pend e entra no caixa quando o
 // débito da fatura aparecer na importação do extrato.
 // ================================================================
-async function fatLer(){
+// ---- envio único: a ferramenta descobre sozinha o que é o arquivo ----
+async function impEnviar(){
   const msg = document.getElementById('imp-msg');
-  msg.textContent = ''; document.getElementById('imp-review').innerHTML = ''; FIMP = null;
-  const f = document.getElementById('fat-file').files[0];
-  const colado = document.getElementById('fat-txt').value.trim();
+  msg.textContent = ''; document.getElementById('imp-review').innerHTML = ''; IMP = null; FIMP = null;
+  const f = document.getElementById('imp-file').files[0];
+  const colado = document.getElementById('imp-txt').value.trim();
+  if (!f && !colado){ msg.textContent = 'Anexe o arquivo (extrato OFX ou fatura do cartão) — ou cole o texto da fatura.'; return; }
   const text = f ? await f.text() : colado;
-  if (!text){ msg.textContent = 'Anexe o CSV da fatura ou cole os itens.'; return; }
-  const res = parseFaturaItens(text);
+  if (/<OFX|OFXHEADER|<STMTTRN/i.test(text)) return impLer(text, f ? f.name : 'extrato.ofx');
+  return fatLer(text);
+}
+
+// detecção do cartão e do mês de referência a partir do conteúdo da fatura
+function detectCartao(text){
+  const t = text.toUpperCase();
+  if (/MASTERCARD|MASTER\b/.test(t)) return 'master';
+  if (t.includes('VISA')) return 'visa';
+  if (/NUBANK|NU PAGAMENTOS|NUCARD/.test(t)) return 'nucard';
+  if (t.includes('SICREDI')) return 'visa';   // fatura Sicredi sem bandeira explícita: cartão principal
+  return null;
+}
+function detectRef(text){
+  const m = text.match(/(?:VENCIMENTO|REFER[ÊE]NCIA|FATURA DE)[^\d]{0,20}(\d{1,2})\/(\d{4})/i);
+  if (m) return `${m[2]}-${String(+m[1]).padStart(2,'0')}`;
+  const meses = {};
+  for (const dm of text.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/g)){
+    const ano = dm[3].length === 2 ? '20'+dm[3] : dm[3], mn = +dm[2];
+    if (mn >= 1 && mn <= 12){ const k = `${ano}-${String(mn).padStart(2,'0')}`; meses[k] = (meses[k]||0)+1; }
+  }
+  const top = Object.entries(meses).sort((a,b)=>b[1]-a[1])[0];
+  if (top) return top[0];
+  const hoje = new Date();
+  return `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
+}
+
+async function fatLer(texto){
+  const msg = document.getElementById('imp-msg');
+  const res = parseFaturaItens(texto);
   if (res.erro){
     msg.innerHTML = esc(res.erro) + (iaCfg() ? ' <button class="btn sm" onclick="iaLerFaturaTxt()">✨ Tentar ler com IA</button>' : '');
     return;
   }
-  FIMP = { cartao: document.getElementById('fat-cartao').value, items: res.items,
+  const cartao = detectCartao(texto);
+  FIMP = { cartao: cartao || 'visa', cartaoAuto: !!cartao, ref: detectRef(texto), items: res.items,
     total: round2(res.items.reduce((s,it)=>s+it.val,0)), ignoradas: res.ignoradas.length };
   fatRender();
   const ref = FIMP;
@@ -961,7 +993,13 @@ async function fatLer(){
 
 function fatRender(){
   const el = document.getElementById('imp-review');
-  let h = `<div class="note" style="margin-bottom:10px"><b>Fatura ${CARTAO_NOME[FIMP.cartao]}</b> · ${FIMP.items.length} item(ns) · total ${fmtMoeda(FIMP.total)}${FIMP.ignoradas?` · ${FIMP.ignoradas} linha(s) de cabeçalho/total ignorada(s)`:''}</div>`;
+  let h = `<div class="note" style="margin-bottom:10px"><b>Fatura de cartão</b> · ${FIMP.items.length} item(ns) · total ${fmtMoeda(FIMP.total)}${FIMP.ignoradas?` · ${FIMP.ignoradas} linha(s) de cabeçalho/total ignorada(s)`:''}</div>`;
+  h += `<div class="formgrid" style="margin-bottom:10px">
+    <label>Cartão${FIMP.cartaoAuto?' <span class="mini" style="font-weight:400">(detectado)</span>':' <span class="mini" style="color:var(--laranja);font-weight:400">(confira)</span>'}
+      <select id="fat-sel-cartao" onchange="FIMP.cartao=this.value">${Object.entries(CARTAO_NOME).map(([k,n])=>`<option value="${k}" ${FIMP.cartao===k?'selected':''}>${n}</option>`).join('')}</select></label>
+    <label>Mês de referência <span class="mini" style="font-weight:400">(detectado)</span>
+      <input type="month" id="fat-sel-ref" value="${FIMP.ref}" onchange="FIMP.ref=this.value"></label>
+  </div>`;
   h += '<div class="tbl-wrap"><table><thead><tr><th class="lab">Compra</th><th>Valor</th><th style="text-align:left">Categoria</th></tr></thead><tbody>';
   FIMP.items.forEach((it,j)=>{
     h += `<tr><td class="lab" style="white-space:normal">${esc(it.desc.slice(0,50))}${it.ia?' <span title="classificado pela IA — confira">✨</span>':''}</td>${cellM(-it.val)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="FIMP.items[${j}].c=this.value">${optsConta(it.c)}</select></td></tr>`;
@@ -977,7 +1015,7 @@ function fatRender(){
 
 async function fatGuardar(){
   if (!FIMP) return;
-  const ref = document.getElementById('fat-ref').value;
+  const ref = FIMP.ref;
   const ex = (D.fat_pend||[]).find(p => p.cartao === FIMP.cartao && p.ref === ref);
   if (ex && !confirm('Já existe uma fatura guardada deste cartão para este mês. Substituir pela versão nova?')) return;
   D.fat_pend = (D.fat_pend||[]).filter(p => !(p.cartao === FIMP.cartao && p.ref === ref));
@@ -986,7 +1024,7 @@ async function fatGuardar(){
   await Vault.save();
   FIMP = null;
   document.getElementById('imp-review').innerHTML = '';
-  document.getElementById('fat-file').value = ''; document.getElementById('fat-txt').value = '';
+  document.getElementById('imp-file').value = ''; document.getElementById('imp-txt').value = '';
   document.getElementById('imp-msg').textContent = '✓ Fatura guardada (criptografada). Ela entra no caixa no dia do pagamento — ao importar o extrato com o débito da fatura, use o botão "usar fatura guardada".';
   renderDocs();
 }
@@ -1021,22 +1059,22 @@ function impUsarFatPend(i, id){
   impRender();
 }
 
-async function impLer(){
+let IMP_SRC = null;   // último OFX lido, para o caso raro de banco não detectado
+function impLerForcado(acc){ if (IMP_SRC) impLer(IMP_SRC.text, IMP_SRC.nome, acc); }
+
+async function impLer(text, nome, accForcada){
   const msg = document.getElementById('imp-msg');
-  const file = document.getElementById('imp-file').files[0];
   msg.textContent = ''; document.getElementById('imp-review').innerHTML = ''; IMP = null;
-  if (!file){ msg.textContent = 'Escolha o arquivo OFX do extrato.'; return; }
-  const text = await file.text();
   const p = parseOFX(text);
-  if (!p.txs.length){
-    const pareceFatura = /\.csv$/i.test(file.name) || (!/<OFX|OFXHEADER/i.test(text) && /[;,]\s*-?[\d.]+,\d\d/.test(text));
-    msg.textContent = pareceFatura
-      ? 'Este arquivo parece ser a fatura do cartão (CSV). A fatura entra no dia do pagamento: importe aqui o extrato OFX da conta e, quando o pagamento da fatura aparecer na revisão, anexe este CSV nele — a ferramenta abre as compras por categoria.'
-      : 'Nenhum lançamento encontrado no arquivo. É um OFX de extrato?';
+  if (!p.txs.length){ msg.textContent = 'Nenhum lançamento encontrado no arquivo. É um OFX de extrato?'; return; }
+  const acc = accForcada || p.acc;
+  if (!acc){
+    IMP_SRC = { text, nome };
+    msg.innerHTML = `Não reconheci o banco deste extrato. De qual conta ele é?
+      <button class="btn sm" onclick="impLerForcado('sicredi')">Sicredi CC</button>
+      <button class="btn sm" onclick="impLerForcado('nubank')">Nubank</button>`;
     return;
   }
-  const acc = document.getElementById('imp-acc').value || p.acc;
-  if (!acc){ msg.textContent = 'Não reconheci o banco — escolha a conta (Sicredi ou Nubank) e tente de novo.'; return; }
   if (p.txs.some(t => +t.d.slice(0,4) !== ANO)){ msg.textContent = `Este arquivo tem lançamentos fora de ${ANO} — a ferramenta cobre ${ANO}.`; return; }
 
   const cob = cobertura()[acc];
@@ -1051,7 +1089,7 @@ async function impLer(){
     const cl = catBank(t.m, t.v);
     return { ...t, kind: cl.kind, c: cl.kind==='giro' ? 'GIRO' : cl.c, cartao: cl.cartao || null, incerto: !!cl.incerto, fat: null };
   });
-  IMP = { acc, rows, ledger: p.ledger, fimData, ignorados, arquivo: file.name, texto: text };
+  IMP = { acc, rows, ledger: p.ledger, fimData, ignorados, arquivo: nome, texto: text };
   impRender();
   iaRefinarExtrato(IMP);
 }
@@ -1243,7 +1281,7 @@ function impConfirmar(){
       : `Corte geral atualizado para ${dbr(D.corte)}.`);
   IMP = null;
   document.getElementById('imp-review').innerHTML = '';
-  document.getElementById('imp-file').value = '';
+  document.getElementById('imp-file').value = ''; document.getElementById('imp-txt').value = '';
   document.getElementById('imp-msg').textContent = resumo + ' Baixe o dados.enc.json atualizado (card Sincronização) para valer em todos os aparelhos.';
 
   Vault.save().then(()=>{
@@ -1252,16 +1290,7 @@ function impConfirmar(){
   });
 }
 
-document.getElementById('imp-ler').addEventListener('click', () =>
-  document.getElementById('imp-tipo').value === 'fatura' ? fatLer() : impLer());
-document.getElementById('imp-tipo').addEventListener('change', e => {
-  const fat = e.target.value === 'fatura';
-  document.getElementById('imp-extrato-campos').style.display = fat ? 'none' : '';
-  document.getElementById('imp-fatura-campos').style.display = fat ? '' : 'none';
-  document.getElementById('imp-msg').textContent = '';
-  document.getElementById('imp-review').innerHTML = '';
-  IMP = null; FIMP = null;
-});
+document.getElementById('imp-ler').addEventListener('click', impEnviar);
 document.getElementById('gh-save').addEventListener('click', ghAtivar);
 document.getElementById('gh-off').addEventListener('click', ghDesativar);
 renderGh();
