@@ -309,7 +309,8 @@ function renderAno27(){
   const meses = [1,2,3,4,5,6,7,8,9,10,11,12];
   const cs = contasAtivas();
   const cfg = proj27Cfg();
-  let h = `<div class="formgrid" style="margin-bottom:8px">
+  // premissas ficam fora do contêiner que rola na horizontal
+  document.getElementById('fcontrols').innerHTML = `<div class="formgrid" style="margin-bottom:4px">
     <label>Crescimento da renda (% ao ano) <input id="p27-renda" type="text" inputmode="decimal" value="${cfg.renda}"></label>
     <label>Reajuste das despesas (% ao ano) <input id="p27-desp" type="text" inputmode="decimal" value="${cfg.desp}"></label>
   </div>
@@ -317,7 +318,7 @@ function renderAno27(){
     <button class="btn sm" onclick="p27Salvar()">Aplicar premissas</button>
     <span class="mini">ficam guardadas no cofre, criptografadas</span>
   </div>`;
-  h += `<table><thead><tr><th class="lab"></th>${meses.map(m=>`<th>${MN[m]}*</th>`).join('')}<th>Ano</th></tr></thead><tbody>`;
+  let h = `<table><thead><tr><th class="lab"></th>${meses.map(m=>`<th>${MN[m]}*</th>`).join('')}<th>Ano</th></tr></thead><tbody>`;
   const linha27 = (nome, ids, cls, extra, labExtra) => {
     const vm = ids.reduce((s,c)=>s+prev27(c.id),0);
     if (cls==='sub' && Math.round(Math.abs(vm*12))===0) return '';
@@ -652,6 +653,7 @@ function render(){
     : per.t==='m'
     ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–${MN[FECHADOS].toLowerCase()})${per.v>CORTE_M?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: extratos${per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]?' até '+D.corte.slice(8,10)+'/'+D.corte.slice(5,7):''}</span><span>Toque em Recebimentos/Pagamentos abre os grupos; no grupo, as contas; na conta, os lançamentos</span>`
     : `<span>Jan–${MN[FECHADOS]}: realizado fechado${FECHADOS<CORTE_M?` · ${MN[CORTE_M]}¹: realizado até ${D.corte.slice(8,10)+'/'+D.corte.slice(5,7)}`:''}${CORTE_M<12?` · ${MN[CORTE_M+1]}–Dez*: previsto`:''}</span>`;
+  document.getElementById('fcontrols').innerHTML = '';
   if (per.t==='y27') renderAno27();
   else if (per.t!=='m') renderMeses(meses);
   else if (sub==='semanas') renderSemanas(per.v);
