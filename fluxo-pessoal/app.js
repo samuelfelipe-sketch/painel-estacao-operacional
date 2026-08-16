@@ -173,8 +173,10 @@ function selPer(v){ const [t,n]=v.split(':'); setPer({t, v:+n}); }
 let page='fluxo';
 function showPage(p){
   page=p;
-  for (const k of ['fluxo','plano','patri','estr','pend','docs','config'])
-    document.getElementById('page-'+k).style.display = k===p?'':'none';
+  for (const k of ['fluxo','plano','patri','estr','pend','docs','config']){
+    const el = document.getElementById('page-'+k);
+    if (el) el.style.display = k===p?'':'none';
+  }
   document.querySelectorAll('#ptabs span').forEach(t=>t.classList.toggle('on', t.dataset.p===p));
 }
 function setPer(p){ per = {t:p.t, v:p.v}; if (per.t!=='m') sub='resumo'; render(); }
@@ -1634,7 +1636,12 @@ function impConfirmar(){
   });
 }
 
-document.getElementById('imp-ler').addEventListener('click', impEnviar);
+// Liga um botão pelo id, tolerando elemento ausente: se o navegador estiver
+// com um index.html de versão diferente em cache (janela de propagação da
+// hospedagem), o boot não pode quebrar — o vigia de versão recarrega em
+// seguida e tudo se alinha.
+const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+on('imp-ler', impEnviar);
 
 // ---- desconexão automática de todos os acessos quando sai versão nova ----
 // Cada aba aberta compara a "etiqueta" (ETag/Last-Modified) dos arquivos da
@@ -1660,20 +1667,26 @@ async function verCheck(){
 verTag().then(t => { VER_TAG = t; });
 setInterval(verCheck, 120000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) verCheck(); });
-document.getElementById('gh-save').addEventListener('click', ghAtivar);
-document.getElementById('gh-off').addEventListener('click', ghDesativar);
+on('gh-save', ghAtivar);
+on('gh-off', ghDesativar);
 renderGh();
-document.getElementById('ia-save').addEventListener('click', iaAtivar);
-document.getElementById('ia-off').addEventListener('click', iaDesativar);
+on('ia-save', iaAtivar);
+on('ia-off', iaDesativar);
 renderIa();
-document.getElementById('p27-aplicar').addEventListener('click', p27Salvar);
-document.getElementById('mt-aplicar').addEventListener('click', metasSalvar);
+on('p27-aplicar', p27Salvar);
+on('mt-aplicar', metasSalvar);
 renderConfigForms();
 if (Vault.dirtyLocal) Vault.autoPublish();   // descarrega pendências antigas ao entrar
-document.getElementById('ac-add').addEventListener('click', acCriar);
-document.getElementById('pw-change').addEventListener('click', pwTrocar);
+on('ac-add', acCriar);
+on('pw-change', pwTrocar);
 
 renderCabecalho();
 renderContas(); renderReservas(); renderMetas(); renderPatrimonio(); renderAgenda(); renderPend(); renderEstrategia(); renderPlano();
 renderDocs(); renderAcessos();
 render();
+
+// se o HTML em cache for de outra versão (falta a página de Configurações),
+// recarrega uma única vez para realinhar — o vigia de versão cobre o resto
+if (!document.getElementById('page-config')){
+  if (!sessionStorage.getItem('fp-skew')){ sessionStorage.setItem('fp-skew','1'); location.reload(); }
+} else sessionStorage.removeItem('fp-skew');
