@@ -81,20 +81,23 @@ function recalcBase(){
 
   // compromissos conhecidos: fatura guardada projeta o pagamento no mês seguinte
   // ao de referência; parcelas k/n projetam as próximas nos meses subsequentes
-  FPROJ = { full:{}, parc:{} };
+  FPROJ = { full:{}, parc:{}, venc:{} };
   const addF = (bag, m, card, cid, v) => {
     if (m < 1 || m > 12) return;
     (bag[m] = bag[m] || {}); (bag[m][card] = bag[m][card] || {});
     bag[m][card][cid] = (bag[m][card][cid] || 0) + v;
   };
   for (const p of (D.fat_pend || [])){
-    if (!p.ref || +p.ref.slice(0,4) !== ANO) continue;
-    const P = +p.ref.slice(5,7) + 1;   // pagamento no mês seguinte ao de referência
+    let P = null;   // mês do pagamento: vencimento real quando conhecido; senão, mês seguinte ao de referência
+    if (p.venc && +p.venc.slice(0,4) === ANO) P = +p.venc.slice(5,7);
+    else if (p.ref && +p.ref.slice(0,4) === ANO) P = +p.ref.slice(5,7) + 1;
+    if (P == null) continue;
     for (const it of p.items){
       addF(FPROJ.full, P, p.cartao, it.c, -it.val);
       const pc = it.parc || parseParcela(it.desc);
       if (pc) for (let j = 1; j <= pc.n - pc.k; j++) addF(FPROJ.parc, P + j, p.cartao, it.c, -it.val);
     }
+    if (p.venc && P >= 1 && P <= 12) (FPROJ.venc[P] = FPROJ.venc[P] || {})[p.cartao] = +p.venc.slice(8,10);
   }
   // parcelas de faturas já incorporadas (lançamentos de cartão com marcador k/n)
   for (const l of D.lanc){
@@ -283,13 +286,39 @@ function semanasDo(m){
 function renderSemanas(m){
   const sem = semanasDo(m);
   const cs = contasAtivas();
-  const somaSem = (ids,[a,b]) => D.lanc.reduce((s,l)=>{
+  const proj = m > CORTE_M;                              // mês inteiro projetado
+  const parcial = m === CORTE_M && CORTE_D < DIM[m];     // mês corrente com dias restantes
+  const diasProj = ([a,b]) => proj ? (b-a+1) : parcial ? Math.max(0, b - Math.max(a-1, CORTE_D)) : 0;
+
+  // faturas guardadas pagas neste mês: valor conhecido entra na semana do vencimento
+  const fatW = {};
+  if (proj && FPROJ.full[m]) for (const card of CARDS){
+    const f = FPROJ.full[m][card]; if (!f) continue;
+    const dia = (FPROJ.venc[m] && FPROJ.venc[m][card]) || 10;
+    for (const cid in f) (fatW[cid] = fatW[cid]||[]).push({ v: f[cid], dia });
+  }
+  const fatTot = cid => (fatW[cid]||[]).reduce((s,x)=>s+x.v,0);
+
+  const somaReal = (ids,[a,b]) => proj ? 0 : D.lanc.reduce((s,l)=>{
     if(l.c==='GIRO') return s; const lm=+l.d.slice(5,7), ld=+l.d.slice(8,10);
     if(lm!==m||ld<a||ld>b) return s; return ids.some(c=>c.id===l.c)? s+l.v : s; },0);
-  let h = `<table><thead><tr><th class="lab"></th>${sem.map(s=>`<th>${String(s[0]).padStart(2,'0')}–${String(s[1]).padStart(2,'0')}</th>`).join('')}<th>Total</th></tr></thead><tbody>`;
+  const somaPrev = (ids,s) => { const dp = diasProj(s); if (!dp) return 0;
+    return ids.reduce((sum,c)=>{
+      if (proj){
+        let v = (prev(c.id, m) - fatTot(c.id)) * dp / DIM[m];
+        for (const x of (fatW[c.id]||[])) if (x.dia >= s[0] && x.dia <= s[1]) v += x.v;
+        return sum + v;
+      }
+      // mês parcial: previsto proporcional dos dias após o corte (mesma régua do caixa projetado)
+      return sum + prev(c.id, Math.min(CORTE_M+1,12), true) * dp / DIM[m];
+    }, 0); };
+  const somaSem = (ids,s) => somaReal(ids,s) + somaPrev(ids,s);
+  const colPrev = s => diasProj(s) > 0;
+
+  let h = `<table><thead><tr><th class="lab"></th>${sem.map(s=>`<th>${String(s[0]).padStart(2,'0')}–${String(s[1]).padStart(2,'0')}${colPrev(s)?'*':''}</th>`).join('')}<th>Total</th></tr></thead><tbody>`;
   const lr = (nome, ids, cls, skipVazio, extra, labExtra) => { const vs=sem.map(s=>somaSem(ids,s)); const t=vs.reduce((a,b)=>a+b,0);
     if (skipVazio && Math.round(Math.abs(t))===0) return '';
-    return `<tr class="${cls}" ${extra||''}><td class="lab" ${labExtra||''}>${nome}</td>${vs.map(v=>cell(v)).join('')}${cell(t)}</tr>`; };
+    return `<tr class="${cls}" ${extra||''}><td class="lab" ${labExtra||''}>${nome}</td>${vs.map((v,i)=>cell(v, colPrev(sem[i])?'prevcol':'')).join('')}${cell(t)}</tr>`; };
   const recIds=cs.filter(c=>c.tipo==='R'), pagIds=cs.filter(c=>c.tipo==='P');
   const bloco = (grupos, pool) => {
     for (const g of grupos){
@@ -305,6 +334,10 @@ function renderSemanas(m){
   h += lr('Pagamentos', pagIds, 'tot sec'+(secs.has('P')?' open':''), false, `onclick="tgSec('P')"`);
   if (secs.has('P')) bloco(GRUPOS_P, pagIds);
   h += lr('FLUXO DE CAIXA', cs, 'fluxo');
+  // caixa ao fim de cada semana — sempre consolidado, como na visão mensal
+  let saldo = saldoNoInicio(m);
+  const caixaCells = sem.map(s => { saldo += somaSem(D.contas, s); return cell(saldo, colPrev(s)?'prevcol':''); }).join('');
+  h += `<tr class="caixa"><td class="lab">Caixa no fim</td>${caixaCells}${cell(saldo)}</tr>`;
   h += '</tbody></table>';
   document.getElementById('ftabela').innerHTML = h;
 }
@@ -413,17 +446,19 @@ function render(){
   st.style.display = per.t==='m' ? 'inline-flex' : 'none';
   st.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.v===sub));
   const temReal = per.t==='m' && per.v<=CORTE_M;
-  st.querySelectorAll('.tab').forEach(t=>{ if(t.dataset.v!=='resumo') t.style.display = temReal?'':'none'; });
+  st.querySelectorAll('.tab').forEach(t=>{ if(t.dataset.v==='dias') t.style.display = temReal?'':'none'; });
+  if (sub==='dias' && !temReal) sub = 'resumo';
   document.getElementById('flegend').innerHTML =
     per.t==='m'
     ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–${MN[FECHADOS].toLowerCase()})${per.v>CORTE_M?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: extratos${per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]?' até '+D.corte.slice(8,10)+'/'+D.corte.slice(5,7):''}</span><span>Toque em Recebimentos/Pagamentos abre os grupos; no grupo, as contas; na conta, os lançamentos</span>`
     : `<span>Jan–${MN[FECHADOS]}: realizado fechado${FECHADOS<CORTE_M?` · ${MN[CORTE_M]}¹: realizado até ${D.corte.slice(8,10)+'/'+D.corte.slice(5,7)}`:''}${CORTE_M<12?` · ${MN[CORTE_M+1]}–Dez*: previsto`:''}</span>`;
   if (per.t!=='m') renderMeses(meses);
-  else if (sub==='semanas' && temReal) renderSemanas(per.v);
+  else if (sub==='semanas') renderSemanas(per.v);
   else if (sub==='dias' && temReal) renderDias(per.v);
   else renderResumo(meses);
   const mesesAg = ((D.agendados||{}).extras||[]).flatMap(e=>e.meses);
   document.getElementById('fnota').innerHTML =
+    (per.t==='m'&&sub==='semanas'&&(per.v>CORTE_M||(per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]))? 'Colunas com * são projeção: o previsto do mês distribuído pelos dias, com faturas guardadas na semana do vencimento. ':'')+
     (per.t==='m'&&per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]? `${MFULL[CORTE_M][0].toUpperCase()+MFULL[CORTE_M].slice(1)} parcial: realizado até ${D.corte.slice(8,10)}/${D.corte.slice(5,7)}; o caixa no fim do mês mostrado é projeção (realizado + previsto proporcional dos dias restantes). `:'')+
     ((per.t==='m'&&mesesAg.includes(per.v)&&D.notas&&D.notas.agendado)? D.notas.agendado+' ':'')+
     ((D.notas&&D.notas.geral) || 'Faturas de cartão entram no dia do pagamento, abertas por categoria conforme a fatura.');
@@ -660,7 +695,7 @@ async function iaLerFaturaTxt(){
     const items = await iaExtrairItens(texto);
     if (!items.length){ msg.textContent = 'A IA não encontrou compras neste texto.'; return; }
     const cartao = detectCartao(texto);
-    FIMP = { cartao: cartao || 'visa', cartaoAuto: !!cartao, ref: detectRef(texto), items,
+    FIMP = { cartao: cartao || 'visa', cartaoAuto: !!cartao, ref: detectRef(texto), venc: detectVenc(texto), items,
       total: round2(items.reduce((s,it)=>s+it.val,0)), ignoradas: 0, viaIA: true };
     msg.textContent = '';
     fatRender();
@@ -1038,15 +1073,21 @@ function detectCartao(text){
   if (t.includes('SICREDI')) return 'visa';   // fatura Sicredi sem bandeira explícita: cartão principal
   return null;
 }
+function detectVenc(text){
+  const m = text.match(/VENCIMENTO[^\d]{0,20}(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i);
+  if (!m || +m[2] < 1 || +m[2] > 12) return null;
+  const aa = m[3].length === 2 ? '20'+m[3] : m[3];
+  return `${aa}-${String(+m[2]).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`;
+}
 function detectRef(text){
   let m = text.match(/(?:REFER[ÊE]NCIA|FATURA DE)[^\d]{0,20}(\d{1,2})\/(\d{4})/i);
   if (m) return `${m[2]}-${String(+m[1]).padStart(2,'0')}`;
   // vencimento em dd/mm/aaaa: a fatura é do mês anterior ao vencimento
-  m = text.match(/VENCIMENTO[^\d]{0,20}(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i);
-  if (m){
-    let aa = m[3].length === 2 ? 2000 + +m[3] : +m[3], mm = +m[2] - 1;
+  const venc = detectVenc(text);
+  if (venc){
+    let aa = +venc.slice(0,4), mm = +venc.slice(5,7) - 1;
     if (mm === 0){ mm = 12; aa--; }
-    if (mm >= 1 && mm <= 12) return `${aa}-${String(mm).padStart(2,'0')}`;
+    return `${aa}-${String(mm).padStart(2,'0')}`;
   }
   const meses = {};
   for (const dm of text.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/g)){
@@ -1067,7 +1108,7 @@ async function fatLer(texto){
     return;
   }
   const cartao = detectCartao(texto);
-  FIMP = { cartao: cartao || 'visa', cartaoAuto: !!cartao, ref: detectRef(texto), items: res.items,
+  FIMP = { cartao: cartao || 'visa', cartaoAuto: !!cartao, ref: detectRef(texto), venc: detectVenc(texto), items: res.items,
     total: round2(res.items.reduce((s,it)=>s+it.val,0)), ignoradas: res.ignoradas.length, declTotal: res.declTotal };
   fatRender();
   const ref = FIMP;
@@ -1113,7 +1154,7 @@ async function fatGuardar(){
   const ex = (D.fat_pend||[]).find(p => p.cartao === FIMP.cartao && p.ref === ref);
   if (ex && !confirm('Já existe uma fatura guardada deste cartão para este mês. Substituir pela versão nova?')) return;
   D.fat_pend = (D.fat_pend||[]).filter(p => !(p.cartao === FIMP.cartao && p.ref === ref));
-  D.fat_pend.push({ id: genId(), cartao: FIMP.cartao, ref, total: FIMP.total, items: FIMP.items,
+  D.fat_pend.push({ id: genId(), cartao: FIMP.cartao, ref, venc: FIMP.venc || null, total: FIMP.total, items: FIMP.items,
     add: new Date().toISOString().slice(0,10) });
   await Vault.save();
   const mesPg = ref ? +ref.slice(5,7) + 1 : 13;
