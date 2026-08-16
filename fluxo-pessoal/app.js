@@ -689,8 +689,6 @@ function renderCabecalho(){
     if (el && N[key]){ el.textContent = N[key]; el.style.display = ''; }
   }
   const nCM = Object.keys(SB.sicredi.fim).length + Object.keys(SB.nubank.fim).length;
-  const hb = document.getElementById('hbadge');
-  if (hb){ hb.textContent = '✓ conciliado no centavo'; hb.title = `${nCM}/${nCM} conta-mês conferidos`; }
   document.getElementById('fontes').innerHTML =
     `<b>Fontes:</b> extratos OFX Sicredi CC e Nubank (jan–${D.corte.slice(8,10)}/${MN[CORTE_M].toLowerCase()}/${ANO}) · faturas Visa Infinite e do cartão Nubank conferidas contra o total declarado · IRPF ${ANO} (ano-base ${ANO-1}). Regra de ouro: saldo inicial + recebimentos − pagamentos = saldo final real de cada conta, conciliado no centavo em ${nCM} de ${nCM} conta-mês. Transferências entre contas próprias são giro e ficam fora dos totais. Nenhum valor é digitado aqui; tudo deriva dos lançamentos e das importações conciliadas.`;
 }
