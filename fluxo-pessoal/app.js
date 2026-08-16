@@ -1390,6 +1390,31 @@ function impConfirmar(){
 }
 
 document.getElementById('imp-ler').addEventListener('click', impEnviar);
+
+// ---- desconexão automática de todos os acessos quando sai versão nova ----
+// Cada aba aberta compara a "etiqueta" (ETag/Last-Modified) dos arquivos da
+// ferramenta na hospedagem; mudou = nova versão publicada → volta ao login.
+let VER_TAG = null;
+async function verTag(){
+  try {
+    const rs = await Promise.all(['index.html','app.js'].map(f => fetch(f, { method:'HEAD', cache:'no-store' })));
+    const tags = rs.map(r => r.headers.get('etag') || r.headers.get('last-modified') || '');
+    return tags.every(t => !t) ? null : tags.join('|');
+  } catch(e){ return null; }
+}
+async function verCheck(){
+  const t = await verTag();
+  if (t == null) return;
+  if (VER_TAG == null){ VER_TAG = t; return; }
+  if (t !== VER_TAG){
+    if (IMP || FIMP) return;   // não derruba no meio de uma revisão aberta
+    sessionStorage.setItem('fp-atualizado','1');
+    location.reload();
+  }
+}
+verTag().then(t => { VER_TAG = t; });
+setInterval(verCheck, 120000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) verCheck(); });
 document.getElementById('gh-save').addEventListener('click', ghAtivar);
 document.getElementById('gh-off').addEventListener('click', ghDesativar);
 renderGh();
