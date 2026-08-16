@@ -309,8 +309,14 @@ function renderAno27(){
   const meses = [1,2,3,4,5,6,7,8,9,10,11,12];
   const cs = contasAtivas();
   const cfg = proj27Cfg();
-  const inp = (id,v) => `<input id="${id}" type="text" inputmode="decimal" value="${v}" style="width:56px;font:inherit;border:1px solid var(--borda);border-radius:6px;padding:3px 6px;text-align:right">`;
-  let h = `<div class="mini" style="margin-bottom:10px">Premissas — crescimento da renda: ${inp('p27-renda',cfg.renda)} % ao ano · reajuste das despesas: ${inp('p27-desp',cfg.desp)} % <button class="btn sm" onclick="p27Salvar()">aplicar</button> <span style="color:var(--muted)">(ficam guardadas no cofre)</span></div>`;
+  let h = `<div class="formgrid" style="margin-bottom:8px">
+    <label>Crescimento da renda (% ao ano) <input id="p27-renda" type="text" inputmode="decimal" value="${cfg.renda}"></label>
+    <label>Reajuste das despesas (% ao ano) <input id="p27-desp" type="text" inputmode="decimal" value="${cfg.desp}"></label>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+    <button class="btn sm" onclick="p27Salvar()">Aplicar premissas</button>
+    <span class="mini">ficam guardadas no cofre, criptografadas</span>
+  </div>`;
   h += `<table><thead><tr><th class="lab"></th>${meses.map(m=>`<th>${MN[m]}*</th>`).join('')}<th>Ano</th></tr></thead><tbody>`;
   const linha27 = (nome, ids, cls, extra, labExtra) => {
     const vm = ids.reduce((s,c)=>s+prev27(c.id),0);
@@ -406,6 +412,8 @@ function renderSemanas(m){
   const colPrev = s => diasProj(s) > 0;
 
   let h = `<table><thead><tr><th class="lab"></th>${sem.map(s=>`<th>${String(s[0]).padStart(2,'0')}–${String(s[1]).padStart(2,'0')}${colPrev(s)?'*':''}</th>`).join('')}<th>Total</th></tr></thead><tbody>`;
+  let saldoIni = saldoNoInicio(m);
+  h += `<tr class="caixa"><td class="lab">Caixa no início</td>${sem.map(s => { const c = cell(saldoIni, colPrev(s)?'prevcol':''); saldoIni += somaSem(D.contas, s); return c; }).join('')}<td>·</td></tr>`;
   const lr = (nome, ids, cls, skipVazio, extra, labExtra) => { const vs=sem.map(s=>somaSem(ids,s)); const t=vs.reduce((a,b)=>a+b,0);
     if (skipVazio && Math.round(Math.abs(t))===0) return '';
     return `<tr class="${cls}" ${extra||''}><td class="lab" ${labExtra||''}>${nome}</td>${vs.map((v,i)=>cell(v, colPrev(sem[i])?'prevcol':'')).join('')}${cell(t)}</tr>`; };
@@ -466,6 +474,7 @@ function renderDias(m){
   }
   let saldo = saldoNoInicio(m);
   let h = `<table><thead><tr><th class="lab">Dia</th><th>Entradas</th><th>Saídas</th><th>Fluxo</th><th>Caixa</th></tr></thead><tbody>`;
+  h += `<tr class="caixa"><td class="lab">Caixa no início</td><td>·</td><td>·</td><td>·</td>${cell(saldo)}</tr>`;
   for (let d=1; d<=DIM[m]; d++){
     const isProj = d > limReal;
     let r=0, p=0;
