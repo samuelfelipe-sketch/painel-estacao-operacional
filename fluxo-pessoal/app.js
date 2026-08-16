@@ -13,7 +13,7 @@ const dbr = iso => iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4);
 
 // ---------- agregações a partir dos lançamentos ----------
 // Recalculadas em recalcBase() — no boot e após cada importação de extrato.
-let CORTE_M, CORTE_D, FECHADOS, R, MED, MEDC, FPROJ, SB, saldoFim, saldoIniAno, saldoProj;
+let CORTE_M, CORTE_D, FECHADOS, R, MED, MEDC, FPROJ, PERFIL, SB, saldoFim, saldoIniAno, saldoProj;
 
 function mediana(arr){ const a=[...arr].sort((x,y)=>x-y); const n=a.length; return n%2? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2; }
 
@@ -69,6 +69,17 @@ function recalcBase(){
     R[l.c][+l.d.slice(5,7)] += l.v;
   }
   MED = {}; D.contas.forEach(c => { MED[c.id] = mediana(R[c.id].slice(1, FECHADOS+1)); });
+
+  // perfil intramensal: em que dia do mês cada conta costuma acontecer, pelo
+  // histórico dos meses fechados — usado para distribuir a projeção nas semanas
+  PERFIL = {}; const perfAbs = {};
+  D.contas.forEach(c => { PERFIL[c.id] = Array(32).fill(0); perfAbs[c.id] = 0; });
+  for (const l of D.lanc){
+    if (l.c === 'GIRO' || +l.d.slice(5,7) > FECHADOS) continue;
+    PERFIL[l.c][+l.d.slice(8,10)] += Math.abs(l.v);
+    perfAbs[l.c] += Math.abs(l.v);
+  }
+  D.contas.forEach(c => { PERFIL[c.id] = perfAbs[c.id] > 0 ? PERFIL[c.id].map(v => v/perfAbs[c.id]) : null; });
 
   // mediana do componente de cada cartão por categoria (p/ trocar típico por conhecido)
   const RC = {}; CARDS.forEach(cd => { RC[cd] = {}; D.contas.forEach(c => RC[cd][c.id] = Array(13).fill(0)); });
@@ -302,15 +313,36 @@ function renderSemanas(m){
   const somaReal = (ids,[a,b]) => proj ? 0 : D.lanc.reduce((s,l)=>{
     if(l.c==='GIRO') return s; const lm=+l.d.slice(5,7), ld=+l.d.slice(8,10);
     if(lm!==m||ld<a||ld>b) return s; return ids.some(c=>c.id===l.c)? s+l.v : s; },0);
-  const somaPrev = (ids,s) => { const dp = diasProj(s); if (!dp) return 0;
+  // fração do previsto da conta que cai nesta semana: segue o padrão histórico
+  // do dia do mês em que cada conta acontece (pró-labore, contas fixas, DCA…);
+  // sem histórico, cai na divisão proporcional pelos dias. Os totais do mês não mudam.
+  const perfilSemana = (cid, [a,b]) => {
+    const ini = proj ? 1 : CORTE_D + 1;          // primeiro dia projetado do mês
+    const fim = DIM[m];
+    const dp = Math.max(0, Math.min(b, fim) - Math.max(a, ini) + 1);
+    if (dp <= 0) return 0;
+    const p = PERFIL[cid];
+    if (!p) return dp / (fim - ini + 1);
+    let mass = 0, tot = 0;
+    for (let d = ini; d <= fim; d++){
+      let f = p[d] || 0;
+      if (d === fim) for (let x = fim+1; x <= 31; x++) f += p[x] || 0;   // dias 29–31 caem no último dia do mês
+      tot += f;
+      if (d >= a && d <= b) mass += f;
+    }
+    if (tot < 1e-9) return dp / (fim - ini + 1);
+    return mass / tot;
+  };
+  const somaPrev = (ids,s) => { if (!diasProj(s)) return 0;
     return ids.reduce((sum,c)=>{
       if (proj){
-        let v = (prev(c.id, m) - fatTot(c.id)) * dp / DIM[m];
+        let v = (prev(c.id, m) - fatTot(c.id)) * perfilSemana(c.id, s);
         for (const x of (fatW[c.id]||[])) if (x.dia >= s[0] && x.dia <= s[1]) v += x.v;
         return sum + v;
       }
-      // mês parcial: previsto proporcional dos dias após o corte (mesma régua do caixa projetado)
-      return sum + prev(c.id, Math.min(CORTE_M+1,12), true) * dp / DIM[m];
+      // mês parcial: o restante previsto do mês (mesma régua do caixa projetado), no padrão histórico
+      const restante = prev(c.id, Math.min(CORTE_M+1,12), true) * (DIM[m]-CORTE_D) / DIM[m];
+      return sum + restante * perfilSemana(c.id, s);
     }, 0); };
   const somaSem = (ids,s) => somaReal(ids,s) + somaPrev(ids,s);
   const colPrev = s => diasProj(s) > 0;
@@ -458,7 +490,7 @@ function render(){
   else renderResumo(meses);
   const mesesAg = ((D.agendados||{}).extras||[]).flatMap(e=>e.meses);
   document.getElementById('fnota').innerHTML =
-    (per.t==='m'&&sub==='semanas'&&(per.v>CORTE_M||(per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]))? 'Colunas com * são projeção: o previsto do mês distribuído pelos dias, com faturas guardadas na semana do vencimento. ':'')+
+    (per.t==='m'&&sub==='semanas'&&(per.v>CORTE_M||(per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]))? 'Colunas com * são projeção: cada conta segue o padrão histórico do dia do mês em que costuma acontecer (extratos já importados), com faturas guardadas na semana do vencimento. ':'')+
     (per.t==='m'&&per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]? `${MFULL[CORTE_M][0].toUpperCase()+MFULL[CORTE_M].slice(1)} parcial: realizado até ${D.corte.slice(8,10)}/${D.corte.slice(5,7)}; o caixa no fim do mês mostrado é projeção (realizado + previsto proporcional dos dias restantes). `:'')+
     ((per.t==='m'&&mesesAg.includes(per.v)&&D.notas&&D.notas.agendado)? D.notas.agendado+' ':'')+
     ((D.notas&&D.notas.geral) || 'Faturas de cartão entram no dia do pagamento, abertas por categoria conforme a fatura.');
