@@ -281,6 +281,26 @@ function renderMeses(meses){
   document.getElementById('ftabela').innerHTML = h;
 }
 
+// fração do previsto de uma conta que cai nos dias [a..b]: segue o padrão
+// histórico do dia do mês em que a conta costuma acontecer (pró-labore,
+// contas fixas, DCA…), com o perfil normalizado na janela projetada
+// [ini..fim]; sem histórico, rateio uniforme. Os totais do mês não mudam.
+function perfilFaixa(cid, a, b, ini, fim){
+  const dp = Math.max(0, Math.min(b, fim) - Math.max(a, ini) + 1);
+  if (dp <= 0) return 0;
+  const p = PERFIL[cid];
+  if (!p) return dp / (fim - ini + 1);
+  let mass = 0, tot = 0;
+  for (let d = ini; d <= fim; d++){
+    let f = p[d] || 0;
+    if (d === fim) for (let x = fim+1; x <= 31; x++) f += p[x] || 0;   // dias 29–31 caem no último dia do mês
+    tot += f;
+    if (d >= a && d <= b) mass += f;
+  }
+  if (tot < 1e-9) return dp / (fim - ini + 1);
+  return mass / tot;
+}
+
 // ---------- semanas (seg–dom dentro do mês) ----------
 function semanasDo(m){
   const semanas=[]; let ini=1;
@@ -313,26 +333,7 @@ function renderSemanas(m){
   const somaReal = (ids,[a,b]) => proj ? 0 : D.lanc.reduce((s,l)=>{
     if(l.c==='GIRO') return s; const lm=+l.d.slice(5,7), ld=+l.d.slice(8,10);
     if(lm!==m||ld<a||ld>b) return s; return ids.some(c=>c.id===l.c)? s+l.v : s; },0);
-  // fração do previsto da conta que cai nesta semana: segue o padrão histórico
-  // do dia do mês em que cada conta acontece (pró-labore, contas fixas, DCA…);
-  // sem histórico, cai na divisão proporcional pelos dias. Os totais do mês não mudam.
-  const perfilSemana = (cid, [a,b]) => {
-    const ini = proj ? 1 : CORTE_D + 1;          // primeiro dia projetado do mês
-    const fim = DIM[m];
-    const dp = Math.max(0, Math.min(b, fim) - Math.max(a, ini) + 1);
-    if (dp <= 0) return 0;
-    const p = PERFIL[cid];
-    if (!p) return dp / (fim - ini + 1);
-    let mass = 0, tot = 0;
-    for (let d = ini; d <= fim; d++){
-      let f = p[d] || 0;
-      if (d === fim) for (let x = fim+1; x <= 31; x++) f += p[x] || 0;   // dias 29–31 caem no último dia do mês
-      tot += f;
-      if (d >= a && d <= b) mass += f;
-    }
-    if (tot < 1e-9) return dp / (fim - ini + 1);
-    return mass / tot;
-  };
+  const perfilSemana = (cid, [a,b]) => perfilFaixa(cid, a, b, proj ? 1 : CORTE_D + 1, DIM[m]);
   const somaPrev = (ids,s) => { if (!diasProj(s)) return 0;
     return ids.reduce((sum,c)=>{
       if (proj){
@@ -376,20 +377,53 @@ function renderSemanas(m){
 
 // ---------- dias ----------
 function renderDias(m){
-  const cs = new Set(contasAtivas().map(c=>c.id));
+  const cAtivas = contasAtivas();
+  const cs = new Set(cAtivas.map(c=>c.id));
+  const proj = m > CORTE_M;
+  const parcial = m === CORTE_M && CORTE_D < DIM[m];
   const dias = {};
-  for (const l of D.lanc){
+  if (!proj) for (const l of D.lanc){
     if (l.c==='GIRO' || +l.d.slice(5,7)!==m || !cs.has(l.c)) continue;
     const d=+l.d.slice(8,10); dias[d]=dias[d]||{r:0,p:0};
     l.v>0? dias[d].r+=l.v : dias[d].p+=l.v;
   }
+  // dias sem extrato: estimativa pelo padrão histórico de cada conta,
+  // com faturas guardadas cravadas no dia do vencimento
+  const limReal = proj ? 0 : (m===CORTE_M ? CORTE_D : DIM[m]);
+  const ini = proj ? 1 : CORTE_D + 1;
+  const totProj = {}, fatDia = {};
+  if (proj || parcial){
+    for (const c of cAtivas)
+      totProj[c.id] = proj ? prev(c.id, m)
+        : prev(c.id, Math.min(CORTE_M+1,12), true) * (DIM[m]-CORTE_D)/DIM[m];
+    if (proj && FPROJ.full[m]) for (const card of CARDS){
+      const f = FPROJ.full[m][card]; if (!f) continue;
+      const dia = Math.min((FPROJ.venc[m] && FPROJ.venc[m][card]) || 10, DIM[m]);
+      for (const cid in f){
+        if (!cs.has(cid)) continue;
+        totProj[cid] = (totProj[cid]||0) - f[cid];   // sai da distribuição por padrão…
+        fatDia[dia] = fatDia[dia]||{r:0,p:0};
+        f[cid]>0? fatDia[dia].r+=f[cid] : fatDia[dia].p+=f[cid];   // …e entra no dia do vencimento
+      }
+    }
+  }
   let saldo = saldoNoInicio(m);
-  const lim = m===CORTE_M? CORTE_D : DIM[m];
   let h = `<table><thead><tr><th class="lab">Dia</th><th>Entradas</th><th>Saídas</th><th>Fluxo</th><th>Caixa</th></tr></thead><tbody>`;
-  for (let d=1; d<=lim; d++){
-    const x = dias[d]||{r:0,p:0}; const f=x.r+x.p; saldo+=f;
-    if (!x.r && !x.p) continue;
-    h += `<tr><td class="lab">${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')} · ${['dom','seg','ter','qua','qui','sex','sáb'][new Date(2026,m-1,d).getDay()]}</td>${cell(x.r)}${cell(x.p)}${cell(f)}${cell(saldo)}</tr>`;
+  for (let d=1; d<=DIM[m]; d++){
+    const isProj = d > limReal;
+    let r=0, p=0;
+    if (!isProj){ const x = dias[d]||{r:0,p:0}; r=x.r; p=x.p; }
+    else if (proj || parcial){
+      for (const c of cAtivas){
+        const v = (totProj[c.id]||0) * perfilFaixa(c.id, d, d, ini, DIM[m]);
+        v>0? r+=v : p+=v;
+      }
+      if (fatDia[d]){ r+=fatDia[d].r; p+=fatDia[d].p; }
+    } else break;
+    const f=r+p; saldo+=f;
+    if (Math.round(Math.abs(r))===0 && Math.round(Math.abs(p))===0) continue;
+    const cls = isProj ? 'prevcol' : '';
+    h += `<tr><td class="lab">${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')} · ${['dom','seg','ter','qua','qui','sex','sáb'][new Date(2026,m-1,d).getDay()]}${isProj?' *':''}</td>${cell(r,cls)}${cell(p,cls)}${cell(f,cls)}${cell(saldo,cls)}</tr>`;
   }
   h += '</tbody></table>';
   document.getElementById('ftabela').innerHTML = h;
@@ -478,19 +512,17 @@ function render(){
   st.style.display = per.t==='m' ? 'inline-flex' : 'none';
   st.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.v===sub));
   const temReal = per.t==='m' && per.v<=CORTE_M;
-  st.querySelectorAll('.tab').forEach(t=>{ if(t.dataset.v==='dias') t.style.display = temReal?'':'none'; });
-  if (sub==='dias' && !temReal) sub = 'resumo';
   document.getElementById('flegend').innerHTML =
     per.t==='m'
     ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–${MN[FECHADOS].toLowerCase()})${per.v>CORTE_M?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: extratos${per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]?' até '+D.corte.slice(8,10)+'/'+D.corte.slice(5,7):''}</span><span>Toque em Recebimentos/Pagamentos abre os grupos; no grupo, as contas; na conta, os lançamentos</span>`
     : `<span>Jan–${MN[FECHADOS]}: realizado fechado${FECHADOS<CORTE_M?` · ${MN[CORTE_M]}¹: realizado até ${D.corte.slice(8,10)+'/'+D.corte.slice(5,7)}`:''}${CORTE_M<12?` · ${MN[CORTE_M+1]}–Dez*: previsto`:''}</span>`;
   if (per.t!=='m') renderMeses(meses);
   else if (sub==='semanas') renderSemanas(per.v);
-  else if (sub==='dias' && temReal) renderDias(per.v);
+  else if (sub==='dias') renderDias(per.v);
   else renderResumo(meses);
   const mesesAg = ((D.agendados||{}).extras||[]).flatMap(e=>e.meses);
   document.getElementById('fnota').innerHTML =
-    (per.t==='m'&&sub==='semanas'&&(per.v>CORTE_M||(per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]))? 'Colunas com * são projeção: cada conta segue o padrão histórico do dia do mês em que costuma acontecer (extratos já importados), com faturas guardadas na semana do vencimento. ':'')+
+    (per.t==='m'&&(sub==='semanas'||sub==='dias')&&(per.v>CORTE_M||(per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]))? 'Linhas/colunas com * são projeção: cada conta segue o padrão histórico do dia do mês em que costuma acontecer (extratos já importados), com faturas guardadas no dia/semana do vencimento. ':'')+
     (per.t==='m'&&per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]? `${MFULL[CORTE_M][0].toUpperCase()+MFULL[CORTE_M].slice(1)} parcial: realizado até ${D.corte.slice(8,10)}/${D.corte.slice(5,7)}; o caixa no fim do mês mostrado é projeção (realizado + previsto proporcional dos dias restantes). `:'')+
     ((per.t==='m'&&mesesAg.includes(per.v)&&D.notas&&D.notas.agendado)? D.notas.agendado+' ':'')+
     ((D.notas&&D.notas.geral) || 'Faturas de cartão entram no dia do pagamento, abertas por categoria conforme a fatura.');
