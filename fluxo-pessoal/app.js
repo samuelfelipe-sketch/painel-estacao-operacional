@@ -967,6 +967,77 @@ async function iaDesativar(){
   renderIa();
 }
 
+// ================================================================
+// Transações — todos os lançamentos, agrupados e filtráveis
+// ================================================================
+const TX_ORG = { sicredi:'Sicredi CC', nubank:'Nubank', visa:'Visa Infinite', nucard:'Cartão Nubank', master:'Mastercard' };
+// mês de competência: compra de cartão conta no mês anterior ao pagamento da fatura
+function txCompMes(l){
+  const m = +l.d.slice(5,7);
+  return CARDS.includes(l.o) ? m - 1 : m;   // 0 = dezembro do ano anterior
+}
+function txVal(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+function renderTxFiltros(){
+  const cat = document.getElementById('tx-cat'); if (!cat || cat.options.length) return;
+  let h = '<option value="">Todas</option><option value="GIRO">Giro entre contas</option>';
+  for (const tipo of ['R','P']){
+    for (const g of (tipo==='R'?GRUPOS_R:GRUPOS_P)){
+      const cs = D.contas.filter(c=>c.grupo===g && c.tipo===tipo);
+      if (!cs.length) continue;
+      h += `<optgroup label="${esc(g)}">` + cs.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('') + '</optgroup>';
+    }
+  }
+  cat.innerHTML = h;
+  document.getElementById('tx-org').innerHTML =
+    '<option value="">Todas</option>' + Object.entries(TX_ORG).map(([k,n])=>`<option value="${k}">${n}</option>`).join('');
+}
+function renderTx(){
+  const el = document.getElementById('tx-lista'); if (!el) return;
+  renderTxFiltros();
+  const regime = txVal('tx-regime') || 'pag', grupo = txVal('tx-grupo') || 'mes';
+  const cat = txVal('tx-cat'), org = txVal('tx-org'), busca = txVal('tx-busca').trim().toLowerCase();
+  let ls = D.lanc.slice();
+  if (cat) ls = ls.filter(l => l.c === cat);
+  if (org) ls = ls.filter(l => l.o === org);
+  if (busca) ls = ls.filter(l => (l.m||'').toLowerCase().includes(busca));
+
+  const grupos = new Map();
+  for (const l of ls){
+    const key = grupo === 'mes' ? String(regime === 'comp' ? txCompMes(l) : +l.d.slice(5,7)).padStart(2,'0') : l.c;
+    if (!grupos.has(key)) grupos.set(key, []);
+    grupos.get(key).push(l);
+  }
+  const nomeGrupo = key => {
+    if (grupo !== 'mes') return key === 'GIRO' ? 'Giro entre contas (fora dos totais)' : esc((CM[key]||{}).nome || key);
+    const m = +key;
+    return m === 0 ? `dezembro ${ANO-1}` : `${MFULL[m]} ${ANO}`;
+  };
+  const chaves = [...grupos.keys()].sort((a,b)=>{
+    if (grupo === 'mes') return b.localeCompare(a);                     // mês mais recente primeiro
+    const tot = k => Math.abs(grupos.get(k).filter(l=>l.c!=='GIRO').reduce((s,l)=>s+l.v,0));
+    return tot(b) - tot(a);                                             // categoria de maior volume primeiro
+  });
+
+  if (!chaves.length){ el.innerHTML = '<p class="mini">Nenhuma transação com esses filtros.</p>'; return; }
+  let h = '';
+  chaves.forEach((key, idx) => {
+    const rows = grupos.get(key).sort((a,b)=> b.d.localeCompare(a.d) || Math.abs(b.v)-Math.abs(a.v));
+    const tot = rows.filter(l=>l.c!=='GIRO').reduce((s,l)=>s+l.v,0);
+    h += `<details class="card cfg" style="padding:12px 16px;margin-bottom:10px"${idx===0?' open':''}>
+      <summary>${nomeGrupo(key)} · ${rows.length} transaç${rows.length===1?'ão':'ões'} · <span style="color:${tot<0?'var(--vermelho)':'#0E5C46'}">${fmtMoeda(tot)}</span></summary>
+      <div class="tbl-wrap"><table><thead><tr><th class="lab">Data · Descrição</th><th style="text-align:left">${grupo==='mes'?'Categoria':'Mês'}</th><th style="text-align:left">Origem</th><th>Valor</th></tr></thead><tbody>`;
+    for (const l of rows){
+      const giro = l.c === 'GIRO';
+      const col2 = grupo === 'mes'
+        ? (giro ? 'Giro (fora dos totais)' : esc((CM[l.c]||{}).nome || l.c))
+        : `${l.d.slice(8,10)}/${l.d.slice(5,7)}`;
+      h += `<tr${giro?' style="opacity:.6"':''}><td class="lab" style="white-space:normal">${l.d.slice(8,10)}/${l.d.slice(5,7)} · ${esc((l.m||'').slice(0,48))}</td><td style="text-align:left;font-size:.78rem">${col2}</td><td style="text-align:left;font-size:.78rem">${TX_ORG[l.o]||esc(l.o||'·')}</td>${cellM(l.v)}</tr>`;
+    }
+    h += '</tbody></table></div></details>';
+  });
+  el.innerHTML = h;
+}
+
 function renderDocs(){
   const docs = Vault.data.docs || [];
   const pend = D.fat_pend || [];
@@ -1632,7 +1703,7 @@ function impConfirmar(){
 
   Vault.save().then(()=>{
     recalcBase();
-    renderCabecalho(); renderContas(); renderMetas(); renderDocs(); render();
+    renderCabecalho(); renderContas(); renderMetas(); renderDocs(); renderTx(); render();
   });
 }
 
@@ -1679,10 +1750,14 @@ renderConfigForms();
 if (Vault.dirtyLocal) Vault.autoPublish();   // descarrega pendências antigas ao entrar
 on('ac-add', acCriar);
 on('pw-change', pwTrocar);
+for (const id of ['tx-regime','tx-grupo','tx-cat','tx-org']){
+  const el = document.getElementById(id); if (el) el.addEventListener('change', renderTx);
+}
+{ const el = document.getElementById('tx-busca'); if (el) el.addEventListener('input', renderTx); }
 
 renderCabecalho();
 renderContas(); renderReservas(); renderMetas(); renderPatrimonio(); renderAgenda(); renderPend(); renderEstrategia(); renderPlano();
-renderDocs(); renderAcessos();
+renderDocs(); renderTx(); renderAcessos();
 render();
 
 // se o HTML em cache for de outra versão (falta a página de Configurações),
