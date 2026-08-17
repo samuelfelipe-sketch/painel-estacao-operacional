@@ -700,7 +700,7 @@ const TAM_MAX_ARQ = 3 * 1048576; // documentos maiores que isso estouram o armaz
 
 function renderSync(){
   const auto = !!(Vault.data.sync && Vault.data.sync.token);
-  let h = '<h2>Sincronização</h2>';
+  let h = '';
   if (auto){
     if (Vault.pubStatus === 'publicando' || (Vault.dirtyLocal && Vault.pubStatus !== 'erro'))
       h += `<p class="mini">⏳ Publicando alterações na base…</p>`;

@@ -164,6 +164,12 @@ footer{font-size:.72rem;color:var(--muted);line-height:1.6;margin-top:24px}
 @media(max-width:560px){.formgrid{grid-template-columns:1fr}}
 .admin-only{display:none}
 body.is-admin .admin-only{display:block}
+/* módulos expansíveis das Configurações */
+details.cfg > summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);-webkit-user-select:none;user-select:none}
+details.cfg > summary::-webkit-details-marker{display:none}
+details.cfg > summary::after{content:'▾';font-size:1rem;color:var(--verde);transition:transform .15s;transform:rotate(-90deg)}
+details.cfg[open] > summary::after{transform:rotate(0)}
+details.cfg[open] > summary{margin-bottom:12px}
 #hnav-user{display:none;align-items:center;gap:10px;margin-top:8px;font-size:.78rem}
 #hnav-user .chip{background:rgba(255,255,255,.14);padding:3px 12px;border-radius:99px;font-weight:700}
 #hnav-user button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:99px;padding:3px 12px;font:inherit;font-size:.75rem;cursor:pointer}
@@ -302,8 +308,8 @@ body.is-admin .admin-only{display:block}
   </section>
 
   <section id="page-config" style="display:none">
-  <div class="card">
-    <h2>Importar para os lançamentos</h2>
+  <details class="card cfg" open>
+    <summary>Importar para os lançamentos</summary>
     <div class="formgrid">
       <label class="full">Arquivo — extrato do banco (OFX) ou fatura do cartão (CSV) <input type="file" id="imp-file"></label>
       <label class="full">ou cole aqui o texto da fatura <textarea id="imp-txt" rows="3" placeholder="uma linha por compra, valor no fim — ex.: POSTO SAPATAO  81,40"></textarea></label>
@@ -312,9 +318,9 @@ body.is-admin .admin-only{display:block}
     <div class="mini" id="imp-msg" style="margin-top:8px"></div>
     <div id="imp-review" style="margin-top:12px"></div>
     <div class="note">Só anexar e enviar — a ferramenta reconhece sozinha se é <b>extrato</b> (Sicredi ou Nubank) ou <b>fatura de cartão</b>, e no caso da fatura identifica também o cartão e o mês (dá para corrigir na revisão, se precisar). <b>Extrato</b>: ignora o que já está conciliado, classifica pelas regras do teu pipeline e nada entra sem a conciliação no centavo fechar. <b>Fatura</b>: pode ser enviada a qualquer momento, mesmo antes de fechar — fica guardada criptografada, já classificada, e entra no caixa <b>no dia do pagamento</b>, quando o débito aparecer na importação do extrato.</div>
-  </div>
-  <div class="card">
-    <h2>Projeção 2027 — premissas</h2>
+  </details>
+  <details class="card cfg">
+    <summary>Projeção 2027 — premissas</summary>
     <div class="formgrid">
       <label>Crescimento da renda (% ao ano) <input id="p27-renda" type="text" inputmode="decimal"></label>
       <label>Reajuste das despesas (% ao ano) <input id="p27-desp" type="text" inputmode="decimal"></label>
@@ -322,9 +328,9 @@ body.is-admin .admin-only{display:block}
     <button class="btn" id="p27-aplicar">Aplicar premissas</button>
     <div class="mini" id="p27-msg" style="margin-top:8px"></div>
     <div class="note">Valem para a visão "2027 — projeção" no Fluxo. Ficam guardadas criptografadas no cofre e sincronizadas entre os aparelhos.</div>
-  </div>
-  <div class="card">
-    <h2>Metas — alvos</h2>
+  </details>
+  <details class="card cfg">
+    <summary>Metas — alvos</summary>
     <div class="formgrid">
       <label>Reserva de emergência (meses) <input id="mt-meses" type="text" inputmode="decimal"></label>
       <label>Meta de patrimônio (R$) <input id="mt-alvo" type="text" inputmode="decimal"></label>
@@ -333,14 +339,14 @@ body.is-admin .admin-only{display:block}
     <button class="btn" id="mt-aplicar">Aplicar metas</button>
     <div class="mini" id="mt-msg" style="margin-top:8px"></div>
     <div class="note">O progresso das metas aparece na aba <b>Patrimônio</b>.</div>
-  </div>
-  <div class="card">
-    <h2>Usuários com acesso</h2>
+  </details>
+  <details class="card cfg">
+    <summary>Usuários com acesso</summary>
     <div class="tbl-wrap" id="ac-lista"></div>
     <div class="note admin-only" style="display:block">Como administrador, você cria e exclui usuários. Cada pessoa entra com o próprio usuário e senha — a senha nunca fica gravada em lugar nenhum, ela é a chave que abre os dados.</div>
-  </div>
-  <div class="card admin-only">
-    <h2>Criar usuário</h2>
+  </details>
+  <details class="card cfg admin-only">
+    <summary>Criar usuário</summary>
     <div class="formgrid">
       <label>Usuário <input id="ac-user" autocomplete="off" placeholder="ex.: alessandra"></label>
       <label>Nome <input id="ac-nome" placeholder="ex.: Alessandra"></label>
@@ -354,9 +360,9 @@ body.is-admin .admin-only{display:block}
     </div>
     <button class="btn" id="ac-add">Criar usuário</button>
     <div class="mini" id="ac-msg" style="margin-top:8px"></div>
-  </div>
-  <div class="card">
-    <h2>Alterar minha senha</h2>
+  </details>
+  <details class="card cfg">
+    <summary>Alterar minha senha</summary>
     <div class="formgrid">
       <label>Senha atual <input type="password" id="pw-old" autocomplete="current-password"></label>
       <label></label>
@@ -365,9 +371,9 @@ body.is-admin .admin-only{display:block}
     </div>
     <button class="btn" id="pw-change">Alterar senha</button>
     <div class="mini" id="pw-msg" style="margin-top:8px"></div>
-  </div>
-  <div class="card admin-only">
-    <h2>Publicação automática na base</h2>
+  </details>
+  <details class="card cfg admin-only">
+    <summary>Publicação automática na base</summary>
     <div class="mini" id="gh-status" style="margin-bottom:8px"></div>
     <div class="formgrid" id="gh-form">
       <label class="full">Chave do GitHub <input type="password" id="gh-token" autocomplete="off" placeholder="github_pat_…"></label>
@@ -378,9 +384,9 @@ body.is-admin .admin-only{display:block}
     </div>
     <div class="mini" id="gh-msg" style="margin-top:8px"></div>
     <div class="note">Com isso ativo, toda alteração (acessos, importações, documentos) vai sozinha para a base — em ~1 minuto vale em todos os aparelhos. Como gerar a chave (2 min): github.com → foto de perfil → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens → Fine-grained tokens</b> → Generate new token → Repository access: <b>Only select repositories</b> → <i>painel-estacao-operacional</i> → Permissions → <b>Contents: Read and write</b> → Generate → cole aqui. A chave fica guardada <b>criptografada</b> dentro do cofre, nunca em texto aberto.</div>
-  </div>
-  <div class="card admin-only">
-    <h2>Classificação inteligente (IA)</h2>
+  </details>
+  <details class="card cfg admin-only">
+    <summary>Classificação inteligente (IA)</summary>
     <div class="mini" id="ia-status" style="margin-bottom:8px"></div>
     <div class="formgrid" id="ia-form">
       <label class="full">Chave da API da Anthropic <input type="password" id="ia-key" autocomplete="off" placeholder="sk-ant-…"></label>
@@ -391,8 +397,11 @@ body.is-admin .admin-only{display:block}
     </div>
     <div class="mini" id="ia-msg" style="margin-top:8px"></div>
     <div class="note">Com isso ativo, o site chama o <b>Claude</b> (a mesma IA daqui do Cowork) ao ler extratos e faturas: o que as regras fixas não reconhecem é classificado pela IA seguindo a tua metodologia, marcado com ✨ para conferência — e dá até para ler faturas coladas em formato bagunçado (texto de PDF, por exemplo). Como obter a chave (2 min): <b>console.anthropic.com</b> → API Keys → Create Key → cole aqui. Ela fica guardada <b>criptografada</b> no cofre. Apenas descrições e valores dos lançamentos são enviados para classificar; custo típico: centavos por fatura.</div>
-  </div>
-  <div class="card" id="sync-card"></div>
+  </details>
+  <details class="card cfg">
+    <summary>Sincronização</summary>
+    <div id="sync-card"></div>
+  </details>
   </section>
 
   <footer id="fontes"></footer>
