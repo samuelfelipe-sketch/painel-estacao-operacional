@@ -13,7 +13,7 @@ const dbr = iso => iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4);
 
 // ---------- agregações a partir dos lançamentos ----------
 // Recalculadas em recalcBase() — no boot e após cada importação de extrato.
-let CORTE_M, CORTE_D, FECHADOS, R, MED, MEDC, FPROJ, PERFIL, SB, saldoFim, saldoIniAno, saldoProj;
+let CORTE_M, CORTE_D, FECHADOS, R, MED, MEDC, MEDB, FPROJ, PERFIL, SB, saldoFim, saldoIniAno, saldoProj;
 
 function mediana(arr){ const a=[...arr].sort((x,y)=>x-y); const n=a.length; return n%2? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2; }
 
@@ -89,6 +89,19 @@ function recalcBase(){
   }
   MEDC = {}; CARDS.forEach(cd => { MEDC[cd] = {}; D.contas.forEach(c => {
     MEDC[cd][c.id] = FECHADOS > 0 ? mediana(RC[cd][c.id].slice(1, FECHADOS+1)) : 0; }); });
+
+  // mediana por banco (cartões somam no banco que paga a fatura) — usada para
+  // ratear a projeção quando só uma conta está coberta num intervalo de dias
+  const ORG_BANCO = { sicredi:'sicredi', visa:'sicredi', master:'sicredi', nubank:'nubank', nucard:'nubank' };
+  const RBk = { sicredi:{}, nubank:{} };
+  ['sicredi','nubank'].forEach(b => { D.contas.forEach(c => RBk[b][c.id] = Array(13).fill(0)); });
+  for (const l of D.lanc){
+    const b = ORG_BANCO[l.o];
+    if (!b || l.c === 'GIRO') continue;
+    RBk[b][l.c][+l.d.slice(5,7)] += l.v;
+  }
+  MEDB = {}; ['sicredi','nubank'].forEach(b => { MEDB[b] = {}; D.contas.forEach(c => {
+    MEDB[b][c.id] = FECHADOS > 0 ? mediana(RBk[b][c.id].slice(1, FECHADOS+1)) : 0; }); });
 
   // compromissos conhecidos: fatura guardada projeta o pagamento no mês seguinte
   // ao de referência; parcelas k/n projetam as próximas nos meses subsequentes
@@ -478,13 +491,34 @@ function renderDias(m){
       }
     }
   }
+  // janela parcial: dias após o corte geral mas dentro da cobertura de uma das
+  // contas — mostra o realizado da conta coberta + estimativa só da que falta
+  const cob = cobertura();
+  const cobMax = [cob.sicredi, cob.nubank].sort().pop();
+  const cobMaxDia = (parcial && +cobMax.slice(5,7) === m && cobMax > D.corte) ? +cobMax.slice(8,10) : 0;
+  const diaISO = d => `${ANO}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const fracBancos = (cid, bancos) => {
+    const tot = Math.abs(MEDB.sicredi[cid]||0) + Math.abs(MEDB.nubank[cid]||0);
+    if (tot < 1e-9) return bancos.length / 2;
+    return bancos.reduce((s,b)=>s+Math.abs(MEDB[b][cid]||0),0) / tot;
+  };
+
   let saldo = saldoNoInicio(m);
   let h = `<table><thead><tr><th class="lab">Dia</th><th>Entradas</th><th>Saídas</th><th>Fluxo</th><th>Caixa</th></tr></thead><tbody>`;
   h += `<tr class="caixa"><td class="lab">Caixa no início</td><td>·</td><td>·</td><td>·</td>${cell(saldo)}</tr>`;
   for (let d=1; d<=DIM[m]; d++){
     const isProj = d > limReal;
+    const hibrido = isProj && d <= cobMaxDia;
     let r=0, p=0;
     if (!isProj){ const x = dias[d]||{r:0,p:0}; r=x.r; p=x.p; }
+    else if (hibrido){
+      const x = dias[d]||{r:0,p:0}; r=x.r; p=x.p;   // realizado da(s) conta(s) já cobertas
+      const falt = ['sicredi','nubank'].filter(b => cob[b] < diaISO(d));
+      if (falt.length) for (const c of cAtivas){
+        const v = (totProj[c.id]||0) * perfilFaixa(c.id, d, d, ini, DIM[m]) * fracBancos(c.id, falt);
+        v>0? r+=v : p+=v;
+      }
+    }
     else if (proj || parcial){
       for (const c of cAtivas){
         const v = (totProj[c.id]||0) * perfilFaixa(c.id, d, d, ini, DIM[m]);
@@ -494,8 +528,8 @@ function renderDias(m){
     } else break;
     const f=r+p; saldo+=f;
     if (Math.round(Math.abs(r))===0 && Math.round(Math.abs(p))===0) continue;
-    const cls = isProj ? 'prevcol' : '';
-    h += `<tr><td class="lab">${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')} · ${['dom','seg','ter','qua','qui','sex','sáb'][new Date(2026,m-1,d).getDay()]}${isProj?' *':''}</td>${cell(r,cls)}${cell(p,cls)}${cell(f,cls)}${cell(saldo,cls)}</tr>`;
+    const cls = hibrido ? '' : (isProj ? 'prevcol' : '');
+    h += `<tr><td class="lab">${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')} · ${['dom','seg','ter','qua','qui','sex','sáb'][new Date(2026,m-1,d).getDay()]}${hibrido?' ◐':(isProj?' *':'')}</td>${cell(r,cls)}${cell(p,cls)}${cell(f,cls)}${cell(saldo,cls)}</tr>`;
   }
   h += '</tbody></table>';
   document.getElementById('ftabela').innerHTML = h;
@@ -683,6 +717,7 @@ function render(){
   const mesesAg = ((D.agendados||{}).extras||[]).flatMap(e=>e.meses);
   document.getElementById('fnota').innerHTML =
     (per.t==='m'&&(sub==='semanas'||sub==='dias')&&(per.v>CORTE_M||(per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]))? 'Linhas/colunas com * são projeção: cada conta segue o padrão histórico do dia do mês em que costuma acontecer (extratos já importados), com faturas guardadas no dia/semana do vencimento. ':'')+
+    (per.t==='m'&&sub==='dias'&&per.v===CORTE_M&&(()=>{const c=cobertura();const mx=[c.sicredi,c.nubank].sort().pop();return mx>D.corte&&+mx.slice(5,7)===CORTE_M;})()? 'Dias com ◐: o extrato de uma conta já cobre o dia (valores reais); a outra conta ainda é estimativa. ':'')+
     (per.t==='m'&&per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]? `${MFULL[CORTE_M][0].toUpperCase()+MFULL[CORTE_M].slice(1)} parcial: realizado até ${D.corte.slice(8,10)}/${D.corte.slice(5,7)}; o caixa no fim do mês mostrado é projeção (realizado + previsto proporcional dos dias restantes). `:'')+
     ((per.t==='m'&&mesesAg.includes(per.v)&&D.notas&&D.notas.agendado)? D.notas.agendado+' ':'')+
     ((D.notas&&D.notas.geral) || 'Faturas de cartão entram no dia do pagamento, abertas por categoria conforme a fatura.');
@@ -1055,8 +1090,13 @@ function renderTx(){
   el.innerHTML = h;
 }
 
+// documentos vivem em dois lugares por herança: Vault.data.docs (fluxo antigo)
+// e D.docs (arquivados pelo importador) — a lista e as ações unem os dois
+const docsAll = () => [ ...(Vault.data.docs || []), ...(D.docs || []) ];
+const docFind = id => docsAll().find(x => x.id === id);
+
 function renderDocs(){
-  const docs = Vault.data.docs || [];
+  const docs = docsAll();
   const pend = D.fat_pend || [];
   const el = document.getElementById('doc-lista');
   if (!docs.length && !pend.length){ el.innerHTML = '<p class="mini">Nenhum documento guardado ainda — importe o primeiro extrato OFX ou fatura na aba Configurações; eles serão arquivados aqui automaticamente.</p>'; renderSync(); return; }
@@ -1081,7 +1121,7 @@ function renderDocs(){
 }
 
 function docBaixar(id){
-  const d = (Vault.data.docs||[]).find(x=>x.id===id); if (!d) return;
+  const d = docFind(id); if (!d) return;
   const blob = d.b64 ? new Blob([Vault.b64d(d.b64)], {type:d.mime}) : new Blob([d.txt], {type:'text/plain;charset=utf-8'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = d.nome || ((d.desc||'documento').replace(/[^\w\d-]+/g,'-') + '.txt');
@@ -1089,7 +1129,7 @@ function docBaixar(id){
 }
 
 function docVer(id){
-  const d = (Vault.data.docs||[]).find(x=>x.id===id); if (!d || !d.txt) return;
+  const d = docFind(id); if (!d || !d.txt) return;
   document.getElementById('mtit').textContent = d.desc || 'Documento';
   document.getElementById('msub').textContent = `${d.t}${d.ref? ' · '+d.ref.slice(5,7)+'/'+d.ref.slice(0,4):''}`;
   document.getElementById('mlist').innerHTML = `<li><pre style="white-space:pre-wrap;font-size:.72rem;max-height:50vh;overflow:auto">${esc(d.txt)}</pre></li>`;
@@ -1097,9 +1137,10 @@ function docVer(id){
 }
 
 async function docExcluir(id){
-  const d = (Vault.data.docs||[]).find(x=>x.id===id); if (!d) return;
+  const d = docFind(id); if (!d) return;
   if (!confirm(`Excluir "${d.desc||d.nome}"? Essa ação não pode ser desfeita.`)) return;
-  Vault.data.docs = Vault.data.docs.filter(x=>x.id!==id);
+  Vault.data.docs = (Vault.data.docs||[]).filter(x=>x.id!==id);
+  D.docs = (D.docs||[]).filter(x=>x.id!==id);
   await Vault.save(); renderDocs();
 }
 
