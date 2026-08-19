@@ -595,16 +595,14 @@ async function metasSalvar(){
 function renderMetas(){
   const el = document.getElementById('metas'); if (!el) return;
   const cfg = metasCfg();
-  // custo essencial mensal: mediana dos meses fechados, sem aplicações
-  // nem eventos do ano (casamento e viagens) — a régua honesta da emergência
+  // custo essencial mensal: soma das medianas mensais por categoria, sem
+  // aplicações nem eventos do ano (casamento e viagens). A mediana de cada
+  // categoria ignora gastos pontuais (ITBI/cartório, bike, compras grandes,
+  // hotéis já ficam em viagens) sem descartar a parte recorrente da categoria.
   const NAO_ESSENCIAL = ['aplic','casamento','viagens'];
-  const desp = [];
-  for (let mm = 1; mm <= FECHADOS; mm++){
-    let s = 0;
-    for (const c of D.contas) if (c.tipo === 'P' && !NAO_ESSENCIAL.includes(c.id)) s += R[c.id][mm];
-    desp.push(-s);
-  }
-  const despRef = desp.length ? mediana(desp) : 0;
+  let despRef = 0;
+  if (FECHADOS > 0)
+    for (const c of D.contas) if (c.tipo === 'P' && !NAO_ESSENCIAL.includes(c.id)) despRef += -(MED[c.id] || 0);
   const liq = D.reservas_liq.reduce((s,x)=>s+x[1],0);
   const lp = D.reservas_lp.reduce((s,x)=>s+x[1],0);
   const caixa = saldoFim[CORTE_M] || 0;
@@ -640,7 +638,7 @@ function renderMetas(){
   }
   const barra = (pct, cor) => `<span style="flex:1;height:16px;background:#F0EDE4;border-radius:4px;overflow:hidden;display:block"><span style="display:block;height:100%;width:${pct.toFixed(1)}%;background:${cor||'var(--laranja)'};border-radius:4px;min-width:2px"></span></span>`;
 
-  let h = `<div class="kv tt"><span class="k">Reserva de emergência<small>só o que resgata em até D+30 · custo essencial (mediana ${ANO}, sem aplicações, casamento e viagens): ${fmt(-despRef)}/mês</small></span><span class="v">${mesesCob.toFixed(1)} meses</span></div>
+  let h = `<div class="kv tt"><span class="k">Reserva de emergência<small>só o que resgata em até D+30 · custo essencial (medianas por categoria em ${ANO} — sem aplicações, casamento, viagens e gastos pontuais como ITBI e compras grandes): ${fmt(-despRef)}/mês</small></span><span class="v">${mesesCob.toFixed(1)} meses</span></div>
     <div class="row" style="display:flex;align-items:center;gap:10px;margin:4px 0 4px">${barra(pctE, meta1Ok?'#0E5C46':'var(--laranja)')}<span class="mini" style="white-space:nowrap">${fmt(liq30)} de ${fmt(meta1Ok ? alvoE : alvoE1)} · ${pctE.toFixed(0)}%</span></div>
     <div class="mini" style="margin-bottom:4px">${meta1Ok
       ? `✓ Meta intermediária (${cfg.emerg_meta1} meses) atingida — rumo ao alvo final de ${cfg.emerg_meses} meses (${fmt(alvoE)}).`
