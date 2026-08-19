@@ -1755,6 +1755,32 @@ async function verCheck(){
 verTag().then(t => { VER_TAG = t; });
 setInterval(verCheck, 120000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) verCheck(); });
+
+// ---- vigia de dados: outro aparelho publicou → esta tela recarrega ----
+// Evita sessões desatualizadas (que mostram dados velhos e, pior, poderiam
+// salvar dados velhos por cima dos novos). Nunca derruba no meio de uma
+// revisão aberta nem com alterações locais ainda não publicadas.
+let DATA_TAG = null;
+async function dataTag(){
+  try {
+    const r = await fetch('dados.enc.json', { method:'HEAD', cache:'no-store' });
+    return r.headers.get('etag') || r.headers.get('last-modified') || null;
+  } catch(e){ return null; }
+}
+window.__dataTagRefresh = () => dataTag().then(t => { if (t != null) DATA_TAG = t; });
+async function dataCheck(){
+  const t = await dataTag();
+  if (t == null) return;
+  if (DATA_TAG == null){ DATA_TAG = t; return; }
+  if (t !== DATA_TAG){
+    if (IMP || FIMP || Vault.dirtyLocal || Vault.pubStatus === 'publicando') return;
+    sessionStorage.setItem('fp-dados','1');
+    location.reload();
+  }
+}
+dataTag().then(t => { DATA_TAG = t; });
+setInterval(dataCheck, 120000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) dataCheck(); });
 on('gh-save', ghAtivar);
 on('gh-off', ghDesativar);
 renderGh();

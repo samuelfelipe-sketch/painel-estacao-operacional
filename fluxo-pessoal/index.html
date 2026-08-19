@@ -538,6 +538,7 @@ const Vault = {
       }
       if (!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — chave inválida ou sem permissão' : ''));
       this.dirtyLocal = false; this.pubStatus = 'ok'; this.pubErro = null;
+      if (window.__dataTagRefresh) window.__dataTagRefresh();   // a própria publicação não deve derrubar esta tela
       this.pubHora = new Date().toTimeString().slice(0,5);
     } catch(e){
       this.pubStatus = 'erro'; this.pubErro = e.message;
@@ -607,6 +608,10 @@ function startApp(){
 
 (async function(){
   const msg = document.getElementById('login-msg');
+  if (sessionStorage.getItem('fp-dados')){
+    sessionStorage.removeItem('fp-dados');
+    msg.textContent = 'Os dados foram atualizados em outro aparelho — entre novamente para carregar a versão mais recente.';
+  }
   if (sessionStorage.getItem('fp-atualizado')){
     sessionStorage.removeItem('fp-atualizado');
     msg.textContent = 'A ferramenta foi atualizada — por segurança, todos os acessos foram desconectados. Entre novamente.';
