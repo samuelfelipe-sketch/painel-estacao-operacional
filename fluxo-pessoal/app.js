@@ -314,7 +314,7 @@ function renderConfigForms(){
   const p = proj27Cfg(), m = metasCfg();
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
   set('p27-renda', p.renda); set('p27-desp', p.desp);
-  set('mt-meses', m.emerg_meses); set('mt-alvo', m.alvo); set('mt-rend', m.rend_aa);
+  set('mt-meses', m.emerg_meses); set('mt-meta1', m.emerg_meta1); set('mt-alvo', m.alvo); set('mt-rend', m.rend_aa);
 }
 function renderAno27(){
   const meses = [1,2,3,4,5,6,7,8,9,10,11,12];
@@ -549,10 +549,10 @@ function renderReservas(){
     D.reservas_lp.map(kv).join('') + sub('Reserva de futuro (sem resgate)', D.reservas_lp);
 }
 // ---------- metas: reserva de emergência e 1º milhão ----------
-function metasCfg(){ return D.metas || { emerg_meses: 6, alvo: 1000000, rend_aa: 0 }; }
+function metasCfg(){ return Object.assign({ emerg_meses: 6, emerg_meta1: 3, alvo: 1000000, rend_aa: 0 }, D.metas || {}); }
 async function metasSalvar(){
   const num = id => { const v = parseFloat(document.getElementById(id).value.replace(/\./g,'').replace(',','.')); return isNaN(v) ? 0 : v; };
-  D.metas = { emerg_meses: num('mt-meses') || 6, alvo: num('mt-alvo') || 1000000, rend_aa: num('mt-rend') };
+  D.metas = { emerg_meses: num('mt-meses') || 6, emerg_meta1: num('mt-meta1') || 3, alvo: num('mt-alvo') || 1000000, rend_aa: num('mt-rend') };
   await Vault.save();
   const msg = document.getElementById('mt-msg');
   if (msg) msg.textContent = '✓ Metas aplicadas — o progresso atualizado está na aba Patrimônio.';
@@ -561,11 +561,13 @@ async function metasSalvar(){
 function renderMetas(){
   const el = document.getElementById('metas'); if (!el) return;
   const cfg = metasCfg();
-  // custo de vida mensal de referência: mediana dos meses fechados, sem aplicações
+  // custo essencial mensal: mediana dos meses fechados, sem aplicações
+  // nem eventos do ano (casamento e viagens) — a régua honesta da emergência
+  const NAO_ESSENCIAL = ['aplic','casamento','viagens'];
   const desp = [];
   for (let mm = 1; mm <= FECHADOS; mm++){
     let s = 0;
-    for (const c of D.contas) if (c.tipo === 'P' && c.id !== 'aplic') s += R[c.id][mm];
+    for (const c of D.contas) if (c.tipo === 'P' && !NAO_ESSENCIAL.includes(c.id)) s += R[c.id][mm];
     desp.push(-s);
   }
   const despRef = desp.length ? mediana(desp) : 0;
@@ -573,10 +575,16 @@ function renderMetas(){
   const lp = D.reservas_lp.reduce((s,x)=>s+x[1],0);
   const caixa = saldoFim[CORTE_M] || 0;
 
-  // reserva de emergência: cobertura = reservas resgatáveis / custo de vida
+  // reserva de emergência: só o que resgata em até D+30 (4º campo da reserva);
+  // item sem prazo declarado conta, por compatibilidade. Caixa em conta fica fora.
+  const prazo = x => x.length > 3 ? x[3] : 0;
+  const liq30 = D.reservas_liq.filter(x => prazo(x) <= 30).reduce((s,x)=>s+x[1],0);
+  const liq5 = D.reservas_liq.filter(x => prazo(x) <= 5).reduce((s,x)=>s+x[1],0);
   const alvoE = cfg.emerg_meses * despRef;
-  const mesesCob = despRef > 0 ? liq / despRef : 0;
-  const pctE = alvoE > 0 ? Math.min(100, 100 * liq / alvoE) : 0;
+  const alvoE1 = cfg.emerg_meta1 * despRef;
+  const mesesCob = despRef > 0 ? liq30 / despRef : 0;
+  const meta1Ok = liq30 >= alvoE1;
+  const pctE = alvoE1 > 0 ? Math.min(100, 100 * liq30 / (meta1Ok ? alvoE : alvoE1)) : 0;
 
   // 1º milhão: patrimônio financeiro (caixa + reservas) crescendo no ritmo projetado
   const fluxoTipico = D.contas.reduce((s,c)=>s+prev(c.id, Math.min(CORTE_M+1,12), true),0);
@@ -598,8 +606,12 @@ function renderMetas(){
   }
   const barra = (pct, cor) => `<span style="flex:1;height:16px;background:#F0EDE4;border-radius:4px;overflow:hidden;display:block"><span style="display:block;height:100%;width:${pct.toFixed(1)}%;background:${cor||'var(--laranja)'};border-radius:4px;min-width:2px"></span></span>`;
 
-  let h = `<div class="kv tt"><span class="k">Reserva de emergência<small>reservas resgatáveis ÷ custo de vida (mediana ${ANO}, sem aplicações: ${fmt(-despRef)}/mês)</small></span><span class="v">${mesesCob.toFixed(1)} meses</span></div>
-    <div class="row" style="display:flex;align-items:center;gap:10px;margin:4px 0 14px">${barra(pctE, pctE>=100?'#0E5C46':'var(--laranja)')}<span class="mini" style="white-space:nowrap">${fmt(liq)} de ${fmt(alvoE)} (alvo ${cfg.emerg_meses} meses) · ${pctE.toFixed(0)}%</span></div>`;
+  let h = `<div class="kv tt"><span class="k">Reserva de emergência<small>só o que resgata em até D+30 · custo essencial (mediana ${ANO}, sem aplicações, casamento e viagens): ${fmt(-despRef)}/mês</small></span><span class="v">${mesesCob.toFixed(1)} meses</span></div>
+    <div class="row" style="display:flex;align-items:center;gap:10px;margin:4px 0 4px">${barra(pctE, meta1Ok?'#0E5C46':'var(--laranja)')}<span class="mini" style="white-space:nowrap">${fmt(liq30)} de ${fmt(meta1Ok ? alvoE : alvoE1)} · ${pctE.toFixed(0)}%</span></div>
+    <div class="mini" style="margin-bottom:4px">${meta1Ok
+      ? `✓ Meta intermediária (${cfg.emerg_meta1} meses) atingida — rumo ao alvo final de ${cfg.emerg_meses} meses (${fmt(alvoE)}).`
+      : `Meta intermediária: <b>${cfg.emerg_meta1} meses (${fmt(alvoE1)})</b> · alvo final: ${cfg.emerg_meses} meses (${fmt(alvoE)}).`}</div>
+    <div class="mini" style="margin-bottom:14px;color:var(--muted)">Disponível em até D+5: ${fmt(liq5)} (${liq30>0?Math.round(100*liq5/liq30):0}% da emergência). Caixa em conta e Bitcoin ficam fora desta conta por política.</div>`;
   h += `<div class="kv tt"><span class="k">1º milhão<small>caixa + reservas hoje: ${fmt(P0)} · ritmo projetado: ${fmt(ritmo)}/mês${cfg.rend_aa?` · rendimento ${cfg.rend_aa}% a.a.`:''}</small></span><span class="v">${pctM.toFixed(1)}%</span></div>
     <div class="row" style="display:flex;align-items:center;gap:10px;margin:4px 0 6px">${barra(pctM)}<span class="mini" style="white-space:nowrap">${fmt(P0)} de ${fmt(cfg.alvo)}</span></div>`;
   h += `<div class="mini" style="margin-bottom:6px">${quando ? 'Chegada estimada: <b>'+quando+'</b>' : 'No ritmo projetado atual a meta não é atingida — ajuste o ritmo ou a premissa de rendimento.'}</div>`;
