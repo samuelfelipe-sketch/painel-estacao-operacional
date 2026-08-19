@@ -662,7 +662,12 @@ function render(){
     per.t==='y27'
     ? `<span><b>2027 inteiro é projeção</b>: mediana dos meses fechados de 2026 + premissas de crescimento (ajustáveis acima da tabela). O caixa parte do fim projetado de 2026.</span>`
     : per.t==='m'
-    ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–${MN[FECHADOS].toLowerCase()})${per.v>CORTE_M?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: extratos${per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]?' até '+D.corte.slice(8,10)+'/'+D.corte.slice(5,7):''}</span><span>Toque em Recebimentos/Pagamentos abre os grupos; no grupo, as contas; na conta, os lançamentos</span>`
+    ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–${MN[FECHADOS].toLowerCase()})${per.v>CORTE_M?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: ${(()=>{
+        const cob = D.cobertura || {};
+        if (cob.sicredi && cob.nubank && cob.sicredi !== cob.nubank)
+          return `Sicredi até ${dbr(cob.sicredi).slice(0,5)} · Nubank até ${dbr(cob.nubank).slice(0,5)} — o consolidado avança quando as duas contas cobrem a data (importe a que falta)`;
+        return 'extratos' + (per.v===CORTE_M&&CORTE_D<DIM[CORTE_M]?' até '+D.corte.slice(8,10)+'/'+D.corte.slice(5,7):'');
+      })()}</span><span>Toque em Recebimentos/Pagamentos abre os grupos; no grupo, as contas; na conta, os lançamentos</span>`
     : `<span>Jan–${MN[FECHADOS]}: realizado fechado${FECHADOS<CORTE_M?` · ${MN[CORTE_M]}¹: realizado até ${D.corte.slice(8,10)+'/'+D.corte.slice(5,7)}`:''}${CORTE_M<12?` · ${MN[CORTE_M+1]}–Dez*: previsto`:''}</span>`;
   // cards de contexto de 2026 (agenda set–dez e saldos bancários) não valem para a visão 2027
   for (const id of ['card-agenda','card-contas']){
