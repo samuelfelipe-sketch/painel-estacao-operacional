@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Imersão Comercial — Resumo dos Aprendizados · Club Reborn</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23004438'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-family='Georgia,serif' font-style='italic' font-weight='600' font-size='38' fill='%23EC6C22'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="auth.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --marinho:#222A44;
+  --marinho-escuro:#1A2136;
+  --dourado:#C0A468;
+  --dourado-escuro:#9E824C;
+  --creme:#F4F0E7;
+  --card:#FCFAF4;
+  --tinta:#232B47;
+  --tinta-suave:#6E7284;
+  --linha:#E3DCC9;
+  --sidebar-w:250px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--creme)}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{font-family:'EB Garamond',serif;background:var(--creme);color:var(--tinta);line-height:1.6;font-size:17px}
+
+/* ---------- Barra superior (mobile) ---------- */
+.topbar{display:none;position:sticky;top:0;z-index:70;background:var(--marinho);color:#fff;padding:12px 16px;align-items:center;gap:12px}
+.topbar button{background:none;border:1px solid rgba(192,164,104,.5);border-radius:6px;color:var(--dourado);font-size:18px;line-height:1;padding:6px 10px;cursor:pointer}
+.topbar .t{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:17px;letter-spacing:.02em}
+.topbar .t i{color:var(--dourado);font-style:italic}
+
+/* ---------- Layout ---------- */
+.layout{display:flex;min-height:100vh}
+aside{width:var(--sidebar-w);flex-shrink:0;background:var(--marinho);color:#D9D5C8;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{padding:32px 20px 24px;border-bottom:1px solid rgba(192,164,104,.25);text-align:center}
+.brand .monograma{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:40px;color:var(--dourado);line-height:1;letter-spacing:.02em}
+.brand .nome{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:16px;letter-spacing:.34em;text-transform:uppercase;color:#EDEAE0;margin-top:12px}
+.brand .tag{font-family:'EB Garamond',serif;font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--dourado);margin-top:8px}
+.menu{flex:1;padding:16px 0}
+.grupo{font-family:'EB Garamond',serif;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:#8C90A3;padding:18px 22px 7px}
+.nav-link{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:#C6C3B6;font-family:'EB Garamond',serif;font-weight:500;font-size:15.5px;padding:9px 22px;cursor:pointer;border-left:2px solid transparent;letter-spacing:.02em}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,.04)}
+.nav-link:focus-visible{outline:2px solid var(--dourado);outline-offset:-2px}
+.nav-link.active{color:var(--dourado);background:rgba(192,164,104,.1);border-left-color:var(--dourado);font-weight:600}
+.user{border-top:1px solid rgba(192,164,104,.25);padding:16px 20px;display:flex;gap:11px;align-items:center}
+.user .av{width:34px;height:34px;border-radius:6px;background:var(--dourado);color:var(--marinho);font-family:'Cormorant Garamond',serif;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.user .n1{font-size:13.5px;font-weight:600;color:#EDEAE0}
+.user .n2{font-size:12px;color:#8C90A3}
+
+.conteudo{flex:1;min-width:0;display:flex;flex-direction:column}
+.wrap{max-width:860px;margin:0 auto;padding:0 24px;width:100%}
+
+/* ---------- Cabeçalho ---------- */
+header{background:var(--creme);padding:40px 0 0}
+header .wrap{padding-bottom:26px;border-bottom:1px solid var(--linha)}
+.eyebrow{font-family:'EB Garamond',serif;font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--dourado-escuro);margin-bottom:14px}
+h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(34px,4.8vw,50px);line-height:1.08;color:var(--tinta)}
+h1 span{color:var(--dourado-escuro);font-style:italic}
+.sub{color:var(--tinta-suave);margin-top:14px;max-width:600px;font-size:16px}
+
+/* ---------- Seções ---------- */
+main{padding:28px 0 80px;flex:1}
+section{display:none}
+section.active{display:block}
+.km{display:flex;align-items:baseline;gap:14px;margin:24px 0 8px;flex-wrap:wrap}
+.km .marco{font-family:'EB Garamond',serif;font-weight:600;font-size:11px;color:var(--marinho);background:var(--dourado);padding:4px 12px;border-radius:2px;letter-spacing:.24em;text-transform:uppercase;flex-shrink:0}
+h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:31px;color:var(--tinta)}
+h3{font-family:'EB Garamond',serif;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.26em;color:var(--dourado-escuro);margin:26px 0 10px;border-bottom:1px solid var(--dourado);display:inline-block;padding-bottom:4px}
+.lead{color:var(--tinta-suave);margin-bottom:16px;font-size:16px;font-style:italic}
+
+/* cards & acordeões */
+.card{background:var(--card);border:1px solid var(--linha);border-radius:6px;padding:18px 20px;margin:12px 0}
+details.card{padding:0}
+details.card summary{list-style:none;cursor:pointer;padding:15px 20px;font-weight:600;display:flex;align-items:center;gap:11px;font-size:16.5px;color:var(--tinta);font-family:'EB Garamond',serif}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary::before{content:"";width:8px;height:8px;border-right:1.5px solid var(--dourado-escuro);border-bottom:1.5px solid var(--dourado-escuro);transform:rotate(-45deg);transition:transform .18s;flex-shrink:0}
+details.card[open] summary::before{transform:rotate(45deg)}
+details.card summary:focus-visible{outline:2px solid var(--dourado);outline-offset:-2px;border-radius:6px}
+details.card .body{padding:4px 20px 18px;border-top:1px solid var(--linha);padding-top:14px}
+.card p{margin:9px 0}
+.card ul,.card ol{margin:9px 0 9px 22px}
+.card li{margin:6px 0}
+.quote{border-left:2px solid var(--dourado);background:#F7F2E6;padding:12px 18px;margin:12px 0;font-style:italic;color:var(--tinta);font-size:17px}
+.quote b{font-style:normal}
+mark{background:#EFE2C2;color:var(--tinta);padding:0 3px;border-radius:2px}
+.pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.08em;padding:2px 9px;border-radius:2px;background:#ECE6D5;color:var(--marinho);margin-right:6px;text-transform:uppercase}
+
+/* tabelas */
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:15px}
+th{font-family:'EB Garamond',serif;font-weight:600;text-transform:uppercase;letter-spacing:.16em;font-size:11.5px;text-align:left;background:#F1ECDD;color:var(--tinta);padding:9px 12px;border-bottom:1px solid var(--dourado)}
+td{padding:9px 12px;border-bottom:1px solid var(--linha);vertical-align:top;background:var(--card);color:var(--tinta)}
+tr:last-child td{border-bottom:none}
+.tbl{overflow-x:auto;border:1px solid var(--linha);border-radius:6px;background:var(--card)}
+.tbl table{margin:0}
+
+/* fórmula */
+.formula{background:var(--marinho);color:#EDEAE0;border-radius:6px;padding:20px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:14px;margin:14px 0}
+.formula .frac{display:inline-block}
+.formula .num{border-bottom:1.5px solid var(--dourado);padding:0 12px 7px;display:block}
+.formula .den{padding:7px 12px 0;display:block;color:#A9ADC0}
+.formula .eq{font-size:20px;color:var(--dourado);margin:0 12px}
+
+footer{background:var(--creme);color:var(--tinta-suave);padding:22px 0;font-size:13.5px;border-top:1px solid var(--linha)}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer i{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--dourado-escuro)}
+
+/* ---------- Mobile: gaveta ---------- */
+@media (max-width:900px){
+  .topbar{display:flex}
+  aside{position:fixed;left:0;top:0;bottom:0;z-index:80;transform:translateX(-100%);transition:transform .22s;height:100dvh}
+  aside.aberta{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.4)}
+  .scrim{position:fixed;inset:0;background:rgba(20,25,45,.5);z-index:75;opacity:0;pointer-events:none;transition:opacity .22s}
+  .scrim.aberta{opacity:1;pointer-events:auto}
+  header{padding-top:24px}
+}
+@media (min-width:901px){.scrim{display:none}}
+.btn-print{position:fixed;top:18px;right:22px;z-index:60;display:inline-flex;align-items:center;gap:9px;background:#FFFFFF;color:#3D4A5C;border:1px solid #C9D2DC;border-radius:999px;padding:9px 18px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-weight:600;font-size:14.5px;cursor:pointer;box-shadow:0 2px 8px rgba(20,30,45,.10)}
+.btn-print:hover{background:#F4F6F8;border-color:#AEBBC9}
+.btn-print:focus-visible{outline:2px solid #3D4A5C;outline-offset:2px}
+@media (max-width:900px){.btn-print{top:60px;right:14px}}
+@media print{aside,.topbar,.scrim,.btn-print{display:none!important}body{background:#fff}header{padding-top:0}main{padding:0 0 20px}@page{margin:12mm}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button id="menu-btn" aria-label="Abrir menu" aria-expanded="false">☰</button>
+  <div class="t">Club Reborn · <i>Imersão Comercial</i></div>
+</div>
+<div class="scrim" id="scrim"></div>
+<button class="btn-print" onclick="window.print()" title="Imprimir a tela atual"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span>Imprimir / PDF</span></button>
+<div class="layout">
+<aside id="sidebar">
+  <div class="brand">
+    <div class="monograma">CR</div>
+    <div class="nome">Club Reborn</div>
+    <div class="tag">Imersão</div>
+  </div>
+  <div class="menu" role="navigation" aria-label="Seções do resumo">
+    <div class="grupo">Início</div>
+      <button class="nav-link active" data-t="metodo">O Método PACE</button>
+    <div class="grupo">Pilares</div>
+      <button class="nav-link" data-t="mentalidade">1 · Mentalidade</button>
+      <button class="nav-link" data-t="pessoas">2 · Pessoas</button>
+      <button class="nav-link" data-t="processos">3 · Processos</button>
+      <button class="nav-link" data-t="atracao">4 · Atração</button>
+      <button class="nav-link" data-t="conversao">5 · Conversão</button>
+      <button class="nav-link" data-t="escala">6 · Escala</button>
+    <div class="grupo">Encerramento</div>
+      <button class="nav-link" data-t="frases">Frases-Âncora</button>
+  </div>
+  <div class="user">
+    <div class="av">IC</div>
+    <div><div class="n1">Imersão Comercial</div><div class="n2">25-26 de julho de 2026</div></div>
+  </div>
+</aside>
+<div class="conteudo">
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Club Reborn · Turma Imersão Presencial · 25-26.07.2026</div>
+    <h1>Resumo dos Aprendizados<br><span>Método PACE</span></h1>
+    <p class="sub">Condensado das transcrições e anotações dos dois dias de imersão, organizado pelos pilares do método, para consulta e compartilhamento entre os membros do clube.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ MÉTODO ============ -->
+<section id="metodo" class="active">
+  <div class="km"><span class="marco">Fundamento</span><h2>O Método PACE</h2></div>
+  <p class="lead">Construído a partir da experiência prática dos mentores, do princípio de Pareto (os 20% que geram 80% do resultado) e dos aprendizados das melhores imersões comerciais do Brasil.</p>
+
+  <div class="card">
+    <p style="text-align:center;font-family:'Cormorant Garamond',serif;font-size:22px"><b>P</b>essoas e Processos → <b>A</b>tração → <b>C</b>onversão → <b>E</b>scala</p>
+    <p style="text-align:center;color:var(--tinta-suave)">Pessoas e Processos são o centro — regem tudo o que vem depois.</p>
+  </div>
+
+  <div class="quote">A mentalidade é o "VO2" do método: assim como o condicionamento físico, é <b>treinável com consistência e constância</b> — e melhora o PACE (o resultado) de tudo o que vem depois.</div>
+
+  <div class="card">
+    <p><b>Como usar este resumo:</b> cada pilar funciona sozinho. Navegue pelo menu ao lado e vá direto ao que a sua operação mais precisa hoje — e lembre da regra da imersão: trabalhe sempre no gargalo.</p>
+  </div>
+</section>
+
+<!-- ============ MENTALIDADE ============ -->
+<section id="mentalidade">
+  <div class="km"><span class="marco">Pilar 1</span><h2>Mentalidade</h2></div>
+
+  <details class="card" open><summary>Postura Ativa × Passiva + Sales Centricity</summary><div class="body">
+    <p>Na postura passiva, "eu não vendo, eu sou comprado" — o crescimento depende do mercado e a culpa dos resultados é externa. Na postura ativa, a área comercial está no core do negócio e o líder é o responsável por fazer a empresa virar. Empresas de alta performance <mark>criam movimento; não reagem a ele</mark>.</p>
+    <p><b>Sales Centricity:</b> ou você trabalha NA área comercial, ou trabalha SERVINDO a área comercial — não existe terceira opção numa empresa de alta performance. Eliminar a competição interna entre setores e liderar pelo exemplo.</p>
+  </div></details>
+
+  <details class="card"><summary>Os 5 pilares da agressividade comercial</summary><div class="body"><ol>
+    <li><b>Autorresponsabilidade</b> — jamais transferir os resultados ao mundo externo.</li>
+    <li><b>Cultura de vendas</b> — valorizar e verbalizar as boas atitudes comerciais em toda a empresa.</li>
+    <li><b>Senso de urgência</b> — nada parado no colo do líder; quando algo trava em você, a empresa inteira está travada.</li>
+    <li><b>Ocupar os espaços</b> — ser auditor da própria empresa: sentar nas ilhas dos setores, cliente oculto interno e externo. Performance e bom ambiente convivem.</li>
+    <li><b>Não deixar pedido na mesa</b> — "só se desiste de um cliente quando ele compra ou morre". O processo comercial não termina no envio do orçamento.</li>
+  </ol></div></details>
+
+  <details class="card"><summary>Sonho coletivo, consistência e ambiência</summary><div class="body">
+    <p>A empresa realiza os sonhos individuais através da realização do sonho coletivo — repetir esse discurso nos rituais. Ideia e emoção sem ação não ficam de pé. "Progress equals happiness": não há evolução no conforto.</p>
+    <p><b>Consistência &amp; Constância:</b> não depender de motivação — <mark>segue o plano</mark>, chovendo, frio ou tomando canelada. Quem não tem plano, sucumbe.</p>
+    <p><b>Ambiência:</b> afastar-se de ambientes que puxam para baixo e deletar distrações.</p>
+  </div></details>
+</section>
+
+<!-- ============ PESSOAS ============ -->
+<section id="pessoas">
+  <div class="km"><span class="marco">Pilar 2</span><h2>Pessoas</h2></div>
+
+  <details class="card" open><summary>Recrutamento contínuo e jornada de contratação</summary><div class="body">
+    <p>Vaga de vendedor <b>sempre aberta</b> (banco de talentos permanente). "Vendedor bom não está desempregado" — arranca-se do concorrente. Vendedor bom se paga: proposta rápida para currículo bom, ou outro leva.</p>
+    <p><b>Jornada:</b> Perfil do Vendedor Ideal (CHAVE) → canais de prospecção → seleção inicial → testes (DISC + Eneagrama em toda contratação) → entrevista → proposta formalizada e personalizada → onboarding.</p>
+    <p><b>Canais para prospectar vendedores:</b> tráfego pago (vídeo humano — case real: R$300 geraram 60-70 currículos/semana), headhunter especializado, LinkedIn (perfis sêniores), eventos e comunidades, vendedor indica vendedor (tem que pedir), profissionais de recolocação e, por último, agências.</p>
+    <p><b>Onboarding do vendedor (5 frentes):</b> sobre a empresa · sobre os processos (CRM, rotinas, ferramentas) · sobre vendas (técnicas, PNL) · sobre o mercado · sobre o produto. Sem preciosismo: o básico para andar.</p>
+    <p><b>Entrevista:</b> ler o currículo antes; ambiente que venda a empresa; perguntar mais do que falar. <mark>Filtro de ouro:</mark> o candidato pesquisou a empresa antes? Se não, não tem skill de prospecção.</p>
+  </div></details>
+
+  <details class="card"><summary>CHAVE — o CHA 2.0</summary><div class="body">
+    <div class="tbl"><table>
+      <tr><th></th><th>Dimensão</th><th>Observação</th></tr>
+      <tr><td><b>C</b></td><td>Conhecimentos</td><td>Técnico: produto, empresa, mercado</td></tr>
+      <tr><td><b>H</b></td><td>Habilidades</td><td>Técnicas de venda, gestão das emoções</td></tr>
+      <tr><td><b>A</b></td><td>Atitudes</td><td><b>Peso de 70-80%</b> — quem tem atitude busca o resto</td></tr>
+      <tr><td><b>V</b></td><td>Valores</td><td>Ética e integridade — ambição sem ética não serve</td></tr>
+      <tr><td><b>E</b></td><td>Entrega</td><td>O que já fez? Background comprovado</td></tr>
+    </table></div>
+    <p>Os 3 fatores da performance acima da média: <b>ambição, conhecimento técnico e gestão das emoções</b> (resiliência ao "não").</p>
+  </div></details>
+
+  <details class="card"><summary>DISC aplicado a vendedores</summary><div class="body">
+    <div class="tbl"><table>
+      <tr><th>Perfil</th><th>Arquétipo</th><th>Brilha em</th><th>Ponto cego</th></tr>
+      <tr><td><b>D</b></td><td>O Fechador</td><td>Ciclo curto, prospecção agressiva, fechamento</td><td>Ouve pouco, pressiona, pula etapas</td></tr>
+      <tr><td><b>I</b></td><td>O Encantador</td><td>Relacionamento, eventos, social selling</td><td>Follow-up fraco, CRM atrasado, promete demais</td></tr>
+      <tr><td><b>S</b></td><td>O Consultor de Confiança</td><td>Venda consultiva, recorrência, retenção</td><td>Evita fechar, aceita "vou pensar"</td></tr>
+      <tr><td><b>C</b></td><td>O Especialista</td><td>B2B complexo, alto valor, múltiplos decisores</td><td>Apresenta demais, conecta de menos</td></tr>
+    </table></div>
+    <p>Não existe "perfil de vendas" — existe o perfil certo para o SEU tipo de venda.</p>
+  </div></details>
+
+  <details class="card"><summary>Gestão do time: remuneração, cobrança e treinamento</summary><div class="body">
+    <ul>
+      <li><b>Matriz Desempenho × Remuneração:</b> alto desempenho + baixa remuneração = vulnerável (corrigir já); baixo + baixa = desenvolve ou demite; baixo + alta = zona de conforto.</li>
+      <li>Não economizar na posição errada — a contratação certa se paga muitas vezes.</li>
+      <li><b>Talento preguiçoso</b> vende por talento, não por processo: cobrar ATIVIDADE (ligações, reuniões, leads), não só resultado.</li>
+      <li>Comissão individual sigilosa; tabelas com margem e comissão crescentes alinham interesses sem revelar a margem.</li>
+      <li>Treinamento em 3 frentes: conhecimento, habilidade e atitude — com role-play até virar "competente inconsciente" (analogia da carteira de motorista).</li>
+    </ul>
+    <div class="quote"><b>A equipe é a cara do líder.</b> O vendedor precisa sentir: "se eu colar nesse líder, eu cresço".</div>
+  </div></details>
+</section>
+
+<!-- ============ PROCESSOS ============ -->
+<section id="processos">
+  <div class="km"><span class="marco">Pilar 3</span><h2>Processos</h2></div>
+  <div class="quote"><b>Processo &gt; pessoa.</b> O que quebra uma estrutura comercial é a falta de organização. Vendedor estrela sem processo replicável é risco. "É muito melhor segurar um louco do que empurrar um burro."</div>
+
+  <details class="card" open><summary>Marketing + Vendas: duas pernas do mesmo corpo</summary><div class="body">
+    <p>Só vendas é pular num pé só. <b>Acordos obrigatórios entre as áreas:</b></p>
+    <ol>
+      <li>Quem é o cliente ideal?</li>
+      <li>O que é um lead qualificado?</li>
+      <li>Quando e quantas vezes o lead deve ser abordado?</li>
+      <li>Quais informações precisam chegar (antes e depois)?</li>
+      <li>Como o feedback da negociação retorna ao marketing?</li>
+    </ol>
+    <p>💡 <b>Prática validada:</b> transcrever as conversas de WhatsApp do time comercial e analisar com IA — o que os melhores fazem para converter, por que se perde, quais abordagens funcionam. Clareza imediata para o gestor.</p>
+    <p><b>"O maior gargalo do marketing não é o marketing":</b> bom marketing não conserta processo ruim — um megafone não melhora uma voz desafinada, só faz mais gente ouvir. Bons processos <mark>reduzem o CAC</mark> porque aumentam conversão e reduzem retrabalho.</p>
+  </div></details>
+
+  <details class="card"><summary>Modelo de venda e estrutura do time</summary><div class="body">
+    <p><b>Flywheel do mercado:</b> Prospect → Lead → Cliente → Case de Sucesso (que gera novos prospects). A lista de prospects tem que ser gigante.</p>
+    <p><b>Matriz Preço × Complexidade</b> define o modelo: Inside Sales (preço alto, baixa complexidade) · Field Sales (relacionamento/técnica) · Self Service (baixo preço, baixa complexidade) · Problema (baixo preço + alta complexidade = inviável).</p>
+    <p><b>Full Funnel × SDR + Closer:</b> decidir pela ótica do CLIENTE, não pela preferência do gestor. Reduzir atrito. O vendedor faz só o essencial para vender; burocracia vai para assistentes/CS.</p>
+  </div></details>
+
+  <details class="card"><summary>Funil de vendas e CRM</summary><div class="body">
+    <p><b>Funil:</b> planejamento → prospecção → levantamento de necessidades → apresentação → objeção/negociação → fechamento → pós-vendas. O que mais falta nas empresas é planejamento.</p>
+    <div class="quote"><b>Teoria das restrições:</b> trabalhar sempre no gargalo — a pergunta permanente é "qual etapa está travando?".</div>
+    <p><b>CRM bem estruturado:</b> poucas etapas (nunca 12+). Para cada etapa definir: objetivo · validação para avançar · ferramentas · tempo máximo de estagnação · motivos de perda · taxa de conversão · meta de avanço. Pode haver mais de um funil. Playbook perfeito é ilusão — simplificar.</p>
+  </div></details>
+</section>
+
+<!-- ============ ATRAÇÃO ============ -->
+<section id="atracao">
+  <div class="km"><span class="marco">Pilar 4</span><h2>Atração</h2></div>
+
+  <details class="card" open><summary>Posicionamento: como deixar de ser mais uma opção</summary><div class="body">
+    <p><b>A Tríade Estratégica:</b> como você se posiciona · quem você serve (ICP) · como comunica valor. Falhar em um é deixar dinheiro na mesa.</p>
+    <ul>
+      <li><mark>Quem não se posiciona é posicionado pelo mercado</mark> — e o default é preço. Sofrer com preço é sintoma de posicionamento fraco.</li>
+      <li>Posicionamento é a conclusão do MERCADO sobre você, não o que você acha da sua empresa.</li>
+      <li>O mercado não premia necessariamente o melhor — premia o percebido (a galinha anuncia o ovo; a pata não).</li>
+      <li>A disputa acontece na MENTE: quando alguém pensa no problema que você resolve, você aparece nas primeiras opções?</li>
+      <li>Quem tenta agradar todos não é escolhido por ninguém. Uma porta de entrada mental; cross-sell e upsell dentro de casa.</li>
+      <li><b>Clareza vence criatividade.</b> A mensagem poderosa é a que o cliente entende e repete.</li>
+    </ul>
+    <p><b>As 4 camadas do posicionamento:</b> categoria (em qual quero ser a primeira lembrança) · problema central · público prioritário · diferenciação.</p>
+    <p><b>Posicionamento em uma frase:</b> "Ajudamos [QUEM] a alcançar [TRANSFORMAÇÃO] por meio de [DIFERENCIAL], sem [OBSTÁCULO]." <b>Teste da substituição:</b> se a comunicação funciona com o nome do concorrente no lugar do seu, ela é genérica.</p>
+    <p><b>Matriz Relevância × Diferenciação:</b> baixa + baixa = invisível · diferenciação sem relevância = interessante, mas ninguém compra · relevância sem diferenciação = <mark>comparável</mark> (guerra de preço) · alta + alta, comunicada = <b>preferível</b>. Ter os atributos e não comunicar atrai só curiosos.</p>
+    <p><b>Exercício das 5 decisões</b> (para sair da imersão com movimento): uma mudança na comunicação · uma na oferta · uma no conteúdo · uma no processo comercial · uma na experiência do cliente.</p>
+    <p><b>Inimigo em comum:</b> todo posicionamento precisa de um — e não precisa ser o concorrente (Apple × complexidade; Nubank × burocracia; Reborn × estagnação). O inimigo une você e o cliente numa mesma bandeira.</p>
+  </div></details>
+
+  <details class="card"><summary>ICP: como escolher e por que documentar</summary><div class="body">
+    <p><b>Como escolher:</b> interesses e demografia · medos e frustrações · aspirações e desejos · motivadores de compra (não só preço: tempo, parcelamento, segurança, proximidade, suporte).</p>
+    <p>📊 ICP documentado eleva taxas de fechamento em <b>até 68%</b> e encurta ciclos em <b>até 30%</b>. O ICP tem nome e toda a empresa deve saber de cor quem serve.</p>
+  </div></details>
+
+  <details class="card"><summary>Foco DO cliente e ciência do comportamento</summary><div class="body">
+    <p><b>Três formas de olhar:</b> foco EM clientes (~70% das empresas — falam de si; ninguém se importa) · foco NOS clientes (reativas, reféns do que o cliente pede) · <b>foco DO cliente</b> (~2% — enxergar o que você tem na perspectiva do que ele busca). A empresa é Sales Centric; o departamento comercial é Customer Centric.</p>
+    <p>Cliente emocionalmente conectado vale <b>52% mais</b> que o apenas satisfeito; o valor emocional pesa <b>2× mais que preço</b>; o comprador fica <b>8× mais propenso a pagar mais</b> quando o enxerga.</p>
+    <p><b>Tríade da Comunicação:</b> foco na praticidade (como afeta a rotina) · foco na transformação (quem ele quer ser) · foco na experiência (como vai se sentir).</p>
+    <p><b>Autocongruência — as 4 autoimagens do consumidor:</b> real (como sou) · social (como acho que me veem) · ideal (como gostaria de ser) · social ideal (como quero ser visto).</p>
+    <p>O dinheiro está no <b>GAP entre a autoimagem real e a ideal</b> do cliente (marketing aspiracional e identitário). <b>Desejo mimético:</b> o desejo é copiado — gerencie a audiência de consumo E a aspiracional (30-60% da exposição de uma marca vem de quem nunca vai comprar; é estratégia, não desperdício).</p>
+  </div></details>
+
+  <details class="card"><summary>Comunicação, canais e prospecção</summary><div class="body">
+    <p>Comunicar <b>TRANSFORMAÇÃO</b>, não característica ("saiu de linha" ✗ → "edição limitada" ✓). A <b>Matriz de Transformação</b> (antes × depois em TEM / SENTE / ROTINA / STATUS) é uma máquina de conteúdo: cada cruzamento vira um roteiro.</p>
+    <p>"A repetição que cansa você é a que começa a ensinar o mercado." O comprador passa só <b>5-17% da jornada</b> com fornecedores — se você não pensa como o cliente nos 80% do tempo em que ele está sozinho, você não existe para ele. A rede social do dono é do negócio. <b>Empilhar canais, nunca substituir</b> (o case Nike: perdeu 45% do valor de mercado ao abandonar canais parceiros).</p>
+    <div class="quote"><b>Fracasso em vendas = funil vazio.</b> A boca do funil tem que transbordar — funil vazio gera desespero e acordo ruim.</div>
+    <p><b>Prospecção só por e-mail é enganação:</b> alto volume, retorno baixíssimo e falsa sensação de trabalho. Preparar o contato: mapear o decisor (LinkedIn, Instagram) e ligar até agendar.</p>
+    <p><b>Metodologia Bullseye:</b> listar todos os canais → 3 potenciais → foco em 1 canal principal, dominar com indicadores, só então abrir o 2º.</p>
+    <p><b>Estrutura da prospecção, nesta ordem:</b> Perfil de Cliente Ideal → Lista (enriquecida com o dado do DECISOR) → Canal → Mensagem → Meta. Prospecção como estilo de vida. Prospectar por nicho, com a linguagem do nicho.</p>
+    <p><b>Indicadores de atração:</b> novos leads no funil · leads por origem · CPL · % desqualificado · MQL.</p>
+  </div></details>
+</section>
+
+<!-- ============ CONVERSÃO ============ -->
+<section id="conversao">
+  <div class="km"><span class="marco">Pilar 5</span><h2>Conversão</h2></div>
+  <div class="quote"><b>"Venda não é dom, venda é processo."</b> Roadmap to Close: paciência · resiliência · follow-up · disciplina · organização.</div>
+
+  <details class="card" open><summary>Qualificação: BANT e a Regra do Jogo</summary><div class="body">
+    <p><b>BANT:</b> Budget (tem condição de comprar e pagar?) · Authority (falo com quem decide? "quem mais participa da decisão?") · Need (existe necessidade real?) · Timeline (quando pretende decidir?). Qualificar economiza tempo; reunião com quem não decide converte zero. Desqualificado ≠ descartado.</p>
+    <p><b>Regra do jogo:</b> antes de vender, entender a negociação — quem tem a caneta, quem influencia, o que importa para quem decide, como funciona o processo de decisão. Equiparar senioridade quando necessário.</p>
+  </div></details>
+
+  <details class="card"><summary>SPIN Selling e relacionamento</summary><div class="body">
+    <p><b>SPIN:</b> Situação → Problema (pergunta DIRECIONADA, nunca aberta) → Implicação (o dedo na ferida: custo, imagem) → Necessidade (o cliente conclui sozinho: "faria sentido...?"). Erros comuns: sobrepor perguntas, papaguear, pular a implicação, esquecer de amarrar dia e hora do próximo contato. SPIN por texto é quase impossível — leve para ligação ou presencial. Treinar com role-play: faz, erra, repete.</p>
+    <p><b>Dale Carnegie aplicado a vendas:</b> interesse genuíno · sorria (inclusive na ligação — a energia passa pela voz) · use o nome da pessoa · escuta ativa (devolver o que o cliente disse com uma pergunta) · fale do que interessa ao outro · faça-o sentir-se importante, com sinceridade.</p>
+    <div class="quote">Se você precisa "convencer" o cliente a fechar, errou antes: ele não viu valor.</div>
+  </div></details>
+
+  <details class="card"><summary>Follow-up que converte</summary><div class="body">
+    <p><b>Sequência e proporção:</b> "o maior erro comercial é pedir em casamento no primeiro encontro". A ordem é: saber que existo → identificação → percepção de valor → troca → compra. Sequência é ordem, não lentidão — pode acontecer numa única conversa, mas sem pular etapas.</p>
+    <p><b>Regra 7-17-4</b> (Google): 7 horas de conteúdo, 17 pontos de contato, 4 canais antes de uma compra. No B2B, até 27 pontos (Forrester). O último ponto de contato colhe o que todos os anteriores plantaram. Ponto de contato malfeito joga contra.</p>
+    <p><b>Cadência definida:</b> número de tentativas · meios de contato · duração (ritmo) · espaçamento · conteúdo de cada contato.</p>
+    <p><b>Empilhamento de estímulos:</b> texto → áudio → vídeo (depoimento do mesmo setor) → estudo → vídeo-bolinha… sempre acrescentando informação NOVA. Se o follow-up não anda, o cliente ainda não tem certeza da transformação — repetir "e aí, vamos fechar?" não resolve.</p>
+    <p><b>Velocidade de resposta:</b> responder em 5 minutos = <b>100× mais chance de contato</b> e 21× mais chance de qualificar; a ausência de resposta responde por 38% das perdas (RD Station). <mark>Se tem ligação no funil, ligue no PRIMEIRO dia.</mark></p>
+    <p><b>"Café se bebe quente":</b> tente avançar NA HORA. Sempre com próximo passo amarrado (dia e hora) e micro compromissos ("faria sentido para ti?").</p>
+    <div class="formula">
+      <span class="frac"><span class="num">Sonho × Percepção de Entrega</span><span class="den">Tempo × Esforço/Sacrifício</span></span>
+      <span class="eq">=</span> <b style="color:var(--dourado)">VALOR</b>
+    </div>
+    <p>Todo follow-up deve mexer numa das 4 alavancas: elevar o sonho e a percepção de entrega; reduzir o tempo e o esforço percebidos. (O mesmo sonho vale R$200/mês na academia e R$50-80 mil no cirurgião.)</p>
+  </div></details>
+
+  <details class="card"><summary>Objeções: método CSIC</summary><div class="body">
+    <p><b>C</b>ompreende (reconheça sem concordar) → <b>S</b>olta (tire a pressão: "não tem problema optar por outra solução") → <b>I</b>sola ("é SÓ isso que impede de avançarmos?") → <b>C</b>ontorna (use o valor para virar).</p>
+    <ul>
+      <li>Nunca confrontar a objeção — contornar.</li>
+      <li>Aceitar ≠ negociar: toda concessão pede contrapartida.</li>
+      <li>Antecipar objeções na qualificação.</li>
+      <li>As objeções são quase sempre as mesmas: montar a matriz de objeções e treinar os <b>2 principais contornos</b> (cobrem ~80% das perdas) em role-play.</li>
+    </ul>
+  </div></details>
+
+  <details class="card"><summary>DISC do cliente: adaptar a venda</summary><div class="body">
+    <div class="tbl"><table>
+      <tr><th>Perfil</th><th>Ele quer</th><th>Pergunta central</th><th>Como vender</th><th>Ritmo</th></tr>
+      <tr><td><b>D</b> (~10-15%)</td><td>Resultado</td><td>O quê?</td><td>Direto, opções prontas, deixá-lo no controle</td><td>Rápido</td></tr>
+      <tr><td><b>I</b> (~25-35%)</td><td>Conexão</td><td>Com quem?</td><td>Rapport, entusiasmo, prova social; ouvir o dobro</td><td>Rápido, por emoção</td></tr>
+      <tr><td><b>S</b> (~45-50%)</td><td>Segurança</td><td>Como?</td><td>Passo a passo, garantias, tempo; nunca pressionar</td><td>Lento</td></tr>
+      <tr><td><b>C</b> (~20-30%)</td><td>Provas</td><td>Por quê?</td><td>Dados, evidências, zero erros, garantia explícita</td><td>Lento e criterioso</td></tr>
+    </table></div>
+    <p>Sem informação prévia: espelhe ritmo, tom e postura.</p>
+    <p><b>Armas da persuasão (Cialdini):</b> afeição/rapport · prova social · reciprocidade · escassez · autoridade · compromisso.</p>
+    <p><b>Indicadores de conversão:</b> % conversão total · % por vendedor · CAC · ticket médio · tempo médio de venda · % por etapa · motivos de perda.</p>
+  </div></details>
+</section>
+
+<!-- ============ ESCALA ============ -->
+<section id="escala">
+  <div class="km"><span class="marco">Pilar 6</span><h2>Escala</h2></div>
+
+  <details class="card" open><summary>As 3 forças de um bom negócio</summary><div class="body">
+    <p>① <b>Alta margem</b> (≥30% de margem de contribuição) · ② <b>Escalabilidade</b> (negócio sem teto) · ③ <b>Recorrência</b> (o cliente compra todo mês sem ser reconquistado). Se falta uma força, criar um modelo que a compense.</p>
+    <p><b>Como tirar o teto</b> (o custo não pode acompanhar a margem): serviços → digitalização e automação (IA), realocando quem sai da entrega para o comercial · custo fixo de entrega → terceirização (ficar com marca + vendas + gestão) · indústria → ocupar 100% da capacidade antes de nova planta · varejo → maximizar todos os canais antes de nova unidade.</p>
+    <p>Margem de contribuição ≠ markup. Não jogar todo o custo fixo no preço (espiral da morte: preço sobe → vende menos → custo unitário sobe). Alavancagem só com gestão do endividamento — <mark>nunca para cobrir prejuízo operacional</mark>. Teoria das restrições sempre: identificar o gargalo e atacar ali.</p>
+  </div></details>
+
+  <details class="card"><summary>NPS: a colheita da maçã baixa</summary><div class="body">
+    <div class="tbl"><table>
+      <tr><th>Nota</th><th>Grupo</th><th>Ação</th></tr>
+      <tr><td>9-10</td><td>Promotor ("maçã baixa")</td><td>PEDIR INDICAÇÃO ativamente — a ação parte de nós</td></tr>
+      <tr><td>7-8</td><td>Neutro ("é bom, MAS...")</td><td>Aumentar engajamento e consciência antes de pedir</td></tr>
+      <tr><td>1-6</td><td>Detrator</td><td>O diretor liga, ouve e resolve — pode virar promotor; afastar-se só piora</td></tr>
+    </table></div>
+    <p><b>Indicadores de escala:</b> MRR · LTV · nº de promotores (e a quantos já pedi indicação) · novas indicações · churn.</p>
+  </div></details>
+</section>
+
+<!-- ============ FRASES ============ -->
+<section id="frases">
+  <div class="km"><span class="marco">Para lembrar</span><h2>Frases-Âncora da Imersão</h2></div>
+  <div class="card"><ul style="list-style:none;margin-left:0">
+    <li class="quote">"Só se desiste de um cliente quando ele compra ou morre."</li>
+    <li class="quote">"Quem não se posiciona é posicionado pelo mercado."</li>
+    <li class="quote">"A disputa não acontece no mercado — acontece na mente do cliente."</li>
+    <li class="quote">"Venda não é dom, venda é processo."</li>
+    <li class="quote">"Café se bebe quente."</li>
+    <li class="quote">"A repetição que cansa você é a que começa a ensinar o mercado."</li>
+    <li class="quote">"Se você não pensa como o cliente nos 80% do tempo, você não existe para ele."</li>
+    <li class="quote">"Fracasso em vendas = funil vazio."</li>
+    <li class="quote">"A equipe é a cara do líder."</li>
+    <li class="quote">"Deus perdoa os tolos, mas não os sábios agindo como tolos."</li>
+    <li class="quote">"Segue o plano!"</li>
+  </ul></div>
+  <p class="lead" style="margin-top:18px">Resumo elaborado a partir das anotações e transcrições da Imersão Comercial do Club Reborn. Conteúdos e frameworks dos mentores Duda, Ivan, Marcelinho e Jardel.</p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span><i>Club Reborn</i> · Imersão Comercial · Método PACE</span>
+    <span>25-26 de julho de 2026</span>
+  </div>
+</footer>
+</div><!-- /conteudo -->
+</div><!-- /layout -->
+
+<script>
+const links=document.querySelectorAll('.nav-link');
+const secs=document.querySelectorAll('main section');
+const sidebar=document.getElementById('sidebar');
+const scrim=document.getElementById('scrim');
+const menuBtn=document.getElementById('menu-btn');
+function fechaMenu(){sidebar.classList.remove('aberta');scrim.classList.remove('aberta');menuBtn.setAttribute('aria-expanded','false')}
+menuBtn.addEventListener('click',()=>{const abre=!sidebar.classList.contains('aberta');sidebar.classList.toggle('aberta',abre);scrim.classList.toggle('aberta',abre);menuBtn.setAttribute('aria-expanded',abre)});
+scrim.addEventListener('click',fechaMenu);
+links.forEach(l=>l.addEventListener('click',()=>{
+  links.forEach(x=>x.classList.remove('active'));
+  secs.forEach(s=>s.classList.remove('active'));
+  l.classList.add('active');
+  document.getElementById(l.dataset.t).classList.add('active');
+  fechaMenu();
+  window.scrollTo({top:0});
+}));
+</script>
+</body>
+</html>

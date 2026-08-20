@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Roadmap Comercial — Estação Sapatão</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23004438'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-family='Georgia,serif' font-style='italic' font-weight='600' font-size='38' fill='%23EC6C22'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600&display=swap" rel="stylesheet">
+<script src="auth.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --fundo:#EBEBEA;--card:#FFFFFF;--verde:#004438;--verde-suave:#3D6B60;
+  --laranja:#EC6C22;--laranja-escuro:#C2531A;--linha:#D8D8D3;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Archivo',sans-serif;background:var(--fundo);color:var(--verde);line-height:1.55;font-size:15.5px;min-height:100vh;display:flex;flex-direction:column}
+.wrap{max-width:880px;margin:0 auto;padding:48px 22px 40px;width:100%;flex:1}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--laranja);margin-bottom:12px}
+h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,4.6vw,46px);line-height:1.08}
+h1 span{color:var(--laranja);font-style:italic}
+.sub{color:var(--verde-suave);margin-top:12px;max-width:560px;font-size:14.5px}
+.tag{font-family:'Archivo',sans-serif;letter-spacing:.28em;text-transform:uppercase;font-size:10.5px;color:var(--laranja-escuro);margin-top:14px}
+.faixa{height:8px;background:repeating-linear-gradient(90deg,var(--laranja) 0 34px,var(--verde) 34px 58px);border-radius:4px;margin:26px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:8px}
+a.card{display:block;background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:22px 20px;text-decoration:none;color:var(--verde);transition:transform .15s,box-shadow .15s;border-top:4px solid var(--laranja)}
+a.card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,20,15,.12)}
+a.card .t{font-family:'Fraunces',serif;font-weight:600;font-size:21px;margin-bottom:8px}
+a.card .d{color:var(--verde-suave);font-size:13.5px}
+a.card .go{display:inline-block;margin-top:14px;font-weight:700;font-size:13px;color:var(--laranja-escuro)}
+footer{color:var(--verde-suave);padding:18px 22px;font-size:12.5px;border-top:1px solid var(--linha);text-align:center}
+footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Estação Sapatão · Club Reborn · Imersão Comercial 25-26.07.2026</div>
+  <h1>Roadmap <span>Comercial</span></h1>
+  <p class="sub">Central de execução do método PACE na Estação Sapatão. Escolha um dos materiais abaixo.</p>
+  <p class="tag">Um lugar para parar, ficar e voltar.</p>
+  <div class="faixa"></div>
+  <div class="cards">
+    <a class="card" href="guia.html">
+      <div class="t">Guia de Execução</div>
+      <div class="d">Painel completo: as 17 ações com status, datas e observações, pilares PACE, cola rápida de frameworks e o Roadmap oficial. Ordenação por Prazo ou G×U×T e aviso de ações atrasadas.</div>
+      <span class="go">Abrir →</span>
+    </a>
+    <a class="card" href="resumo.html">
+      <div class="t">Resumo da Imersão</div>
+      <div class="d">Os aprendizados dos dois dias organizados pelos pilares do método PACE, com as frases-âncora dos mentores. Versão neutra, boa para compartilhar com o Club Reborn.</div>
+      <span class="go">Abrir →</span>
+    </a>
+    <a class="card" href="plano-de-acao.html">
+      <div class="t">Plano de Ação (impressão)</div>
+      <div class="d">A tabela enxuta das 17 ações priorizadas por G×U×T, com responsáveis e prazos — formatada para imprimir em A4 paisagem e levar para a reunião.</div>
+      <span class="go">Abrir →</span>
+    </a>
+  </div>
+</div>
+<footer><i>Estação Sapatão</i> · Roadmap Comercial · Revisão na sala do conselho em 90 dias · <a href="#" onclick="sapataoSair();return false" style="color:inherit">Sair</a></footer>
+</body>
+</html>
