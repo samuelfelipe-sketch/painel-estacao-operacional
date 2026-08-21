@@ -14,6 +14,7 @@
 
   /* SHA-256 em JS puro (domínio público — geraintluff/sha256) */
   function sha256(ascii) {
+    ascii = unescape(encodeURIComponent(ascii)); // acentos viram bytes UTF-8
     function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
     var mathPow = Math.pow, maxWord = mathPow(2, 32), result = '', i, j;
     var words = [], asciiBitLength = ascii.length * 8;
@@ -68,9 +69,20 @@
   }
 
   function lembrado() {
-    try { if (sessionStorage.getItem(CHAVE) === HASH_SENHA) return true; } catch (e) {}
-    try { if (localStorage.getItem(CHAVE) === HASH_SENHA) return true; } catch (e) {}
-    return false;
+    var v = null;
+    try { v = sessionStorage.getItem(CHAVE) || localStorage.getItem(CHAVE); } catch (e) {}
+    if (!v) return false;
+    if (v === HASH_SENHA) return true;
+    /* hash guardado difere do arquivo (possível cache após troca de senha):
+       revalida em segundo plano contra a versão fresca e só desconecta se
+       realmente não bater */
+    fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/roadmap/auth.js?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.text(); })
+      .then(function (src) {
+        var m = src.match(/HASH_SENHA = '([0-9a-f]{64})'/);
+        if (!m || v !== m[1]) window.sapataoSair();
+      }).catch(function () {});
+    return true;
   }
 
   /* usado pela aba Configurações do guia para validar e trocar a senha */
@@ -133,19 +145,31 @@
         erro = gate.querySelector('#sptx-erro'),
         lembrar = gate.querySelector('#sptx-lembrar');
     campo.focus();
+    function entra(hash) {
+      try { sessionStorage.setItem(CHAVE, hash); } catch (e) {}
+      if (lembrar.checked) { try { localStorage.setItem(CHAVE, hash); } catch (e) {} }
+      gate.remove();
+      document.documentElement.classList.remove('sptx-lock');
+    }
+    function recusa() {
+      erro.classList.add('on');
+      form.classList.add('shake');
+      campo.select();
+      setTimeout(function () { form.classList.remove('shake'); }, 400);
+    }
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
-      if (sha256(campo.value) === HASH_SENHA) {
-        try { sessionStorage.setItem(CHAVE, HASH_SENHA); } catch (e) {}
-        if (lembrar.checked) { try { localStorage.setItem(CHAVE, HASH_SENHA); } catch (e) {} }
-        gate.remove();
-        document.documentElement.classList.remove('sptx-lock');
-      } else {
-        erro.classList.add('on');
-        form.classList.add('shake');
-        campo.select();
-        setTimeout(function () { form.classList.remove('shake'); }, 400);
-      }
+      var h = sha256(campo.value);
+      if (h === HASH_SENHA) { entra(HASH_SENHA); return; }
+      /* a senha pode ter sido trocada há pouco e este arquivo ainda estar em
+         cache — confere a versão fresca do repositório antes de recusar */
+      fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/roadmap/auth.js?t=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r.text(); })
+        .then(function (src) {
+          var m = src.match(/HASH_SENHA = '([0-9a-f]{64})'/);
+          if (m && h === m[1]) entra(m[1]); else recusa();
+        })
+        .catch(recusa);
     });
   }
 

@@ -1091,6 +1091,7 @@ if(snBtn)snBtn.addEventListener('click',async function(){
     const j=await g.json();
     let src=b64dec(j.content);
     const novoHash=A.sha256(nova);
+    if(!/^[0-9a-f]{64}$/.test(novoHash))throw new Error('falha ao gerar o c\u00f3digo da senha');
     const re=/HASH_SENHA = '[0-9a-f]{64}'/;
     if(!re.test(src))throw new Error('n\u00e3o achei o HASH_SENHA no auth.js');
     src=src.replace(re,"HASH_SENHA = '"+novoHash+"'");
@@ -1102,7 +1103,7 @@ if(snBtn)snBtn.addEventListener('click',async function(){
       if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,novoHash);
     }catch(e){}
     document.getElementById('sn-atual').value='';document.getElementById('sn-nova').value='';document.getElementById('sn-conf').value='';
-    snDiz('Senha alterada! Vale no site em ~2 minutos. Este aparelho continua conectado; os outros v\u00e3o pedir a senha nova.');
+    snDiz('Senha alterada! Este aparelho continua conectado; os outros v\u00e3o pedir a senha nova (se algum recusar nos primeiros minutos, \u00e9 cache \u2014 o site confere sozinho e aceita).');
   }catch(e){snDiz('N\u00e3o consegui gravar ('+e.message+'). Confira a chave de publica\u00e7\u00e3o e tente de novo.',true);}
   snBtn.disabled=false;
 });
