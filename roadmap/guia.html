@@ -839,7 +839,7 @@ try{
 function gravaLocal(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:2,salvoEm:salvoEm,dados:EXECUCOES}));}catch(e){}}
 function salva(){salvoEm=Date.now();gravaLocal();agendaPublicacao();}
 const aberto=new Set();
-let ordem={chave:'gut',dir:-1};
+let ordem={chave:'prazo',dir:1};
 
 const tbody=document.getElementById('exec-tbody');
 const cards=document.getElementById('exec-cards');
