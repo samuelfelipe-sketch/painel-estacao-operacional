@@ -2,9 +2,9 @@
    Acesso restrito — Roadmap Comercial · Estação Sapatão
    ------------------------------------------------------------
    A senha não aparece em texto claro: o que fica aqui é o
-   hash SHA-256 dela. Para trocar a senha, gere o novo hash
-   (ex.: peça ao Claude "gera o SHA-256 da senha X") e
-   substitua o valor de HASH_SENHA abaixo.
+   hash SHA-256 dela. Para trocar a senha, use a aba
+   Configurações do Guia (precisa da chave de publicação) —
+   ela reescreve o HASH_SENHA abaixo automaticamente.
    Obs.: é uma proteção de acesso simples de site estático —
    suficiente para uso interno, não para dados sensíveis.
    ============================================================ */
@@ -72,6 +72,9 @@
     try { if (localStorage.getItem(CHAVE) === HASH_SENHA) return true; } catch (e) {}
     return false;
   }
+
+  /* usado pela aba Configurações do guia para validar e trocar a senha */
+  window.sapataoAuth = { hash: HASH_SENHA, sha256: sha256, chave: CHAVE };
 
   window.sapataoSair = function () {
     try { sessionStorage.removeItem(CHAVE); } catch (e) {}

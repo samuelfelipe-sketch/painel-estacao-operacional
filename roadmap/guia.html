@@ -789,8 +789,20 @@ tr.late td{background:#FCF0ED!important}
   </div>
 
   <div class="card" style="margin-top:14px">
+    <h3 style="margin-top:2px">&#128273; Senha do site</h3>
+    <p class="lead" style="margin:8px 0 12px">Troca a senha de acesso para <b>todos</b> que usam o Roadmap. Precisa da chave de publicação (acima) — a alteração é gravada no site e vale em ~2 minutos; os outros aparelhos passarão a pedir a senha nova.</p>
+    <div style="display:grid;gap:8px;max-width:340px">
+      <input type="password" id="sn-atual" placeholder="Senha atual" autocomplete="off" style="font-family:inherit;font-size:14px;padding:10px 12px;border:1.5px solid var(--linha);border-radius:8px;color:var(--verde)">
+      <input type="password" id="sn-nova" placeholder="Senha nova (m&iacute;nimo 6 caracteres)" autocomplete="off" style="font-family:inherit;font-size:14px;padding:10px 12px;border:1.5px solid var(--linha);border-radius:8px;color:var(--verde)">
+      <input type="password" id="sn-conf" placeholder="Repita a senha nova" autocomplete="off" style="font-family:inherit;font-size:14px;padding:10px 12px;border:1.5px solid var(--linha);border-radius:8px;color:var(--verde)">
+      <button type="button" class="ord-btn active" id="sn-trocar">Alterar senha</button>
+    </div>
+    <p class="lead" id="sn-msg" style="margin:10px 0 0;font-size:13px"></p>
+  </div>
+
+  <div class="card" style="margin-top:14px">
     <h3 style="margin-top:2px">Acesso e dados</h3>
-    <p class="lead" style="margin:8px 0 0">Backup manual: botões <b>Exportar/Importar</b> no Plano de Ação. &middot; Histórico completo das execuções: <a href="https://github.com/samuelfelipe-sketch/painel-estacao-operacional/commits/main/roadmap/execucoes.json" target="_blank" rel="noopener">ver no GitHub &rarr;</a> &middot; Para trocar a senha do site, atualize o <b>auth.js</b> (peça ao Claude).</p>
+    <p class="lead" style="margin:8px 0 0">Backup manual: botões <b>Exportar/Importar</b> no Plano de Ação. &middot; Histórico completo das execuções: <a href="https://github.com/samuelfelipe-sketch/painel-estacao-operacional/commits/main/roadmap/execucoes.json" target="_blank" rel="noopener">ver no GitHub &rarr;</a></p>
     <p style="margin:14px 0 0"><button type="button" class="ord-btn" onclick="sapataoSair()">Sair deste aparelho (pedir senha de novo)</button></p>
   </div>
 </section>
@@ -1042,6 +1054,45 @@ if(cfgRemover)cfgRemover.addEventListener('click',function(){
   atualizaCfg();iniciaSync();
 });
 atualizaCfg();
+
+/* --- Troca de senha do site (reescreve o auth.js no repositório) --- */
+const snMsg=document.getElementById('sn-msg'),snBtn=document.getElementById('sn-trocar');
+function snDiz(txt,erro){if(snMsg){snMsg.textContent=txt;snMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
+if(snBtn)snBtn.addEventListener('click',async function(){
+  const A=window.sapataoAuth;
+  const atual=document.getElementById('sn-atual').value;
+  const nova=document.getElementById('sn-nova').value;
+  const conf=document.getElementById('sn-conf').value;
+  if(!A){snDiz('Recarregue a p\u00e1gina e tente de novo.',true);return;}
+  if(!tokenSync()){snDiz('Cole antes a chave de publica\u00e7\u00e3o no quadro Nuvem acima \u2014 ela \u00e9 necess\u00e1ria para gravar a senha nova.',true);return;}
+  if(A.sha256(atual)!==A.hash){snDiz('A senha atual n\u00e3o confere.',true);return;}
+  if(nova.length<6){snDiz('A senha nova precisa de pelo menos 6 caracteres.',true);return;}
+  if(nova!==conf){snDiz('A confirma\u00e7\u00e3o n\u00e3o bate com a senha nova.',true);return;}
+  if(nova===atual){snDiz('A senha nova \u00e9 igual \u00e0 atual.',true);return;}
+  snBtn.disabled=true;snDiz('Gravando senha nova\u2026');
+  try{
+    const API_AUTH='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/auth.js';
+    const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
+    const g=await fetch(API_AUTH+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+    if(!g.ok)throw new Error('HTTP '+g.status+' ao ler o auth.js');
+    const j=await g.json();
+    let src=b64dec(j.content);
+    const novoHash=A.sha256(nova);
+    const re=/HASH_SENHA = '[0-9a-f]{64}'/;
+    if(!re.test(src))throw new Error('n\u00e3o achei o HASH_SENHA no auth.js');
+    src=src.replace(re,"HASH_SENHA = '"+novoHash+"'");
+    const r=await fetch(API_AUTH,{method:'PUT',headers:h,body:JSON.stringify({
+      message:'chore: altera a senha do Roadmap Comercial (via Configura\u00e7\u00f5es)',branch:'main',content:b64enc(src),sha:j.sha})});
+    if(!r.ok)throw new Error('HTTP '+r.status+' ao gravar');
+    try{
+      if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,novoHash);
+      if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,novoHash);
+    }catch(e){}
+    document.getElementById('sn-atual').value='';document.getElementById('sn-nova').value='';document.getElementById('sn-conf').value='';
+    snDiz('Senha alterada! Vale no site em ~2 minutos. Este aparelho continua conectado; os outros v\u00e3o pedir a senha nova.');
+  }catch(e){snDiz('N\u00e3o consegui gravar ('+e.message+'). Confira a chave de publica\u00e7\u00e3o e tente de novo.',true);}
+  snBtn.disabled=false;
+});
 iniciaSync();
 document.addEventListener('visibilitychange',function(){if(!document.hidden)iniciaSync();});
 })();
