@@ -124,9 +124,14 @@ footer i{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--doura
 .btn-print:focus-visible{outline:2px solid #3D4A5C;outline-offset:2px}
 @media (max-width:900px){.btn-print{top:60px;right:14px}}
 @media print{aside,.topbar,.scrim,.btn-print{display:none!important}body{background:#fff}header{padding-top:0}main{padding:0 0 20px}@page{margin:12mm}}
+.btn-voltar{position:fixed;top:14px;left:14px;z-index:999;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#004438;background:#fff;border:1.5px solid #D8D8D3;border-radius:20px;padding:8px 16px;text-decoration:none;box-shadow:0 2px 8px rgba(0,20,15,.08)}
+.btn-voltar:hover{border-color:#EC6C22;color:#C2531A}
+@media print{.btn-voltar{display:none!important}}
 </style>
 </head>
 <body>
+<a href="index.html" class="btn-voltar" aria-label="Voltar à página inicial do Roadmap">&#8592; Voltar</a>
+
 
 <div class="topbar">
   <button id="menu-btn" aria-label="Abrir menu" aria-expanded="false">☰</button>
