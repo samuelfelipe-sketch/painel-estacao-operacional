@@ -115,6 +115,9 @@ tr:last-child td{border-bottom:none}
 .data.urgente{background:var(--laranja);border-color:var(--laranja);color:#fff}
 .prazo .acao b{font-size:14.5px;color:var(--verde)}
 .prazo .meta-line{font-size:12.5px;color:var(--verde-suave);margin-top:2px}
+.prazo.done{opacity:.62}
+.prazo.done .acao b{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--verde-suave)}
+.data.ok{background:#E7F2EA;border-color:#BFDCC9;color:#1D6B3C}
 
 /* fórmula */
 .formula{background:var(--card);border:1px solid var(--linha);color:var(--verde);border-radius:10px;padding:18px;text-align:center;font-family:'IBM Plex Mono',monospace;margin:12px 0}
@@ -270,30 +273,9 @@ tr.late td{background:#FCF0ED!important}
 <!-- ============ PAINEL ============ -->
 <section id="painel" class="active">
   <div class="km"><span class="marco">Execução</span><h2>Painel do Plano de Ação</h2></div>
-  <p class="lead">As 17 ações oficiais em ordem de prazo. Prioridade G×U×T entre parênteses. É isto que o Club Reborn cobra em 90 dias.</p>
+  <p class="lead">As 17 ações oficiais, atualizadas automaticamente conforme o preenchimento do Plano de Ação: pendentes em ordem de prazo e concluídas riscadas no fim. Prioridade G×U×T entre parênteses. É isto que o Club Reborn cobra em 90 dias.</p>
 
-  <div class="card">
-    <h3 style="margin-top:4px">Julho</h3>
-    <div class="prazo"><div class="data urgente">31/07</div><div class="acao"><b>Agendar reuniões da área comercial — 2º semestre</b><div class="meta-line">Processos · Samuel · (125)</div></div></div>
-    <div class="prazo"><div class="data urgente">31/07</div><div class="acao"><b>Treinamento de ICP do time comercial</b><div class="meta-line">Atração · Samuel · (75)</div></div></div>
-    <h3>Agosto</h3>
-    <div class="prazo"><div class="data">07/08</div><div class="acao"><b>Listar 20 clientes ICP</b><div class="meta-line">Atração · Fabrício · (75)</div></div></div>
-    <div class="prazo"><div class="data">11/08</div><div class="acao"><b>Treinamento de Posicionamento Final p/ líderes</b><div class="meta-line">Atração · Samuel · (125)</div></div></div>
-    <div class="prazo"><div class="data">15/08</div><div class="acao"><b>Descrição de cargo e escopo do vendedor Sapatão</b><div class="meta-line">Pessoas · Samuel · (125)</div></div></div>
-    <div class="prazo"><div class="data">15/08</div><div class="acao"><b>Linha de comunicação em tráfego pago c/ Matriz de Transformação</b><div class="meta-line">Atração · Samuel · (75)</div></div></div>
-    <div class="prazo"><div class="data">21/08</div><div class="acao"><b>Revisar etapas do CRM</b><div class="meta-line">Processos · Samuel · (45)</div></div></div>
-    <div class="prazo"><div class="data">22/08</div><div class="acao"><b>Realizar NPS com clientes B2B</b><div class="meta-line">Escala · Andressa · (125)</div></div></div>
-    <div class="prazo"><div class="data">22/08</div><div class="acao"><b>Documento com script de vendas (SPIN + Objeções CSIC)</b><div class="meta-line">Conversão · Samuel · (75)</div></div></div>
-    <div class="prazo"><div class="data">28/08</div><div class="acao"><b>Treinamento de SPIN</b><div class="meta-line">Conversão · Samuel · (75)</div></div></div>
-    <div class="prazo"><div class="data">31/08</div><div class="acao"><b>Treinamento de Posicionamento — time operacional</b><div class="meta-line">Atração · Maicon · (125)</div></div></div>
-    <div class="prazo"><div class="data">31/08</div><div class="acao"><b>Pedir indicação para promotores do NPS</b><div class="meta-line">Escala · Fabrício · (100)</div></div></div>
-    <div class="prazo"><div class="data">31/08</div><div class="acao"><b>Abrir vaga de vendedor</b><div class="meta-line">Pessoas · Samuel · (80)</div></div></div>
-    <h3>Setembro</h3>
-    <div class="prazo"><div class="data">04/09</div><div class="acao"><b>Treinamento de Objeções e CSIC</b><div class="meta-line">Conversão · Samuel · (75)</div></div></div>
-    <div class="prazo"><div class="data">15/09</div><div class="acao"><b>Rever entregas do time comercial (perfil CHAVE)</b><div class="meta-line">Pessoas · Samuel · (125)</div></div></div>
-    <div class="prazo"><div class="data">15/09</div><div class="acao"><b>Medir Churn</b><div class="meta-line">Escala · Samuel · (60)</div></div></div>
-    <div class="prazo"><div class="data">30/09</div><div class="acao"><b>Treinamento do time p/ desenvolvimento do CHAVE</b><div class="meta-line">Pessoas · Gabrielle · (75)</div></div></div>
-  </div>
+  <div class="card" id="painel-acoes"></div>
 
   <h3>Rotinas fixas do comercial</h3>
   <div class="tbl"><table>
@@ -882,6 +864,36 @@ function ordenadas(){
   });
   return l;
 }
+
+/* --- Painel de início espelha o estado do Plano de Ação --- */
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function renderPainel(){
+  const alvo=document.getElementById('painel-acoes');if(!alvo)return;
+  const pend=[],done=[];
+  ACOES.forEach(function(a){(EXECUCOES[a.id].status==='concluido'?done:pend).push(a);});
+  pend.sort(function(a,b){return a.prazo.localeCompare(b.prazo)||(b.gut-a.gut)||(a.id-b.id);});
+  done.sort(function(a,b){var da=EXECUCOES[a.id].data||a.prazo,db=EXECUCOES[b.id].data||b.prazo;return da.localeCompare(db)||(a.id-b.id);});
+  function linha(a,ok){
+    const e=EXECUCOES[a.id],late=!ok&&a.prazo<HOJE;
+    const badge=ok?fmt(e.data||a.prazo).slice(0,5):fmt(a.prazo).slice(0,5);
+    return '<div class="prazo'+(ok?' done':'')+'"><div class="data'+(ok?' ok':(late?' urgente':''))+'">'+(ok?'&#10004; ':'')+badge+'</div>'
+      +'<div class="acao"><b>'+a.acao+'</b><div class="meta-line">'+a.bloco+' · '+a.resp+' · ('+a.gut+')'
+      +(ok?' · concluída em '+fmt(e.data||a.prazo):(late?' · <b style="color:var(--laranja-escuro)">atrasada</b>':''))+'</div></div></div>';
+  }
+  let html='',mesAtual='';
+  pend.forEach(function(a,i){
+    const m=MESES[+a.prazo.slice(5,7)-1];
+    if(m!==mesAtual){html+='<h3'+(i===0?' style="margin-top:4px"':'')+'>'+m+'</h3>';mesAtual=m;}
+    html+=linha(a,false);
+  });
+  if(!pend.length)html+='<p class="lead" style="margin:6px 0 4px">Nenhuma ação pendente — plano concluído! &#127881;</p>';
+  if(done.length){
+    html+='<h3>Concluídas ('+done.length+' de '+ACOES.length+')</h3>';
+    done.forEach(function(a){html+=linha(a,true);});
+  }
+  alvo.innerHTML=html;
+}
+
 function renderAll(){
   const lista=ordenadas();
   let done=0,atrasadas=0;
@@ -924,6 +936,7 @@ function renderAll(){
     const on=th.dataset.sort===ordem.chave;
     th.querySelector('.seta').innerHTML=on?(ordem.dir===1?'&#9650;':'&#9660;'):'';
   });
+  renderPainel();
 }
 function trata(e){
   const cont=e.target.closest('[data-acao]');if(!cont)return;
