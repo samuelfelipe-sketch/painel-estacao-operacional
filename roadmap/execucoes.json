@@ -1,11 +1,5 @@
 {
   "v": 2,
-  "salvoEm": 1755800000000,
-  "dados": {
-    "17": {
-      "status": "concluido",
-      "data": "2026-08-21",
-      "obs": "[teste de sincronização — pode apagar]"
-    }
-  }
+  "salvoEm": 0,
+  "dados": {}
 }
