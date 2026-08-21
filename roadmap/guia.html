@@ -157,6 +157,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .exec-ordem{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:13px;color:var(--verde-suave);flex-wrap:wrap}
 .ord-btn{font-family:'Archivo',sans-serif;font-weight:600;font-size:13px;color:var(--verde);background:#fff;border:1px solid var(--linha);border-radius:20px;padding:7px 15px;cursor:pointer}
 .ord-btn.active{background:var(--verde);border-color:var(--verde);color:#fff}
+.sync-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:20px;padding:6px 12px;border:1px solid var(--linha);background:#fff;color:var(--verde-suave);cursor:pointer}
+.sync-chip.ok{color:#1D6B3C;background:#E7F2EA;border-color:#BFDCC9}
+.sync-chip.erro{color:#8C1D18;background:#F9DEDC;border-color:#E8B3AE}
+.sync-chip.pendente{color:#92400E;background:#FEF3C7;border-color:#FDE68A}
+@media print{.sync-chip{display:none!important}}
 th.th-sort{cursor:pointer;user-select:none;white-space:nowrap}
 th.th-sort:hover{color:var(--laranja-escuro)}
 th.th-sort .seta{color:var(--laranja)}
@@ -745,7 +750,7 @@ tr.late td{background:#FCF0ED!important}
     <div id="exec-late" class="exec-late-chip" hidden>&#9888; <b id="exec-late-n">0</b> atrasada(s)</div>
   </div>
 
-  <div class="exec-ordem" role="group" aria-label="Ordenação do plano"><span>Ordenar por:</span><button type="button" class="ord-btn" data-sort="gut">G×U×T</button><button type="button" class="ord-btn" data-sort="prazo">Prazo</button><span style="flex:1"></span><button type="button" class="ord-btn" id="btn-exportar" title="Baixa um arquivo JSON com status, datas e observações preenchidos">&#8595; Exportar dados</button><button type="button" class="ord-btn" id="btn-importar" title="Restaura dados de um arquivo exportado por este guia">&#8593; Importar</button><input type="file" id="imp-file" accept=".json,application/json" hidden></div>
+  <div class="exec-ordem" role="group" aria-label="Ordenação do plano"><span>Ordenar por:</span><button type="button" class="ord-btn" data-sort="gut">G×U×T</button><button type="button" class="ord-btn" data-sort="prazo">Prazo</button><span style="flex:1"></span><button type="button" class="ord-btn" id="btn-exportar" title="Baixa um arquivo JSON com status, datas e observações preenchidos">&#8595; Exportar dados</button><button type="button" class="ord-btn" id="btn-importar" title="Restaura dados de um arquivo exportado por este guia">&#8593; Importar</button><button type="button" class="sync-chip" id="sync-chip" title="Sincronização automática entre aparelhos — clique para configurar a chave de publicação">&#9729; Nuvem: iniciando…</button><input type="file" id="imp-file" accept=".json,application/json" hidden></div>
 
   <div class="tbl exec-desk"><table id="tbl-exec">
     <thead><tr><th>#</th><th>Ação</th><th>Bloco</th><th>Resp.</th><th class="th-sort" data-sort="prazo" title="Clique para ordenar por prazo">Prazo <span class="seta"></span></th><th class="th-sort" data-sort="gut" title="Clique para ordenar por G×U×T">G×U×T <span class="seta"></span></th><th>Status</th><th>Data de execução</th><th>Observações</th></tr></thead>
@@ -795,11 +800,13 @@ links.forEach(l=>l.addEventListener('click',()=>{
 const ACOES=[{"id": 1, "acao": "Agendar Reuniões da Área Comercial — 2º Semestre", "bloco": "Processos", "resp": "Samuel", "prazo": "2026-07-31", "gut": 125}, {"id": 2, "acao": "Escrever Descrição de Cargo e Escopo de Trabalho do Vendedor do Sapatão", "bloco": "Pessoas", "resp": "Samuel", "prazo": "2026-08-15", "gut": 125}, {"id": 3, "acao": "Rever entregas do time comercial (Perfil CHAVE)", "bloco": "Pessoas", "resp": "Samuel", "prazo": "2026-09-15", "gut": 125}, {"id": 4, "acao": "Treinamento de Posicionamento Final para Líderes", "bloco": "Atração", "resp": "Samuel", "prazo": "2026-08-11", "gut": 125}, {"id": 5, "acao": "Treinamento sobre Posicionamento para todo o time operacional", "bloco": "Atração", "resp": "Maicon", "prazo": "2026-08-31", "gut": 125}, {"id": 6, "acao": "Realizar NPS com clientes B2B", "bloco": "Escala", "resp": "Andressa", "prazo": "2026-08-22", "gut": 125}, {"id": 7, "acao": "Pedir Indicação para Promotores do NPS", "bloco": "Escala", "resp": "Fabrício", "prazo": "2026-08-31", "gut": 100}, {"id": 8, "acao": "Abrir vaga de vendedor", "bloco": "Pessoas", "resp": "Samuel", "prazo": "2026-08-31", "gut": 80}, {"id": 9, "acao": "Treinamento do time comercial para desenvolvimento do CHAVE", "bloco": "Pessoas", "resp": "Gabrielle", "prazo": "2026-09-30", "gut": 75}, {"id": 10, "acao": "Treinamento de ICP do time comercial", "bloco": "Atração", "resp": "Samuel", "prazo": "2026-07-31", "gut": 75}, {"id": 11, "acao": "Linha de comunicação em tráfego pago com a Matriz de Transformação", "bloco": "Atração", "resp": "Samuel", "prazo": "2026-08-15", "gut": 75}, {"id": 12, "acao": "Listar 20 Clientes ICP", "bloco": "Atração", "resp": "Fabrício", "prazo": "2026-08-07", "gut": 75}, {"id": 13, "acao": "Documento com Script de Vendas (SPIN + Objeções CSIC)", "bloco": "Conversão", "resp": "Samuel", "prazo": "2026-08-22", "gut": 75}, {"id": 14, "acao": "Treinamento de SPIN", "bloco": "Conversão", "resp": "Samuel", "prazo": "2026-08-28", "gut": 75}, {"id": 15, "acao": "Treinamento de Objeções e CSIC", "bloco": "Conversão", "resp": "Samuel", "prazo": "2026-09-04", "gut": 75}, {"id": 16, "acao": "Medir Churn", "bloco": "Escala", "resp": "Samuel", "prazo": "2026-09-15", "gut": 60}, {"id": 17, "acao": "Revisar Etapas do CRM", "bloco": "Processos", "resp": "Samuel", "prazo": "2026-08-21", "gut": 45}];
 const EXECUCOES={1:{"status": "aberto", "data": "", "obs": ""},2:{"status": "aberto", "data": "", "obs": ""},3:{"status": "aberto", "data": "", "obs": ""},4:{"status": "aberto", "data": "", "obs": ""},5:{"status": "aberto", "data": "", "obs": ""},6:{"status": "aberto", "data": "", "obs": ""},7:{"status": "aberto", "data": "", "obs": ""},8:{"status": "aberto", "data": "", "obs": ""},9:{"status": "aberto", "data": "", "obs": ""},10:{"status": "aberto", "data": "", "obs": ""},11:{"status": "aberto", "data": "", "obs": ""},12:{"status": "aberto", "data": "", "obs": ""},13:{"status": "aberto", "data": "", "obs": ""},14:{"status": "aberto", "data": "", "obs": ""},15:{"status": "aberto", "data": "", "obs": ""},16:{"status": "aberto", "data": "", "obs": ""},17:{"status": "aberto", "data": "", "obs": ""}};
 const CHAVE_LS='sapatao-execucoes-v1';
+let salvoEm=0;
 try{
   const sv=JSON.parse(localStorage.getItem(CHAVE_LS)||'null');
-  if(sv&&sv.dados)Object.keys(sv.dados).forEach(function(k){if(EXECUCOES[k])Object.assign(EXECUCOES[k],sv.dados[k]);});
+  if(sv&&sv.dados){Object.keys(sv.dados).forEach(function(k){if(EXECUCOES[k])Object.assign(EXECUCOES[k],sv.dados[k]);});salvoEm=sv.salvoEm||1;}
 }catch(e){/* ambiente sem localStorage (ex.: artefato) — segue sem persistência */}
-function salva(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:1,dados:EXECUCOES}));}catch(e){}}
+function gravaLocal(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:2,salvoEm:salvoEm,dados:EXECUCOES}));}catch(e){}}
+function salva(){salvoEm=Date.now();gravaLocal();agendaPublicacao();}
 const aberto=new Set();
 let ordem={chave:'gut',dir:-1};
 
@@ -922,6 +929,74 @@ if(impFile)impFile.addEventListener('change',function(){
   r.readAsText(f);
 });
 renderAll();
+
+/* --- Sincronização automática entre aparelhos ---
+   A base de dados é o próprio repositório do site (roadmap/execucoes.json).
+   Leitura: pública, funciona em qualquer aparelho sem configurar nada.
+   Publicação: exige uma chave do GitHub (fine-grained token, Contents
+   Read/Write só neste repositório) colada uma única vez por aparelho —
+   fica no localStorage, nunca vai para o código público. */
+const SYNC_API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/execucoes.json';
+const LS_TOKEN='sapatao-sync-token';
+const chipEl=document.getElementById('sync-chip');
+let syncTimer=null;
+function tokenSync(){try{return localStorage.getItem(LS_TOKEN)||''}catch(e){return ''}}
+function b64enc(str){return btoa(unescape(encodeURIComponent(str)));}
+function b64dec(str){return decodeURIComponent(escape(atob(str.replace(/\s/g,''))));}
+function chip(classe,txt){if(!chipEl)return;chipEl.className='sync-chip'+(classe?' '+classe:'');chipEl.innerHTML='&#9729; '+txt;}
+async function leRemoto(){
+  const h={'Accept':'application/vnd.github+json'};
+  if(tokenSync())h['Authorization']='Bearer '+tokenSync();
+  const r=await fetch(SYNC_API+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  if(r.status===404)return{sha:null,salvoEm:0,dados:null};
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  let doc={};try{doc=JSON.parse(b64dec(j.content));}catch(e){}
+  return{sha:j.sha,salvoEm:doc.salvoEm||0,dados:doc.dados||null};
+}
+async function publica(){
+  if(!tokenSync()){chip('','Nuvem: s\u00f3 leitura \u2014 toque p/ ativar publica\u00e7\u00e3o');return;}
+  try{
+    chip('pendente','Nuvem: publicando\u2026');
+    const rem=await leRemoto();
+    if(rem.dados&&rem.salvoEm>salvoEm){aplicaRemoto(rem);return;}
+    const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
+    const body={message:'chore: sincroniza execu\u00e7\u00f5es do Roadmap Comercial (autom\u00e1tico)',branch:'main',
+                content:b64enc(JSON.stringify({v:2,salvoEm:salvoEm,dados:EXECUCOES},null,2))};
+    if(rem.sha)body.sha=rem.sha;
+    const r=await fetch(SYNC_API,{method:'PUT',headers:h,body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    chip('ok','Nuvem: sincronizado');
+  }catch(e){
+    chip('erro','Nuvem: falha ao publicar \u2014 vou tentar de novo');
+    clearTimeout(syncTimer);syncTimer=setTimeout(publica,20000);
+  }
+}
+function agendaPublicacao(){clearTimeout(syncTimer);syncTimer=setTimeout(publica,2500);}
+function aplicaRemoto(rem){
+  Object.keys(rem.dados).forEach(function(k){if(EXECUCOES[k])Object.assign(EXECUCOES[k],rem.dados[k]);});
+  salvoEm=rem.salvoEm;gravaLocal();renderAll();chip('ok','Nuvem: sincronizado');
+}
+async function iniciaSync(){
+  try{
+    const rem=await leRemoto();
+    if(rem.dados&&rem.salvoEm>salvoEm){aplicaRemoto(rem);}
+    else if(salvoEm>rem.salvoEm){agendaPublicacao();}
+    else chip(tokenSync()?'ok':'','Nuvem: '+(tokenSync()?'sincronizado':'leitura autom\u00e1tica \u2014 toque p/ ativar publica\u00e7\u00e3o'));
+  }catch(e){chip('erro','Nuvem: sem conex\u00e3o \u2014 dados locais');}
+}
+if(chipEl)chipEl.addEventListener('click',function(){
+  const atual=tokenSync();
+  const v=prompt((atual?'J\u00e1 existe uma chave neste aparelho. Cole outra para trocar, escreva REMOVER para apagar, ou Cancelar para manter.':'Cole a chave de publica\u00e7\u00e3o (GitHub fine-grained token com Contents: Read/Write s\u00f3 no reposit\u00f3rio painel-estacao-operacional).\n\nSem chave, este aparelho l\u00ea as atualiza\u00e7\u00f5es mas n\u00e3o publica.'),'');
+  if(v===null)return;
+  try{
+    if(v.trim().toUpperCase()==='REMOVER')localStorage.removeItem(LS_TOKEN);
+    else if(v.trim())localStorage.setItem(LS_TOKEN,v.trim());
+  }catch(e){}
+  iniciaSync();
+});
+iniciaSync();
+document.addEventListener('visibilitychange',function(){if(!document.hidden)iniciaSync();});
 })();
 </script>
 </body>
