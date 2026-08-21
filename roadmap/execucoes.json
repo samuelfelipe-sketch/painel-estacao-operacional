@@ -1,5 +1,91 @@
 {
   "v": 2,
-  "salvoEm": 0,
-  "dados": {}
+  "salvoEm": 1,
+  "dados": {
+    "1": {
+      "status": "concluido",
+      "data": "2026-07-31",
+      "obs": ""
+    },
+    "2": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "3": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "4": {
+      "status": "concluido",
+      "data": "2026-08-03",
+      "obs": "Gerou uma nova tarefa. Treinar os Líderes do Time Operacional"
+    },
+    "5": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "6": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "7": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "8": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "9": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "10": {
+      "status": "concluido",
+      "data": "2026-07-31",
+      "obs": ""
+    },
+    "11": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "12": {
+      "status": "concluido",
+      "data": "2026-08-17",
+      "obs": ""
+    },
+    "13": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "14": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "15": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "16": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    },
+    "17": {
+      "status": "aberto",
+      "data": "",
+      "obs": ""
+    }
+  }
 }
