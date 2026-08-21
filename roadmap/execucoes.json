@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "salvoEm": 1787331763165,
+  "salvoEm": 1787338360136,
   "dados": {
     "1": {
       "status": "concluido",
@@ -85,7 +85,7 @@
     "17": {
       "status": "aberto",
       "data": "",
-      "obs": "samuel"
+      "obs": ""
     }
   }
 }
