@@ -48,7 +48,11 @@ O site fica em `https://<usuario>.github.io/sapatao-roadmap/`.
 
 ## Observações
 
-- Os campos de execução do `guia.html` (status, data, observações) **são salvos automaticamente no navegador** (localStorage) — ao voltar à página no mesmo aparelho, tudo continua preenchido.
-- Os botões **Exportar dados / Importar** (no topo do Plano de Ação) geram e leem um arquivo JSON: use para backup ou para levar o preenchimento a outro aparelho. Para consolidar de vez no site (valendo para todo mundo), atualize o objeto `EXECUCOES` no `<script>` no final do `guia.html` com o conteúdo do JSON exportado (ou peça ao Claude).
+- Os campos de execução do `guia.html` (status, data, observações) são salvos no navegador **e sincronizados automaticamente entre aparelhos**: a base de dados é o arquivo `roadmap/execucoes.json` deste repositório (cada alteração vira um commit automático, com histórico).
+  - **Ler** é automático em qualquer aparelho — ao abrir o guia, ele baixa a versão mais recente.
+  - **Publicar** exige uma chave do GitHub colada uma única vez por aparelho: clique no chip **☁ Nuvem** no topo do Plano de Ação e cole um fine-grained token com permissão *Contents: Read and write* somente neste repositório (crie em github.com → Settings → Developer settings → Fine-grained tokens; é o mesmo tipo de chave usado pelo app `fluxo-pessoal`). A chave fica só no localStorage do aparelho, nunca no código.
+  - Vale a última alteração (comparação por data/hora). Sem internet, tudo continua funcionando localmente e publica quando reconectar.
+  - **Atenção**: o repositório é público, então o conteúdo de `execucoes.json` (status, datas, observações) é legível por quem achar o repositório — evite dados sensíveis nas observações.
+- Os botões **Exportar dados / Importar** continuam existindo como backup manual em JSON.
 - A detecção de ações atrasadas usa a data do dispositivo do visitante.
 - Para atualizar prazos, responsáveis ou ações, edite o array `ACOES` no mesmo `<script>` do `guia.html`.
