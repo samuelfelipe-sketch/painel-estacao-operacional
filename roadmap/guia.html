@@ -236,6 +236,8 @@ tr.late td{background:#FCF0ED!important}
       <button class="nav-link" data-t="cola"><span class="dot"></span>Cola Rápida</button>
       <button class="nav-link" data-t="roadmap"><span class="dot"></span>Roadmap Oficial</button>
       <button class="nav-link" data-t="gut"><span class="dot"></span>Plano de Ação</button>
+    <div class="grupo">Ajustes</div>
+      <button class="nav-link" data-t="config"><span class="dot"></span>Configura&ccedil;&otilde;es</button>
     <div class="grupo">Sair</div>
       <a class="nav-link" href="index.html" style="text-decoration:none"><span class="dot"></span>&#8592; Página inicial</a>
   </div>
@@ -759,7 +761,36 @@ tr.late td{background:#FCF0ED!important}
 
   <div id="exec-cards" aria-label="Lista de ações do plano"></div>
 
-  <p class="lead" style="margin-top:10px;font-size:13px">No celular, toque numa ação para abrir e preencher status, data e observações. Na versão publicada online, suas marcações são salvas automaticamente neste navegador. Elas ficam neste dispositivo — para o registro oficial (e para sincronizar em todo lugar), me conte as execuções que eu gravo direto no arquivo.</p>
+  <p class="lead" style="margin-top:10px;font-size:13px">No celular, toque numa ação para abrir e preencher status, data e observações. Suas marcações são salvas automaticamente e sincronizadas entre os aparelhos — o estado da nuvem aparece no chip acima e os ajustes ficam na aba <b>Configurações</b>.</p>
+</section>
+
+
+<!-- ============ CONFIGURAÇÕES ============ -->
+<section id="config">
+  <div class="km"><span class="marco">Ajustes</span><h2>Configurações</h2></div>
+  <p class="lead">Sincronização automática do Plano de Ação entre aparelhos. A base de dados é o próprio repositório do site — cada alteração vira uma versão registrada, com histórico.</p>
+
+  <div class="card">
+    <h3 style="margin-top:2px">&#9729; Nuvem</h3>
+    <p class="lead" style="margin:8px 0 14px"><b>Estado:</b> <span id="cfg-status">verificando&hellip;</span></p>
+    <div id="cfg-tem-chave" hidden>
+      <p class="lead" style="margin:0 0 12px">&#10004; Este aparelho tem uma chave salva e <b>publica</b> as alterações automaticamente.</p>
+      <button type="button" class="ord-btn" id="cfg-remover">Remover chave deste aparelho</button>
+    </div>
+    <div id="cfg-sem-chave" hidden>
+      <p class="lead" style="margin:0 0 12px">Este aparelho <b>lê</b> as atualizações automaticamente, mas ainda <b>não publica</b>. Para publicar, cole uma chave do GitHub — fine-grained token com <b>Contents: Read and write</b> apenas no repositório <b>painel-estacao-operacional</b>. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Criar chave no GitHub &rarr;</a></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="password" id="cfg-token" placeholder="Cole a chave aqui (github_pat_&hellip; ou ghp_&hellip;)" autocomplete="off" style="flex:1;min-width:220px;font-family:inherit;font-size:14px;padding:10px 12px;border:1.5px solid var(--linha);border-radius:8px;color:var(--verde)">
+        <button type="button" class="ord-btn active" id="cfg-salvar">Salvar chave</button>
+      </div>
+      <p class="lead" style="margin:10px 0 0;font-size:12.5px">A chave fica guardada só neste aparelho — nunca vai para o código do site.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3 style="margin-top:2px">Acesso e dados</h3>
+    <p class="lead" style="margin:8px 0 0">Backup manual: botões <b>Exportar/Importar</b> no Plano de Ação. &middot; Histórico completo das execuções: <a href="https://github.com/samuelfelipe-sketch/painel-estacao-operacional/commits/main/roadmap/execucoes.json" target="_blank" rel="noopener">ver no GitHub &rarr;</a> &middot; Para trocar a senha do site, atualize o <b>auth.js</b> (peça ao Claude).</p>
+  </div>
 </section>
 
 </main>
@@ -943,11 +974,18 @@ let syncTimer=null;
 function tokenSync(){try{return localStorage.getItem(LS_TOKEN)||''}catch(e){return ''}}
 function b64enc(str){return btoa(unescape(encodeURIComponent(str)));}
 function b64dec(str){return decodeURIComponent(escape(atob(str.replace(/\s/g,''))));}
-function chip(classe,txt){if(!chipEl)return;chipEl.className='sync-chip'+(classe?' '+classe:'');chipEl.innerHTML='&#9729; '+txt;}
+const cfgStatus=document.getElementById('cfg-status'),cfgTem=document.getElementById('cfg-tem-chave'),cfgSem=document.getElementById('cfg-sem-chave');
+function atualizaCfg(){if(!cfgTem)return;const t=!!tokenSync();cfgTem.hidden=!t;cfgSem.hidden=t;}
+function chip(classe,txt){if(chipEl){chipEl.className='sync-chip'+(classe?' '+classe:'');chipEl.innerHTML='&#9729; '+txt;}if(cfgStatus)cfgStatus.textContent=txt.replace(/^Nuvem: /,'');}
+let chaveInvalida=false;
 async function leRemoto(){
   const h={'Accept':'application/vnd.github+json'};
   if(tokenSync())h['Authorization']='Bearer '+tokenSync();
-  const r=await fetch(SYNC_API+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  let r=await fetch(SYNC_API+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  if((r.status===401||r.status===403)&&tokenSync()){
+    chaveInvalida=true;
+    r=await fetch(SYNC_API+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+  }else if(r.ok){chaveInvalida=false;}
   if(r.status===404)return{sha:null,salvoEm:0,dados:null};
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();
@@ -955,10 +993,11 @@ async function leRemoto(){
   return{sha:j.sha,salvoEm:doc.salvoEm||0,dados:doc.dados||null};
 }
 async function publica(){
-  if(!tokenSync()){chip('','Nuvem: s\u00f3 leitura \u2014 toque p/ ativar publica\u00e7\u00e3o');return;}
+  if(!tokenSync()){chip('','Nuvem: s\u00f3 leitura \u2014 ative em Configura\u00e7\u00f5es');return;}
   try{
     chip('pendente','Nuvem: publicando\u2026');
     const rem=await leRemoto();
+    if(chaveInvalida){chip('erro','Nuvem: chave inv\u00e1lida \u2014 confira em Configura\u00e7\u00f5es');return;}
     if(rem.dados&&rem.salvoEm>salvoEm){aplicaRemoto(rem);return;}
     const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
     const body={message:'chore: sincroniza execu\u00e7\u00f5es do Roadmap Comercial (autom\u00e1tico)',branch:'main',
@@ -982,19 +1021,25 @@ async function iniciaSync(){
     const rem=await leRemoto();
     if(rem.dados&&rem.salvoEm>salvoEm){aplicaRemoto(rem);}
     else if(salvoEm>rem.salvoEm){agendaPublicacao();}
-    else chip(tokenSync()?'ok':'','Nuvem: '+(tokenSync()?'sincronizado':'leitura autom\u00e1tica \u2014 toque p/ ativar publica\u00e7\u00e3o'));
+    else if(chaveInvalida)chip('erro','Nuvem: chave inv\u00e1lida \u2014 confira em Configura\u00e7\u00f5es');
+    else chip(tokenSync()?'ok':'','Nuvem: '+(tokenSync()?'sincronizado':'leitura autom\u00e1tica \u2014 publica\u00e7\u00e3o desativada'));
   }catch(e){chip('erro','Nuvem: sem conex\u00e3o \u2014 dados locais');}
 }
 if(chipEl)chipEl.addEventListener('click',function(){
-  const atual=tokenSync();
-  const v=prompt((atual?'J\u00e1 existe uma chave neste aparelho. Cole outra para trocar, escreva REMOVER para apagar, ou Cancelar para manter.':'Cole a chave de publica\u00e7\u00e3o (GitHub fine-grained token com Contents: Read/Write s\u00f3 no reposit\u00f3rio painel-estacao-operacional).\n\nSem chave, este aparelho l\u00ea as atualiza\u00e7\u00f5es mas n\u00e3o publica.'),'');
-  if(v===null)return;
-  try{
-    if(v.trim().toUpperCase()==='REMOVER')localStorage.removeItem(LS_TOKEN);
-    else if(v.trim())localStorage.setItem(LS_TOKEN,v.trim());
-  }catch(e){}
-  iniciaSync();
+  const l=document.querySelector('.nav-link[data-t="config"]');if(l)l.click();
 });
+const cfgSalvar=document.getElementById('cfg-salvar'),cfgRemover=document.getElementById('cfg-remover'),cfgCampo=document.getElementById('cfg-token');
+if(cfgSalvar)cfgSalvar.addEventListener('click',function(){
+  const v=cfgCampo.value.trim();
+  if(!v){cfgCampo.focus();return;}
+  try{localStorage.setItem(LS_TOKEN,v);}catch(e){}
+  cfgCampo.value='';atualizaCfg();iniciaSync();
+});
+if(cfgRemover)cfgRemover.addEventListener('click',function(){
+  try{localStorage.removeItem(LS_TOKEN);}catch(e){}
+  atualizaCfg();iniciaSync();
+});
+atualizaCfg();
 iniciaSync();
 document.addEventListener('visibilitychange',function(){if(!document.hidden)iniciaSync();});
 })();
