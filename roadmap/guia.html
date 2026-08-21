@@ -127,6 +127,11 @@ footer{background:var(--fundo);color:var(--verde-suave);padding:20px 0;font-size
 footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
 /* ---------- Mobile: gaveta ---------- */
+@media (min-width:1280px){
+  .wrap{max-width:1240px}
+  main.wrap>section{max-width:836px;margin-left:auto;margin-right:auto}
+  main.wrap>section#gut{max-width:none}
+}
 @media (max-width:900px){
   .topbar{display:flex}
   aside{position:fixed;left:0;top:0;bottom:0;z-index:80;transform:translateX(-100%);transition:transform .22s;height:100dvh}
@@ -858,7 +863,7 @@ function renderAll(){
   bar.style.width=(done/ACOES.length*100)+'%';
   lateChip.hidden=atrasadas===0;
   lateN.textContent=atrasadas;
-  document.querySelectorAll('.ord-btn').forEach(function(b){
+  document.querySelectorAll('.ord-btn[data-sort]').forEach(function(b){
     const on=b.dataset.sort===ordem.chave;
     b.classList.toggle('active',on);
     b.innerHTML=(b.dataset.sort==='gut'?'G×U×T':'Prazo')+(on?(ordem.dir===1?' &#9650;':' &#9660;'):'');
@@ -891,7 +896,7 @@ function defineOrdem(chave){
   else ordem={chave:chave,dir:chave==='prazo'?1:-1};
   renderAll();
 }
-document.querySelectorAll('.ord-btn').forEach(function(b){b.addEventListener('click',function(){defineOrdem(b.dataset.sort);});});
+document.querySelectorAll('.ord-btn[data-sort]').forEach(function(b){b.addEventListener('click',function(){defineOrdem(b.dataset.sort);});});
 document.querySelectorAll('th.th-sort').forEach(function(th){th.addEventListener('click',function(){defineOrdem(th.dataset.sort);});});
 
 /* --- Exportar / importar os dados preenchidos --- */
