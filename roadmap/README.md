@@ -17,7 +17,7 @@ Tudo é HTML puro — sem build, sem dependências, sem backend. As fontes vêm 
 
 ## Acesso (login e senha)
 
-Todas as páginas pedem senha antes de abrir. A validação é feita no navegador comparando o **hash SHA-256** — a senha não aparece em texto claro no código.
+As páginas pedem senha antes de abrir — exceto o `resumo.html` (Método Reborn), que é aberto de propósito para compartilhar com o Club Reborn. A validação é feita no navegador comparando o **hash SHA-256** — a senha não aparece em texto claro no código.
 
 - **Senha inicial:** `pass123`
 - Marcando "Manter conectado neste dispositivo", não pede de novo naquele aparelho. O link **Sair** no rodapé da página inicial desconecta.
