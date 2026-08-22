@@ -279,12 +279,7 @@ body.so-leitura .fu-novo,body.so-leitura .fu-del{display:none!important}
   <div class="wrap">
     <h1>Planejamento<br><span>Estratégico</span></h1>
     <p class="sub">As 25 ações estratégicas do PE Reborn com KPIs, prazos, responsáveis e follow-ups das reuniões — mais o diagnóstico completo para consulta.</p>
-    <div class="painel">
-      <div class="bomba"><div class="lbl">Maturidade</div><div class="val">81<small>/140</small></div></div>
-      <div class="bomba"><div class="lbl">Ações estratégicas</div><div class="val">25</div></div>
-      <div class="bomba"><div class="lbl">Concluídas</div><div class="val" id="bomba-done">0</div></div>
-      <div class="bomba"><div class="lbl">Próximo follow-up</div><div class="val" style="font-size:17px;padding-top:6px" id="bomba-fu">—</div></div>
-    </div>
+    <div class="painel" id="hero-bombas"></div>
   </div>
 </header>
 <div class="faixa" id="hero-faixa"></div>
@@ -292,276 +287,31 @@ body.so-leitura .fu-novo,body.so-leitura .fu-del{display:none!important}
 <main class="wrap">
 
 <!-- ============ PAINEL ============ -->
-<section id="painel" class="active">
-  <div class="km"><span class="marco">Execução</span><h2>Painel das Ações Estratégicas</h2></div>
-  <div class="km-btn-row" style="text-align:center;margin:24px 0 28px"><button type="button" class="ord-btn" style="border:1.5px solid var(--laranja);color:var(--laranja-escuro);background:var(--fundo);border-radius:999px;padding:12px 28px;font-size:14.5px;font-weight:700" data-vai="acoes">Abrir Ações Estratégicas &#8594;</button></div>
-  <p class="lead">As 25 ações priorizadas pela Matriz G×U×T, atualizadas conforme o preenchimento: pendentes com prazo em ordem de vencimento, sem prazo definido por prioridade e concluídas riscadas no fim.</p>
-  <div class="card" id="painel-acoes"></div>
-
-  <h3>Rodadas de follow-up</h3>
-  <p class="lead">Reuniões de acompanhamento do PE — os registros de cada rodada ficam no histórico de cada ação.</p>
-  <div class="card" id="painel-rodadas"></div>
-
-  <h3>Ações por responsável</h3>
-  <div class="tbl"><table id="painel-resp"></table></div>
-</section>
+<section id="painel" class="active"></section>
 
 <!-- ============ AÇÕES ============ -->
-<section id="acoes">
-  <div class="km"><span class="marco">Prioridade G×U×T</span><h2>Ações Estratégicas</h2></div>
-  <p class="lead">Toque numa ação para abrir: KPI, meta, recursos, investimento e o <b>histórico de follow-ups</b> — registre o acompanhamento de cada reunião ali mesmo. Tudo é salvo automaticamente e sincronizado entre os aparelhos.</p>
-
-  <div class="card exec-resumo">
-    <div class="exec-num"><b id="exec-count">0</b> de 25 concluídas</div>
-    <div class="exec-barra"><div id="exec-bar"></div></div>
-    <div id="exec-late" class="exec-late-chip" hidden>&#9888; <b id="exec-late-n">0</b> atrasada(s)</div>
-  </div>
-
-  <div class="ac-filtros" role="group" aria-label="Filtros">
-    <span>Responsável:</span>
-    <button type="button" class="ord-btn f-resp active" data-resp="todos">Todos</button>
-    <button type="button" class="ord-btn f-resp" data-resp="Samuel">Samuel</button>
-    <button type="button" class="ord-btn f-resp" data-resp="Maicon">Maicon</button>
-    <button type="button" class="ord-btn f-resp" data-resp="Gabrielle">Gabrielle</button>
-    <span style="flex:1"></span>
-    <span>Ordenar:</span>
-    <button type="button" class="ord-btn f-ord active" data-ord="gut">G×U×T</button>
-    <button type="button" class="ord-btn f-ord" data-ord="prazo">Prazo</button>
-  </div>
-  <div style="margin:4px 0 10px"><span class="sync-chip" id="sync-chip">&#9729; Nuvem: conectando…</span></div>
-
-  <div id="ac-cards" aria-label="Lista de ações estratégicas"></div>
-</section>
+<section id="acoes"None></section>
 
 <!-- ============ DIAGNÓSTICO ============ -->
-<section id="diagnostico">
-  <div class="km"><span class="marco">Consulta</span><h2>Diagnóstico de Maturidade</h2></div>
-  <p class="lead">Avaliação da empresa em 7 dimensões (nota máxima 20 por dimensão). <b>Pontuação total: 81 de 140.</b></p>
-  <div class="tbl"><table>
-    <tr><th>Dimensão</th><th>Nota</th><th>Leitura</th></tr>
-    <tr><td>Gestão do Negócio</td><td><b>14</b>/20</td><td>Melhor dimensão</td></tr>
-    <tr><td>Resultados</td><td><b>13</b>/20</td><td>—</td></tr>
-    <tr><td>Contabilidade &amp; Finanças</td><td><b>12</b>/20</td><td>—</td></tr>
-    <tr><td>Visão e Estratégia</td><td><b>11</b>/20</td><td>—</td></tr>
-    <tr><td>Gestão Comercial</td><td><b>11</b>/20</td><td>—</td></tr>
-    <tr><td>Gestão de Operações</td><td><b>11</b>/20</td><td>—</td></tr>
-    <tr><td><b>Gestão de Pessoas</b></td><td><b>9</b>/20</td><td><b>Dimensão mais frágil</b></td></tr>
-  </table></div>
-
-  <h3>Matriz de Gargalos</h3>
-  <p class="lead">O que limita o desempenho do negócio — os três primeiros são os priorizados.</p>
-  <div class="tbl"><table>
-    <tr><th>#</th><th>Gargalo</th><th>Área</th><th>Impacto no negócio</th></tr>
-    <tr><td><b>1</b></td><td><b>Realizar mais atendimentos</b></td><td>Comercial</td><td>Não ocupa 100% da capacidade de operação</td></tr>
-    <tr><td><b>2</b></td><td><b>Desenvolvimento de time</b></td><td>Talentos Humanos</td><td>Falta de direcionamento e foco no que mais importa</td></tr>
-    <tr><td><b>3</b></td><td><b>Processos bem definidos</b></td><td>Todos os setores</td><td>Falta de priorização e saber como e o que fazer</td></tr>
-    <tr><td>·</td><td>Comunicar melhor para os clientes</td><td>Marketing</td><td>Falta de atratividade da empresa para os clientes</td></tr>
-    <tr><td>·</td><td>Cross-Sell / Up-Sell</td><td>Operação</td><td>Ticket médio baixo / atendimento</td></tr>
-    <tr><td>·</td><td>Precificação de Combustíveis</td><td>Samuel</td><td>Não existe um processo definido fora do Samuel</td></tr>
-    <tr><td>·</td><td>Turnover</td><td>Talentos Humanos</td><td>Alta rotatividade impede a formação de time</td></tr>
-    <tr><td>·</td><td>Indicadores espalhados</td><td>TI</td><td>Muito esforço para buscar as informações e para todos terem acesso</td></tr>
-  </table></div>
-
-  <h3>Dependência do Dono</h3>
-  <p class="lead">Grau em que o negócio depende do empresário em cada área (1 = independente · 5 = dependência total).</p>
-  <div class="tbl"><table>
-    <tr><th>Área / Processo</th><th>Nível</th><th>Leitura</th></tr>
-    <tr><td>Estratégia e planejamento</td><td><b>5</b></td><td>Dependência total</td></tr>
-    <tr><td>Marketing e comunicação</td><td><b>5</b></td><td>Dependência total</td></tr>
-    <tr><td>Vendas e prospecção</td><td><b>4</b></td><td>Alta dependência</td></tr>
-    <tr><td>Gestão financeira</td><td><b>4</b></td><td>Alta dependência</td></tr>
-    <tr><td>Tomada de decisões operacionais</td><td>3</td><td>Moderada</td></tr>
-    <tr><td>Liderança e gestão de pessoas</td><td>3</td><td>Moderada</td></tr>
-    <tr><td>Atendimento ao cliente</td><td>1</td><td>Independente</td></tr>
-    <tr><td>Entrega / Produção / Operação</td><td>1</td><td>Independente</td></tr>
-  </table></div>
-</section>
+<section id="diagnostico"None></section>
 
 <!-- ============ SWOT ============ -->
-<section id="swot">
-  <div class="km"><span class="marco">Consulta</span><h2>Análise SWOT</h2></div>
-  <p class="lead">Diagnóstico estratégico — ambiente interno (forças e fraquezas) e externo (oportunidades e ameaças).</p>
-  <div class="quad">
-    <div class="card"><div class="qt">💪 Forças <span class="pill">internas</span></div><ul>
-      <li>Localização Geográfica</li><li>Talentos Humanos</li><li>Marca</li><li>Ciclo Diesel</li><li>Refeições</li></ul></div>
-    <div class="card"><div class="qt">⚠️ Fraquezas <span class="pill">internas</span></div><ul>
-      <li>Desenvolvimento de Time</li><li>Atendimento (Operações)</li><li>Estrutura (Estética + Limpeza)</li><li>Capacidade Operacional Ociosa (qtde de atendimentos)</li><li>Processos Não Estruturados</li></ul></div>
-    <div class="card"><div class="qt">🌟 Oportunidades <span class="pill amb">externas</span></div><ul>
-      <li>Pessoas 50+ buscando oportunidades de trabalho</li><li>Aplicativos (gestão de relacionamento e consumo)</li><li>Consolidação de pontos de parada (complexo / estação)</li><li>Consumo de produtos mais saudáveis</li><li>IA — geração de promoções exclusivas para o nicho de clientes</li></ul></div>
-    <div class="card"><div class="qt">🌩️ Ameaças <span class="pill amb">externas</span></div><ul>
-      <li>Informalização do trabalho (consignado + auxílios governamentais)</li><li>Diminuição do consumo de combustíveis fósseis (elétricos, híbridos)</li><li>Endividamento da população</li><li>Aumento da Necessidade de Capital de Giro</li><li>Comoditização dos veículos (baixo upsell e cross-sell)</li></ul></div>
-  </div>
-
-  <h3>Cruzamentos estratégicos</h3>
-  <div class="quad">
-    <div class="card"><div class="qt">FO — Forças + Oportunidades</div><p class="lead" style="margin-bottom:6px">Como usar nossas forças para capturar as oportunidades?</p><ul>
-      <li>Localização Geográfica + Consolidação de Pontos de Parada</li>
-      <li>Talentos Humanos + Pessoas 50+ buscando trabalho</li>
-      <li>Marca + Aplicativos (relacionamento e consumo)</li>
-      <li>Ciclo Diesel + Consolidação de Pontos de Parada</li>
-      <li>Refeições + Consumo de produtos mais saudáveis</li></ul></div>
-    <div class="card"><div class="qt">FA — Forças + Ameaças</div><p class="lead" style="margin-bottom:6px">Como usar nossas forças para neutralizar as ameaças?</p><ul>
-      <li>Talentos Humanos + Informalização do Trabalho</li>
-      <li>Localização Geográfica + Queda dos combustíveis fósseis</li>
-      <li>Refeições + Endividamento da População</li>
-      <li>Ciclo Diesel + Aumento da NCG</li>
-      <li>Marca + Queda dos combustíveis fósseis</li></ul></div>
-    <div class="card"><div class="qt">FrO — Fraquezas + Oportunidades</div><p class="lead" style="margin-bottom:6px">Como superar fraquezas para não perder oportunidades?</p><ul>
-      <li>Desenvolvimento de Time + Pessoas 50+ buscando trabalho</li>
-      <li>Atendimento (Operações) + Consolidação de pontos de parada</li>
-      <li>Estrutura (Estética + Limpeza) + Consolidação de pontos de parada</li>
-      <li>Processos Não Estruturados + IA para promoções de nicho</li>
-      <li>Atendimento (Operações) + Consumo de produtos mais saudáveis</li></ul></div>
-    <div class="card"><div class="qt">FrA — Fraquezas + Ameaças</div><p class="lead" style="margin-bottom:6px">Como reduzir fraquezas que nos expõem às ameaças?</p><ul>
-      <li>Desenvolvimento de Time + Informalização do trabalho</li>
-      <li>Atendimento (Operações) + Queda dos combustíveis fósseis</li>
-      <li>Atendimento (Operações) + Comoditização dos veículos</li>
-      <li>Estrutura (Estética + Limpeza) + Queda dos combustíveis fósseis</li>
-      <li>Capacidade Ociosa + Queda dos combustíveis fósseis</li></ul></div>
-  </div>
-</section>
+<section id="swot"None></section>
 
 <!-- ============ BCG ============ -->
-<section id="bcg">
-  <div class="km"><span class="marco">Consulta</span><h2>Matriz BCG</h2></div>
-  <p class="lead">Portfólio de produtos e serviços por crescimento de mercado × participação.</p>
-  <div class="quad">
-    <div class="card"><div class="qt">⭐ Estrela <span class="pill">alto crescimento · alta participação</span></div><p class="lead" style="margin-bottom:6px">Investir para manter liderança.</p><ul>
-      <li>Refeições</li><li>Ciclo Diesel</li><li>Gasolina Aditivada</li></ul></div>
-    <div class="card"><div class="qt">🐄 Vaca Leiteira <span class="pill">baixo crescimento · alta participação</span></div><p class="lead" style="margin-bottom:6px">Extrair caixa para financiar outros.</p><ul>
-      <li>Gasolina Comum</li><li>Food</li><li>Bebidas Alcoólicas</li></ul></div>
-    <div class="card"><div class="qt">❓ Ponto de Interrogação <span class="pill amb">alto crescimento · baixa participação</span></div><p class="lead" style="margin-bottom:6px">Decidir: investir ou abandonar.</p><ul>
-      <li>Estética Automotiva</li><li>Lubrificantes</li><li>Lavagem</li></ul></div>
-    <div class="card"><div class="qt">🍍 Abacaxi <span class="pill amb">baixo crescimento · baixa participação</span></div><p class="lead" style="margin-bottom:6px">Eliminar ou manter com cautela.</p><ul>
-      <li>Presentes</li><li>Filtros Antigos</li><li>Tabaco</li></ul></div>
-  </div>
-</section>
+<section id="bcg"None></section>
 
 <!-- ============ CENÁRIO ============ -->
-<section id="cenario">
-  <div class="km"><span class="marco">Consulta</span><h2>Avaliação de Cenário</h2></div>
-  <p class="lead">Leitura do ambiente externo em 5 eixos: tendências, oportunidades e ameaças identificadas.</p>
-  <div id="cenario-cards"></div>
-</section>
+<section id="cenario"None></section>
 
 <!-- ============ ICP ============ -->
-<section id="icp">
-  <div class="km"><span class="marco">Consulta</span><h2>Cliente-Alvo (ICP)</h2></div>
-  <p class="lead">Para quem a Estação Sapatão cria o máximo de valor.</p>
-
-  <h3>Cliente primário — B2C · Consumidor Final</h3>
-  <div class="card">
-    <p><b>Segmento:</b> B2C — Consumidor Final · Classe B</p>
-    <p><b>Produtos / serviços:</b> Ciclo Otto (Gasolina, Etanol, GNV), Loja de Conveniência, Produtos Automotivos, Serviços</p>
-    <p><b>Potencial:</b> ~300–420 mil pessoas/mês passando na BR-116 (ticket médio R$ 180,00 · 26 litros)</p>
-    <p><b>Contexto do cliente:</b> usa o carro todo dia, abastecimento constante, leva os filhos na escola, tem família, passeia. Aberto a outros consumos (loja, automotivos, lavagem). Valoriza bom atendimento, banheiro limpo e qualidade de produtos.</p>
-    <p><b>Progresso que quer realizar (Job to be Done):</b> ser percebido rápido na bomba, pacote de gentilezas (parabrisa, pneus, lixinho, água do limpador, pagar no carro), entrar e sair rápido, mais quilometragem (menos paradas), estacionamento próximo, preço justo.</p>
-    <p><b>Como entregamos:</b> combustível de qualidade (mais quilometragem); pacote de gentilezas entregue parcialmente (~20%); ambiente menos sujo.</p>
-    <p><b>⚠ Fora do Job:</b> cashback agressivo de preço, App (descontos), segurança, qualidade de produtos.</p>
-    <p><b>Canal:</b> varejo (pista + loja), saída da avenida/rodovia; indicação.</p>
-    <p><b>Diferencial:</b> localização, fácil acesso, produtos de qualidade, pagamento no veículo.</p>
-    <p><b>⚠ Cliente fora do perfil que consome energia desproporcional:</b> tickets baixos (R$ 20–50).</p>
-  </div>
-
-  <h3>Cliente secundário — B2B · Frotista</h3>
-  <div class="card">
-    <p><b>Segmento:</b> B2B — Frotista</p>
-    <p><b>Produtos / serviços:</b> Ciclo Diesel, Ciclo Otto, Produtos Automotivos</p>
-    <p class="lead" style="margin-bottom:0">Demais campos do perfil ainda a preencher na próxima revisão do PE.</p>
-  </div>
-
-  <h3>Fatores qualificadores de pedido</h3>
-  <p class="lead">O mínimo que o mercado exige para estar na disputa — e onde há lacunas.</p>
-  <div class="tbl"><table>
-    <tr><th>Critério mínimo do mercado</th><th>Atendemos?</th></tr>
-    <tr><td>Qualidade de produto (sem adulteração / sem fama de)</td><td>✔ Sim</td></tr>
-    <tr><td>Preço justo (competitivo com o mercado)</td><td>✔ Sim</td></tr>
-    <tr><td>Banheiro limpo</td><td><b>Parcialmente</b></td></tr>
-    <tr><td>Atendimento rápido e cordial</td><td><b>Parcialmente</b></td></tr>
-    <tr><td>Sensação de segurança</td><td><b>Parcialmente</b></td></tr>
-  </table></div>
-</section>
+<section id="icp"None></section>
 
 <!-- ============ MODELO ============ -->
-<section id="modelo">
-  <div class="km"><span class="marco">Consulta</span><h2>Modelo de Negócio</h2></div>
-
-  <h3>Core Business</h3>
-  <div class="card">
-    <p><b>Qual é o nosso core business?</b> Compra e venda de combustíveis e mercadorias.</p>
-    <p><b>Por que somos melhores nisso do que a concorrência?</b></p>
-    <ul><li>Relacionamento com fornecedores (ex.: Shell)</li><li>Bom atendimento (boa gestão de pessoas)</li><li>Bom acolhimento dos clientes (cultural — política de CS)</li></ul>
-    <p><b>⚠ Fora da entrega de valor (consome recursos):</b> diversidade absurda de produtos; holding de imóveis.</p>
-    <p><b>⚠ Receita que desvia o foco:</b> holding (inquilinos) / aluguéis.</p>
-  </div>
-
-  <h3>Análise VRIN</h3>
-  <p class="lead">Valioso · Raro · Inimitável · Não-substituível → vantagem competitiva sustentável.</p>
-  <div class="tbl"><table>
-    <tr><th>Recurso / capacidade</th><th>V</th><th>R</th><th>I</th><th>N</th><th>Sustentável?</th></tr>
-    <tr><td>Localização Geográfica</td><td>S</td><td>S</td><td>S</td><td>N</td><td>N</td></tr>
-    <tr><td>Talentos Humanos</td><td>S</td><td>S</td><td>N</td><td>S</td><td><b>S</b></td></tr>
-    <tr><td>Relacionamento c/ fornecedores (Shell)</td><td>S</td><td>N</td><td>N</td><td>S</td><td><b>S</b></td></tr>
-    <tr><td>App</td><td>S</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
-    <tr><td>Loja de Conveniência</td><td>S</td><td>S</td><td>N</td><td>N</td><td><b>S</b></td></tr>
-    <tr><td>Empresa familiar em profissionalização (jeito Sapatão)</td><td>S</td><td>S</td><td>S</td><td>S</td><td><b>S</b></td></tr>
-    <tr><td>Marca</td><td>S</td><td>S</td><td>S</td><td>S</td><td><b>S</b></td></tr>
-  </table></div>
-
-  <h3>Como criamos, entregamos e capturamos valor</h3>
-  <div class="card">
-    <p><b>Para quem?</b> B2C — Consumidor Final (Classe B) · B2B — Frotista</p>
-    <p><b>Que valor?</b> B2C: agilidade, ambiente agradável e mix · B2B: qualidade de produto, qualidade de atendimento e preço</p>
-    <p><b>Como entregamos?</b> Venda presencial · Relacionamento presencial, eventos e App</p>
-    <p><b>Como geramos receita?</b> Venda de combustíveis e mercadorias − CMV − custos de operação</p>
-    <p><b>⚠ Estruturas fora da entrega de valor:</b> gestão da Holding (inquilinos)</p>
-    <p><b>⚠ Canais que consomem recursos com pouco uso dos melhores clientes:</b> Instagram? Panfletos?</p>
-  </div>
-
-  <h3>Alavancas de resultado</h3>
-  <div class="card"><span class="pill">Volume de Vendas</span><span class="pill">Ticket Médio</span><span class="pill">CMV</span><span class="pill">Mix de Gasolina Aditivada</span><span class="pill">Quantidade de Postos</span><span class="pill">App</span><span class="pill">Produtividade</span></div>
-</section>
+<section id="modelo"None></section>
 
 <!-- ============ CONFIG ============ -->
-<section id="config">
-  <div class="km"><span class="marco">Ajustes</span><h2>Configurações</h2></div>
-  <p class="lead">O acesso e a sincronização são <b>unificados com o Roadmap Comercial</b>: a mesma senha entra nos dois, e a mesma chave de publicação sincroniza os dois. A troca de senha continua na aba Configurações do Roadmap.</p>
-  <div class="card">
-    <p><b>Estado da nuvem:</b> <span id="cfg-status">—</span></p>
-    <div id="cfg-tem-chave" hidden>
-      <p class="lead" style="margin:8px 0">Este aparelho tem a chave de publicação — as alterações são gravadas na nuvem automaticamente.</p>
-      <button type="button" class="cfg-btn sec" id="cfg-remover">Remover a chave deste aparelho</button>
-    </div>
-    <div id="cfg-sem-chave" hidden>
-      <p class="lead" style="margin:8px 0">Sem chave de publicação: este aparelho só lê. Entre digitando a senha (a chave desce da nuvem sozinha) ou cole aqui a mesma chave usada no Roadmap.</p>
-      <input type="password" class="cfg-token" id="cfg-token" placeholder="Chave de publicação (fine-grained token)" autocomplete="off">
-      <button type="button" class="cfg-btn" id="cfg-salvar">Salvar chave neste aparelho</button>
-    </div>
-  </div>
-
-  <h3>Minha senha</h3>
-  <div class="card" style="max-width:420px">
-    <p class="lead" style="margin-bottom:8px">A senha identifica o seu usuário — vale para o Roadmap e para o Planejamento. Precisa da chave de publicação neste aparelho.</p>
-    <input type="password" class="sn-campo" id="sn-atual" placeholder="Senha atual" autocomplete="off">
-    <input type="password" class="sn-campo" id="sn-nova" placeholder="Senha nova (mínimo 6 caracteres)" autocomplete="off">
-    <input type="password" class="sn-campo" id="sn-conf" placeholder="Repetir a senha nova" autocomplete="off">
-    <button type="button" class="cfg-btn" id="sn-trocar">Alterar minha senha</button>
-    <p class="lead" id="sn-msg" style="margin-top:8px"></p>
-  </div>
-
-  <div id="cfg-usuarios" hidden>
-    <h3>Usuários e permissões</h3>
-    <p class="lead">Cada pessoa entra com a própria senha (é ela que identifica o usuário). Permissão por painel: <b>Edita</b>, <b>Só lê</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo, além de gerir os usuários.</p>
-    <div class="card">
-      <div class="tbl"><table class="us-tbl" id="us-tbl"></table></div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-        <button type="button" class="cfg-btn" id="us-add" style="margin-top:0">+ Adicionar usuário</button>
-        <button type="button" class="cfg-btn" id="us-salvar" style="margin-top:0;background:var(--laranja)">Salvar alterações</button>
-      </div>
-      <p class="lead" id="us-msg" style="margin-top:10px;margin-bottom:0"></p>
-    </div>
-  </div>
-</section>
+<section id="config"None></section>
 
 </main>
 </div><!-- /conteudo -->
@@ -597,19 +347,82 @@ document.querySelectorAll('[data-vai]').forEach(b=>b.addEventListener('click',()
 
 <script>
 (function(){
-/* ============ Dados estáticos (da planilha do PE Reborn) ============ */
-const ACOES=[{"id": 1, "acao": "Script / Processo de Vendas", "kpi": "Ticket Médio", "meta": "140", "resp": "Maicon", "prazo": "2026-06-30", "recurso": "- Estruturação e padronização do script de vendas\n- Desenvolvimento de materiais de apoio (QR Code, comunicação visual)\n- Treinamento prático da equipe de pista e loja\n- Capacitação de liderança para acompanhamento e correção\n- Implementação de indicadores de performance (ticket médio e conversão)\n- Rotina de gestão, feedback e otimização contínua", "invest": "R$ 2.100,00", "g": 5, "u": 5, "t": 5, "gut": 125}, {"id": 2, "acao": "Descritivo de cargos claros e formalizados para toda companhia", "kpi": "Avaliação de Acompanhamento (Líder p/ Liderado)", "meta": "100% do time avaliado", "resp": "Gabrielle", "prazo": "2026-05-31", "recurso": "-Atendimento individual com cada colaborador\n-Duração média de 20 minutos por colaborador\n-Apresentação do descritivo de cargo impresso\n-Esclarecimento de dúvidas\n-Formalização por meio de assinatura", "invest": "R$ 3.328,00", "g": 5, "u": 5, "t": 5, "gut": 125}, {"id": 3, "acao": "Aumento da base de clientes", "kpi": "Número de clientes ativos cadastrados (B2B)", "meta": "700", "resp": "Samuel", "prazo": "2026-07-31", "recurso": "- Projeto de Geração Autônoma de Leads\n- Bonificação para time de Pista p/ Lead gerado e convertido\n- Desenvolver canais atuais para dar mais resultado (referido)\n- Novos canais de venda (linkedin, referido, etc)", "invest": "44000", "g": 5, "u": 5, "t": 5, "gut": 125}, {"id": 4, "acao": "Padronização de processos de produção", "kpi": "Tempo de produção do prato", "meta": "< 10 minutos", "resp": "Maicon", "prazo": "2026-07-31", "recurso": "", "invest": "", "g": 4, "u": 5, "t": 5, "gut": 100}, {"id": 5, "acao": "Fortalecimento da Cultura", "kpi": "Avaliação de Desempenho (Cultural)", "meta": "80% do time alinhados aos valores da empresa", "resp": "Gabrielle", "prazo": "2026-12-31", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 4, "gut": 100}, {"id": 6, "acao": "Adquirir novos postos", "kpi": "Quantidade de postos", "meta": "2", "resp": "Samuel", "prazo": "2026-08-31", "recurso": "", "invest": "2000000", "g": 5, "u": 5, "t": 4, "gut": 100}, {"id": 7, "acao": "Comunicar visualmente onde estamos (outdoor)", "kpi": "Quantidade de Outdoors na Br-116", "meta": "6", "resp": "Samuel", "prazo": "2026-04-30", "recurso": "", "invest": "30000", "g": 4, "u": 5, "t": 4, "gut": 80}, {"id": 8, "acao": "Melhoria estética da pista e pátio", "kpi": "Orçamento Mensal de Manutenção", "meta": "6500", "resp": "Maicon", "prazo": "2026-09-30", "recurso": "", "invest": "", "g": 5, "u": 4, "t": 4, "gut": 80}, {"id": 9, "acao": "Estruturação de Processos", "kpi": "Processos Mapeados e Documentados", "meta": "1", "resp": "Gabrielle", "prazo": "2026-08-31", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 3, "gut": 75}, {"id": 10, "acao": "Monitoramento do Atendimento ao Cliente", "kpi": "NPS", "meta": "0.7", "resp": "Samuel", "prazo": "2026-06-30", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 3, "gut": 75}, {"id": 11, "acao": "Ações de geração de caixa", "kpi": "Pix", "meta": "0.12", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 3, "gut": 75}, {"id": 12, "acao": "Aumentar quantidade de vendas", "kpi": "Atendimentos / dia", "meta": "3000", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 3, "gut": 75}, {"id": 13, "acao": "Aumento da percepção de remuneração média / colaborador", "kpi": "Salário / Colaborador", "meta": "250", "resp": "Gabrielle", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 14, "acao": "Melhoria dos espaços físicos compartilhados (reforma refeitório + criação de um espaço de descanso)", "kpi": "Orçamento Anual de Investimento nos Espaços para o Time", "meta": "25000", "resp": "Gabrielle", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 15, "acao": "Ampliação dos banheiros (banheiro família, deficiente, etc)", "kpi": "m2 do banheiro", "meta": "130m2", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 16, "acao": "Banheiros Caminhoneiros", "kpi": "m2 de banheiro", "meta": "40m2", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 17, "acao": "Melhoria da estrutura física (paisagismo, piso, outras coisas de infraestrutura)", "kpi": "Orçamento Anual de Investimento em Infraestrutura", "meta": "70000", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 18, "acao": "Desenvolver o financeiro / controller da empresa", "kpi": "Contratação de um financeiro Sênior", "meta": "1", "resp": "Gabrielle", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 4, "t": 3, "gut": 60}, {"id": 19, "acao": "Ampliação da Loja de Conveniência (Sapatão Matriz)", "kpi": "m2", "meta": "500m2", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 4, "t": 3, "gut": 60}, {"id": 20, "acao": "Aumento de vagas de Estacionamento", "kpi": "Qtde de Vagas", "meta": "60", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 4, "t": 3, "gut": 60}, {"id": 21, "acao": "Pesquisa de Clima", "kpi": "Reconhecimento e Valorização Pessoal", "meta": "0.85", "resp": "Gabrielle", "prazo": "2026-11-30", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 2, "gut": 50}, {"id": 22, "acao": "Tratamento da Base de Dados para comunicação direcionada", "kpi": "Ticket Médio do App", "meta": "250", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 3, "gut": 48}, {"id": 23, "acao": "Desenvolvimento e profissionalização dos times", "kpi": "Treinamentos", "meta": "80", "resp": "Gabrielle", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 3, "t": 3, "gut": 45}, {"id": 24, "acao": "Parceria com RHs de Empresas", "kpi": "Empresas Parceiras (abastecimento)", "meta": "10", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 3, "u": 5, "t": 3, "gut": 45}, {"id": 25, "acao": "Ampliação do horário de funcionamento", "kpi": "Fat/hora (das 22:00 às 00:00)", "meta": "9000", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 3, "u": 3, "t": 3, "gut": 27}];
-const RODADAS=["2026-03-19","2026-04-24","2026-06-05","2026-07-17","2026-08-14","2026-09-18","2026-10-30"];
-const CENARIO=[
- {eixo:"Sociedade & Política",tend:["Não existe mais necessidade de ter CNH para se deslocar","Falta de valorização do trabalho","Mudanças nas relações de trabalho"],op:["Diminuição do valor da emissão de CNH","Modificações nos formatos e contratos de trabalho"],am:["Falta de interesse por dirigir / possuir veículos","Desinteresse em estudar e se aprimorar","Mudança da escala 6x1"]},
- {eixo:"Economia",tend:["Falta de educação financeira","Mudança na posse: de dono a usuário de serviços","Volatilidade nos preços de energia fóssil"],op:["Promoções para motoristas de app ou locadores de veículos","Plano de contenção para gestão de crises e otimização de margens"],am:["Endividamento da população","Aumento de NCG"]},
- {eixo:"Tecnologia & IA",tend:["IA para relacionamento com os clientes (SAC)","IA para gestão de estoque e precificação dinâmica","Plataformas digitais globais de negociação"],op:["Atendimento imediato das demandas dos clientes","Promoções exclusivas para o nicho de clientes","Aplicativos (gestão de relacionamento e consumo)"],am:["Falta de humanização do atendimento","Desvalorização das marcas locais (vínculo só às grandes marcas)"]},
- {eixo:"Mercado & Produtos",tend:["Hubs de energia multimodais (elétrico / hidrogênio)","Mudança dos hábitos de consumo de alimentação","Serviços de assinatura e locação flexível"],op:["Consolidação de pontos de parada (complexo / estação)","Consumo de produtos mais saudáveis"],am:["Diminuição do consumo de combustíveis fósseis","Preconceito com lojas de conveniência e fast food","Comoditização dos veículos (baixo upsell e cross-sell)"]},
- {eixo:"Setor / Mão de obra",tend:["Problemas de saúde emocional nas populações de base (NR-1)","Envelhecimento da população","Novas relações de trabalho em plataformas"],op:["Pessoas 50+ buscando oportunidades de trabalho"],am:["Falta de clareza entre investimento e resultado","Gestão das diferentes gerações","Informalização do trabalho (consignado + auxílios)"]}
-];
+/* ============ Conteúdo cifrado (cofre de dados) ============
+   O conteúdo sensível (ações, follow-ups, diagnóstico, seções) vem de
+   estrategia/pe-conteudo.json — cifrado com a chave de dados (DEK).
+   Sem usuário e senha válidos, nada é legível. */
+let ACOES=[],RODADAS=[],CENARIO=[],SEED={};
+const CONTEUDO_API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/estrategia/pe-conteudo.json';
+let bootado=false,conteudoAbertoRemoto=false;
+function b64docdec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+async function pegaJsonApi(url){
+  const r=await fetch(url+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  return{sha:j.sha,doc:JSON.parse(b64docdec(j.content))};
+}
+function telaTravada(msg){
+  let d=document.getElementById('tela-travada');
+  if(!d){d=document.createElement('div');d.id='tela-travada';d.className='wrap';const mn=document.querySelector('main');mn.parentNode.insertBefore(d,mn);}
+  d.innerHTML='<div class="card" style="margin-top:30px;text-align:center;padding:30px 22px"><div style="font-size:36px">&#128274;</div><h2 style="margin-top:6px">Dados protegidos</h2><p class="lead" style="margin-top:8px;margin-bottom:14px">'+msg+'</p><button type="button" class="ord-btn" onclick="window.sapataoSair()">Entrar com usuário e senha</button></div>';
+  document.querySelector('main').style.display='none';
+  const h=document.getElementById('hero');if(h)h.style.display='none';
+}
+function destravou(){
+  const d=document.getElementById('tela-travada');if(d)d.remove();
+  document.querySelector('main').style.display='';
+  const h=document.getElementById('hero');if(h)h.style.display='';
+}
+async function destrava(){
+  if(bootado)return;
+  let r;
+  try{r=await pegaJsonApi(CONTEUDO_API);}
+  catch(e){telaTravada('Sem conexão para carregar os dados. Confira a internet e recarregue a página.');return;}
+  let doc=r.doc;const eraAberto=doc.enc!==1;conteudoAbertoRemoto=eraAberto;
+  if(doc.enc===1){
+    if(!window.sapataoCofre.dek())await window.sapataoCofre.baixaDekPeloToken();
+    doc=await window.sapataoCofre.decifra(doc);
+    if(!doc){telaTravada('Este aparelho ainda não tem a chave dos dados. Saia e entre com o seu usuário e senha para destravar.');return;}
+  }
+  bootado=true;destravou();
+  Object.keys(doc.secoes||{}).forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=doc.secoes[id];});
+  ACOES=doc.dados.ACOES;RODADAS=doc.dados.RODADAS;CENARIO=doc.dados.CENARIO;SEED=doc.dados.SEED;
+  boot();
+  if(eraAberto)migraCriptografia();
+}
+document.addEventListener('sapatao-login',async()=>{if(!bootado){try{await window.sapataoChave.busca();}catch(e){}destrava();}else if(conteudoAbertoRemoto)migraCriptografia();});
+/* ---- migração: primeiro admin conectado ativa a criptografia ---- */
+async function migraCriptografia(){
+  const A=window.sapataoAuth,C=window.sapataoChave,K=window.sapataoCofre;
+  if(!(A&&A.user&&A.user.admin&&C.token()))return;
+  try{
+    if(!K.dek())await K.baixaDekPeloToken();
+    if(!K.dek())K.gravaDek(K.gera());
+    await K.publicaDekPeloToken();
+    if(A.pw)await C.garante();
+    for(const path of ['estrategia/pe-conteudo.json','estrategia/pe-execucoes.json'])await cifraArquivo(path);
+    if(typeof chip==='function'){}
+    conteudoAbertoRemoto=false;
+    const el=document.getElementById('sync-chip');
+    if(el){el.className='sync-chip ok';el.innerHTML='&#9729; Nuvem: criptografia dos dados ativada &#128274;';}
+  }catch(e){/* tenta de novo na próxima visita */}
+}
+async function cifraArquivo(path){
+  const url='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/'+path;
+  const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+window.sapataoChave.token(),'Content-Type':'application/json'};
+  const g=await fetch(url+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  if(!g.ok)throw new Error('HTTP '+g.status);
+  const j=await g.json();
+  const doc=JSON.parse(b64docdec(j.content));
+  if(doc.enc===1)return;
+  const cifrado=await window.sapataoCofre.cifra(doc);
+  const r=await fetch(url,{method:'PUT',headers:h,body:JSON.stringify({
+    message:'chore: ativa a criptografia dos dados (automático)',branch:'main',
+    content:btoa(unescape(encodeURIComponent(JSON.stringify(cifrado)))),sha:j.sha})});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+}
 
-/* ============ Estado editável (status, novo prazo, follow-ups) ============ */
-const SEED={"1": {"status": "andamento", "novoPrazo": "2026-08-31", "followups": [{"data": "2026-03-19", "texto": "Revisão da Matriz GUT com priorização de 3 projetos para serem tocados no primeiro momento."}, {"data": "2026-04-24", "texto": "- TM Atual (mar/26) = R$ 147,67 (muito movimentado pelo Diesel)\n- Padrão de Atendimento Começou previsto para início de execução em 22/04.\n- Revisto esse ponto: Implementação de indicadores de performance (ticket médio e qtde de atendimentos)\n- Feedbacks + Escuta Ativa são foco até a próxima avaliação\n- Meta poderá ser reavaliada por conta da precificação do Combustível + Crescimento Volume de Diesel"}, {"data": "2026-06-05", "texto": "- TM Atual (mai/26) R$ 122,00\n- Padrão de Atendimento está sendo implementado em Junho/26\n- Acompanhamento é necessário para execução\n- Investimanto  R$ 260,00 + R$ 120,00 impressão manuais\n- Valores com horas de reuniões com líderes para montagem dos materias a ser calculada."}, {"data": "2026-07-17", "texto": "- TM (JUN/26) 126,70 Atual (JUL/26) 135,93\n- Padrão de Atendimento implementado em Junho/26\n- Liderança está executando! Percebe-se que boa parte da equipe já pratica o: Bem vindo ao Sapatão de forma mais natural.\n- Link do Manual de Padrão de Atendimento:"}]}, "2": {"status": "andamento", "novoPrazo": "2026-08-31", "followups": [{"data": "2026-04-24", "texto": "- Descritivos estão sendo finalizados\n- Serão apresentados em Maio/26"}, {"data": "2026-06-05", "texto": "- Apresentado o Descritivo para em torno de 40% do time (faltando turno da manhã em NH e todo time de EV)\n- Expectativa de 2 semanas para apresentação\n- Avaliação de Acompanhamento será executada até o fim de Junho/26"}, {"data": "2026-07-17", "texto": "- Apresentado para todo o time Operacional (sem contar a nova unidade)\n- Documentos assinados e dentro do Sólides\n- Falta dos outros setores\n- Avaliação de Acompanhamento ainda não foi executada (31/08)"}]}, "3": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-04-24", "texto": "- 536 clientes em Março (cenário Diesel)\n- 466 parcial em Abril\n- Projeto de Geração Autônoma p/ Maio\n- Verificar Indiplus / Captação de Leads na Pista (Vela PubliTech)\n- Treinamento de abordagem p/ time de Pista (Samuel)"}, {"data": "2026-06-05", "texto": "- 510 clientes em Maio\n- Acréscimo de 25 clientes (maio e uma perda de 38 clientes (maio)\n- SDR automático rodou em Maio e está rodando (+-20 leads)\n- Indiplus rodou fim de Maio (13 leads gerados)\n- Treinamento sobre Comercial p/ Time (Fabrício)"}, {"data": "2026-07-17", "texto": "- 530 clientes em Junho\n- 109 clientes inativos (Criado processo de reativação de clientes)\n- Indiplus c/ pgto de R$ 10,00 p/ Lead gerado a partir de Julho\n- SDR automatizado não resultou em novos clientes, em revisão c/ Axion"}]}, "4": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-07-17", "texto": "- Mapeamento das receitas de cozinha (90% pronto)"}]}, "5": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-07-17", "texto": "- Redesenho de Cultura em fase final de construção\n- Validação com sócios, diretoria e lideranças da operação"}]}, "6": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-06-05", "texto": "- Entrada no 4 Colônias entre fim de Junho e 01/07."}, {"data": "2026-07-17", "texto": "- Assumimos o Sapatão 4 Colônias em 01/07 (900k de investimento)\n- 1 posto em Campo Bom (Charrua) negado\n- 1 posto em Estância Velha (Vitória) em negociação"}]}, "7": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-06-05", "texto": "- Realizada a instalação de 6, mais 2 serão instalados em Junho"}, {"data": "2026-07-17", "texto": "- Todos Outdoors instalados (7 ao todo)\n- 2 novos serão instalados na RS-239"}]}, "8": {"status": "andamento", "novoPrazo": "", "followups": []}, "9": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-07-17", "texto": "- Mapeamento de processos dentro do TH realizados\n- Ainda falta a confecção dos POPs                                                                                                                                                                                                                                                               - falta começar em outros setores"}]}, "10": {"status": "andamento", "novoPrazo": "2026-09-30", "followups": []}, "11": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-07-17", "texto": "- Cashback em Dobro se utilizado App do Sapatão e pago no Pix"}]}, "12": {"status": "andamento", "novoPrazo": "", "followups": []}, "13": {"status": "andamento", "novoPrazo": "", "followups": []}, "14": {"status": "andamento", "novoPrazo": "", "followups": []}, "15": {"status": "andamento", "novoPrazo": "", "followups": []}, "16": {"status": "andamento", "novoPrazo": "", "followups": []}, "17": {"status": "andamento", "novoPrazo": "", "followups": []}, "18": {"status": "andamento", "novoPrazo": "", "followups": []}, "19": {"status": "andamento", "novoPrazo": "", "followups": []}, "20": {"status": "andamento", "novoPrazo": "", "followups": []}, "21": {"status": "andamento", "novoPrazo": "", "followups": []}, "22": {"status": "andamento", "novoPrazo": "", "followups": []}, "23": {"status": "andamento", "novoPrazo": "", "followups": []}, "24": {"status": "andamento", "novoPrazo": "", "followups": []}, "25": {"status": "andamento", "novoPrazo": "", "followups": []}};
+function boot(){
 const EXEC={};
 ACOES.forEach(a=>{EXEC[a.id]=JSON.parse(JSON.stringify(SEED[a.id]||{status:'andamento',novoPrazo:a.novoPrazo||'',followups:[]}))});
 const CHAVE_LS='sapatao-pe-v1';
@@ -821,6 +634,11 @@ async function leRemoto(){
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();
   let doc={};try{doc=JSON.parse(b64dec(j.content));}catch(e){}
+  if(doc&&doc.enc===1){
+    const ab=await window.sapataoCofre.decifra(doc);
+    if(!ab)throw new Error('sem a chave dos dados');
+    doc=ab;
+  }
   return{sha:j.sha,salvoEm:doc.salvoEm||0,dados:doc.dados||null};
 }
 async function recuperaChaveNuvem(){
@@ -844,8 +662,10 @@ async function publica(){
     }
     if(rem.dados&&rem.salvoEm>salvoEm){aplicaRemoto(rem);return;}
     const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
+    let carga={v:1,salvoEm:salvoEm,dados:EXEC};
+    if(window.sapataoCofre.dek())carga=await window.sapataoCofre.cifra(carga);
     const body={message:'chore: sincroniza follow-ups do Planejamento Estratégico (automático)',branch:'main',
-                content:b64enc(JSON.stringify({v:1,salvoEm:salvoEm,dados:EXEC},null,2))};
+                content:b64enc(JSON.stringify(carga,null,2))};
     if(rem.sha)body.sha=rem.sha;
     const r=await fetch(SYNC_API,{method:'PUT',headers:h,body:JSON.stringify(body)});
     if(!r.ok)throw new Error('HTTP '+r.status);
@@ -1063,6 +883,8 @@ if(usTbl){
 renderAll();renderPainel();atualizaCfg();aplicaPermissao();
 iniciaSync();buscaChaveNuvem();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)iniciaSync();});
+}/* fim do boot() */
+destrava();
 })();
 </script>
 </body>

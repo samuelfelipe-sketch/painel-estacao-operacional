@@ -15,10 +15,13 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 | `roadmap/index.html` | só redireciona para a central | — |
 | `roadmap/auth.js` | portão de login (usuário + senha, SHA-256 client-side; apps definem `window.SAPATAO_APP`) | — |
 | `roadmap/usuarios.json` | **usuários e permissões** (nome, hash da senha, admin, perm roadmap/pe) — editado pela aba Configurações do PE | — |
-| `roadmap/execucoes.json` | **base de dados** do Plano de Ação (status/data/obs das 17 ações) — commits automáticos feitos pelo próprio site | — |
+| `roadmap/execucoes.json` | **base de dados** do Plano de Ação — CIFRADA (AES-256-GCM, `{enc:1,iv,ct}`) — commits automáticos feitos pelo próprio site | — |
+| `roadmap/guia-conteudo.json` | conteúdo sensível do Guia (ações, execuções-semente, seções) — CIFRADO | — |
+| `roadmap/dek.enc.json` | chave dos dados (DEK) embrulhada pela chave de publicação — canal reserva de destravamento | — |
 | `roadmap/icon.svg` | favicon: funil de vendas em etapas, fechamento em laranja | — |
 | `estrategia/index.html` | **Planejamento Estratégico** — 25 ações do PE Reborn (KPI, meta, G×U×T, prazos, follow-ups por reunião) + abas de consulta (maturidade, SWOT, BCG, cenário, ICP, modelo de negócio). Usa o MESMO `roadmap/auth.js` (senha e sessão unificadas) e a mesma chave de publicação | senha |
-| `estrategia/pe-execucoes.json` | **base de dados** do PE (status/novo prazo/follow-ups por ação) — commits automáticos `chore: sincroniza follow-ups do Planejamento Estratégico (automático)` | — |
+| `estrategia/pe-execucoes.json` | **base de dados** do PE (status/novo prazo/follow-ups) — CIFRADA — commits automáticos `chore: sincroniza follow-ups do Planejamento Estratégico (automático)` | — |
+| `estrategia/pe-conteudo.json` | conteúdo sensível do PE (25 ações, diagnóstico, SWOT etc.) — CIFRADO | — |
 | `painel-operacional.html` | Painel Operacional (faturamento por canal). **Desativado por ora** — `data.json` vazio desde maio (token da API do dashboard expirou) | aberto |
 | `fluxo-pessoal/` | app de finanças pessoais (projeto separado, não mexer sem pedido) | — |
 | `reborn-imersao.html`, `context.md`, `scripts/`, `.github/workflows/` | legado do painel operacional | — |
@@ -40,7 +43,8 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 ## Regras de trabalho
 - **Antes de commitar, sempre `git pull --rebase`**: o site faz commits automáticos (execucoes.json, auth.js) e o Samuel abre PRs por sessões na nuvem.
 - Conflito em `roadmap/execucoes.json`: ficar com a versão remota (é a base de dados viva).
-- Repositório é **público**: nada de tokens, senhas em texto claro ou dados sensíveis.
+- Repositório é **público** e os DADOS SÃO SENSÍVEIS: todo conteúdo de negócio vive CIFRADO (AES-256-GCM) nos arquivos `*-conteudo.json`, `execucoes.json` e `pe-execucoes.json`. A chave dos dados (DEK) só existe: no localStorage dos aparelhos autorizados (`sapatao-dek-v1`), dentro dos envelopes por usuário (`chave.enc.json`, aberto pela senha) e em `dek.enc.json` (aberto pela chave de publicação). **NUNCA commitar dados de negócio em texto claro** — nem em HTML, nem em JSON, nem em commits antigos (o histórico foi limpo por isso). Os apps cifram/decifram no navegador via `window.sapataoCofre`.
+- Nada de tokens ou senhas em texto claro no código.
 - Testar localmente com `python3 -m http.server` (as páginas usam `auth.js` externo e fetch — não funcionam bem abrindo o arquivo direto).
 - GitHub Pages publica em ~1–2 min após o push; favicon e `auth.js` podem ficar até ~10 min no cache do navegador.
 - Senhas/usuários: gerir pela aba Configurações (admin) — grava `roadmap/usuarios.json`. Manualmente: hash = SHA-256 da senha no `usuarios.json` (e o fallback do Samuel em `auth.js`).
