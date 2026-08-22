@@ -228,6 +228,9 @@ tr:last-child td{border-bottom:none}
 /* usuário sem permissão de edição */
 body.so-leitura .exec-status,body.so-leitura .exec-data{pointer-events:none;opacity:.65;background:#F4F4F2!important}
 body.so-leitura .fu-novo,body.so-leitura .fu-del{display:none!important}
+/* nível "só follow-ups": registra follow-up, mas não mexe em status nem em prazos */
+body.so-followup .exec-status{pointer-events:none;opacity:.65;background:#F4F4F2!important}
+body.so-followup .rn-novo,body.so-followup .fu-del{display:none!important}
 
 /* administração de usuários */
 .us-tbl select,.us-tbl input[type=text]{font-family:'Archivo',sans-serif;font-size:12.5px;border:1px solid var(--linha);border-radius:6px;padding:5px 7px;background:#fff;color:var(--verde);max-width:130px}
@@ -475,7 +478,7 @@ function rnHtml(a){
     h+='<div class="fu-item"><span class="fu-data">'+fmt(r.para)+'</span><div class="fu-texto-view" style="font-size:12.5px;color:var(--verde-suave)">'
       +(r.em?'renegociado em '+fmt(r.em):'trazido da planilha do PE')+(r.por?' por '+esc(r.por):'')+'</div></div>';
   });
-  h+='</div><div class="fu-novo"><div class="fu-linha"><label>Renegociar para</label><input type="date" class="rn-data"></div><button type="button" class="fu-add rn-add">Renegociar prazo</button></div>';
+  h+='</div><div class="fu-novo rn-novo"><div class="fu-linha"><label>Renegociar para</label><input type="date" class="rn-data"></div><button type="button" class="fu-add rn-add">Renegociar prazo</button></div>';
   return h;
 }
 function fuHtml(a){
@@ -540,6 +543,7 @@ cards.addEventListener('click',ev=>{
     renderAll();return;
   }
   if(ev.target.classList.contains('rn-add')){
+    if(document.body.classList.contains('so-followup'))return;
     const d=card.querySelector('.rn-data').value;
     if(!d){card.querySelector('.rn-data').focus();return;}
     const rn={em:HOJE,para:d};
@@ -559,6 +563,7 @@ cards.addEventListener('click',ev=>{
     salva();return;
   }
   if(ev.target.classList.contains('fu-del')){
+    if(document.body.classList.contains('so-followup'))return;
     const i=+ev.target.dataset.i;
     if(confirm('Apagar este follow-up? Ele continua no histórico, riscado, com o registro de quem apagou.')){
       EXEC[id].followups[i].apagado={em:HOJE,por:quem()||undefined};
@@ -570,7 +575,7 @@ cards.addEventListener('click',ev=>{
 cards.addEventListener('change',ev=>{
   const card=ev.target.closest('.acard');if(!card)return;
   const id=+card.dataset.acao;
-  if(ev.target.classList.contains('exec-status')){EXEC[id].status=ev.target.value;salva();}
+  if(ev.target.classList.contains('exec-status')){if(document.body.classList.contains('so-followup'))return;EXEC[id].status=ev.target.value;salva();}
 });
 document.querySelectorAll('.f-resp').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.f-resp').forEach(x=>x.classList.remove('active'));
@@ -751,8 +756,9 @@ document.addEventListener('sapatao-login',buscaChaveNuvem);
 /* ============ Usuário logado: nome, permissão e administração ============ */
 function aplicaPermissao(){
   const A=window.sapataoAuth;
-  const ed=!A||!A.user||A.podeEditar('pe');
-  document.body.classList.toggle('so-leitura',!ed);
+  const nv=(!A||!A.user)?'edita':(A.user.admin?'edita':((A.user.perm||{}).pe||'nao'));
+  document.body.classList.toggle('so-leitura',nv==='le'||nv==='nao');
+  document.body.classList.toggle('so-followup',nv==='followup');
   const n1=document.querySelector('.user .n1');
   if(n1&&A&&A.user)n1.textContent=A.user.nome;
   /* Configurações inteira é só para admin */
@@ -768,7 +774,7 @@ function aplicaPermissao(){
       const p=document.querySelector('.nav-link[data-t="painel"]');if(p)p.click();
     }
   }
-  if(!ed)renderAll();
+  if(nv!=='edita')renderAll();
 }
 document.addEventListener('sapatao-auth',aplicaPermissao);
 document.addEventListener('sapatao-login',aplicaPermissao);
@@ -831,13 +837,14 @@ function usDiz(t,erro){if(usMsg){usMsg.textContent=t;usMsg.style.color=erro?'#8C
 function usRender(){
   if(!usDoc)return;
   const PERMS=[['edita','Edita'],['le','Só lê'],['nao','Sem acesso']];
-  const sel=(v,cls,i)=>'<select class="'+cls+'" data-i="'+i+'">'+PERMS.map(p=>'<option value="'+p[0]+'"'+(v===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select>';
+  const PERMS_PE=[['edita','Edita'],['followup','Só follow-ups'],['le','Só lê'],['nao','Sem acesso']];
+  const sel=(v,cls,i,ops)=>'<select class="'+cls+'" data-i="'+i+'">'+(ops||PERMS).map(p=>'<option value="'+p[0]+'"'+(v===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select>';
   usTbl.innerHTML='<tr><th>Usuário</th><th>Roadmap</th><th>Planejamento</th><th>Admin</th><th>Ativo</th><th>Senha</th></tr>'
     +usDoc.usuarios.map((u,i)=>{
       const p=u.perm||{};
       return '<tr><td><input type="text" class="us-nome" data-i="'+i+'" value="'+esc(u.nome)+'"></td>'
         +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.roadmap||'nao','us-roadmap',i))+'</td>'
-        +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.pe||'nao','us-pe',i))+'</td>'
+        +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.pe||'nao','us-pe',i,PERMS_PE))+'</td>'
         +'<td><input type="checkbox" class="us-admin" data-i="'+i+'"'+(u.admin?' checked':'')+'></td>'
         +'<td><input type="checkbox" class="us-ativo" data-i="'+i+'"'+(u.ativo!==false?' checked':'')+'></td>'
         +'<td><button type="button" class="us-mini us-senha" data-i="'+i+'">redefinir</button></td></tr>';
