@@ -662,7 +662,17 @@ function renderPatrimonio(){
   document.getElementById('patrimonio').innerHTML = h;
 }
 function renderAgenda(){
-  document.getElementById('agenda').innerHTML = D.agenda.map(a=>
+  // Linhas de fatura são dinâmicas: vêm das faturas guardadas (fat_pend) e
+  // atualizam a cada importação — some quando o pagamento é conciliado.
+  // Entradas estáticas "Fatura …" da agenda antiga são ignoradas.
+  const fixas = (D.agenda||[]).filter(a => !/^fatura/i.test(a.q));
+  const fats = [...(D.fat_pend||[])].sort((a,b)=>(a.venc||a.ref).localeCompare(b.venc||b.ref)).map(p => {
+    const pg = p.venc || `${p.ref.slice(0,4)}-${String(+p.ref.slice(5,7)+1).padStart(2,'0')}`;
+    return { q: `Fatura ${CARTAO_NOME[p.cartao]||p.cartao}${p.venc?` venc. ${p.venc.slice(8,10)}/${p.venc.slice(5,7)}`:''} — guardada (${p.items.length} itens)`,
+      freq: `${MN[+pg.slice(5,7)] ? MN[+pg.slice(5,7)].toLowerCase() : pg.slice(5,7)} · entra no caixa no dia do pagamento · atualiza a cada importação`,
+      v: -p.total };
+  });
+  document.getElementById('agenda').innerHTML = fats.concat(fixas).map(a=>
     `<li><span class="q">${a.q}<span class="f">${a.freq}</span></span><span class="v${a.v<0?' neg':''}">${a.v===null?'a definir':fmt(a.v)}</span></li>`).join('');
 }
 function renderPend(){
@@ -1497,7 +1507,7 @@ async function fatGuardar(){
   document.getElementById('imp-msg').textContent = '✓ Fatura guardada (criptografada). Ela entra no caixa no dia do pagamento — ao importar o extrato com o débito da fatura, use o botão "usar fatura guardada".' +
     (mesPg <= 12 ? ` O pagamento já está projetado no fluxo de ${MFULL[mesPg]}.` : '');
   recalcBase();
-  renderCabecalho(); renderDocs(); render();
+  renderCabecalho(); renderDocs(); renderAgenda(); render();
 }
 
 function fatPendVer(id){
@@ -1515,7 +1525,7 @@ async function fatPendExcluir(id){
   D.fat_pend = D.fat_pend.filter(x=>x.id!==id);
   await Vault.save();
   recalcBase();
-  renderCabecalho(); renderDocs(); render();
+  renderCabecalho(); renderDocs(); renderAgenda(); render();
 }
 
 function impUsarFatPend(i, id){
@@ -1759,7 +1769,7 @@ function impConfirmar(){
 
   Vault.save().then(()=>{
     recalcBase();
-    renderCabecalho(); renderContas(); renderMetas(); renderDocs(); renderTx(); render();
+    renderCabecalho(); renderContas(); renderMetas(); renderDocs(); renderTx(); renderAgenda(); render();
   });
 }
 
