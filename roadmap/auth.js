@@ -203,7 +203,10 @@
             if (i >= envs.length) return false;
             return abreEnvelope(envs[i], A.pw).then(function (t) {
               if (!t) return tenta(i + 1);
-              C.grava(t); return true;
+              var p = null; try { p = JSON.parse(t); } catch (e) {}
+              if (p && p.t) { C.grava(p.t); if (p.k) window.sapataoCofre.gravaDek(p.k); }
+              else C.grava(t);
+              return true;
             }).catch(function () { return tenta(i + 1); });
           };
           return tenta(0);
@@ -238,14 +241,20 @@
         .catch(function () { /* arquivo ainda não existe */ })
         .then(function () {
           if (envelopes[userId]) {
-            /* já existe: confere se a senha atual abre; se abrir, nada a fazer */
-            return abreEnvelope(envelopes[userId], pw).then(function () { return 'ok'; }).catch(function () { return 'regrava'; });
+            /* já existe: confere se a senha abre e se o conteúdo está atual */
+            return abreEnvelope(envelopes[userId], pw).then(function (t) {
+              var p = null; try { p = JSON.parse(t); } catch (e) { p = { t: t }; }
+              var dek = window.sapataoCofre.dek();
+              return (p.t === token && (!dek || p.k === dek)) ? 'ok' : 'regrava';
+            }).catch(function () { return 'regrava'; });
           }
           return 'regrava';
         })
         .then(function (st) {
           if (st === 'ok') return true;
-          return fechaEnvelope(token, pw).then(function (env) {
+          var carga = { t: token };
+          if (window.sapataoCofre.dek()) carga.k = window.sapataoCofre.dek();
+          return fechaEnvelope(JSON.stringify(carga), pw).then(function (env) {
             envelopes[userId] = env;
             var body = {
               message: 'chore: guarda a chave de publicação criptografada (nuvem)', branch: 'main',
@@ -254,6 +263,64 @@
             if (sha) body.sha = sha;
             return fetch(KEY_URL, { method: 'PUT', headers: h, body: JSON.stringify(body) }).then(function (r) { return r.ok; });
           });
+        }).catch(function () { return false; });
+    }
+  };
+
+  /* ---------- cofre dos DADOS (criptografia de ponta a ponta) ----------
+     Os arquivos sensíveis do site ficam cifrados (AES-256-GCM) com uma
+     chave de dados (DEK) aleatória. A DEK viaja: (a) dentro do envelope
+     de cada usuário ({t: token, k: dek}, aberto pela senha) e (b) em
+     roadmap/dek.enc.json, embrulhada pela própria chave de publicação —
+     assim qualquer aparelho autorizado destrava. Sem usuário e senha
+     válidos, os arquivos são ilegíveis. */
+  var LS_DEK = 'sapatao-dek-v1';
+  var DEK_URL = API_BASE + 'roadmap/dek.enc.json';
+  var K = window.sapataoCofre = {
+    ls: LS_DEK,
+    dek: function () { try { return localStorage.getItem(LS_DEK) || ''; } catch (e) { return ''; } },
+    gravaDek: function (d) { try { if (d) localStorage.setItem(LS_DEK, d); else localStorage.removeItem(LS_DEK); } catch (e) {} },
+    gera: function () { return b64bytes(crypto.getRandomValues(new Uint8Array(32))); },
+    chaveAes: function () { return crypto.subtle.importKey('raw', bytesB64(K.dek()), 'AES-GCM', false, ['encrypt', 'decrypt']); },
+    /* objeto → {enc:1, iv, ct} */
+    cifra: function (obj) {
+      var iv = crypto.getRandomValues(new Uint8Array(12));
+      return K.chaveAes().then(function (key) {
+        return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
+      }).then(function (ct) { return { enc: 1, iv: b64bytes(iv), ct: b64bytes(new Uint8Array(ct)) }; });
+    },
+    /* {enc:1,...} → objeto (null se não abrir); documento aberto passa direto */
+    decifra: function (doc) {
+      if (!doc || doc.enc !== 1) return Promise.resolve(doc);
+      if (!K.dek()) return Promise.resolve(null);
+      return K.chaveAes().then(function (key) {
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytesB64(doc.iv) }, key, bytesB64(doc.ct));
+      }).then(function (pt) { return JSON.parse(new TextDecoder().decode(pt)); })
+        .catch(function () { return null; });
+    },
+    /* canal reserva: DEK embrulhada pela chave de publicação */
+    baixaDekPeloToken: function () {
+      var token = C.token();
+      if (K.dek() || !token) return Promise.resolve(!!K.dek());
+      return fetch(DEK_URL + '?ref=main&t=' + Date.now(), { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (j) { return abreEnvelope(JSON.parse(b64dec(j.content)), token); })
+        .then(function (d) { if (d) { K.gravaDek(d); return true; } return false; })
+        .catch(function () { return false; });
+    },
+    publicaDekPeloToken: function () {
+      var token = C.token();
+      if (!token || !K.dek()) return Promise.resolve(false);
+      var h = { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+      var sha = null;
+      return fetch(DEK_URL + '?ref=main&t=' + Date.now(), { headers: h, cache: 'no-store' })
+        .then(function (g) { if (g.ok) return g.json(); }).then(function (j) { if (j) sha = j.sha; })
+        .catch(function () {})
+        .then(function () { return fechaEnvelope(K.dek(), token); })
+        .then(function (env) {
+          var body = { message: 'chore: guarda a chave dos dados criptografada (nuvem)', branch: 'main', content: b64enc(JSON.stringify(env, null, 2)) };
+          if (sha) body.sha = sha;
+          return fetch(DEK_URL, { method: 'PUT', headers: h, body: JSON.stringify(body) }).then(function (r) { return r.ok; });
         }).catch(function () { return false; });
     }
   };
