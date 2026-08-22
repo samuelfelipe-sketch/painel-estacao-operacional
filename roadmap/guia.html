@@ -14,6 +14,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E %3Cdefs%3E %3ClinearGradient id=%22bg%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E %3Cstop offset=%220%22 stop-color=%22%230B5748%22/%3E %3Cstop offset=%221%22 stop-color=%22%2300332A%22/%3E %3C/linearGradient%3E %3C/defs%3E %3Crect width=%22512%22 height=%22512%22 fill=%22url(%23bg)%22/%3E %3C%21-- funil de vendas em etapas%3B a %C3%BAltima (fechamento) em laranja --%3E %3Cpath d=%22M76 116 L436 116 L409.8 173 L102.2 173 Z%22 fill=%22%23F5F3EC%22 opacity=%220.5%22/%3E %3Cpath d=%22M113.3 197 L398.7 197 L372.5 254 L139.5 254 Z%22 fill=%22%23F5F3EC%22 opacity=%220.72%22/%3E %3Cpath d=%22M150.5 278 L361.5 278 L335.3 335 L176.7 335 Z%22 fill=%22%23F5F3EC%22/%3E %3Cpath d=%22M187.8 359 L324.2 359 L298 416 L214 416 Z%22 fill=%22%23EC6C22%22/%3E %3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>window.SAPATAO_APP='roadmap';</script>
 <script src="auth.js"></script>
 <style>
 :root{
@@ -208,6 +209,10 @@ tr.done td{background:#F0F7F1!important;color:var(--verde-suave)}
 tr.done td:nth-child(2){text-decoration:line-through;text-decoration-thickness:1.5px}
 tr.late td{background:#FCF0ED!important}
 .tag-late{display:inline-block;margin-left:8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#8C1D18;background:#F9DEDC;border-radius:4px;padding:2px 7px;white-space:nowrap}
+
+/* usuário sem permissão de edição: campos travados */
+body.so-leitura .exec-status,body.so-leitura .exec-data,body.so-leitura .exec-obs{pointer-events:none;opacity:.65;background:#F4F4F2!important}
+body.so-leitura #btn-importar{display:none}
 
 /* cartões (celular) */
 #exec-cards{display:none}
@@ -855,6 +860,17 @@ document.querySelectorAll('[data-vai]').forEach(b=>b.addEventListener('click',()
   const alvo=document.querySelector('.nav-link[data-t="'+b.dataset.vai+'"]');
   if(alvo)alvo.click();
 }));
+/* usuário logado: nome na lateral e trava de edição conforme a permissão */
+function aplicaPermissao(){
+  const A=window.sapataoAuth;
+  const ed=!A||!A.user||A.podeEditar('roadmap');
+  document.body.classList.toggle('so-leitura',!ed);
+  const n1=document.querySelector('.user .n1');
+  if(n1&&A&&A.user)n1.textContent=A.user.nome;
+}
+aplicaPermissao();
+document.addEventListener('sapatao-auth',aplicaPermissao);
+document.addEventListener('sapatao-login',aplicaPermissao);
 </script>
 
 
@@ -870,7 +886,7 @@ try{
   if(sv&&sv.dados){Object.keys(sv.dados).forEach(function(k){if(EXECUCOES[k])Object.assign(EXECUCOES[k],sv.dados[k]);});salvoEm=sv.salvoEm||1;}
 }catch(e){/* ambiente sem localStorage (ex.: artefato) — segue sem persistência */}
 function gravaLocal(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:2,salvoEm:salvoEm,dados:EXECUCOES}));}catch(e){}}
-function salva(){salvoEm=Date.now();gravaLocal();agendaPublicacao();}
+function salva(){if(document.body.classList.contains('so-leitura'))return;salvoEm=Date.now();gravaLocal();agendaPublicacao();}
 const aberto=new Set();
 let ordem={chave:'prazo',dir:1};
 
@@ -1125,7 +1141,7 @@ if(cfgSalvar)cfgSalvar.addEventListener('click',function(){
   try{localStorage.setItem(LS_TOKEN,v);}catch(e){}
   cfgCampo.value='';atualizaCfg();iniciaSync();
   const A=window.sapataoAuth;
-  if(A&&A.pw)publicaChaveNuvem(A.pw,v).then(function(ok){if(ok)chip('ok','Nuvem: chave guardada também na nuvem — os outros aparelhos recebem ao entrar com a senha');});
+  if(A&&A.pw)window.sapataoChave.garante().then(function(ok){if(ok)chip('ok','Nuvem: chave guardada também na nuvem — os outros aparelhos do seu usuário recebem ao entrar com a senha');});
   else chip('ok','Nuvem: chave salva neste aparelho. Para guardá-la na nuvem, saia e entre digitando a senha, e cole a chave de novo.');
 });
 if(cfgRemover)cfgRemover.addEventListener('click',function(){
@@ -1134,50 +1150,11 @@ if(cfgRemover)cfgRemover.addEventListener('click',function(){
 });
 atualizaCfg();
 
-/* --- Chave de publicação na nuvem ---
-   A chave fica também no repositório, criptografada (AES-GCM) com uma chave
-   derivada da SENHA do site (PBKDF2, 310 mil iterações) — roadmap/chave.enc.json.
-   Quem entra digitando a senha em outro aparelho recebe e destrava sozinho.
-   A senha digitada existe só na memória da página (window.sapataoAuth.pw). */
-const KEY_API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/chave.enc.json';
-function b64bytes(u8){let s='';u8.forEach(function(b){s+=String.fromCharCode(b);});return btoa(s);}
-function bytesB64(b64){return Uint8Array.from(atob(b64),function(c){return c.charCodeAt(0);});}
-async function kdfSenha(pw,saltU8){
-  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:saltU8,iterations:310000},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-}
-async function publicaChaveNuvem(pw,token){
-  if(!pw||!token||!window.crypto||!crypto.subtle)return false;
-  try{
-    const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
-    const key=await kdfSenha(pw,salt);
-    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(token));
-    const doc={v:1,salt:b64bytes(salt),iv:b64bytes(iv),ct:b64bytes(new Uint8Array(ct))};
-    const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+token,'Content-Type':'application/json'};
-    let sha=null;
-    const g=await fetch(KEY_API+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
-    if(g.ok)sha=(await g.json()).sha;
-    const body={message:'chore: guarda a chave de publicação criptografada (nuvem)',branch:'main',content:b64enc(JSON.stringify(doc,null,2))};
-    if(sha)body.sha=sha;
-    const r=await fetch(KEY_API,{method:'PUT',headers:h,body:JSON.stringify(body)});
-    return r.ok;
-  }catch(e){return false;}
-}
+/* --- Chave de publicação na nuvem: cofre compartilhado em auth.js
+   (roadmap/chave.enc.json v2 — um envelope por usuário, AES-GCM) --- */
 async function buscaChaveNuvem(){
-  const A=window.sapataoAuth;
-  if(tokenSync()||!A||!A.pw||!window.crypto||!crypto.subtle)return;
-  try{
-    const r=await fetch(KEY_API+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
-    if(!r.ok)return;
-    const doc=JSON.parse(b64dec((await r.json()).content));
-    const key=await kdfSenha(A.pw,bytesB64(doc.salt));
-    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytesB64(doc.iv)},key,bytesB64(doc.ct));
-    const token=new TextDecoder().decode(pt);
-    if(!token)return;
-    try{localStorage.setItem(LS_TOKEN,token);}catch(e){}
-    atualizaCfg();iniciaSync();
-    chip('ok','Nuvem: chave recebida da nuvem — este aparelho já publica');
-  }catch(e){/* senha não abre o cofre (chave gravada com senha antiga) — segue só leitura */}
+  const ok=await window.sapataoChave.busca();
+  if(ok){atualizaCfg();iniciaSync();chip('ok','Nuvem: chave recebida da nuvem — este aparelho já publica');}
 }
 document.addEventListener('sapatao-login',buscaChaveNuvem);
 buscaChaveNuvem();
@@ -1190,43 +1167,45 @@ if(snBtn)snBtn.addEventListener('click',async function(){
   const atual=document.getElementById('sn-atual').value;
   const nova=document.getElementById('sn-nova').value;
   const conf=document.getElementById('sn-conf').value;
-  if(!A){snDiz('Recarregue a p\u00e1gina e tente de novo.',true);return;}
-  if(!tokenSync()){snDiz('Cole antes a chave de publica\u00e7\u00e3o no quadro Nuvem acima \u2014 ela \u00e9 necess\u00e1ria para gravar a senha nova.',true);return;}
+  if(!A||!A.user){snDiz('Recarregue a página e tente de novo.',true);return;}
+  if(!tokenSync()){snDiz('Cole antes a chave de publicação no quadro Nuvem acima — ela é necessária para gravar a senha nova.',true);return;}
   if(nova.length<6){snDiz('A senha nova precisa de pelo menos 6 caracteres.',true);return;}
-  if(nova!==conf){snDiz('A confirma\u00e7\u00e3o n\u00e3o bate com a senha nova.',true);return;}
-  if(nova===atual){snDiz('A senha nova \u00e9 igual \u00e0 atual.',true);return;}
-  snBtn.disabled=true;snDiz('Gravando senha nova\u2026');
+  if(nova!==conf){snDiz('A confirmação não bate com a senha nova.',true);return;}
+  if(nova===atual){snDiz('A senha nova é igual à atual.',true);return;}
+  snBtn.disabled=true;snDiz('Gravando senha nova…');
   try{
-    const API_AUTH='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/auth.js';
+    const API_US='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/usuarios.json';
     const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
-    const g=await fetch(API_AUTH+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+    const g=await fetch(API_US+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
     if(g.status===401||g.status===403)throw new Error('a chave de publicação é inválida ou expirou — gere uma nova no GitHub e cole no quadro Nuvem acima');
-    if(!g.ok)throw new Error('HTTP '+g.status+' ao ler o auth.js');
+    if(!g.ok)throw new Error('HTTP '+g.status+' ao ler os usuários');
     const j=await g.json();
-    let src=b64dec(j.content);
-    /* valida a senha atual contra a vers\u00e3o fresca do reposit\u00f3rio (n\u00e3o contra o cache do navegador) */
-    const mAtual=src.match(/HASH_SENHA = '([0-9a-f]{64})'/);
-    const hAtual=A.sha256(atual);
-    if(!(mAtual&&hAtual===mAtual[1])&&hAtual!==A.hash){snBtn.disabled=false;snDiz('A senha atual n\u00e3o confere.',true);return;}
+    const doc=JSON.parse(b64dec(j.content));
+    const eu=(doc.usuarios||[]).find(function(u){return u.id===A.user.id;});
+    if(!eu)throw new Error('seu usuário não está na lista');
+    /* valida a senha atual contra a versão fresca do repositório */
+    if(A.sha256(atual)!==eu.hash){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
     const novoHash=A.sha256(nova);
-    if(!/^[0-9a-f]{64}$/.test(novoHash))throw new Error('falha ao gerar o c\u00f3digo da senha');
-    const re=/HASH_SENHA = '[0-9a-f]{64}'/;
-    if(!re.test(src))throw new Error('n\u00e3o achei o HASH_SENHA no auth.js');
-    src=src.replace(re,"HASH_SENHA = '"+novoHash+"'");
-    const r=await fetch(API_AUTH,{method:'PUT',headers:h,body:JSON.stringify({
-      message:'chore: altera a senha do Roadmap Comercial (via Configura\u00e7\u00f5es)',branch:'main',content:b64enc(src),sha:j.sha})});
+    if(!/^[0-9a-f]{64}$/.test(novoHash))throw new Error('falha ao gerar o código da senha');
+    /* a senha identifica o usuário no login — não pode repetir a de outra pessoa */
+    if((doc.usuarios||[]).some(function(u){return u.id!==eu.id&&u.hash===novoHash;})){snBtn.disabled=false;snDiz('Essa senha já está em uso por outro usuário — escolha outra.',true);return;}
+    eu.hash=novoHash;
+    const r=await fetch(API_US,{method:'PUT',headers:h,body:JSON.stringify({
+      message:'chore: altera a senha do usuário '+eu.nome+' (via Configurações)',branch:'main',content:b64enc(JSON.stringify(doc,null,1)),sha:j.sha})});
     if(r.status===401||r.status===403)throw new Error('a chave de publicação é inválida ou expirou — gere uma nova no GitHub e cole no quadro Nuvem acima');
     if(!r.ok)throw new Error('HTTP '+r.status+' ao gravar');
+    const sess=JSON.stringify({u:eu.id,h:novoHash});
     try{
-      if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,novoHash);
-      if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,novoHash);
+      if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,sess);
+      if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,sess);
+      localStorage.setItem('sapatao-usuarios-cache-v1',JSON.stringify({v:1,usuarios:doc.usuarios}));
     }catch(e){}
-    /* regrava a chave da nuvem cifrada com a senha nova */
-    A.pw=nova;
-    if(tokenSync())publicaChaveNuvem(nova,tokenSync());
+    A.user.hash=novoHash;A.pw=nova;
+    /* regrava o envelope da chave da nuvem cifrado com a senha nova */
+    window.sapataoChave.garante();
     document.getElementById('sn-atual').value='';document.getElementById('sn-nova').value='';document.getElementById('sn-conf').value='';
-    snDiz('Senha alterada! Este aparelho continua conectado; os outros v\u00e3o pedir a senha nova (se algum recusar nos primeiros minutos, \u00e9 cache \u2014 o site confere sozinho e aceita).');
-  }catch(e){snDiz('N\u00e3o consegui gravar ('+e.message+'). Confira a chave de publica\u00e7\u00e3o e tente de novo.',true);}
+    snDiz('Senha alterada! Este aparelho continua conectado; os seus outros aparelhos vão pedir a senha nova.');
+  }catch(e){snDiz('Não consegui gravar ('+e.message+'). Confira a chave de publicação e tente de novo.',true);}
   snBtn.disabled=false;
 });
 iniciaSync();

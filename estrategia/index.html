@@ -9,6 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E %3Cdefs%3E %3ClinearGradient id=%22bg%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E %3Cstop offset=%220%22 stop-color=%22%230B5748%22/%3E %3Cstop offset=%221%22 stop-color=%22%2300332A%22/%3E %3C/linearGradient%3E %3C/defs%3E %3Crect width=%22512%22 height=%22512%22 fill=%22url(%23bg)%22/%3E %3C%21-- alvo estrat%C3%A9gico: an%C3%A9is creme, centro laranja --%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%22170%22 fill=%22none%22 stroke=%22%23F5F3EC%22 stroke-width=%2230%22 opacity=%220.55%22/%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%22105%22 fill=%22none%22 stroke=%22%23F5F3EC%22 stroke-width=%2230%22 opacity=%220.8%22/%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%2246%22 fill=%22%23EC6C22%22/%3E %3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>window.SAPATAO_APP='pe';</script>
 <script src="../roadmap/auth.js"></script>
 <style>
 :root{
@@ -217,6 +218,23 @@ tr:last-child td{border-bottom:none}
 .cfg-token{width:100%;font-family:'IBM Plex Mono',monospace;font-size:12.5px;border:1px solid var(--linha);border-radius:8px;padding:9px 11px;background:#fff;color:var(--verde)}
 .cfg-btn{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#fff;background:var(--verde);border:none;border-radius:8px;padding:9px 16px;cursor:pointer;margin-top:8px}
 .cfg-btn.sec{background:#fff;color:#8C1D18;border:1px solid #E8B3AE}
+
+/* follow-up apagado fica no histórico, riscado e com registro */
+.fu-apagado .fu-texto-view{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--verde-suave);opacity:.75}
+.fu-apagado .fu-data{opacity:.6}
+.fu-apagado-nota{font-size:11px;color:#8C1D18;margin-top:3px;font-style:italic}
+.fu-por{font-size:11.5px;color:var(--verde-suave);margin-top:3px}
+
+/* usuário sem permissão de edição */
+body.so-leitura .exec-status,body.so-leitura .exec-data{pointer-events:none;opacity:.65;background:#F4F4F2!important}
+body.so-leitura .fu-novo,body.so-leitura .fu-del{display:none!important}
+
+/* administração de usuários */
+.us-tbl select,.us-tbl input[type=text]{font-family:'Archivo',sans-serif;font-size:12.5px;border:1px solid var(--linha);border-radius:6px;padding:5px 7px;background:#fff;color:var(--verde);max-width:130px}
+.us-tbl td{white-space:nowrap}
+.us-mini{font-family:'Archivo',sans-serif;font-weight:600;font-size:12px;color:var(--verde);background:#fff;border:1px solid var(--linha);border-radius:14px;padding:4px 11px;cursor:pointer}
+.us-mini:hover{border-color:var(--verde-suave)}
+.sn-campo{width:100%;font-family:'Archivo',sans-serif;font-size:14px;border:1px solid var(--linha);border-radius:8px;padding:9px 11px;background:#fff;color:var(--verde);margin:4px 0}
 </style>
 </head>
 <body>
@@ -520,6 +538,29 @@ tr:last-child td{border-bottom:none}
       <button type="button" class="cfg-btn" id="cfg-salvar">Salvar chave neste aparelho</button>
     </div>
   </div>
+
+  <h3>Minha senha</h3>
+  <div class="card" style="max-width:420px">
+    <p class="lead" style="margin-bottom:8px">A senha identifica o seu usuário — vale para o Roadmap e para o Planejamento. Precisa da chave de publicação neste aparelho.</p>
+    <input type="password" class="sn-campo" id="sn-atual" placeholder="Senha atual" autocomplete="off">
+    <input type="password" class="sn-campo" id="sn-nova" placeholder="Senha nova (mínimo 6 caracteres)" autocomplete="off">
+    <input type="password" class="sn-campo" id="sn-conf" placeholder="Repetir a senha nova" autocomplete="off">
+    <button type="button" class="cfg-btn" id="sn-trocar">Alterar minha senha</button>
+    <p class="lead" id="sn-msg" style="margin-top:8px"></p>
+  </div>
+
+  <div id="cfg-usuarios" hidden>
+    <h3>Usuários e permissões</h3>
+    <p class="lead">Cada pessoa entra com a própria senha (é ela que identifica o usuário). Permissão por painel: <b>Edita</b>, <b>Só lê</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo, além de gerir os usuários.</p>
+    <div class="card">
+      <div class="tbl"><table class="us-tbl" id="us-tbl"></table></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="cfg-btn" id="us-add" style="margin-top:0">+ Adicionar usuário</button>
+        <button type="button" class="cfg-btn" id="us-salvar" style="margin-top:0;background:var(--laranja)">Salvar alterações</button>
+      </div>
+      <p class="lead" id="us-msg" style="margin-top:10px;margin-bottom:0"></p>
+    </div>
+  </div>
 </section>
 
 </main>
@@ -578,7 +619,8 @@ try{
   if(sv&&sv.dados){Object.keys(sv.dados).forEach(k=>{if(EXEC[k])EXEC[k]=sv.dados[k];});salvoEm=sv.salvoEm||1;}
 }catch(e){}
 function gravaLocal(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:1,salvoEm:salvoEm,dados:EXEC}));}catch(e){}}
-function salva(){salvoEm=Date.now();gravaLocal();agendaPublicacao();renderAll();renderPainel();}
+function quem(){const A=window.sapataoAuth;return (A&&A.user&&A.user.nome)||'';}
+function salva(){if(document.body.classList.contains('so-leitura'))return;salvoEm=Date.now();gravaLocal();agendaPublicacao();renderAll();renderPainel();}
 
 const aberto=new Set();
 let filtro={resp:'todos',ord:'gut'};
@@ -610,7 +652,14 @@ function fuHtml(a){
   let h='<div class="fu-lista">';
   if(!e.followups.length)h+='<div class="fu-vazio">Nenhum follow-up registrado ainda.</div>';
   e.followups.forEach((f,i)=>{
-    h+='<div class="fu-item"><span class="fu-data">'+fmt(f.data)+'</span><div class="fu-texto-view">'+esc(f.texto)+'</div><button type="button" class="fu-del" data-i="'+i+'" title="Apagar este follow-up">&#10005;</button></div>';
+    const ap=f.apagado;
+    h+='<div class="fu-item'+(ap?' fu-apagado':'')+'"><span class="fu-data">'+fmt(f.data)+'</span>'
+      +'<div style="flex:1"><div class="fu-texto-view">'+esc(f.texto)+'</div>'
+      +(f.por&&!ap?'<div class="fu-por">— '+esc(f.por)+'</div>':'')
+      +(ap?'<div class="fu-apagado-nota">apagado em '+fmt(ap.em)+(ap.por?' por '+esc(ap.por):'')+'</div>':'')
+      +'</div>'
+      +(ap?'':'<button type="button" class="fu-del" data-i="'+i+'" title="Apagar este follow-up (fica o registro)">&#10005;</button>')
+      +'</div>';
   });
   h+='</div><div class="fu-novo"><div class="fu-linha"><label>Novo follow-up</label><input type="date" class="fu-data-in" value="'+HOJE+'"></div><textarea class="fu-texto" placeholder="O que foi visto nesta rodada? Avanços, números, pendências…"></textarea><button type="button" class="fu-add">Registrar follow-up</button></div>';
   return h;
@@ -662,13 +711,18 @@ cards.addEventListener('click',ev=>{
     const t=card.querySelector('.fu-texto').value.trim();
     const d=card.querySelector('.fu-data-in').value||HOJE;
     if(!t){card.querySelector('.fu-texto').focus();return;}
-    EXEC[id].followups.push({data:d,texto:t});
+    const novo={data:d,texto:t};
+    if(quem())novo.por=quem();
+    EXEC[id].followups.push(novo);
     EXEC[id].followups.sort((x,y)=>x.data.localeCompare(y.data));
     salva();return;
   }
   if(ev.target.classList.contains('fu-del')){
     const i=+ev.target.dataset.i;
-    if(confirm('Apagar este follow-up? Essa ação não pode ser desfeita.')){EXEC[id].followups.splice(i,1);salva();}
+    if(confirm('Apagar este follow-up? Ele continua no histórico, riscado, com o registro de quem apagou.')){
+      EXEC[id].followups[i].apagado={em:HOJE,por:quem()||undefined};
+      salva();
+    }
     return;
   }
 });
@@ -826,35 +880,172 @@ if(cfgSalvar)cfgSalvar.addEventListener('click',()=>{
   if(!v){cfgCampo.focus();return;}
   try{localStorage.setItem(LS_TOKEN,v);}catch(e){}
   cfgCampo.value='';atualizaCfg();iniciaSync();
+  const A=window.sapataoAuth;
+  if(A&&A.pw)window.sapataoChave.garante().then(ok=>{if(ok)chip('ok','Nuvem: chave guardada também na nuvem — os outros aparelhos do seu usuário recebem ao entrar com a senha');});
 });
 if(cfgRemover)cfgRemover.addEventListener('click',()=>{
   try{localStorage.removeItem(LS_TOKEN);}catch(e){}
   atualizaCfg();iniciaSync();
 });
-async function kdfSenha(pw,saltU8){
-  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:saltU8,iterations:310000},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-}
-function bytesB64(b64){return Uint8Array.from(atob(b64),c=>c.charCodeAt(0));}
+/* cofre da chave compartilhado (auth.js): envelope por usuário */
 async function buscaChaveNuvem(){
-  const A=window.sapataoAuth;
-  if(tokenSync()||!A||!A.pw||!window.crypto||!crypto.subtle)return;
-  try{
-    const r=await fetch(KEY_API+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
-    if(!r.ok)return;
-    const doc=JSON.parse(b64dec((await r.json()).content));
-    const key=await kdfSenha(A.pw,bytesB64(doc.salt));
-    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytesB64(doc.iv)},key,bytesB64(doc.ct));
-    const token=new TextDecoder().decode(pt);
-    if(!token)return;
-    try{localStorage.setItem(LS_TOKEN,token);}catch(e){}
-    atualizaCfg();iniciaSync();
-    chip('ok','Nuvem: chave recebida da nuvem — este aparelho já publica');
-  }catch(e){/* senha não abre o cofre — segue só leitura */}
+  const ok=await window.sapataoChave.busca();
+  if(ok){atualizaCfg();iniciaSync();chip('ok','Nuvem: chave recebida da nuvem — este aparelho já publica');}
+  else if(tokenSync()&&window.sapataoAuth&&window.sapataoAuth.pw)window.sapataoChave.garante();
 }
 document.addEventListener('sapatao-login',buscaChaveNuvem);
 
-renderAll();renderPainel();atualizaCfg();
+/* ============ Usuário logado: nome, permissão e administração ============ */
+function aplicaPermissao(){
+  const A=window.sapataoAuth;
+  const ed=!A||!A.user||A.podeEditar('pe');
+  document.body.classList.toggle('so-leitura',!ed);
+  const n1=document.querySelector('.user .n1');
+  if(n1&&A&&A.user)n1.textContent=A.user.nome;
+  const adm=document.getElementById('cfg-usuarios');
+  if(adm)adm.hidden=!(A&&A.user&&A.user.admin);
+  if(!ed)renderAll();
+}
+document.addEventListener('sapatao-auth',aplicaPermissao);
+document.addEventListener('sapatao-login',aplicaPermissao);
+
+/* ---- minha senha ---- */
+const API_US='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/usuarios.json';
+const snMsg=document.getElementById('sn-msg'),snBtn=document.getElementById('sn-trocar');
+function snDiz(t,erro){if(snMsg){snMsg.textContent=t;snMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
+async function usuariosDoRepo(comToken){
+  const h={'Accept':'application/vnd.github+json'};
+  if(comToken&&tokenSync())h['Authorization']='Bearer '+tokenSync();
+  const g=await fetch(API_US+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  if(g.status===401||g.status===403)throw new Error('a chave de publicação é inválida ou expirou');
+  if(!g.ok)throw new Error('HTTP '+g.status+' ao ler os usuários');
+  const j=await g.json();
+  return{sha:j.sha,doc:JSON.parse(b64dec(j.content))};
+}
+async function gravaUsuarios(doc,sha,msg){
+  const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
+  const r=await fetch(API_US,{method:'PUT',headers:h,body:JSON.stringify({message:msg,branch:'main',content:b64enc(JSON.stringify(doc,null,1)),sha:sha})});
+  if(r.status===401||r.status===403)throw new Error('a chave de publicação é inválida ou expirou');
+  if(!r.ok)throw new Error('HTTP '+r.status+' ao gravar');
+  try{localStorage.setItem('sapatao-usuarios-cache-v1',JSON.stringify({v:1,usuarios:doc.usuarios}));}catch(e){}
+}
+if(snBtn)snBtn.addEventListener('click',async ()=>{
+  const A=window.sapataoAuth;
+  const atual=document.getElementById('sn-atual').value;
+  const nova=document.getElementById('sn-nova').value;
+  const conf=document.getElementById('sn-conf').value;
+  if(!A||!A.user){snDiz('Recarregue a página e tente de novo.',true);return;}
+  if(!tokenSync()){snDiz('Este aparelho precisa da chave de publicação (quadro Nuvem acima) para gravar a senha.',true);return;}
+  if(nova.length<6){snDiz('A senha nova precisa de pelo menos 6 caracteres.',true);return;}
+  if(nova!==conf){snDiz('A confirmação não bate com a senha nova.',true);return;}
+  snBtn.disabled=true;snDiz('Gravando senha nova…');
+  try{
+    const{sha,doc}=await usuariosDoRepo(true);
+    const eu=(doc.usuarios||[]).find(u=>u.id===A.user.id);
+    if(!eu)throw new Error('seu usuário não está na lista');
+    if(A.sha256(atual)!==eu.hash){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
+    const novoHash=A.sha256(nova);
+    if((doc.usuarios||[]).some(u=>u.id!==eu.id&&u.hash===novoHash)){snBtn.disabled=false;snDiz('Essa senha já está em uso por outro usuário — escolha outra.',true);return;}
+    eu.hash=novoHash;
+    await gravaUsuarios(doc,sha,'chore: altera a senha do usuário '+eu.nome+' (via Configurações)');
+    const sess=JSON.stringify({u:eu.id,h:novoHash});
+    try{
+      if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,sess);
+      if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,sess);
+    }catch(e){}
+    A.user.hash=novoHash;A.pw=nova;
+    window.sapataoChave.garante();
+    ['sn-atual','sn-nova','sn-conf'].forEach(i=>document.getElementById(i).value='');
+    snDiz('Senha alterada! Este aparelho continua conectado; os seus outros aparelhos vão pedir a senha nova.');
+  }catch(e){snDiz('Não consegui gravar ('+e.message+').',true);}
+  snBtn.disabled=false;
+});
+
+/* ---- administração de usuários (só admin) ---- */
+const usTbl=document.getElementById('us-tbl'),usMsg=document.getElementById('us-msg');
+let usDoc=null,usSha=null;
+function usDiz(t,erro){if(usMsg){usMsg.textContent=t;usMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
+function usRender(){
+  if(!usDoc)return;
+  const PERMS=[['edita','Edita'],['le','Só lê'],['nao','Sem acesso']];
+  const sel=(v,cls,i)=>'<select class="'+cls+'" data-i="'+i+'">'+PERMS.map(p=>'<option value="'+p[0]+'"'+(v===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select>';
+  usTbl.innerHTML='<tr><th>Usuário</th><th>Roadmap</th><th>Planejamento</th><th>Admin</th><th>Ativo</th><th>Senha</th></tr>'
+    +usDoc.usuarios.map((u,i)=>{
+      const p=u.perm||{};
+      return '<tr><td><input type="text" class="us-nome" data-i="'+i+'" value="'+esc(u.nome)+'"></td>'
+        +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.roadmap||'nao','us-roadmap',i))+'</td>'
+        +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.pe||'nao','us-pe',i))+'</td>'
+        +'<td><input type="checkbox" class="us-admin" data-i="'+i+'"'+(u.admin?' checked':'')+'></td>'
+        +'<td><input type="checkbox" class="us-ativo" data-i="'+i+'"'+(u.ativo!==false?' checked':'')+'></td>'
+        +'<td><button type="button" class="us-mini us-senha" data-i="'+i+'">redefinir</button></td></tr>';
+    }).join('');
+}
+async function usCarrega(){
+  try{const r=await usuariosDoRepo(true);usDoc=r.doc;usSha=r.sha;usRender();usDiz('');}
+  catch(e){usDiz('Não consegui carregar a lista ('+e.message+').',true);}
+}
+function usId(nome){
+  const base=nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'usuario';
+  let id=base,n=2;
+  while(usDoc.usuarios.some(u=>u.id===id)){id=base+'-'+n;n++;}
+  return id;
+}
+if(usTbl){
+  usTbl.addEventListener('change',ev=>{
+    const i=+ev.target.dataset.i,u=usDoc&&usDoc.usuarios[i];if(!u)return;
+    u.perm=u.perm||{};
+    if(ev.target.classList.contains('us-nome'))u.nome=ev.target.value.trim()||u.nome;
+    if(ev.target.classList.contains('us-roadmap'))u.perm.roadmap=ev.target.value;
+    if(ev.target.classList.contains('us-pe'))u.perm.pe=ev.target.value;
+    if(ev.target.classList.contains('us-admin')){u.admin=ev.target.checked;usRender();}
+    if(ev.target.classList.contains('us-ativo'))u.ativo=ev.target.checked;
+  });
+  usTbl.addEventListener('click',ev=>{
+    if(!ev.target.classList.contains('us-senha'))return;
+    const i=+ev.target.dataset.i,u=usDoc.usuarios[i];
+    const s=prompt('Nova senha para '+u.nome+' (mínimo 6 caracteres):');
+    if(s===null)return;
+    if(s.length<6){usDiz('Senha muito curta — nada foi alterado.',true);return;}
+    const h=window.sapataoAuth.sha256(s);
+    if(usDoc.usuarios.some(x=>x.id!==u.id&&x.hash===h)){usDiz('Essa senha já é de outro usuário — escolha outra.',true);return;}
+    u.hash=h;
+    usDiz('Senha de '+u.nome+' pronta — clique em "Salvar alterações" para gravar.');
+  });
+  document.getElementById('us-add').addEventListener('click',()=>{
+    if(!usDoc)return;
+    const nome=prompt('Nome do novo usuário:');
+    if(!nome||!nome.trim())return;
+    const s=prompt('Senha inicial de '+nome.trim()+' (mínimo 6 caracteres):');
+    if(s===null)return;
+    if(s.length<6){usDiz('Senha muito curta — usuário não criado.',true);return;}
+    const h=window.sapataoAuth.sha256(s);
+    if(usDoc.usuarios.some(x=>x.hash===h)){usDiz('Essa senha já é de outro usuário — escolha outra.',true);return;}
+    usDoc.usuarios.push({id:usId(nome.trim()),nome:nome.trim(),hash:h,admin:false,ativo:true,perm:{roadmap:'le',pe:'le'}});
+    usRender();
+    usDiz('Usuário criado com permissão "Só lê" nos dois painéis — ajuste e clique em "Salvar alterações".');
+  });
+  document.getElementById('us-salvar').addEventListener('click',async ()=>{
+    const A=window.sapataoAuth;
+    if(!usDoc)return;
+    if(!tokenSync()){usDiz('Este aparelho precisa da chave de publicação para gravar.',true);return;}
+    const eu=usDoc.usuarios.find(u=>u.id===A.user.id);
+    if(eu){eu.admin=true;eu.ativo=true;} /* ninguém se tranca para fora */
+    if(!usDoc.usuarios.some(u=>u.admin&&u.ativo!==false)){usDiz('É preciso ter ao menos um admin ativo.',true);return;}
+    const hs=usDoc.usuarios.map(u=>u.hash);
+    if(new Set(hs).size!==hs.length){usDiz('Dois usuários estão com a mesma senha — troque uma delas.',true);return;}
+    usDiz('Gravando…');
+    try{
+      await gravaUsuarios(usDoc,usSha,'chore: atualiza usuários e permissões (via Configurações)');
+      A.usuarios=usDoc.usuarios;
+      usDiz('Usuários gravados! As permissões valem no próximo acesso de cada um.');
+      usCarrega();
+    }catch(e){usDiz('Não consegui gravar ('+e.message+').',true);}
+  });
+  const navCfg=document.querySelector('.nav-link[data-t="config"]');
+  if(navCfg)navCfg.addEventListener('click',()=>{const A=window.sapataoAuth;if(A&&A.user&&A.user.admin)usCarrega();});
+}
+
+renderAll();renderPainel();atualizaCfg();aplicaPermissao();
 iniciaSync();buscaChaveNuvem();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)iniciaSync();});
 })();
