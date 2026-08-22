@@ -83,9 +83,10 @@ section{display:none}
 section.active{display:block}
 .km{display:flex;align-items:baseline;gap:12px;margin:22px 0 6px;flex-wrap:wrap}
 .km .marco{font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;color:var(--laranja-escuro);background:#F7E1D1;padding:3px 10px;border-radius:20px;letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;order:1}
-.km-btn{order:2;display:inline-flex;align-items:center;gap:8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;color:#fff;background:var(--laranja);border:none;border-bottom:3px solid var(--laranja-escuro);border-radius:10px;padding:11px 22px;cursor:pointer;flex-shrink:0;box-shadow:0 3px 10px rgba(236,108,34,.3)}
-.km-btn:hover{background:var(--laranja-escuro)}
-.km-btn:active{transform:translateY(1px);border-bottom-width:2px;box-shadow:0 1px 4px rgba(236,108,34,.3)}
+.km-btn-row{text-align:center;margin:24px 0 28px}
+.km-btn{display:inline-flex;align-items:center;gap:8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14.5px;color:var(--laranja-escuro);background:var(--fundo);border:1.5px solid var(--laranja);border-radius:999px;padding:12px 28px;cursor:pointer}
+.km-btn:hover{background:#F7E1D1}
+.km-btn:active{background:#F3D6BE}
 .km-btn:focus-visible{outline:2px solid var(--laranja);outline-offset:2px}
 h2{font-family:'Fraunces',serif;font-weight:600;font-size:27px;letter-spacing:.01em;color:var(--verde)}
 h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;text-transform:uppercase;letter-spacing:.16em;color:var(--laranja-escuro);margin:22px 0 8px;border-bottom:2px solid var(--laranja);display:inline-block;padding-bottom:3px}
@@ -176,7 +177,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .btn-print:hover{background:#F4F6F8;border-color:#AEBBC9}
 .btn-print:focus-visible{outline:2px solid #3D4A5C;outline-offset:2px}
 @media (max-width:900px){.btn-print{display:none}}
-@media print{aside,.topbar,.scrim,.btn-print,.faixa,.km-btn{display:none!important}body{background:#fff}header{padding-top:0}main{padding:0 0 20px}@page{margin:12mm}}
+@media print{aside,.topbar,.scrim,.btn-print,.faixa,.km-btn-row{display:none!important}body{background:#fff}header{padding-top:0}main{padding:0 0 20px}@page{margin:12mm}}
 
 /* --- execução do plano --- */
 .exec-resumo{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
@@ -303,7 +304,8 @@ tr.late td{background:#FCF0ED!important}
 
 <!-- ============ PAINEL ============ -->
 <section id="painel" class="active">
-  <div class="km"><span class="marco">Execução</span><button type="button" class="km-btn" data-vai="gut">Abrir Plano de Ação &#8594;</button><h2>Painel do Plano de Ação</h2></div>
+  <div class="km"><span class="marco">Execução</span><h2>Painel do Plano de Ação</h2></div>
+  <div class="km-btn-row"><button type="button" class="km-btn" data-vai="gut">Abrir Plano de Ação &#8594;</button></div>
   <p class="lead">As 17 ações oficiais, atualizadas automaticamente conforme o preenchimento do Plano de Ação: pendentes em ordem de prazo e concluídas riscadas no fim. Prioridade G×U×T entre parênteses. É isto que o Club Reborn cobra em 90 dias.</p>
 
   <div class="card" id="painel-acoes"></div>
