@@ -270,8 +270,8 @@
     '.sptx-sub{font-size:13.5px;color:#3D6B60;margin:0 0 18px}' +
     '.sptx-faixa{height:1px;background:#D8D8D3;margin:0 0 22px}' +
     '.sptx-gate label.sptx-l{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3D6B60;margin-bottom:6px}' +
-    '.sptx-gate input[type=password],.sptx-gate select{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:12px 14px;border:1.5px solid #D8D8D3;border-radius:10px;color:#004438;outline:none;background:#fff}' +
-    '.sptx-gate input[type=password]:focus,.sptx-gate select:focus{border-color:#EC6C22}' +
+    '.sptx-gate input[type=password],.sptx-gate input[type=text]{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:12px 14px;border:1.5px solid #D8D8D3;border-radius:10px;color:#004438;outline:none;background:#fff}' +
+    '.sptx-gate input[type=password]:focus,.sptx-gate input[type=text]:focus{border-color:#EC6C22}' +
     '.sptx-campo{margin-bottom:14px}' +
     '.sptx-erro{display:none;color:#8C1D18;background:#F9DEDC;border:1px solid #E8B3AE;border-radius:8px;font-size:13px;padding:8px 12px;margin-top:10px}' +
     '.sptx-erro.on{display:block}' +
@@ -322,13 +322,13 @@
       '<form class="sptx-card" autocomplete="off">' +
       '<div class="sptx-eyebrow">Estação Sapatão · Acesso restrito</div>' +
       '<h1 class="sptx-titulo">' + (APP === 'pe' ? 'Planejamento <i>Estratégico</i>' : 'Roadmap <i>Comercial</i>') + '</h1>' +
-      '<p class="sptx-sub">Material interno. Escolha o seu usuário e digite a sua senha.</p>' +
+      '<p class="sptx-sub">Material interno. Digite o seu usuário e a sua senha.</p>' +
       '<div class="sptx-faixa"></div>' +
       '<div class="sptx-campo"><label class="sptx-l" for="sptx-user">Usuário</label>' +
-      '<select id="sptx-user"></select></div>' +
+      '<input type="text" id="sptx-user" placeholder="Seu usuário" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></div>' +
       '<label class="sptx-l" for="sptx-senha">Senha</label>' +
-      '<input type="password" id="sptx-senha" placeholder="••••••••" autofocus>' +
-      '<div class="sptx-erro" id="sptx-erro">Senha incorreta. Tente de novo.</div>' +
+      '<input type="password" id="sptx-senha" placeholder="••••••••" autocomplete="current-password">' +
+      '<div class="sptx-erro" id="sptx-erro">Usuário ou senha incorretos.</div>' +
       '<label class="sptx-lembrar"><input type="checkbox" id="sptx-lembrar" checked> Manter conectado neste dispositivo</label>' +
       '<button type="submit" class="sptx-btn">Entrar</button>' +
       '<div class="sptx-rodape">Um lugar para parar, ficar e voltar.</div>' +
@@ -336,26 +336,10 @@
     document.body.appendChild(gate);
     var form = gate.querySelector('form'),
         campo = gate.querySelector('#sptx-senha'),
-        selUser = gate.querySelector('#sptx-user'),
+        campoUser = gate.querySelector('#sptx-user'),
         erro = gate.querySelector('#sptx-erro'),
         lembrar = gate.querySelector('#sptx-lembrar');
-    function montaOpcoes(lista) {
-      var ultimo = '';
-      try { ultimo = localStorage.getItem('sapatao-ultimo-usuario') || ''; } catch (e) {}
-      var atual = selUser.value || ultimo;
-      selUser.innerHTML = '';
-      lista.forEach(function (u) {
-        if (u.ativo === false) return;
-        var o = document.createElement('option');
-        o.value = u.id; o.textContent = u.nome;
-        if (u.id === atual) o.selected = true;
-        selUser.appendChild(o);
-      });
-    }
-    montaOpcoes(A.usuarios);
-    /* atualiza a lista de usuários com a versão fresca do repositório */
-    usuariosFrescos().then(function (lista) { A.usuarios = lista; montaOpcoes(lista); }).catch(function () {});
-    campo.focus();
+    campoUser.focus();
     function entra(user, h, senha) {
       gravaSessao(user, h, lembrar.checked);
       A.user = user;
@@ -368,36 +352,37 @@
       try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
     }
     function recusa(msg) {
-      erro.textContent = msg || 'Senha incorreta. Tente de novo.';
+      erro.textContent = msg || 'Usuário ou senha incorretos. Tente de novo.';
       erro.classList.add('on');
       form.classList.add('shake');
       campo.select();
       setTimeout(function () { form.classList.remove('shake'); }, 400);
     }
+    /* compara o usuário digitado com nome/id, ignorando maiúsculas e acentos */
+    function chave(s) {
+      return (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
-      var senha = campo.value, h = sha256(senha), id = selUser.value;
+      var senha = campo.value, h = sha256(senha), digitado = chave(campoUser.value);
+      if (!digitado) { recusa('Digite o seu usuário.'); campoUser.focus(); return; }
       function bate(lista) {
         for (var i = 0; i < lista.length; i++) {
-          if (lista[i].id === id && lista[i].ativo !== false && lista[i].hash === h) return lista[i];
+          var u = lista[i];
+          if (u.ativo === false) continue;
+          if ((chave(u.nome) === digitado || chave(u.id) === digitado) && u.hash === h) return u;
         }
         return null;
       }
       var u = bate(A.usuarios);
-      if (u) {
-        try { localStorage.setItem('sapatao-ultimo-usuario', u.id); } catch (e) {}
-        entra(u, h, senha); return;
-      }
-      /* a lista local pode estar velha (senha trocada há pouco):
+      if (u) { entra(u, h, senha); return; }
+      /* a lista local pode estar velha (usuário novo, senha trocada há pouco):
          confere a versão fresca do repositório antes de recusar */
       usuariosFrescos().then(function (lista) {
-        A.usuarios = lista; montaOpcoes(lista);
+        A.usuarios = lista;
         var v = bate(lista);
-        if (v) {
-          try { localStorage.setItem('sapatao-ultimo-usuario', v.id); } catch (e) {}
-          entra(v, h, senha);
-        } else recusa();
-      }).catch(function () { recusa(); });
+        if (v) entra(v, h, senha); else recusa('Usuário ou senha incorretos. Tente de novo.');
+      }).catch(function () { recusa('Usuário ou senha incorretos. Tente de novo.'); });
     });
   }
 
