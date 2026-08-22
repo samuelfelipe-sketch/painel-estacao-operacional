@@ -106,8 +106,13 @@
   }
   function permDe(user, app) {
     if (!user) return 'nao';
+    if (app === 'config') return 'edita'; /* todo usuário gerencia a própria conta */
     if (user.admin) return 'edita';
     return (user.perm || {})[app] || 'nao';
+  }
+  /* compara nomes de usuário ignorando maiúsculas e acentos */
+  function normUser(s) {
+    return (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
   /* ---------- sessão ---------- */
@@ -358,6 +363,48 @@
 
   /* ---------- fluxo de entrada ---------- */
   var s = leSessao();
+  /* login programático (usado pelo campo de login da central) */
+  A.login = function (usuarioDig, senha, lembrar) {
+    var dig = normUser(usuarioDig), h = sha256(senha);
+    if (!dig || !senha) return Promise.resolve(null);
+    function bate(lista) {
+      for (var i = 0; i < lista.length; i++) {
+        var u = lista[i];
+        if (u.ativo === false) continue;
+        if ((normUser(u.nome) === dig || normUser(u.id) === dig) && u.hash === h) return u;
+      }
+      return null;
+    }
+    function fim(u) {
+      if (!u) return null;
+      gravaSessao(u, h, lembrar !== false);
+      A.user = u; A.pw = senha;
+      anuncia();
+      try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
+      return u;
+    }
+    var u = bate(A.usuarios);
+    if (u) return Promise.resolve(fim(u));
+    return usuariosFrescos().then(function (l) { A.usuarios = l; return fim(bate(l)); }).catch(function () { return null; });
+  };
+  if (APP === 'central') {
+    /* a central é aberta: nunca trava; só resolve a sessão, se houver */
+    if (s) {
+      var uc = null;
+      if (s.u) { A.usuarios.forEach(function (x) { if (x.id === s.u && x.hash === s.h && x.ativo !== false) uc = x; }); }
+      if (!uc) uc = achaPorHash(A.usuarios, s.h);
+      if (uc) {
+        A.user = uc; anuncia();
+        usuariosFrescos().then(function (lista) {
+          A.usuarios = lista;
+          var v2 = null;
+          lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v2 = x; });
+          A.user = v2; anuncia();
+        }).catch(function () {});
+      }
+    }
+    return;
+  }
   if (s) {
     var u = null;
     if (s.u) { A.usuarios.forEach(function (x) { if (x.id === s.u && x.hash === s.h && x.ativo !== false) u = x; }); }
@@ -431,19 +478,15 @@
       campo.select();
       setTimeout(function () { form.classList.remove('shake'); }, 400);
     }
-    /* compara o usuário digitado com nome/id, ignorando maiúsculas e acentos */
-    function chave(s) {
-      return (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    }
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
-      var senha = campo.value, h = sha256(senha), digitado = chave(campoUser.value);
+      var senha = campo.value, h = sha256(senha), digitado = normUser(campoUser.value);
       if (!digitado) { recusa('Digite o seu usuário.'); campoUser.focus(); return; }
       function bate(lista) {
         for (var i = 0; i < lista.length; i++) {
           var u = lista[i];
           if (u.ativo === false) continue;
-          if ((chave(u.nome) === digitado || chave(u.id) === digitado) && u.hash === h) return u;
+          if ((normUser(u.nome) === digitado || normUser(u.id) === digitado) && u.hash === h) return u;
         }
         return null;
       }

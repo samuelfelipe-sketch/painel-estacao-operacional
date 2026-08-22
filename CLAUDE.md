@@ -8,7 +8,8 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 
 | Caminho | O que é | Acesso |
 |---|---|---|
-| `index.html` | **Central de acessos** (porta de entrada): 3 cartões | aberto |
+| `index.html` | **Central de acessos**: login unificado (campo na página, `SAPATAO_APP='central'`) + cartões de todos os apps | aberto |
+| `configuracoes/index.html` | **Configurações centrais** (login): minha senha (todos), chave de sincronização e administração de usuários (admin). Apps apontam para cá | senha |
 | `roadmap/guia.html` | **Guia de Execução** — app principal do Roadmap Comercial (método PACE, 17 ações) | senha |
 | `roadmap/plano-de-acao.html` | Plano de Ação formatado para impressão (A4 paisagem) | senha |
 | `roadmap/resumo.html` | **Método Reborn** — resumo da imersão Club Reborn. Identidade própria (navy/dourado). **Não alterar o layout.** | aberto de propósito (compartilhável) |
@@ -23,7 +24,7 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 | `estrategia/pe-execucoes.json` | **base de dados** do PE (status/novo prazo/follow-ups) — CIFRADA — commits automáticos `chore: sincroniza follow-ups do Planejamento Estratégico (automático)` | — |
 | `estrategia/pe-conteudo.json` | conteúdo sensível do PE (25 ações, diagnóstico, SWOT etc.) — CIFRADO | — |
 | `painel-operacional.html` | Painel Operacional (faturamento por canal). **Desativado por ora** — `data.json` vazio desde maio (token da API do dashboard expirou) | aberto |
-| `fluxo-pessoal/` | app de finanças pessoais (projeto separado, não mexer sem pedido) | — |
+| `fluxo-pessoal/` | app de finanças pessoais — LOGIN E USUÁRIOS PRÓPRIOS, dados cifrados dentro dele (não usa o auth.js; não mexer sem pedido) | login próprio |
 | `reborn-imersao.html`, `context.md`, `scripts/`, `.github/workflows/` | legado do painel operacional | — |
 
 ## Identidade visual (todas as páginas, exceto o Método Reborn)
