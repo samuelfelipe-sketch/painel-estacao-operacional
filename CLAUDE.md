@@ -16,6 +16,8 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 | `roadmap/auth.js` | portão de login (SHA-256 client-side) | — |
 | `roadmap/execucoes.json` | **base de dados** do Plano de Ação (status/data/obs das 17 ações) — commits automáticos feitos pelo próprio site | — |
 | `roadmap/icon.svg` | favicon: funil de vendas em etapas, fechamento em laranja | — |
+| `estrategia/index.html` | **Planejamento Estratégico** — 25 ações do PE Reborn (KPI, meta, G×U×T, prazos, follow-ups por reunião) + abas de consulta (maturidade, SWOT, BCG, cenário, ICP, modelo de negócio). Usa o MESMO `roadmap/auth.js` (senha e sessão unificadas) e a mesma chave de publicação | senha |
+| `estrategia/pe-execucoes.json` | **base de dados** do PE (status/novo prazo/follow-ups por ação) — commits automáticos `chore: sincroniza follow-ups do Planejamento Estratégico (automático)` | — |
 | `painel-operacional.html` | Painel Operacional (faturamento por canal). **Desativado por ora** — `data.json` vazio desde maio (token da API do dashboard expirou) | aberto |
 | `fluxo-pessoal/` | app de finanças pessoais (projeto separado, não mexer sem pedido) | — |
 | `reborn-imersao.html`, `context.md`, `scripts/`, `.github/workflows/` | legado do painel operacional | — |

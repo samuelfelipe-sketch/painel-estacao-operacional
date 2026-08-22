@@ -1,0 +1,212 @@
+{
+ "v": 1,
+ "salvoEm": 1,
+ "dados": {
+  "1": {
+   "status": "andamento",
+   "novoPrazo": "2026-08-31",
+   "followups": [
+    {
+     "data": "2026-03-19",
+     "texto": "Revisão da Matriz GUT com priorização de 3 projetos para serem tocados no primeiro momento."
+    },
+    {
+     "data": "2026-04-24",
+     "texto": "- TM Atual (mar/26) = R$ 147,67 (muito movimentado pelo Diesel)\n- Padrão de Atendimento Começou previsto para início de execução em 22/04.\n- Revisto esse ponto: Implementação de indicadores de performance (ticket médio e qtde de atendimentos)\n- Feedbacks + Escuta Ativa são foco até a próxima avaliação\n- Meta poderá ser reavaliada por conta da precificação do Combustível + Crescimento Volume de Diesel"
+    },
+    {
+     "data": "2026-06-05",
+     "texto": "- TM Atual (mai/26) R$ 122,00\n- Padrão de Atendimento está sendo implementado em Junho/26\n- Acompanhamento é necessário para execução\n- Investimanto  R$ 260,00 + R$ 120,00 impressão manuais\n- Valores com horas de reuniões com líderes para montagem dos materias a ser calculada."
+    },
+    {
+     "data": "2026-07-17",
+     "texto": "- TM (JUN/26) 126,70 Atual (JUL/26) 135,93\n- Padrão de Atendimento implementado em Junho/26\n- Liderança está executando! Percebe-se que boa parte da equipe já pratica o: Bem vindo ao Sapatão de forma mais natural.\n- Link do Manual de Padrão de Atendimento:"
+    }
+   ]
+  },
+  "2": {
+   "status": "andamento",
+   "novoPrazo": "2026-08-31",
+   "followups": [
+    {
+     "data": "2026-04-24",
+     "texto": "- Descritivos estão sendo finalizados\n- Serão apresentados em Maio/26"
+    },
+    {
+     "data": "2026-06-05",
+     "texto": "- Apresentado o Descritivo para em torno de 40% do time (faltando turno da manhã em NH e todo time de EV)\n- Expectativa de 2 semanas para apresentação\n- Avaliação de Acompanhamento será executada até o fim de Junho/26"
+    },
+    {
+     "data": "2026-07-17",
+     "texto": "- Apresentado para todo o time Operacional (sem contar a nova unidade)\n- Documentos assinados e dentro do Sólides\n- Falta dos outros setores\n- Avaliação de Acompanhamento ainda não foi executada (31/08)"
+    }
+   ]
+  },
+  "3": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": [
+    {
+     "data": "2026-04-24",
+     "texto": "- 536 clientes em Março (cenário Diesel)\n- 466 parcial em Abril\n- Projeto de Geração Autônoma p/ Maio\n- Verificar Indiplus / Captação de Leads na Pista (Vela PubliTech)\n- Treinamento de abordagem p/ time de Pista (Samuel)"
+    },
+    {
+     "data": "2026-06-05",
+     "texto": "- 510 clientes em Maio\n- Acréscimo de 25 clientes (maio e uma perda de 38 clientes (maio)\n- SDR automático rodou em Maio e está rodando (+-20 leads)\n- Indiplus rodou fim de Maio (13 leads gerados)\n- Treinamento sobre Comercial p/ Time (Fabrício)"
+    },
+    {
+     "data": "2026-07-17",
+     "texto": "- 530 clientes em Junho\n- 109 clientes inativos (Criado processo de reativação de clientes)\n- Indiplus c/ pgto de R$ 10,00 p/ Lead gerado a partir de Julho\n- SDR automatizado não resultou em novos clientes, em revisão c/ Axion"
+    }
+   ]
+  },
+  "4": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": [
+    {
+     "data": "2026-07-17",
+     "texto": "- Mapeamento das receitas de cozinha (90% pronto)"
+    }
+   ]
+  },
+  "5": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": [
+    {
+     "data": "2026-07-17",
+     "texto": "- Redesenho de Cultura em fase final de construção\n- Validação com sócios, diretoria e lideranças da operação"
+    }
+   ]
+  },
+  "6": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": [
+    {
+     "data": "2026-06-05",
+     "texto": "- Entrada no 4 Colônias entre fim de Junho e 01/07."
+    },
+    {
+     "data": "2026-07-17",
+     "texto": "- Assumimos o Sapatão 4 Colônias em 01/07 (900k de investimento)\n- 1 posto em Campo Bom (Charrua) negado\n- 1 posto em Estância Velha (Vitória) em negociação"
+    }
+   ]
+  },
+  "7": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": [
+    {
+     "data": "2026-06-05",
+     "texto": "- Realizada a instalação de 6, mais 2 serão instalados em Junho"
+    },
+    {
+     "data": "2026-07-17",
+     "texto": "- Todos Outdoors instalados (7 ao todo)\n- 2 novos serão instalados na RS-239"
+    }
+   ]
+  },
+  "8": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "9": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": [
+    {
+     "data": "2026-07-17",
+     "texto": "- Mapeamento de processos dentro do TH realizados\n- Ainda falta a confecção dos POPs                                                                                                                                                                                                                                                               - falta começar em outros setores"
+    }
+   ]
+  },
+  "10": {
+   "status": "andamento",
+   "novoPrazo": "2026-09-30",
+   "followups": []
+  },
+  "11": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": [
+    {
+     "data": "2026-07-17",
+     "texto": "- Cashback em Dobro se utilizado App do Sapatão e pago no Pix"
+    }
+   ]
+  },
+  "12": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "13": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "14": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "15": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "16": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "17": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "18": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "19": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "20": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "21": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "22": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "23": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "24": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  },
+  "25": {
+   "status": "andamento",
+   "novoPrazo": "",
+   "followups": []
+  }
+ }
+}

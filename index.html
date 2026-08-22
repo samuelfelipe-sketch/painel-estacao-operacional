@@ -36,6 +36,10 @@ a.card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,20,15,.12)
 a.card .t{font-family:'Fraunces',serif;font-weight:600;font-size:21px;margin-bottom:8px}
 a.card .d{color:var(--verde-suave);font-size:13.5px}
 a.card .go{display:inline-block;margin-top:14px;font-weight:700;font-size:13px;color:var(--laranja-escuro)}
+.card-off{display:block;background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:22px 20px;color:var(--verde-suave);border-top:4px solid var(--linha);opacity:.75}
+.card-off .t{font-family:'Fraunces',serif;font-weight:600;font-size:21px;margin-bottom:8px;color:var(--verde-suave)}
+.card-off .d{font-size:13.5px}
+.card-off .selo{display:inline-block;margin-top:14px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--verde-suave);background:#E3E3E0;border-radius:20px;padding:4px 12px}
 footer{color:var(--verde-suave);padding:18px 22px;font-size:12.5px;border-top:1px solid var(--linha);text-align:center}
 footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
 @media (max-width:600px){
@@ -63,16 +67,21 @@ footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
       <div class="d">Abre direto o Guia de Execução do método PACE: as 17 ações com status, datas e observações sincronizados entre aparelhos, pilares, cola rápida e plano de ação para impressão. Acesso por senha.</div>
       <span class="go">Entrar →</span>
     </a>
+    <a class="card" href="estrategia/">
+      <div class="t">Planejamento Estratégico &#128274;</div>
+      <div class="d">As 25 ações estratégicas do PE Reborn com KPIs, prazos, responsáveis e follow-ups das reuniões — mais diagnóstico de maturidade, SWOT, BCG, cenário, ICP e modelo de negócio para consulta. Mesma senha do Roadmap.</div>
+      <span class="go">Entrar →</span>
+    </a>
     <a class="card" href="roadmap/resumo.html">
       <div class="t">Método Reborn</div>
       <div class="d">Resumo da Imersão Comercial: os aprendizados dos dois dias organizados pelos pilares do método PACE, com as frases-âncora dos mentores. Aberto — bom para compartilhar com o Club Reborn.</div>
       <span class="go">Abrir →</span>
     </a>
-    <a class="card" href="painel-operacional.html">
+    <div class="card-off">
       <div class="t">Painel Operacional</div>
-      <div class="d">Faturamento do mês por canal, aceleradores e ações sugeridas — atualizado automaticamente todos os dias.</div>
-      <span class="go">Abrir →</span>
-    </a>
+      <div class="d">Faturamento do mês por canal, aceleradores e ações sugeridas. Aguardando nova chave da API do dashboard para voltar a atualizar.</div>
+      <span class="selo">Desativado por ora</span>
+    </div>
   </div>
 </div>
 <footer><i>Estação Sapatão</i> · Um lugar para parar, ficar e voltar.</footer>
