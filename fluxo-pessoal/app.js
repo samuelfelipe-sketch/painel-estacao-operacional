@@ -1769,6 +1769,12 @@ function impConfirmar(){
 // seguida e tudo se alinha.
 const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
 on('imp-ler', impEnviar);
+// ícone "?" ao lado do Enviar: toque abre/fecha a explicação (hover é só CSS)
+on('imp-help', e => { e.stopPropagation(); const p = document.getElementById('imp-help-pop'); if (p) p.classList.toggle('on'); });
+document.addEventListener('click', e => {
+  const p = document.getElementById('imp-help-pop');
+  if (p && p.classList.contains('on') && !p.contains(e.target)) p.classList.remove('on');
+});
 
 // ---- desconexão automática de todos os acessos quando sai versão nova ----
 // Cada aba aberta compara a "etiqueta" (ETag/Last-Modified) dos arquivos da
