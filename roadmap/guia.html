@@ -1078,7 +1078,6 @@ if(snBtn)snBtn.addEventListener('click',async function(){
   const conf=document.getElementById('sn-conf').value;
   if(!A){snDiz('Recarregue a p\u00e1gina e tente de novo.',true);return;}
   if(!tokenSync()){snDiz('Cole antes a chave de publica\u00e7\u00e3o no quadro Nuvem acima \u2014 ela \u00e9 necess\u00e1ria para gravar a senha nova.',true);return;}
-  if(A.sha256(atual)!==A.hash){snDiz('A senha atual n\u00e3o confere.',true);return;}
   if(nova.length<6){snDiz('A senha nova precisa de pelo menos 6 caracteres.',true);return;}
   if(nova!==conf){snDiz('A confirma\u00e7\u00e3o n\u00e3o bate com a senha nova.',true);return;}
   if(nova===atual){snDiz('A senha nova \u00e9 igual \u00e0 atual.',true);return;}
@@ -1090,6 +1089,10 @@ if(snBtn)snBtn.addEventListener('click',async function(){
     if(!g.ok)throw new Error('HTTP '+g.status+' ao ler o auth.js');
     const j=await g.json();
     let src=b64dec(j.content);
+    /* valida a senha atual contra a vers\u00e3o fresca do reposit\u00f3rio (n\u00e3o contra o cache do navegador) */
+    const mAtual=src.match(/HASH_SENHA = '([0-9a-f]{64})'/);
+    const hAtual=A.sha256(atual);
+    if(!(mAtual&&hAtual===mAtual[1])&&hAtual!==A.hash){snBtn.disabled=false;snDiz('A senha atual n\u00e3o confere.',true);return;}
     const novoHash=A.sha256(nova);
     if(!/^[0-9a-f]{64}$/.test(novoHash))throw new Error('falha ao gerar o c\u00f3digo da senha');
     const re=/HASH_SENHA = '[0-9a-f]{64}'/;
