@@ -29,7 +29,7 @@ body{font-family:'Archivo',sans-serif;background:var(--fundo);color:var(--verde)
 h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,4.6vw,46px);line-height:1.08}
 h1 span{color:var(--laranja);font-style:italic}
 .sub{color:var(--verde-suave);margin-top:12px;max-width:560px;font-size:14.5px}
-.faixa{height:8px;background:repeating-linear-gradient(90deg,var(--laranja) 0 34px,var(--verde) 34px 58px);border-radius:4px;margin:26px 0}
+.faixa{height:1px;background:var(--linha);margin:26px 0}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:8px}
 a.card{display:block;background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:22px 20px;text-decoration:none;color:var(--verde);transition:transform .15s,box-shadow .15s;border-top:4px solid var(--laranja)}
 a.card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,20,15,.12)}
@@ -38,6 +38,16 @@ a.card .d{color:var(--verde-suave);font-size:13.5px}
 a.card .go{display:inline-block;margin-top:14px;font-weight:700;font-size:13px;color:var(--laranja-escuro)}
 footer{color:var(--verde-suave);padding:18px 22px;font-size:12.5px;border-top:1px solid var(--linha);text-align:center}
 footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
+@media (max-width:600px){
+  .wrap{padding:28px 16px 32px}
+  .placa{padding:14px 16px;margin-bottom:20px}
+  .placa img{width:140px}
+  .eyebrow{font-size:10px;letter-spacing:.16em}
+  .sub{font-size:14px}
+  .faixa{margin:20px 0}
+  a.card{padding:18px 16px}
+  a.card .t{font-size:19px}
+}
 </style>
 </head>
 <body>
