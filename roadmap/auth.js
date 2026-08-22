@@ -431,77 +431,26 @@
   }
 
 
-  /* Trava a página até a senha certa */
-  garanteEstilo();
-  document.documentElement.classList.add('sptx-lock');
-
-  function montaGate() {
-    var gate = document.createElement('div');
-    gate.className = 'sptx-gate';
-    gate.innerHTML =
-      '<form class="sptx-card" autocomplete="off">' +
-      '<div class="sptx-eyebrow">Estação Sapatão · Acesso restrito</div>' +
-      '<h1 class="sptx-titulo">' + (APP === 'pe' ? 'Planejamento <i>Estratégico</i>' : 'Roadmap <i>Comercial</i>') + '</h1>' +
-      '<p class="sptx-sub">Material interno. Digite o seu usuário e a sua senha.</p>' +
-      '<div class="sptx-faixa"></div>' +
-      '<div class="sptx-campo"><label class="sptx-l" for="sptx-user">Usuário</label>' +
-      '<input type="text" id="sptx-user" placeholder="Seu usuário" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></div>' +
-      '<label class="sptx-l" for="sptx-senha">Senha</label>' +
-      '<input type="password" id="sptx-senha" placeholder="••••••••" autocomplete="current-password">' +
-      '<div class="sptx-erro" id="sptx-erro">Usuário ou senha incorretos.</div>' +
-      '<label class="sptx-lembrar"><input type="checkbox" id="sptx-lembrar" checked> Manter conectado neste dispositivo</label>' +
-      '<button type="submit" class="sptx-btn">Entrar</button>' +
-      '<div class="sptx-rodape">Um lugar para parar, ficar e voltar.</div>' +
-      '</form>';
-    document.body.appendChild(gate);
-    var form = gate.querySelector('form'),
-        campo = gate.querySelector('#sptx-senha'),
-        campoUser = gate.querySelector('#sptx-user'),
-        erro = gate.querySelector('#sptx-erro'),
-        lembrar = gate.querySelector('#sptx-lembrar');
-    campoUser.focus();
-    function entra(user, h, senha) {
-      gravaSessao(user, h, lembrar.checked);
-      A.user = user;
-      /* senha só em memória (nunca gravada): abre o cofre da chave de publicação */
-      A.pw = senha || null;
-      gate.remove();
+  /* O login agora acontece só na CENTRAL DE ACESSOS.
+     Sem sessão válida aqui, a página manda para lá. */
+  function vaiParaCentral() { location.replace('../index.html'); }
+  if (s) {
+    /* a sessão não bateu com o cache local: confere a lista fresca
+       (senha trocada há pouco / usuário novo) antes de redirecionar */
+    garanteEstilo();
+    document.documentElement.classList.add('sptx-lock');
+    usuariosFrescos().then(function (lista) {
+      A.usuarios = lista;
+      var v = null;
+      lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v = x; });
+      if (!v) { vaiParaCentral(); return; }
+      A.user = v;
+      if (!A.temAcesso(APP)) { document.documentElement.classList.remove('sptx-lock'); bloqueiaSemAcesso(); return; }
       document.documentElement.classList.remove('sptx-lock');
-      if (!A.temAcesso(APP)) { bloqueiaSemAcesso(); return; }
       anuncia();
       try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
-    }
-    function recusa(msg) {
-      erro.textContent = msg || 'Usuário ou senha incorretos. Tente de novo.';
-      erro.classList.add('on');
-      form.classList.add('shake');
-      campo.select();
-      setTimeout(function () { form.classList.remove('shake'); }, 400);
-    }
-    form.addEventListener('submit', function (ev) {
-      ev.preventDefault();
-      var senha = campo.value, h = sha256(senha), digitado = normUser(campoUser.value);
-      if (!digitado) { recusa('Digite o seu usuário.'); campoUser.focus(); return; }
-      function bate(lista) {
-        for (var i = 0; i < lista.length; i++) {
-          var u = lista[i];
-          if (u.ativo === false) continue;
-          if ((normUser(u.nome) === digitado || normUser(u.id) === digitado) && u.hash === h) return u;
-        }
-        return null;
-      }
-      var u = bate(A.usuarios);
-      if (u) { entra(u, h, senha); return; }
-      /* a lista local pode estar velha (usuário novo, senha trocada há pouco):
-         confere a versão fresca do repositório antes de recusar */
-      usuariosFrescos().then(function (lista) {
-        A.usuarios = lista;
-        var v = bate(lista);
-        if (v) entra(v, h, senha); else recusa('Usuário ou senha incorretos. Tente de novo.');
-      }).catch(function () { recusa('Usuário ou senha incorretos. Tente de novo.'); });
-    });
+    }).catch(function () { vaiParaCentral(); });
+  } else {
+    vaiParaCentral();
   }
-
-  if (document.body) montaGate();
-  else document.addEventListener('DOMContentLoaded', montaGate);
 })();

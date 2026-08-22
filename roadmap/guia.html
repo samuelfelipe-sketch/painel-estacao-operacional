@@ -279,9 +279,8 @@ body.so-leitura #btn-importar{display:none}
       <button class="nav-link" data-t="gut"><span class="dot"></span>Plano de Ação</button>
     <div class="grupo">Ajustes</div>
       <button class="nav-link" data-t="config"><span class="dot"></span>Configura&ccedil;&otilde;es</button>
-    <div class="grupo">Sair</div>
-      <button class="nav-link" type="button" onclick="try{sessionStorage.removeItem('sapatao-roadmap-auth-v1');localStorage.removeItem('sapatao-roadmap-auth-v1')}catch(e){};location.href='../index.html'"><span class="dot"></span>&#128274; Sair — pedir senha de novo</button>
-      <a class="nav-link" href="../index.html" style="text-decoration:none"><span class="dot"></span>&#8592; Página inicial</a>
+    <div class="grupo">Central</div>
+      <a class="nav-link" href="../index.html" style="text-decoration:none"><span class="dot"></span>&#8592; Central de acessos</a>
   </div>
   <div class="user">
     <div class="av">ES</div>
@@ -437,6 +436,8 @@ async function destrava(){
   }
   bootado=true;destravou();
   Object.keys(doc.secoes||{}).forEach(function(id){const el=document.getElementById(id);if(el)el.innerHTML=doc.secoes[id];});
+  /* o sair agora é só pela central de acessos */
+  document.querySelectorAll('#config button').forEach(function(b){if(/pedir senha de novo/.test(b.textContent))b.closest('.card,button').remove();});
   ACOES=doc.dados.ACOES;EXECUCOES=doc.dados.EXECUCOES;
   boot();
   if(eraAberto)migraCriptografia();
