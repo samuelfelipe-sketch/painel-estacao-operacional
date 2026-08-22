@@ -424,12 +424,19 @@ async function cifraArquivo(path){
 
 function boot(){
 const EXEC={};
-ACOES.forEach(a=>{EXEC[a.id]=JSON.parse(JSON.stringify(SEED[a.id]||{status:'andamento',novoPrazo:a.novoPrazo||'',followups:[]}))});
+/* renegociações de prazo: lista {em, para, por} — o prazo original nunca some.
+   Dados antigos com só novoPrazo viram uma renegociação "da planilha". */
+function normaliza(e){
+  if(!e.followups)e.followups=[];
+  if(!e.renegs)e.renegs=e.novoPrazo?[{em:'',para:e.novoPrazo}]:[];
+  return e;
+}
+ACOES.forEach(a=>{EXEC[a.id]=normaliza(JSON.parse(JSON.stringify(SEED[a.id]||{status:'andamento',novoPrazo:a.novoPrazo||'',followups:[]})))});
 const CHAVE_LS='sapatao-pe-v1';
 let salvoEm=0;
 try{
   const sv=JSON.parse(localStorage.getItem(CHAVE_LS)||'null');
-  if(sv&&sv.dados){Object.keys(sv.dados).forEach(k=>{if(EXEC[k])EXEC[k]=sv.dados[k];});salvoEm=sv.salvoEm||1;}
+  if(sv&&sv.dados){Object.keys(sv.dados).forEach(k=>{if(EXEC[k])EXEC[k]=normaliza(sv.dados[k]);});salvoEm=sv.salvoEm||1;}
 }catch(e){}
 function gravaLocal(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:1,salvoEm:salvoEm,dados:EXEC}));}catch(e){}}
 function quem(){const A=window.sapataoAuth;return (A&&A.user&&A.user.nome)||'';}
@@ -441,7 +448,7 @@ function hojeLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getM
 const HOJE=hojeLocal();
 function fmt(iso){if(!iso)return'—';const p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function prazoEfetivo(a){return EXEC[a.id].novoPrazo||a.prazo||'';}
+function prazoEfetivo(a){const e=EXEC[a.id];if(e.renegs&&e.renegs.length)return e.renegs[e.renegs.length-1].para;return e.novoPrazo||a.prazo||'';}
 function atrasada(a){const p=prazoEfetivo(a);return EXEC[a.id].status!=='concluido'&&p&&p<HOJE;}
 
 /* ============ Cartões das ações ============ */
@@ -459,6 +466,17 @@ function lista(){
     return (b.gut-a.gut)||(a.id-b.id);
   });
   return l;
+}
+function rnHtml(a){
+  const e=EXEC[a.id];
+  let h='<div class="fu-lista">';
+  if(!e.renegs.length)h+='<div class="fu-vazio">Sem renegociações — vale o prazo original.</div>';
+  e.renegs.forEach(r=>{
+    h+='<div class="fu-item"><span class="fu-data">'+fmt(r.para)+'</span><div class="fu-texto-view" style="font-size:12.5px;color:var(--verde-suave)">'
+      +(r.em?'renegociado em '+fmt(r.em):'trazido da planilha do PE')+(r.por?' por '+esc(r.por):'')+'</div></div>';
+  });
+  h+='</div><div class="fu-novo"><div class="fu-linha"><label>Renegociar para</label><input type="date" class="rn-data"></div><button type="button" class="fu-add rn-add">Renegociar prazo</button></div>';
+  return h;
 }
 function fuHtml(a){
   const e=EXEC[a.id];
@@ -497,14 +515,15 @@ function renderAll(){
       +'<div class="it"><span class="l">KPI</span><span class="v">'+esc(a.kpi)+'</span></div>'
       +'<div class="it"><span class="l">Meta</span><span class="v">'+esc(a.meta)+'</span></div>'
       +'<div class="it"><span class="l">Prazo original</span><span class="v">'+fmt(a.prazo)+'</span></div>'
+      +(e.renegs&&e.renegs.length?'<div class="it"><span class="l">Prazo atual (renegociado)</span><span class="v"><b>'+fmt(prazoEfetivo(a))+'</b></span></div>':'')
       +'<div class="it"><span class="l">G · U · T</span><span class="v">'+a.g+' · '+a.u+' · '+a.t+' = <b>'+a.gut+'</b></span></div>'
       +(a.invest?'<div class="it"><span class="l">Investimento projetado</span><span class="v">'+esc(a.invest)+'</span></div>':'')
       +'</div>'
       +(a.recurso?'<div class="arec">'+esc(a.recurso)+'</div>':'')
       +'<div class="ameta">'
       +'<div class="it acard-campo"><label>Status</label><select class="exec-status'+(ok?' ok':'')+'" aria-label="Status da ação '+a.id+'"><option value="andamento"'+(ok?'':' selected')+'>Em andamento</option><option value="concluido"'+(ok?' selected':'')+'>&#10004; Concluída</option></select></div>'
-      +'<div class="it acard-campo"><label>Novo prazo</label><input type="date" class="exec-data" value="'+e.novoPrazo+'" aria-label="Novo prazo da ação '+a.id+'"></div>'
       +'</div>'
+      +'<div class="acard-campo"><label>Renegociações de prazo</label>'+rnHtml(a)+'</div>'
       +'<h3 style="margin-top:8px">Follow-ups</h3>'+fuHtml(a)
       +'</div></div>';
   }).join('');
@@ -519,6 +538,15 @@ cards.addEventListener('click',ev=>{
   if(ev.target.closest('.acard-head')){
     if(aberto.has(id))aberto.delete(id);else aberto.add(id);
     renderAll();return;
+  }
+  if(ev.target.classList.contains('rn-add')){
+    const d=card.querySelector('.rn-data').value;
+    if(!d){card.querySelector('.rn-data').focus();return;}
+    const rn={em:HOJE,para:d};
+    if(quem())rn.por=quem();
+    EXEC[id].renegs.push(rn);
+    EXEC[id].novoPrazo=d; /* compatibilidade com dados antigos */
+    salva();return;
   }
   if(ev.target.classList.contains('fu-add')){
     const t=card.querySelector('.fu-texto').value.trim();
@@ -543,7 +571,6 @@ cards.addEventListener('change',ev=>{
   const card=ev.target.closest('.acard');if(!card)return;
   const id=+card.dataset.acao;
   if(ev.target.classList.contains('exec-status')){EXEC[id].status=ev.target.value;salva();}
-  if(ev.target.classList.contains('exec-data')){EXEC[id].novoPrazo=ev.target.value;salva();}
 });
 document.querySelectorAll('.f-resp').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.f-resp').forEach(x=>x.classList.remove('active'));
@@ -569,8 +596,10 @@ function renderPainel(){
   function linha(a,ok){
     const p=prazoEfetivo(a),lt=atrasada(a);
     const badge=p?fmt(p).slice(0,5):('G '+a.gut);
+    const rn=EXEC[a.id].renegs&&EXEC[a.id].renegs.length;
     return '<div class="prazo'+(ok?' done':'')+'"><div class="data'+(ok?' ok':(lt?' urgente':''))+'">'+(ok?'&#10004; ':'')+badge+'</div>'
       +'<div class="acao"><b>'+esc(a.acao)+'</b><div class="meta-line">'+esc(a.resp)+' · '+esc(a.kpi)+' · (GUT '+a.gut+')'
+      +(rn?' · prazo renegociado':'')
       +(lt?' · <b style="color:var(--laranja-escuro)">atrasada</b>':'')+'</div></div></div>';
   }
   let html='',mes='';
@@ -677,7 +706,7 @@ async function publica(){
 }
 function agendaPublicacao(){clearTimeout(syncTimer);syncTimer=setTimeout(publica,2500);}
 function aplicaRemoto(rem){
-  Object.keys(rem.dados).forEach(k=>{if(EXEC[k])EXEC[k]=rem.dados[k];});
+  Object.keys(rem.dados).forEach(k=>{if(EXEC[k])EXEC[k]=normaliza(rem.dados[k]);});
   salvoEm=rem.salvoEm;gravaLocal();renderAll();renderPainel();chip('ok','Nuvem: sincronizado');
 }
 async function iniciaSync(){
