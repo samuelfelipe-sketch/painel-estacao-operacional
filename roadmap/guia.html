@@ -251,7 +251,7 @@ tr.late td{background:#FCF0ED!important}
   </div>
 </aside>
 <div class="conteudo">
-<header>
+<header id="hero">
   <div class="wrap">
     <div class="eyebrow">Estação Sapatão · Club Reborn · Imersão Comercial 25-26.07.2026</div>
     <h1>Guia de Execução<br><span>Roadmap Comercial</span></h1>
@@ -265,7 +265,7 @@ tr.late td{background:#FCF0ED!important}
     </div>
   </div>
 </header>
-<div class="faixa"></div>
+<div class="faixa" id="hero-faixa"></div>
 
 
 <main class="wrap">
@@ -815,6 +815,12 @@ links.forEach(l=>l.addEventListener('click',()=>{
   secs.forEach(s=>s.classList.remove('active'));
   l.classList.add('active');
   document.getElementById(l.dataset.t).classList.add('active');
+  /* o cabeçalho grande (capa + indicadores da imersão) é do Painel;
+     nas outras abas ele sai para o conteúdo começar no topo */
+  const capa=l.dataset.t==='painel';
+  const hero=document.getElementById('hero'),fx=document.getElementById('hero-faixa');
+  if(hero)hero.style.display=capa?'':'none';
+  if(fx)fx.style.display=capa?'':'none';
   fechaMenu();
   window.scrollTo({top:0});
 }));
