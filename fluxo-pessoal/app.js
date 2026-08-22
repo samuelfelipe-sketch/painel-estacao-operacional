@@ -367,20 +367,36 @@ function renderAno27(){
 // histórico do dia do mês em que a conta costuma acontecer (pró-labore,
 // contas fixas, DCA…), com o perfil normalizado na janela projetada
 // [ini..fim]; sem histórico, rateio uniforme. Os totais do mês não mudam.
-function perfilFaixa(cid, a, b, ini, fim){
-  const dp = Math.max(0, Math.min(b, fim) - Math.max(a, ini) + 1);
-  if (dp <= 0) return 0;
+// pesos por dia concentrados nos dias em que a conta costuma acontecer:
+// dias com peso abaixo da média da janela são zerados e a massa vai para os
+// dias fortes — a projeção diária mostra poucos lançamentos maiores, como no
+// extrato real, em vez de um pingado uniforme. Os totais do mês não mudam.
+function pesosDias(cid, ini, fim){
+  const n = fim - ini + 1, w = {};
+  const unif = () => { for (let d = ini; d <= fim; d++) w[d] = 1/n; return w; };
   const p = PERFIL[cid];
-  if (!p) return dp / (fim - ini + 1);
-  let mass = 0, tot = 0;
+  if (!p) return unif();
+  let tot = 0;
   for (let d = ini; d <= fim; d++){
     let f = p[d] || 0;
     if (d === fim) for (let x = fim+1; x <= 31; x++) f += p[x] || 0;   // dias 29–31 caem no último dia do mês
-    tot += f;
-    if (d >= a && d <= b) mass += f;
+    w[d] = f; tot += f;
   }
-  if (tot < 1e-9) return dp / (fim - ini + 1);
-  return mass / tot;
+  // conta que historicamente nunca acontece nesses dias não entra neles
+  // (ex.: doações sempre no início do mês não pingam na segunda quinzena)
+  if (tot < 1e-9) return w;
+  const lim = tot / n;   // média da janela; o dia mais forte sempre passa
+  let keep = 0;
+  for (let d = ini; d <= fim; d++) if (w[d] >= lim) keep += w[d];
+  for (let d = ini; d <= fim; d++) w[d] = w[d] >= lim ? w[d]/keep : 0;
+  return w;
+}
+function perfilFaixa(cid, a, b, ini, fim){
+  if (Math.min(b, fim) < Math.max(a, ini)) return 0;
+  const w = pesosDias(cid, ini, fim);
+  let s = 0;
+  for (let d = Math.max(a, ini); d <= Math.min(b, fim); d++) s += w[d] || 0;
+  return s;
 }
 
 // ---------- semanas (seg–dom dentro do mês) ----------
