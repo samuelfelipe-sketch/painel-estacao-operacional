@@ -145,11 +145,15 @@
         erro = gate.querySelector('#sptx-erro'),
         lembrar = gate.querySelector('#sptx-lembrar');
     campo.focus();
-    function entra(hash) {
+    function entra(hash, senha) {
       try { sessionStorage.setItem(CHAVE, hash); } catch (e) {}
       if (lembrar.checked) { try { localStorage.setItem(CHAVE, hash); } catch (e) {} }
+      /* senha só em memória (nunca gravada): abre a chave de publicação
+         guardada criptografada na nuvem (roadmap/chave.enc.json) */
+      window.sapataoAuth.pw = senha || null;
       gate.remove();
       document.documentElement.classList.remove('sptx-lock');
+      try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
     }
     function recusa() {
       erro.classList.add('on');
@@ -160,14 +164,14 @@
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       var h = sha256(campo.value);
-      if (h === HASH_SENHA) { entra(HASH_SENHA); return; }
+      if (h === HASH_SENHA) { entra(HASH_SENHA, campo.value); return; }
       /* a senha pode ter sido trocada há pouco e este arquivo ainda estar em
          cache — confere a versão fresca do repositório antes de recusar */
       fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/roadmap/auth.js?t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { return r.text(); })
         .then(function (src) {
           var m = src.match(/HASH_SENHA = '([0-9a-f]{64})'/);
-          if (m && h === m[1]) entra(m[1]); else recusa();
+          if (m && h === m[1]) entra(m[1], campo.value); else recusa();
         })
         .catch(recusa);
     });
