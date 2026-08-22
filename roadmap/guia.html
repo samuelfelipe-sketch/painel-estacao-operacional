@@ -364,11 +364,14 @@ links.forEach(l=>l.addEventListener('click',()=>{
   fechaMenu();
   window.scrollTo({top:0});
 }));
-/* atalhos "data-vai" abrem outra aba como se fosse pelo menu */
-document.querySelectorAll('[data-vai]').forEach(b=>b.addEventListener('click',()=>{
+/* atalhos "data-vai" abrem outra aba como se fosse pelo menu
+   (delegado no documento: o conteúdo das seções é injetado depois, ao destravar) */
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-vai]');
+  if(!b)return;
   const alvo=document.querySelector('.nav-link[data-t="'+b.dataset.vai+'"]');
   if(alvo)alvo.click();
-}));
+});
 /* usuário logado: nome na lateral e trava de edição conforme a permissão */
 function aplicaPermissao(){
   const A=window.sapataoAuth;
