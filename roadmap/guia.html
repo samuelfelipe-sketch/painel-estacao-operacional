@@ -465,6 +465,9 @@ function destravou(){
 }
 async function destrava(){
   if(bootado)return;
+  /* sem permissão neste painel, nada de conteúdo no DOM (aparelho compartilhado pode ter a chave) */
+  const _A=window.sapataoAuth;
+  if(!_A||!_A.user||!_A.temAcesso('roadmap'))return;
   let r;
   try{r=await pegaJsonApi(CONTEUDO_API);}
   catch(e){telaTravada('Sem conexão para carregar os dados. Confira a internet e recarregue a página.');return;}
