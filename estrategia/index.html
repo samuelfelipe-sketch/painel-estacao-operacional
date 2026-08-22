@@ -945,7 +945,6 @@ if(snBtn)snBtn.addEventListener('click',async ()=>{
     if(!eu)throw new Error('seu usuário não está na lista');
     if(A.sha256(atual)!==eu.hash){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
     const novoHash=A.sha256(nova);
-    if((doc.usuarios||[]).some(u=>u.id!==eu.id&&u.hash===novoHash)){snBtn.disabled=false;snDiz('Essa senha já está em uso por outro usuário — escolha outra.',true);return;}
     eu.hash=novoHash;
     await gravaUsuarios(doc,sha,'chore: altera a senha do usuário '+eu.nome+' (via Configurações)');
     const sess=JSON.stringify({u:eu.id,h:novoHash});
@@ -1006,9 +1005,7 @@ if(usTbl){
     const s=prompt('Nova senha para '+u.nome+' (mínimo 6 caracteres):');
     if(s===null)return;
     if(s.length<6){usDiz('Senha muito curta — nada foi alterado.',true);return;}
-    const h=window.sapataoAuth.sha256(s);
-    if(usDoc.usuarios.some(x=>x.id!==u.id&&x.hash===h)){usDiz('Essa senha já é de outro usuário — escolha outra.',true);return;}
-    u.hash=h;
+    u.hash=window.sapataoAuth.sha256(s);
     usDiz('Senha de '+u.nome+' pronta — clique em "Salvar alterações" para gravar.');
   });
   document.getElementById('us-add').addEventListener('click',()=>{
@@ -1018,9 +1015,7 @@ if(usTbl){
     const s=prompt('Senha inicial de '+nome.trim()+' (mínimo 6 caracteres):');
     if(s===null)return;
     if(s.length<6){usDiz('Senha muito curta — usuário não criado.',true);return;}
-    const h=window.sapataoAuth.sha256(s);
-    if(usDoc.usuarios.some(x=>x.hash===h)){usDiz('Essa senha já é de outro usuário — escolha outra.',true);return;}
-    usDoc.usuarios.push({id:usId(nome.trim()),nome:nome.trim(),hash:h,admin:false,ativo:true,perm:{roadmap:'le',pe:'le'}});
+    usDoc.usuarios.push({id:usId(nome.trim()),nome:nome.trim(),hash:window.sapataoAuth.sha256(s),admin:false,ativo:true,perm:{roadmap:'le',pe:'le'}});
     usRender();
     usDiz('Usuário criado com permissão "Só lê" nos dois painéis — ajuste e clique em "Salvar alterações".');
   });
@@ -1031,8 +1026,6 @@ if(usTbl){
     const eu=usDoc.usuarios.find(u=>u.id===A.user.id);
     if(eu){eu.admin=true;eu.ativo=true;} /* ninguém se tranca para fora */
     if(!usDoc.usuarios.some(u=>u.admin&&u.ativo!==false)){usDiz('É preciso ter ao menos um admin ativo.',true);return;}
-    const hs=usDoc.usuarios.map(u=>u.hash);
-    if(new Set(hs).size!==hs.length){usDiz('Dois usuários estão com a mesma senha — troque uma delas.',true);return;}
     usDiz('Gravando…');
     try{
       await gravaUsuarios(usDoc,usSha,'chore: atualiza usuários e permissões (via Configurações)');

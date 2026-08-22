@@ -270,8 +270,9 @@
     '.sptx-sub{font-size:13.5px;color:#3D6B60;margin:0 0 18px}' +
     '.sptx-faixa{height:1px;background:#D8D8D3;margin:0 0 22px}' +
     '.sptx-gate label.sptx-l{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3D6B60;margin-bottom:6px}' +
-    '.sptx-gate input[type=password]{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:12px 14px;border:1.5px solid #D8D8D3;border-radius:10px;color:#004438;outline:none}' +
-    '.sptx-gate input[type=password]:focus{border-color:#EC6C22}' +
+    '.sptx-gate input[type=password],.sptx-gate select{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:12px 14px;border:1.5px solid #D8D8D3;border-radius:10px;color:#004438;outline:none;background:#fff}' +
+    '.sptx-gate input[type=password]:focus,.sptx-gate select:focus{border-color:#EC6C22}' +
+    '.sptx-campo{margin-bottom:14px}' +
     '.sptx-erro{display:none;color:#8C1D18;background:#F9DEDC;border:1px solid #E8B3AE;border-radius:8px;font-size:13px;padding:8px 12px;margin-top:10px}' +
     '.sptx-erro.on{display:block}' +
     '.sptx-lembrar{display:flex;align-items:center;gap:8px;font-size:13px;color:#3D6B60;margin:14px 0 18px;cursor:pointer}' +
@@ -321,8 +322,10 @@
       '<form class="sptx-card" autocomplete="off">' +
       '<div class="sptx-eyebrow">Estação Sapatão · Acesso restrito</div>' +
       '<h1 class="sptx-titulo">' + (APP === 'pe' ? 'Planejamento <i>Estratégico</i>' : 'Roadmap <i>Comercial</i>') + '</h1>' +
-      '<p class="sptx-sub">Material interno. Digite a sua senha para continuar — ela identifica o seu usuário.</p>' +
+      '<p class="sptx-sub">Material interno. Escolha o seu usuário e digite a sua senha.</p>' +
       '<div class="sptx-faixa"></div>' +
+      '<div class="sptx-campo"><label class="sptx-l" for="sptx-user">Usuário</label>' +
+      '<select id="sptx-user"></select></div>' +
       '<label class="sptx-l" for="sptx-senha">Senha</label>' +
       '<input type="password" id="sptx-senha" placeholder="••••••••" autofocus>' +
       '<div class="sptx-erro" id="sptx-erro">Senha incorreta. Tente de novo.</div>' +
@@ -333,8 +336,25 @@
     document.body.appendChild(gate);
     var form = gate.querySelector('form'),
         campo = gate.querySelector('#sptx-senha'),
+        selUser = gate.querySelector('#sptx-user'),
         erro = gate.querySelector('#sptx-erro'),
         lembrar = gate.querySelector('#sptx-lembrar');
+    function montaOpcoes(lista) {
+      var ultimo = '';
+      try { ultimo = localStorage.getItem('sapatao-ultimo-usuario') || ''; } catch (e) {}
+      var atual = selUser.value || ultimo;
+      selUser.innerHTML = '';
+      lista.forEach(function (u) {
+        if (u.ativo === false) return;
+        var o = document.createElement('option');
+        o.value = u.id; o.textContent = u.nome;
+        if (u.id === atual) o.selected = true;
+        selUser.appendChild(o);
+      });
+    }
+    montaOpcoes(A.usuarios);
+    /* atualiza a lista de usuários com a versão fresca do repositório */
+    usuariosFrescos().then(function (lista) { A.usuarios = lista; montaOpcoes(lista); }).catch(function () {});
     campo.focus();
     function entra(user, h, senha) {
       gravaSessao(user, h, lembrar.checked);
@@ -356,15 +376,27 @@
     }
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
-      var senha = campo.value, h = sha256(senha);
-      var u = achaPorHash(A.usuarios, h);
-      if (u) { entra(u, h, senha); return; }
-      /* a lista local pode estar velha (senha trocada há pouco, usuário novo):
+      var senha = campo.value, h = sha256(senha), id = selUser.value;
+      function bate(lista) {
+        for (var i = 0; i < lista.length; i++) {
+          if (lista[i].id === id && lista[i].ativo !== false && lista[i].hash === h) return lista[i];
+        }
+        return null;
+      }
+      var u = bate(A.usuarios);
+      if (u) {
+        try { localStorage.setItem('sapatao-ultimo-usuario', u.id); } catch (e) {}
+        entra(u, h, senha); return;
+      }
+      /* a lista local pode estar velha (senha trocada há pouco):
          confere a versão fresca do repositório antes de recusar */
       usuariosFrescos().then(function (lista) {
-        A.usuarios = lista;
-        var v = achaPorHash(lista, h);
-        if (v) entra(v, h, senha); else recusa();
+        A.usuarios = lista; montaOpcoes(lista);
+        var v = bate(lista);
+        if (v) {
+          try { localStorage.setItem('sapatao-ultimo-usuario', v.id); } catch (e) {}
+          entra(v, h, senha);
+        } else recusa();
       }).catch(function () { recusa(); });
     });
   }
