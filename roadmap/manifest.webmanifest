@@ -1,8 +1,8 @@
 {
-  "name": "Estação Sapatão — Central",
-  "short_name": "Sapatão",
-  "description": "Painéis e materiais de gestão da Estação Sapatão",
-  "start_url": "./",
+  "name": "Guia de Execução — Roadmap Comercial",
+  "short_name": "Roadmap",
+  "description": "Guia de Execução do Roadmap Comercial da Estação Sapatão",
+  "start_url": "guia.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#EBEBEA",
