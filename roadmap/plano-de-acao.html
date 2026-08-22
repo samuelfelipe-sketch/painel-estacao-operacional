@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Plano de Ação — Roadmap Comercial Estação Sapatão</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E %3Cdefs%3E %3ClinearGradient id=%22bg%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E %3Cstop offset=%220%22 stop-color=%22%230B5748%22/%3E %3Cstop offset=%221%22 stop-color=%22%2300332A%22/%3E %3C/linearGradient%3E %3C/defs%3E %3Crect width=%22512%22 height=%22512%22 fill=%22url(%23bg)%22/%3E %3C%21-- funil de vendas em etapas%3B a %C3%BAltima (fechamento) em laranja --%3E %3Cpath d=%22M76 116 L436 116 L409.8 173 L102.2 173 Z%22 fill=%22%23F5F3EC%22 opacity=%220.5%22/%3E %3Cpath d=%22M113.3 197 L398.7 197 L372.5 254 L139.5 254 Z%22 fill=%22%23F5F3EC%22 opacity=%220.72%22/%3E %3Cpath d=%22M150.5 278 L361.5 278 L335.3 335 L176.7 335 Z%22 fill=%22%23F5F3EC%22/%3E %3Cpath d=%22M187.8 359 L324.2 359 L298 416 L214 416 Z%22 fill=%22%23EC6C22%22/%3E %3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600&display=swap" rel="stylesheet">
+<script src="auth.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --fundo:#EBEBEA;
+  --card:#FFFFFF;
+  --verde:#004438;
+  --verde-suave:#3D6B60;
+  --laranja:#EC6C22;
+  --laranja-escuro:#C2531A;
+  --linha:#D8D8D3;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Archivo',sans-serif;background:var(--fundo);color:var(--verde);line-height:1.5;font-size:15px}
+.wrap{max-width:960px;margin:0 auto;padding:34px 20px 60px}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--laranja);margin-bottom:10px}
+h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.1}
+h1 span{color:var(--laranja);font-style:italic}
+.lead{color:var(--verde-suave);margin:10px 0 22px;font-size:14px;max-width:640px}
+.faixa{height:8px;background:repeating-linear-gradient(90deg,var(--laranja) 0 34px,var(--verde) 34px 58px);border-radius:4px;margin:18px 0 24px}
+
+.tbl{overflow-x:auto;border:1px solid var(--linha);border-radius:10px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:720px}
+th{font-family:'Archivo',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:11px;text-align:left;background:#F4F4F2;color:var(--verde);padding:12px 12px;border-bottom:2px solid var(--laranja)}
+td{padding:12px 12px;border-bottom:1px solid var(--linha);vertical-align:top;color:var(--verde)}
+tbody tr:nth-child(even) td{background:#FAFAF8}
+tr:last-child td{border-bottom:none}
+td.num{font-weight:700;width:36px}
+td.gut{font-family:'IBM Plex Mono',monospace;font-weight:600}
+td.gut.max{color:var(--laranja-escuro)}
+td.prazo{white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:13px}
+
+.rodape{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;font-size:12px;color:var(--verde-suave)}
+.rodape i{font-family:'Fraunces',serif;font-weight:600}
+@media print{
+  body{background:#fff}
+  .wrap{padding:10px 0}
+  .tbl{border-radius:0}
+  @page{size:A4 landscape;margin:12mm}
+}
+.btn-voltar{position:fixed;top:14px;left:14px;z-index:999;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#004438;background:#fff;border:1.5px solid #D8D8D3;border-radius:20px;padding:8px 16px;text-decoration:none;box-shadow:0 2px 8px rgba(0,20,15,.08)}
+.btn-voltar:hover{border-color:#EC6C22;color:#C2531A}
+@media print{.btn-voltar,.btn-imprimir{display:none!important}}
+</style>
+</head>
+<body>
+<button type="button" class="btn-voltar btn-imprimir" style="left:auto;right:14px;cursor:pointer" onclick="window.print()">&#128424; Imprimir / PDF</button>
+<a href="../index.html" class="btn-voltar" aria-label="Voltar à página inicial do Roadmap">&#8592; Voltar</a>
+
+<div class="wrap">
+  <div class="eyebrow">Estação Sapatão · Club Reborn · Roadmap Comercial 26.07.2026</div>
+  <h1>Plano de Ação <span>Método PACE</span></h1>
+  <p class="lead">As 17 ações do Roadmap em ordem de prioridade (G×U×T — Gravidade × Urgência × Tendência), começando pelas de maior pontuação. Revisão na sala do conselho em 90 dias.</p>
+  <div class="faixa"></div>
+
+  <div class="tbl">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Ação</th><th>Bloco</th><th>Responsável</th><th>Prazo</th><th>G×U×T</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Agendar Reuniões da Área Comercial — 2º Semestre</td><td>Processos</td><td>Samuel</td><td class="prazo">31/07/2026</td><td class="gut max">125</td></tr>
+      <tr><td class="num">2</td><td>Escrever Descrição de Cargo e Escopo de Trabalho do Vendedor do Sapatão</td><td>Pessoas</td><td>Samuel</td><td class="prazo">15/08/2026</td><td class="gut max">125</td></tr>
+      <tr><td class="num">3</td><td>Rever entregas do time comercial (Perfil CHAVE)</td><td>Pessoas</td><td>Samuel</td><td class="prazo">15/09/2026</td><td class="gut max">125</td></tr>
+      <tr><td class="num">4</td><td>Treinamento de Posicionamento Final para Líderes</td><td>Atração</td><td>Samuel</td><td class="prazo">11/08/2026</td><td class="gut max">125</td></tr>
+      <tr><td class="num">5</td><td>Treinamento sobre Posicionamento para todo o time operacional</td><td>Atração</td><td>Maicon</td><td class="prazo">31/08/2026</td><td class="gut max">125</td></tr>
+      <tr><td class="num">6</td><td>Realizar NPS com clientes B2B</td><td>Escala</td><td>Andressa</td><td class="prazo">22/08/2026</td><td class="gut max">125</td></tr>
+      <tr><td class="num">7</td><td>Pedir Indicação para Promotores do NPS</td><td>Escala</td><td>Fabrício</td><td class="prazo">31/08/2026</td><td class="gut">100</td></tr>
+      <tr><td class="num">8</td><td>Abrir vaga de vendedor</td><td>Pessoas</td><td>Samuel</td><td class="prazo">31/08/2026</td><td class="gut">80</td></tr>
+      <tr><td class="num">9</td><td>Treinamento do time comercial para desenvolvimento do CHAVE</td><td>Pessoas</td><td>Gabrielle</td><td class="prazo">30/09/2026</td><td class="gut">75</td></tr>
+      <tr><td class="num">10</td><td>Treinamento de ICP do time comercial</td><td>Atração</td><td>Samuel</td><td class="prazo">31/07/2026</td><td class="gut">75</td></tr>
+      <tr><td class="num">11</td><td>Linha de comunicação em tráfego pago com a Matriz de Transformação</td><td>Atração</td><td>Samuel</td><td class="prazo">15/08/2026</td><td class="gut">75</td></tr>
+      <tr><td class="num">12</td><td>Listar 20 Clientes ICP</td><td>Atração</td><td>Fabrício</td><td class="prazo">07/08/2026</td><td class="gut">75</td></tr>
+      <tr><td class="num">13</td><td>Documento com Script de Vendas (SPIN + Objeções CSIC)</td><td>Conversão</td><td>Samuel</td><td class="prazo">22/08/2026</td><td class="gut">75</td></tr>
+      <tr><td class="num">14</td><td>Treinamento de SPIN</td><td>Conversão</td><td>Samuel</td><td class="prazo">28/08/2026</td><td class="gut">75</td></tr>
+      <tr><td class="num">15</td><td>Treinamento de Objeções e CSIC</td><td>Conversão</td><td>Samuel</td><td class="prazo">04/09/2026</td><td class="gut">75</td></tr>
+      <tr><td class="num">16</td><td>Medir Churn</td><td>Escala</td><td>Samuel</td><td class="prazo">15/09/2026</td><td class="gut">60</td></tr>
+      <tr><td class="num">17</td><td>Revisar Etapas do CRM</td><td>Processos</td><td>Samuel</td><td class="prazo">21/08/2026</td><td class="gut">45</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="rodape">
+    <span><i>Estação Sapatão</i> · Um lugar para parar, ficar e voltar.</span>
+    <span>17 ações · 1 a 17 de 17</span>
+  </div>
+</div>
+</body>
+</html>

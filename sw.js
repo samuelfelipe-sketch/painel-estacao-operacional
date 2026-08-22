@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-es-v3';
+const CACHE_NAME = 'painel-es-v4';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -19,8 +19,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
-  // data.json: sempre busca da rede (Network First), sem cache
-  if (url.includes('data.json')) {
+  // Navegações e data.json: sempre rede primeiro (cache só como reserva offline)
+  if (e.request.mode === 'navigate' || url.includes('data.json')) {
     e.respondWith(
       fetch(e.request).catch(() => caches.match('./index.html'))
     );
