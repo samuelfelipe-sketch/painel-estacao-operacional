@@ -1086,6 +1086,7 @@ if(snBtn)snBtn.addEventListener('click',async function(){
     const API_AUTH='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/auth.js';
     const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
     const g=await fetch(API_AUTH+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+    if(g.status===401||g.status===403)throw new Error('a chave de publicação é inválida ou expirou — gere uma nova no GitHub e cole no quadro Nuvem acima');
     if(!g.ok)throw new Error('HTTP '+g.status+' ao ler o auth.js');
     const j=await g.json();
     let src=b64dec(j.content);
@@ -1100,6 +1101,7 @@ if(snBtn)snBtn.addEventListener('click',async function(){
     src=src.replace(re,"HASH_SENHA = '"+novoHash+"'");
     const r=await fetch(API_AUTH,{method:'PUT',headers:h,body:JSON.stringify({
       message:'chore: altera a senha do Roadmap Comercial (via Configura\u00e7\u00f5es)',branch:'main',content:b64enc(src),sha:j.sha})});
+    if(r.status===401||r.status===403)throw new Error('a chave de publicação é inválida ou expirou — gere uma nova no GitHub e cole no quadro Nuvem acima');
     if(!r.ok)throw new Error('HTTP '+r.status+' ao gravar');
     try{
       if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,novoHash);
