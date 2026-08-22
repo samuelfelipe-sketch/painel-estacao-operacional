@@ -766,7 +766,7 @@ tr.late td{background:#FCF0ED!important}
         <input type="password" id="cfg-token" placeholder="Cole a chave aqui (github_pat_&hellip; ou ghp_&hellip;)" autocomplete="off" style="flex:1;min-width:220px;font-family:inherit;font-size:14px;padding:10px 12px;border:1.5px solid var(--linha);border-radius:8px;color:var(--verde)">
         <button type="button" class="ord-btn active" id="cfg-salvar">Salvar chave</button>
       </div>
-      <p class="lead" style="margin:10px 0 0;font-size:12.5px">A chave fica guardada só neste aparelho — nunca vai para o código do site.</p>
+      <p class="lead" style="margin:10px 0 0;font-size:12.5px">A chave fica neste aparelho e tamb&eacute;m na nuvem, <b>criptografada pela senha do site</b> — os outros aparelhos recebem sozinhos ao entrar digitando a senha. Nunca aparece em texto aberto no c&oacute;digo.</p>
     </div>
   </div>
 
@@ -992,8 +992,10 @@ renderAll();
    A base de dados é o próprio repositório do site (roadmap/execucoes.json).
    Leitura: pública, funciona em qualquer aparelho sem configurar nada.
    Publicação: exige uma chave do GitHub (fine-grained token, Contents
-   Read/Write só neste repositório) colada uma única vez por aparelho —
-   fica no localStorage, nunca vai para o código público. */
+   Read/Write só neste repositório) colada uma única vez — fica no
+   localStorage e, criptografada pela senha do site, na nuvem
+   (roadmap/chave.enc.json): os outros aparelhos recebem ao entrar
+   digitando a senha. Nunca vai em texto aberto para o código público. */
 const SYNC_API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/execucoes.json';
 const LS_TOKEN='sapatao-sync-token';
 const chipEl=document.getElementById('sync-chip');
@@ -1061,12 +1063,63 @@ if(cfgSalvar)cfgSalvar.addEventListener('click',function(){
   if(!v){cfgCampo.focus();return;}
   try{localStorage.setItem(LS_TOKEN,v);}catch(e){}
   cfgCampo.value='';atualizaCfg();iniciaSync();
+  const A=window.sapataoAuth;
+  if(A&&A.pw)publicaChaveNuvem(A.pw,v).then(function(ok){if(ok)chip('ok','Nuvem: chave guardada também na nuvem — os outros aparelhos recebem ao entrar com a senha');});
+  else chip('ok','Nuvem: chave salva neste aparelho. Para guardá-la na nuvem, saia e entre digitando a senha, e cole a chave de novo.');
 });
 if(cfgRemover)cfgRemover.addEventListener('click',function(){
   try{localStorage.removeItem(LS_TOKEN);}catch(e){}
   atualizaCfg();iniciaSync();
 });
 atualizaCfg();
+
+/* --- Chave de publicação na nuvem ---
+   A chave fica também no repositório, criptografada (AES-GCM) com uma chave
+   derivada da SENHA do site (PBKDF2, 310 mil iterações) — roadmap/chave.enc.json.
+   Quem entra digitando a senha em outro aparelho recebe e destrava sozinho.
+   A senha digitada existe só na memória da página (window.sapataoAuth.pw). */
+const KEY_API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/chave.enc.json';
+function b64bytes(u8){let s='';u8.forEach(function(b){s+=String.fromCharCode(b);});return btoa(s);}
+function bytesB64(b64){return Uint8Array.from(atob(b64),function(c){return c.charCodeAt(0);});}
+async function kdfSenha(pw,saltU8){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:saltU8,iterations:310000},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function publicaChaveNuvem(pw,token){
+  if(!pw||!token||!window.crypto||!crypto.subtle)return false;
+  try{
+    const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const key=await kdfSenha(pw,salt);
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(token));
+    const doc={v:1,salt:b64bytes(salt),iv:b64bytes(iv),ct:b64bytes(new Uint8Array(ct))};
+    const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+token,'Content-Type':'application/json'};
+    let sha=null;
+    const g=await fetch(KEY_API+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+    if(g.ok)sha=(await g.json()).sha;
+    const body={message:'chore: guarda a chave de publicação criptografada (nuvem)',branch:'main',content:b64enc(JSON.stringify(doc,null,2))};
+    if(sha)body.sha=sha;
+    const r=await fetch(KEY_API,{method:'PUT',headers:h,body:JSON.stringify(body)});
+    return r.ok;
+  }catch(e){return false;}
+}
+async function buscaChaveNuvem(){
+  const A=window.sapataoAuth;
+  if(tokenSync()||!A||!A.pw||!window.crypto||!crypto.subtle)return;
+  try{
+    const r=await fetch(KEY_API+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+    if(!r.ok)return;
+    const doc=JSON.parse(b64dec((await r.json()).content));
+    const key=await kdfSenha(A.pw,bytesB64(doc.salt));
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytesB64(doc.iv)},key,bytesB64(doc.ct));
+    const token=new TextDecoder().decode(pt);
+    if(!token)return;
+    try{localStorage.setItem(LS_TOKEN,token);}catch(e){}
+    atualizaCfg();iniciaSync();
+    chip('ok','Nuvem: chave recebida da nuvem — este aparelho já publica');
+  }catch(e){/* senha não abre o cofre (chave gravada com senha antiga) — segue só leitura */}
+}
+document.addEventListener('sapatao-login',buscaChaveNuvem);
+buscaChaveNuvem();
 
 /* --- Troca de senha do site (reescreve o auth.js no repositório) --- */
 const snMsg=document.getElementById('sn-msg'),snBtn=document.getElementById('sn-trocar');
@@ -1107,6 +1160,9 @@ if(snBtn)snBtn.addEventListener('click',async function(){
       if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,novoHash);
       if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,novoHash);
     }catch(e){}
+    /* regrava a chave da nuvem cifrada com a senha nova */
+    A.pw=nova;
+    if(tokenSync())publicaChaveNuvem(nova,tokenSync());
     document.getElementById('sn-atual').value='';document.getElementById('sn-nova').value='';document.getElementById('sn-conf').value='';
     snDiz('Senha alterada! Este aparelho continua conectado; os outros v\u00e3o pedir a senha nova (se algum recusar nos primeiros minutos, \u00e9 cache \u2014 o site confere sozinho e aceita).');
   }catch(e){snDiz('N\u00e3o consegui gravar ('+e.message+'). Confira a chave de publica\u00e7\u00e3o e tente de novo.',true);}
