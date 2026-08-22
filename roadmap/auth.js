@@ -9,7 +9,7 @@
    suficiente para uso interno, não para dados sensíveis.
    ============================================================ */
 (function () {
-  var HASH_SENHA = '83ba0697220bce26389f7cf386f21f6bb3ed2e8e663b756d4ceab762be708ba5';
+  var HASH_SENHA = '9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c';
   var CHAVE = 'sapatao-roadmap-auth-v1';
 
   /* SHA-256 em JS puro (domínio público — geraintluff/sha256) */
