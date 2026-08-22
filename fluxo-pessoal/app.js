@@ -1769,11 +1769,17 @@ function impConfirmar(){
 // seguida e tudo se alinha.
 const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
 on('imp-ler', impEnviar);
-// ícone "?" ao lado do Enviar: toque abre/fecha a explicação (hover é só CSS)
-on('imp-help', e => { e.stopPropagation(); const p = document.getElementById('imp-help-pop'); if (p) p.classList.toggle('on'); });
+// ícones "?": toque abre/fecha a explicação do card (hover é só CSS).
+// Toque em outro lugar fecha; toque dentro do balão aberto não fecha.
 document.addEventListener('click', e => {
-  const p = document.getElementById('imp-help-pop');
-  if (p && p.classList.contains('on') && !p.contains(e.target)) p.classList.remove('on');
+  if (e.target.closest('.qpop')) return;
+  const h = e.target.closest('.qhelp');
+  const abertos = [...document.querySelectorAll('.qpop.on')];
+  abertos.forEach(p => p.classList.remove('on'));
+  if (h){
+    const p = h.parentElement.querySelector('.qpop');
+    if (p && !abertos.includes(p)) p.classList.add('on');
+  }
 });
 
 // ---- desconexão automática de todos os acessos quando sai versão nova ----
