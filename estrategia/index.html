@@ -769,7 +769,14 @@ function aplicaPermissao(){
   /* Configurações inteira é só para admin */
   const adm=!!(A&&A.user&&A.user.admin);
   const usAdm=document.getElementById('cfg-usuarios');
-  if(usAdm)usAdm.hidden=!adm;
+  if(usAdm){
+    usAdm.hidden=!adm;
+    /* a administração de usuários mudou para as Configurações da central */
+    if(adm&&!usAdm.dataset.central){
+      usAdm.dataset.central='1';
+      usAdm.innerHTML='<h3>Usuários e permissões</h3><div class="card"><p class="lead" style="margin-bottom:10px">A administração de usuários fica nas <b>Configurações da central</b> — um lugar só para todos os painéis.</p><button type="button" class="cfg-btn" style="margin-top:0" onclick="location.href=\'../configuracoes/\'">Abrir Configurações da central &#8594;</button></div>';
+    }
+  }
   const cfgNav=document.querySelector('.nav-link[data-t="config"]');
   if(cfgNav){
     cfgNav.style.display=adm?'':'none';
