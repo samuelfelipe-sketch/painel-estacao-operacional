@@ -346,10 +346,12 @@ links.forEach(l=>l.addEventListener('click',()=>{
   fechaMenu();
   window.scrollTo({top:0});
 }));
-document.querySelectorAll('[data-vai]').forEach(b=>b.addEventListener('click',()=>{
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-vai]');
+  if(!b)return;
   const alvo=document.querySelector('.nav-link[data-t="'+b.dataset.vai+'"]');
   if(alvo)alvo.click();
-}));
+});
 </script>
 
 <script>
