@@ -1,16 +1,28 @@
 /* ============================================================
-   Acesso restrito — Roadmap Comercial · Estação Sapatão
+   Acesso restrito — Estação Sapatão (Roadmap + Planejamento)
    ------------------------------------------------------------
-   A senha não aparece em texto claro: o que fica aqui é o
-   hash SHA-256 dela. Para trocar a senha, use a aba
-   Configurações do Guia (precisa da chave de publicação) —
-   ela reescreve o HASH_SENHA abaixo automaticamente.
+   v2 — com USUÁRIOS: cada pessoa tem a própria senha (o que fica
+   aqui e em roadmap/usuarios.json é só o hash SHA-256) e permissões
+   por painel: roadmap (Guia) e pe (Planejamento Estratégico),
+   cada uma 'edita' | 'le' | 'nao'. Admin gerencia tudo.
+   A página define window.SAPATAO_APP = 'roadmap' | 'pe' antes
+   deste script; sem definir, vale 'roadmap'.
+   O login é só pela senha: o hash identifica quem entrou.
    Obs.: é uma proteção de acesso simples de site estático —
    suficiente para uso interno, não para dados sensíveis.
    ============================================================ */
 (function () {
-  var HASH_SENHA = 'd2a841835b53ff10c938d88d247151e4cb36bb6c9047c8f7b9affe799d97f7c1';
+  /* Fallback embutido (mantém o Samuel entrando mesmo sem rede).
+     A lista viva fica em roadmap/usuarios.json. */
+  var USUARIOS_FALLBACK = [
+    { id: 'samuel', nome: 'Samuel', hash: 'd2a841835b53ff10c938d88d247151e4cb36bb6c9047c8f7b9affe799d97f7c1', admin: true, ativo: true, perm: { roadmap: 'edita', pe: 'edita' } }
+  ];
+  var RAW_BASE = 'https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/';
+  var API_BASE = 'https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/';
   var CHAVE = 'sapatao-roadmap-auth-v1';
+  var CACHE_US = 'sapatao-usuarios-cache-v1';
+  var LS_TOKEN = 'sapatao-sync-token';
+  var APP = (typeof window.SAPATAO_APP === 'string' && window.SAPATAO_APP) || 'roadmap';
 
   /* SHA-256 em JS puro (domínio público — geraintluff/sha256) */
   function sha256(ascii) {
@@ -41,17 +53,15 @@
       hash = hash.slice(0, 8);
       for (i = 0; i < 64; i++) {
         var w15 = w[i - 15], w2 = w[i - 2];
-        var a = hash[0], e = hash[4];
+        var s0 = w15 && (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3));
+        var s1 = w2 && (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10));
+        if (i >= 16) w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+        var e = hash[4];
         var temp1 = hash[7]
           + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
           + ((e & hash[5]) ^ (~e & hash[6]))
-          + k[i]
-          + (w[i] = (i < 16) ? w[i] : (
-            w[i - 16]
-            + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
-            + w[i - 7]
-            + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
-          ) | 0);
+          + k[i] + w[i];
+        var a = hash[0];
         var temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
           + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
         hash = [(temp1 + temp2) | 0].concat(hash);
@@ -68,38 +78,194 @@
     return result;
   }
 
-  function lembrado() {
-    var v = null;
-    try { v = sessionStorage.getItem(CHAVE) || localStorage.getItem(CHAVE); } catch (e) {}
-    if (!v) return false;
-    if (v === HASH_SENHA) return true;
-    /* hash guardado difere do arquivo (possível cache após troca de senha):
-       revalida em segundo plano contra a versão fresca e só desconecta se
-       realmente não bater */
-    fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/roadmap/auth.js?t=' + Date.now(), { cache: 'no-store' })
-      .then(function (r) { return r.text(); })
-      .then(function (src) {
-        var m = src.match(/HASH_SENHA = '([0-9a-f]{64})'/);
-        if (!m || v !== m[1]) window.sapataoSair();
-      }).catch(function () {});
-    return true;
+  /* ---------- usuários ---------- */
+  function usuariosLocais() {
+    try {
+      var c = JSON.parse(localStorage.getItem(CACHE_US) || 'null');
+      if (c && c.usuarios && c.usuarios.length) return c.usuarios;
+    } catch (e) {}
+    return USUARIOS_FALLBACK;
+  }
+  function guardaCache(lista) {
+    try { localStorage.setItem(CACHE_US, JSON.stringify({ v: 1, usuarios: lista })); } catch (e) {}
+  }
+  function usuariosFrescos() {
+    return fetch(RAW_BASE + 'roadmap/usuarios.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) {
+        var lista = (j && j.usuarios) || null;
+        if (lista && lista.length) { guardaCache(lista); return lista; }
+        throw 0;
+      });
+  }
+  function achaPorHash(lista, h) {
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].ativo !== false && lista[i].hash === h) return lista[i];
+    }
+    return null;
+  }
+  function permDe(user, app) {
+    if (!user) return 'nao';
+    if (user.admin) return 'edita';
+    return (user.perm || {})[app] || 'nao';
   }
 
-  /* usado pela aba Configurações do guia para validar e trocar a senha */
-  window.sapataoAuth = { hash: HASH_SENHA, sha256: sha256, chave: CHAVE };
+  /* ---------- sessão ---------- */
+  function leSessao() {
+    var v = null;
+    try { v = sessionStorage.getItem(CHAVE) || localStorage.getItem(CHAVE); } catch (e) {}
+    if (!v) return null;
+    if (/^[0-9a-f]{64}$/.test(v)) return { h: v };          /* formato antigo: só o hash */
+    try { var j = JSON.parse(v); if (j && j.h) return j; } catch (e) {}
+    return null;
+  }
+  function gravaSessao(user, h, lembrar) {
+    var v = JSON.stringify({ u: user.id, h: h });
+    try { sessionStorage.setItem(CHAVE, v); } catch (e) {}
+    if (lembrar) { try { localStorage.setItem(CHAVE, v); } catch (e) {} }
+  }
 
+  var A = window.sapataoAuth = {
+    sha256: sha256, chave: CHAVE, app: APP,
+    usuarios: usuariosLocais(),
+    user: null, pw: null,
+    permDe: permDe,
+    podeEditar: function (app) { return permDe(A.user, app || APP) === 'edita'; },
+    temAcesso: function (app) { return permDe(A.user, app || APP) !== 'nao'; },
+    /* compat com código antigo que lia .hash */
+    get hash() { return A.user ? A.user.hash : ''; }
+  };
   window.sapataoSair = function () {
     try { sessionStorage.removeItem(CHAVE); } catch (e) {}
     try { localStorage.removeItem(CHAVE); } catch (e) {}
     location.reload();
   };
 
-  if (lembrado()) return;
+  function anuncia() { try { document.dispatchEvent(new CustomEvent('sapatao-auth', { detail: { user: A.user } })); } catch (e) {} }
 
-  /* Trava a página até a senha certa */
-  document.documentElement.classList.add('sptx-lock');
-  var estilo = document.createElement('style');
-  estilo.textContent =
+  function bloqueiaSemAcesso() {
+    garanteEstilo();
+    document.documentElement.classList.add('sptx-lock');
+    var d = document.createElement('div');
+    d.className = 'sptx-gate';
+    d.innerHTML = '<div class="sptx-card"><div class="sptx-eyebrow">Estação Sapatão</div>'
+      + '<h1 class="sptx-titulo">Sem <i>acesso</i></h1>'
+      + '<p class="sptx-sub">O usuário <b>' + (A.user ? A.user.nome : '') + '</b> não tem acesso a este painel. Fale com o Samuel para liberar a permissão.</p>'
+      + '<button type="button" class="sptx-btn" onclick="location.href=\'../index.html\'">&#8592; Voltar à página inicial</button>'
+      + '<button type="button" class="sptx-btn" style="background:none;color:#3D6B60;margin-top:8px" onclick="window.sapataoSair()">Entrar com outro usuário</button></div>';
+    function poe() { document.body.appendChild(d); }
+    if (document.body) poe(); else document.addEventListener('DOMContentLoaded', poe);
+  }
+
+  /* ---------- cofre da chave de publicação (compartilhado entre os painéis) ----------
+     roadmap/chave.enc.json v2: {v:2, envelopes:{usuarioId:{salt,iv,ct}}} — o token
+     criptografado com a senha de cada usuário (AES-GCM, PBKDF2 310k).
+     Compatível com o formato v1 (um único envelope na raiz). */
+  function b64bytes(u8) { var s = ''; u8.forEach(function (b) { s += String.fromCharCode(b); }); return btoa(s); }
+  function bytesB64(b64) { return Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); }); }
+  function b64enc(str) { return btoa(unescape(encodeURIComponent(str))); }
+  function b64dec(str) { return decodeURIComponent(escape(atob(str.replace(/\s/g, '')))); }
+  function kdf(pw, saltU8) {
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey'])
+      .then(function (base) {
+        return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: saltU8, iterations: 310000 }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+      });
+  }
+  function abreEnvelope(env, pw) {
+    return kdf(pw, bytesB64(env.salt)).then(function (key) {
+      return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytesB64(env.iv) }, key, bytesB64(env.ct));
+    }).then(function (pt) { return new TextDecoder().decode(pt); });
+  }
+  function fechaEnvelope(token, pw) {
+    var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    return kdf(pw, salt).then(function (key) {
+      return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(token));
+    }).then(function (ct) { return { salt: b64bytes(salt), iv: b64bytes(iv), ct: b64bytes(new Uint8Array(ct)) }; });
+  }
+  var KEY_URL = API_BASE + 'roadmap/chave.enc.json';
+  var C = window.sapataoChave = {
+    ls: LS_TOKEN,
+    token: function () { try { return localStorage.getItem(LS_TOKEN) || ''; } catch (e) { return ''; } },
+    grava: function (t) { try { if (t) localStorage.setItem(LS_TOKEN, t); else localStorage.removeItem(LS_TOKEN); } catch (e) {} },
+    /* baixa e abre o envelope do usuário logado (quando não há chave local) */
+    busca: function () {
+      if (C.token() || !A.user || !A.pw || !window.crypto || !crypto.subtle) return Promise.resolve(false);
+      return fetch(KEY_URL + '?ref=main&t=' + Date.now(), { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (j) {
+          var doc = JSON.parse(b64dec(j.content));
+          var envs = [];
+          if (doc.v === 2 && doc.envelopes) {
+            if (doc.envelopes[A.user.id]) envs.push(doc.envelopes[A.user.id]);
+            if (doc.envelopes._antiga) envs.push(doc.envelopes._antiga);
+          } else if (doc.ct) envs.push(doc); /* formato v1 */
+          var tenta = function (i) {
+            if (i >= envs.length) return false;
+            return abreEnvelope(envs[i], A.pw).then(function (t) {
+              if (!t) return tenta(i + 1);
+              C.grava(t); return true;
+            }).catch(function () { return tenta(i + 1); });
+          };
+          return tenta(0);
+        }).catch(function () { return false; });
+    },
+    /* garante que o envelope do usuário logado existe na nuvem (v2),
+       preservando os envelopes dos outros usuários */
+    garante: function () {
+      if (!A.user || !A.pw) return Promise.resolve(false);
+      return C.garantePara(A.user.id, A.pw);
+    },
+    /* grava o envelope de QUALQUER usuário (o admin usa ao criar um usuário
+       ou redefinir a senha dele — a chave chega sozinha nos aparelhos da pessoa) */
+    garantePara: function (userId, pw) {
+      var token = C.token();
+      if (!token || !userId || !pw || !window.crypto || !crypto.subtle) return Promise.resolve(false);
+      var h = { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+      var sha = null, envelopes = {};
+      return fetch(KEY_URL + '?ref=main&t=' + Date.now(), { headers: h, cache: 'no-store' })
+        .then(function (g) { if (!g.ok) throw 0; return g.json(); })
+        .then(function (j) {
+          sha = j.sha;
+          var doc = JSON.parse(b64dec(j.content));
+          if (doc.v === 2 && doc.envelopes) envelopes = doc.envelopes;
+          else if (doc.ct) {
+            /* migra o v1: se a senha atual abre, o envelope é deste usuário;
+               senão preserva como _antiga para não perder ninguém */
+            return abreEnvelope(doc, pw).then(function () { /* é nosso: será reescrito */ })
+              .catch(function () { envelopes._antiga = { salt: doc.salt, iv: doc.iv, ct: doc.ct }; });
+          }
+        })
+        .catch(function () { /* arquivo ainda não existe */ })
+        .then(function () {
+          if (envelopes[userId]) {
+            /* já existe: confere se a senha atual abre; se abrir, nada a fazer */
+            return abreEnvelope(envelopes[userId], pw).then(function () { return 'ok'; }).catch(function () { return 'regrava'; });
+          }
+          return 'regrava';
+        })
+        .then(function (st) {
+          if (st === 'ok') return true;
+          return fechaEnvelope(token, pw).then(function (env) {
+            envelopes[userId] = env;
+            var body = {
+              message: 'chore: guarda a chave de publicação criptografada (nuvem)', branch: 'main',
+              content: b64enc(JSON.stringify({ v: 2, envelopes: envelopes }, null, 2))
+            };
+            if (sha) body.sha = sha;
+            return fetch(KEY_URL, { method: 'PUT', headers: h, body: JSON.stringify(body) }).then(function (r) { return r.ok; });
+          });
+        }).catch(function () { return false; });
+    }
+  };
+
+  function garanteEstilo() {
+    if (document.getElementById('sptx-estilo')) return;
+    var estilo = document.createElement('style');
+    estilo.id = 'sptx-estilo';
+    estilo.textContent = SPTX_CSS;
+    (document.head || document.documentElement).appendChild(estilo);
+  }
+  var SPTX_CSS =
     'html.sptx-lock body{overflow:hidden}' +
     'html.sptx-lock body>*:not(.sptx-gate){display:none!important}' +
     '.sptx-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px;background:#004438;font-family:"Archivo",-apple-system,sans-serif}' +
@@ -110,8 +276,9 @@
     '.sptx-sub{font-size:13.5px;color:#3D6B60;margin:0 0 18px}' +
     '.sptx-faixa{height:1px;background:#D8D8D3;margin:0 0 22px}' +
     '.sptx-gate label.sptx-l{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3D6B60;margin-bottom:6px}' +
-    '.sptx-gate input[type=password]{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:12px 14px;border:1.5px solid #D8D8D3;border-radius:10px;color:#004438;outline:none}' +
-    '.sptx-gate input[type=password]:focus{border-color:#EC6C22}' +
+    '.sptx-gate input[type=password],.sptx-gate input[type=text]{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:12px 14px;border:1.5px solid #D8D8D3;border-radius:10px;color:#004438;outline:none;background:#fff}' +
+    '.sptx-gate input[type=password]:focus,.sptx-gate input[type=text]:focus{border-color:#EC6C22}' +
+    '.sptx-campo{margin-bottom:14px}' +
     '.sptx-erro{display:none;color:#8C1D18;background:#F9DEDC;border:1px solid #E8B3AE;border-radius:8px;font-size:13px;padding:8px 12px;margin-top:10px}' +
     '.sptx-erro.on{display:block}' +
     '.sptx-lembrar{display:flex;align-items:center;gap:8px;font-size:13px;color:#3D6B60;margin:14px 0 18px;cursor:pointer}' +
@@ -121,7 +288,38 @@
     '.sptx-rodape{font-size:11.5px;color:#3D6B60;text-align:center;margin-top:16px}' +
     '@keyframes sptxShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}' +
     '.sptx-card.shake{animation:sptxShake .35s}';
-  (document.head || document.documentElement).appendChild(estilo);
+
+  /* ---------- fluxo de entrada ---------- */
+  var s = leSessao();
+  if (s) {
+    var u = null;
+    if (s.u) { A.usuarios.forEach(function (x) { if (x.id === s.u && x.hash === s.h && x.ativo !== false) u = x; }); }
+    if (!u) u = achaPorHash(A.usuarios, s.h);
+    if (u) {
+      A.user = u;
+      /* revalida em segundo plano contra a lista fresca (senha trocada,
+         usuário desativado, permissão alterada) */
+      usuariosFrescos().then(function (lista) {
+        A.usuarios = lista;
+        var v = null;
+        lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v = x; });
+        if (!v) { window.sapataoSair(); return; }
+        A.user = v;
+        if (!A.temAcesso(APP)) { location.reload(); return; }
+        anuncia();
+      }).catch(function () {});
+      if (!A.temAcesso(APP)) { bloqueiaSemAcesso(); return; }
+      anuncia();
+      return; /* sessão válida — libera a página */
+    }
+    /* sessão não bate com ninguém do cache: revalida contra a lista fresca
+       antes de pedir senha (pode ser troca recente) */
+  }
+
+
+  /* Trava a página até a senha certa */
+  garanteEstilo();
+  document.documentElement.classList.add('sptx-lock');
 
   function montaGate() {
     var gate = document.createElement('div');
@@ -129,12 +327,14 @@
     gate.innerHTML =
       '<form class="sptx-card" autocomplete="off">' +
       '<div class="sptx-eyebrow">Estação Sapatão · Acesso restrito</div>' +
-      '<h1 class="sptx-titulo">Roadmap <i>Comercial</i></h1>' +
-      '<p class="sptx-sub">Material interno da área comercial. Digite a senha para continuar.</p>' +
+      '<h1 class="sptx-titulo">' + (APP === 'pe' ? 'Planejamento <i>Estratégico</i>' : 'Roadmap <i>Comercial</i>') + '</h1>' +
+      '<p class="sptx-sub">Material interno. Digite o seu usuário e a sua senha.</p>' +
       '<div class="sptx-faixa"></div>' +
+      '<div class="sptx-campo"><label class="sptx-l" for="sptx-user">Usuário</label>' +
+      '<input type="text" id="sptx-user" placeholder="Seu usuário" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></div>' +
       '<label class="sptx-l" for="sptx-senha">Senha</label>' +
-      '<input type="password" id="sptx-senha" placeholder="••••••••" autofocus>' +
-      '<div class="sptx-erro" id="sptx-erro">Senha incorreta. Tente de novo.</div>' +
+      '<input type="password" id="sptx-senha" placeholder="••••••••" autocomplete="current-password">' +
+      '<div class="sptx-erro" id="sptx-erro">Usuário ou senha incorretos.</div>' +
       '<label class="sptx-lembrar"><input type="checkbox" id="sptx-lembrar" checked> Manter conectado neste dispositivo</label>' +
       '<button type="submit" class="sptx-btn">Entrar</button>' +
       '<div class="sptx-rodape">Um lugar para parar, ficar e voltar.</div>' +
@@ -142,38 +342,53 @@
     document.body.appendChild(gate);
     var form = gate.querySelector('form'),
         campo = gate.querySelector('#sptx-senha'),
+        campoUser = gate.querySelector('#sptx-user'),
         erro = gate.querySelector('#sptx-erro'),
         lembrar = gate.querySelector('#sptx-lembrar');
-    campo.focus();
-    function entra(hash, senha) {
-      try { sessionStorage.setItem(CHAVE, hash); } catch (e) {}
-      if (lembrar.checked) { try { localStorage.setItem(CHAVE, hash); } catch (e) {} }
-      /* senha só em memória (nunca gravada): abre a chave de publicação
-         guardada criptografada na nuvem (roadmap/chave.enc.json) */
-      window.sapataoAuth.pw = senha || null;
+    campoUser.focus();
+    function entra(user, h, senha) {
+      gravaSessao(user, h, lembrar.checked);
+      A.user = user;
+      /* senha só em memória (nunca gravada): abre o cofre da chave de publicação */
+      A.pw = senha || null;
       gate.remove();
       document.documentElement.classList.remove('sptx-lock');
+      if (!A.temAcesso(APP)) { bloqueiaSemAcesso(); return; }
+      anuncia();
       try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
     }
-    function recusa() {
+    function recusa(msg) {
+      erro.textContent = msg || 'Usuário ou senha incorretos. Tente de novo.';
       erro.classList.add('on');
       form.classList.add('shake');
       campo.select();
       setTimeout(function () { form.classList.remove('shake'); }, 400);
     }
+    /* compara o usuário digitado com nome/id, ignorando maiúsculas e acentos */
+    function chave(s) {
+      return (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
-      var h = sha256(campo.value);
-      if (h === HASH_SENHA) { entra(HASH_SENHA, campo.value); return; }
-      /* a senha pode ter sido trocada há pouco e este arquivo ainda estar em
-         cache — confere a versão fresca do repositório antes de recusar */
-      fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/roadmap/auth.js?t=' + Date.now(), { cache: 'no-store' })
-        .then(function (r) { return r.text(); })
-        .then(function (src) {
-          var m = src.match(/HASH_SENHA = '([0-9a-f]{64})'/);
-          if (m && h === m[1]) entra(m[1], campo.value); else recusa();
-        })
-        .catch(recusa);
+      var senha = campo.value, h = sha256(senha), digitado = chave(campoUser.value);
+      if (!digitado) { recusa('Digite o seu usuário.'); campoUser.focus(); return; }
+      function bate(lista) {
+        for (var i = 0; i < lista.length; i++) {
+          var u = lista[i];
+          if (u.ativo === false) continue;
+          if ((chave(u.nome) === digitado || chave(u.id) === digitado) && u.hash === h) return u;
+        }
+        return null;
+      }
+      var u = bate(A.usuarios);
+      if (u) { entra(u, h, senha); return; }
+      /* a lista local pode estar velha (usuário novo, senha trocada há pouco):
+         confere a versão fresca do repositório antes de recusar */
+      usuariosFrescos().then(function (lista) {
+        A.usuarios = lista;
+        var v = bate(lista);
+        if (v) entra(v, h, senha); else recusa('Usuário ou senha incorretos. Tente de novo.');
+      }).catch(function () { recusa('Usuário ou senha incorretos. Tente de novo.'); });
     });
   }
 

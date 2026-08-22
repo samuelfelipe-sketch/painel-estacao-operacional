@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Planejamento Estratégico — Estação Sapatão</title>
+<meta name="theme-color" content="#004438">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E %3Cdefs%3E %3ClinearGradient id=%22bg%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E %3Cstop offset=%220%22 stop-color=%22%230B5748%22/%3E %3Cstop offset=%221%22 stop-color=%22%2300332A%22/%3E %3C/linearGradient%3E %3C/defs%3E %3Crect width=%22512%22 height=%22512%22 fill=%22url(%23bg)%22/%3E %3C%21-- alvo estrat%C3%A9gico: an%C3%A9is creme, centro laranja --%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%22170%22 fill=%22none%22 stroke=%22%23F5F3EC%22 stroke-width=%2230%22 opacity=%220.55%22/%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%22105%22 fill=%22none%22 stroke=%22%23F5F3EC%22 stroke-width=%2230%22 opacity=%220.8%22/%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%2246%22 fill=%22%23EC6C22%22/%3E %3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>window.SAPATAO_APP='pe';</script>
+<script src="../roadmap/auth.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --fundo:#EBEBEA;
+  --card:#FFFFFF;
+  --verde:#004438;
+  --verde-escuro:#00352C;
+  --verde-suave:#3D6B60;
+  --laranja:#EC6C22;
+  --laranja-escuro:#C2531A;
+  --linha:#D8D8D3;
+  --linha-verde:#C9D6D1;
+  --sidebar-w:248px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--fundo)}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{font-family:'Archivo',sans-serif;background:var(--fundo);color:var(--verde);line-height:1.55;font-size:15.5px}
+
+/* ---------- Barra superior (mobile) ---------- */
+.topbar{display:none;position:sticky;top:0;z-index:70;background:var(--verde);color:#fff;padding:12px 16px;align-items:center;gap:12px}
+.topbar button{background:none;border:1.5px solid rgba(255,255,255,.4);border-radius:6px;color:#fff;font-size:18px;line-height:1;padding:6px 10px;cursor:pointer}
+.topbar .t{font-family:'Fraunces',serif;font-weight:600;font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- Layout ---------- */
+.layout{display:flex;min-height:100vh}
+aside{width:var(--sidebar-w);flex-shrink:0;background:var(--verde);color:#EBEBEA;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,.12)}
+.brand .placa{background:#EBEBEA;border-radius:10px;padding:14px 12px;text-align:center}
+.brand .placa .p1{font-family:'Fraunces',serif;font-weight:700;font-size:17px;color:var(--verde)}
+.brand .placa .p1 i{color:var(--laranja);font-style:italic}
+.brand .placa .p2{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--verde-suave);margin-top:2px}
+.menu{flex:1;padding:14px 0}
+.grupo{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#7FA79A;padding:16px 20px 6px}
+.nav-link{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:#C4D6CF;font-family:'Archivo',sans-serif;font-weight:500;font-size:14px;padding:9px 20px;cursor:pointer;border-left:3px solid transparent}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,.05)}
+.nav-link:focus-visible{outline:2px solid var(--laranja);outline-offset:-2px}
+.nav-link.active{color:#fff;background:rgba(236,108,34,.14);border-left-color:var(--laranja);font-weight:600}
+.nav-link .dot{width:6px;height:6px;border-radius:50%;background:var(--laranja);opacity:0;flex-shrink:0}
+.nav-link.active .dot{opacity:1}
+.user{border-top:1px solid rgba(255,255,255,.12);padding:16px 20px;display:flex;gap:10px;align-items:center}
+.user .av{width:34px;height:34px;border-radius:7px;background:var(--laranja);color:#fff;font-family:'Fraunces',serif;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.user .n1{font-size:13px;font-weight:600;color:#fff}
+.user .n2{font-size:11px;color:#9FBFB4}
+
+.conteudo{flex:1;min-width:0;display:flex;flex-direction:column}
+.wrap{max-width:880px;margin:0 auto;padding:0 22px;width:100%}
+
+/* ---------- Cabeçalho ---------- */
+header{background:var(--fundo);padding:34px 0 0}
+header .wrap{padding-bottom:24px}
+h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(27px,4.4vw,44px);line-height:1.08;letter-spacing:.005em;color:var(--verde)}
+h1 span{color:var(--laranja);font-style:italic}
+.sub{color:var(--verde-suave);margin-top:12px;max-width:600px;font-size:14.5px}
+.painel{display:flex;gap:14px;margin-top:22px;flex-wrap:wrap}
+.bomba{background:var(--card);border:1px solid var(--linha);border-radius:8px;padding:12px 16px;min-width:128px}
+.bomba .lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--verde-suave)}
+.bomba .val{font-family:'IBM Plex Mono',monospace;font-size:25px;font-weight:600;color:var(--laranja);margin-top:2px}
+.bomba .val small{font-size:13px;color:var(--verde-suave);font-weight:500}
+.faixa{height:1px;background:var(--linha)}
+
+/* ---------- Seções ---------- */
+main{padding:26px 0 70px;flex:1}
+section{display:none}
+section.active{display:block}
+.km{display:flex;align-items:baseline;gap:12px;margin:22px 0 6px;flex-wrap:wrap}
+.km .marco{font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;color:var(--laranja-escuro);background:#F7E1D1;padding:3px 10px;border-radius:20px;letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;order:1}
+h2{font-family:'Fraunces',serif;font-weight:600;font-size:27px;letter-spacing:.01em;color:var(--verde)}
+h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;text-transform:uppercase;letter-spacing:.16em;color:var(--laranja-escuro);margin:22px 0 8px;border-bottom:2px solid var(--laranja);display:inline-block;padding-bottom:3px}
+.lead{color:var(--verde-suave);margin-bottom:14px;font-size:14.5px}
+
+.card{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:16px 18px;margin:10px 0}
+.card p{margin:8px 0}
+.card ul,.card ol{margin:8px 0 8px 20px}
+.card li{margin:5px 0}
+.quote{border-left:4px solid var(--laranja);background:#F6EDE4;padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-style:italic;color:var(--verde)}
+.quote b{font-style:normal}
+.pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.06em;padding:2px 8px;border-radius:20px;background:#E3EAE7;color:var(--verde);margin-right:6px;text-transform:uppercase}
+.pill.amb{background:#F7E1D1;color:var(--laranja-escuro)}
+
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}
+th{font-family:'Archivo',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px;text-align:left;background:#F4F4F2;color:var(--verde);padding:8px 10px;border-bottom:2px solid var(--laranja)}
+td{padding:8px 10px;border-bottom:1px solid var(--linha);vertical-align:top;background:var(--card);color:var(--verde)}
+tr:last-child td{border-bottom:none}
+.tbl{overflow-x:auto;border:1px solid var(--linha);border-radius:10px;background:var(--card)}
+.tbl table{margin:0}
+
+/* painel de prazos */
+.prazo{display:flex;gap:14px;padding:12px 0;border-bottom:1px dashed var(--linha);align-items:flex-start}
+.prazo:last-child{border-bottom:none}
+.data{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:var(--verde);background:#E3EAE7;border:1px solid var(--linha-verde);border-radius:6px;padding:5px 8px;min-width:74px;text-align:center;flex-shrink:0}
+.data.urgente{background:var(--laranja);border-color:var(--laranja);color:#fff}
+.data.ok{background:#E7F2EA;border-color:#BFDCC9;color:#1D6B3C}
+.prazo .acao b{font-size:14.5px;color:var(--verde)}
+.prazo .meta-line{font-size:12.5px;color:var(--verde-suave);margin-top:2px}
+.prazo.done{opacity:.62}
+.prazo.done .acao b{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--verde-suave)}
+
+/* ---------- Mobile ---------- */
+@media (min-width:1280px){.wrap{max-width:1240px}main.wrap>section{max-width:836px;margin-left:auto;margin-right:auto}}
+@media (max-width:900px){
+  .topbar{display:flex}
+  aside{position:fixed;left:0;top:0;bottom:0;z-index:80;transform:translateX(-100%);transition:transform .22s;height:100dvh}
+  aside.aberta{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.35)}
+  .scrim{position:fixed;inset:0;background:rgba(0,20,15,.45);z-index:75;opacity:0;pointer-events:none;transition:opacity .22s}
+  .scrim.aberta{opacity:1;pointer-events:auto}
+  header{padding-top:18px}
+  header .wrap{padding-bottom:18px}
+  .wrap{padding:0 16px}
+  .sub{font-size:14px}
+  .painel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+  .bomba{min-width:0;padding:10px 12px}
+  .bomba .val{font-size:21px}
+  main{padding:18px 0 56px}
+  h2{font-size:22px}
+  .km{margin:16px 0 6px;gap:8px}
+  .lead{font-size:14px}
+  .card{padding:14px}
+  h3{font-size:12.5px;letter-spacing:.12em;margin:18px 0 8px}
+  table{font-size:13px}
+}
+@media (min-width:901px){.scrim{display:none}}
+.btn-print{position:fixed;top:18px;right:22px;z-index:60;display:inline-flex;align-items:center;gap:9px;background:#FFFFFF;color:#3D4A5C;border:1px solid #C9D2DC;border-radius:999px;padding:9px 18px;font-family:'Archivo',sans-serif;font-weight:600;font-size:14.5px;cursor:pointer;box-shadow:0 2px 8px rgba(20,30,45,.10)}
+.btn-print:hover{background:#F4F6F8;border-color:#AEBBC9}
+@media (max-width:900px){.btn-print{display:none}}
+@media print{aside,.topbar,.scrim,.btn-print,.faixa,.ac-filtros,.fu-novo,.sync-chip{display:none!important}body{background:#fff}header{padding-top:0}main{padding:0 0 20px}@page{margin:12mm}}
+
+/* --- resumo de execução --- */
+.exec-resumo{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.exec-resumo .exec-num{font-size:15px}
+.exec-resumo .exec-num b{font-family:'IBM Plex Mono',monospace;font-size:24px;color:var(--laranja);margin-right:4px}
+.exec-barra{flex:1;min-width:140px;height:10px;background:#E3EAE7;border-radius:6px;overflow:hidden}
+#exec-bar{height:100%;width:0%;background:var(--verde);border-radius:6px;transition:width .25s}
+.exec-late-chip{font-weight:700;color:#8C1D18;background:#F9DEDC;border:1px solid #E8B3AE;border-radius:20px;padding:5px 12px;font-size:13px}
+.sync-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:20px;padding:6px 12px;border:1px solid var(--linha);background:#fff;color:var(--verde-suave);cursor:pointer}
+.sync-chip.ok{color:#1D6B3C;background:#E7F2EA;border-color:#BFDCC9}
+.sync-chip.erro{color:#8C1D18;background:#F9DEDC;border-color:#E8B3AE}
+.sync-chip.pendente{color:#92400E;background:#FEF3C7;border-color:#FDE68A}
+
+/* --- filtros --- */
+.ac-filtros{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:13px;color:var(--verde-suave);flex-wrap:wrap}
+.ord-btn{font-family:'Archivo',sans-serif;font-weight:600;font-size:13px;color:var(--verde);background:#fff;border:1px solid var(--linha);border-radius:20px;padding:7px 15px;cursor:pointer}
+.ord-btn.active{background:var(--verde);border-color:var(--verde);color:#fff}
+
+/* --- cartões de ação --- */
+.acard{background:var(--card);border:1px solid var(--linha);border-radius:10px;margin:10px 0;overflow:hidden}
+.acard.late{border-left:4px solid #B3261E}
+.acard.done{border-left:4px solid #2E7D4F;opacity:.62}
+.acard.done.open{opacity:1}
+.acard-head{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:13px 14px;text-align:left;cursor:pointer;font-family:'Archivo',sans-serif;color:var(--verde)}
+.acard-num{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;background:#F4F4F2;border-radius:6px;padding:3px 8px;flex-shrink:0}
+.acard-tit{flex:1;font-weight:600;font-size:14px;line-height:1.35}
+.acard.done .acard-tit{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--verde-suave);font-weight:500}
+.acard-chev{width:9px;height:9px;border-right:2.5px solid var(--laranja);border-bottom:2.5px solid var(--laranja);transform:rotate(45deg);transition:transform .18s;flex-shrink:0;margin-left:2px}
+.acard.open .acard-chev{transform:rotate(-135deg)}
+.acard-flags{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0}
+.flag{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:4px;padding:2px 7px;white-space:nowrap}
+.flag.gut{background:#F4F4F2;color:var(--verde-suave);font-family:'IBM Plex Mono',monospace}
+.flag.gut.alta{background:#F7E1D1;color:var(--laranja-escuro)}
+.flag.resp{background:#E3EAE7;color:var(--verde)}
+.flag.ok{background:#E7F2EA;color:#1D6B3C}
+.flag.late{background:#F9DEDC;color:#8C1D18}
+.acard-body{display:none;border-top:1px dashed var(--linha);padding:12px 14px}
+.acard.open .acard-body{display:block}
+.ameta{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-bottom:10px}
+.ameta .it{font-size:13px}
+.ameta .it .l{display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--verde-suave)}
+.ameta .it .v{color:var(--verde)}
+@media (max-width:520px){.ameta{grid-template-columns:1fr}}
+.arec{font-size:13px;background:#F7F7F5;border:1px dashed var(--linha);border-radius:8px;padding:9px 12px;margin:8px 0;white-space:pre-line;color:var(--verde)}
+.acard-campo{margin:10px 0}
+.acard-campo label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--verde-suave);margin-bottom:4px}
+.exec-status,.exec-data{font-family:'Archivo',sans-serif;font-size:13px;color:var(--verde);background:#fff;border:1px solid var(--linha);border-radius:6px;padding:6px 8px}
+.exec-status{cursor:pointer;width:100%}
+.exec-status.ok{background:#E7F2EA;border-color:#9CC4A9;color:#1D6B3C;font-weight:700}
+.exec-data{width:100%}
+.exec-status:focus,.exec-data:focus,.fu-texto:focus{outline:2px solid var(--laranja);outline-offset:1px}
+
+/* --- follow-ups --- */
+.fu-lista{margin:6px 0}
+.fu-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--linha);align-items:flex-start}
+.fu-item:last-child{border-bottom:none}
+.fu-data{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:var(--verde);background:#E3EAE7;border-radius:6px;padding:4px 7px;flex-shrink:0;white-space:nowrap}
+.fu-texto-view{flex:1;font-size:13.5px;white-space:pre-line;color:var(--verde)}
+.fu-del{background:none;border:none;color:#B3261E;font-size:15px;cursor:pointer;padding:0 4px;flex-shrink:0;opacity:.55}
+.fu-del:hover{opacity:1}
+.fu-vazio{font-size:13px;color:var(--verde-suave);font-style:italic;padding:6px 0}
+.fu-novo{margin-top:10px;background:#F7F7F5;border:1px dashed var(--linha);border-radius:8px;padding:10px 12px}
+.fu-novo .fu-linha{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.fu-novo label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--verde-suave)}
+.fu-novo input[type=date]{font-family:'Archivo',sans-serif;font-size:13px;border:1px solid var(--linha);border-radius:6px;padding:5px 8px;background:#fff;color:var(--verde)}
+.fu-texto{width:100%;min-height:64px;resize:vertical;font-family:'Archivo',sans-serif;font-size:13.5px;border:1px solid var(--linha);border-radius:6px;padding:8px 10px;background:#fff;color:var(--verde)}
+.fu-add{margin-top:8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#fff;background:var(--verde);border:none;border-radius:8px;padding:9px 16px;cursor:pointer}
+.fu-add:hover{background:var(--verde-escuro)}
+
+/* --- SWOT / BCG quadrantes --- */
+.quad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+@media (max-width:640px){.quad{grid-template-columns:1fr}}
+.quad .card{margin:0}
+.quad .qt{font-weight:700;font-size:13.5px;margin-bottom:6px}
+.quad ul{margin:4px 0 2px 18px}
+.quad li{margin:4px 0;font-size:13.5px}
+
+/* --- configurações --- */
+.cfg-token{width:100%;font-family:'IBM Plex Mono',monospace;font-size:12.5px;border:1px solid var(--linha);border-radius:8px;padding:9px 11px;background:#fff;color:var(--verde)}
+.cfg-btn{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#fff;background:var(--verde);border:none;border-radius:8px;padding:9px 16px;cursor:pointer;margin-top:8px}
+.cfg-btn.sec{background:#fff;color:#8C1D18;border:1px solid #E8B3AE}
+
+/* follow-up apagado fica no histórico, riscado e com registro */
+.fu-apagado .fu-texto-view{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--verde-suave);opacity:.75}
+.fu-apagado .fu-data{opacity:.6}
+.fu-apagado-nota{font-size:11px;color:#8C1D18;margin-top:3px;font-style:italic}
+.fu-por{font-size:11.5px;color:var(--verde-suave);margin-top:3px}
+
+/* usuário sem permissão de edição */
+body.so-leitura .exec-status,body.so-leitura .exec-data{pointer-events:none;opacity:.65;background:#F4F4F2!important}
+body.so-leitura .fu-novo,body.so-leitura .fu-del{display:none!important}
+
+/* administração de usuários */
+.us-tbl select,.us-tbl input[type=text]{font-family:'Archivo',sans-serif;font-size:12.5px;border:1px solid var(--linha);border-radius:6px;padding:5px 7px;background:#fff;color:var(--verde);max-width:130px}
+.us-tbl td{white-space:nowrap}
+.us-mini{font-family:'Archivo',sans-serif;font-weight:600;font-size:12px;color:var(--verde);background:#fff;border:1px solid var(--linha);border-radius:14px;padding:4px 11px;cursor:pointer}
+.us-mini:hover{border-color:var(--verde-suave)}
+.sn-campo{width:100%;font-family:'Archivo',sans-serif;font-size:14px;border:1px solid var(--linha);border-radius:8px;padding:9px 11px;background:#fff;color:var(--verde);margin:4px 0}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button id="menu-btn" aria-label="Abrir menu" aria-expanded="false">☰</button>
+  <div class="t">Planejamento Estratégico</div>
+  <button type="button" onclick="window.print()" aria-label="Imprimir / PDF" title="Imprimir / PDF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+</div>
+<div class="scrim" id="scrim"></div>
+<button class="btn-print" onclick="window.print()" title="Imprimir a tela atual"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span>Imprimir / PDF</span></button>
+<div class="layout">
+<aside id="sidebar">
+  <div class="brand">
+    <div class="placa"><div class="p1">Estação <i>Sapatão</i></div><div class="p2">Planejamento Estratégico</div></div>
+  </div>
+  <div class="menu" role="navigation" aria-label="Seções">
+    <div class="grupo">Início</div>
+      <button class="nav-link active" data-t="painel"><span class="dot"></span>Painel</button>
+    <div class="grupo">Execução</div>
+      <button class="nav-link" data-t="acoes"><span class="dot"></span>Ações Estratégicas</button>
+    <div class="grupo">Consulta</div>
+      <button class="nav-link" data-t="diagnostico"><span class="dot"></span>Diagnóstico de Maturidade</button>
+      <button class="nav-link" data-t="swot"><span class="dot"></span>Análise SWOT</button>
+      <button class="nav-link" data-t="bcg"><span class="dot"></span>Matriz BCG</button>
+      <button class="nav-link" data-t="cenario"><span class="dot"></span>Avaliação de Cenário</button>
+      <button class="nav-link" data-t="icp"><span class="dot"></span>Cliente-Alvo (ICP)</button>
+      <button class="nav-link" data-t="modelo"><span class="dot"></span>Modelo de Negócio</button>
+    <div class="grupo">Ajustes</div>
+      <button class="nav-link" data-t="config"><span class="dot"></span>Configura&ccedil;&otilde;es</button>
+    <div class="grupo">Sair</div>
+      <button class="nav-link" type="button" onclick="try{sessionStorage.removeItem('sapatao-roadmap-auth-v1');localStorage.removeItem('sapatao-roadmap-auth-v1')}catch(e){};location.href='../index.html'"><span class="dot"></span>&#128274; Sair — pedir senha de novo</button>
+      <a class="nav-link" href="../index.html" style="text-decoration:none"><span class="dot"></span>&#8592; Página inicial</a>
+  </div>
+  <div class="user">
+    <div class="av">ES</div>
+    <div><div class="n1">Estação Sapatão</div><div class="n2">PE Reborn · 2026</div></div>
+  </div>
+</aside>
+<div class="conteudo">
+<header id="hero">
+  <div class="wrap">
+    <h1>Planejamento<br><span>Estratégico</span></h1>
+    <p class="sub">As 25 ações estratégicas do PE Reborn com KPIs, prazos, responsáveis e follow-ups das reuniões — mais o diagnóstico completo para consulta.</p>
+    <div class="painel">
+      <div class="bomba"><div class="lbl">Maturidade</div><div class="val">81<small>/140</small></div></div>
+      <div class="bomba"><div class="lbl">Ações estratégicas</div><div class="val">25</div></div>
+      <div class="bomba"><div class="lbl">Concluídas</div><div class="val" id="bomba-done">0</div></div>
+      <div class="bomba"><div class="lbl">Próximo follow-up</div><div class="val" style="font-size:17px;padding-top:6px" id="bomba-fu">—</div></div>
+    </div>
+  </div>
+</header>
+<div class="faixa" id="hero-faixa"></div>
+
+<main class="wrap">
+
+<!-- ============ PAINEL ============ -->
+<section id="painel" class="active">
+  <div class="km"><span class="marco">Execução</span><h2>Painel das Ações Estratégicas</h2></div>
+  <div class="km-btn-row" style="text-align:center;margin:24px 0 28px"><button type="button" class="ord-btn" style="border:1.5px solid var(--laranja);color:var(--laranja-escuro);background:var(--fundo);border-radius:999px;padding:12px 28px;font-size:14.5px;font-weight:700" data-vai="acoes">Abrir Ações Estratégicas &#8594;</button></div>
+  <p class="lead">As 25 ações priorizadas pela Matriz G×U×T, atualizadas conforme o preenchimento: pendentes com prazo em ordem de vencimento, sem prazo definido por prioridade e concluídas riscadas no fim.</p>
+  <div class="card" id="painel-acoes"></div>
+
+  <h3>Rodadas de follow-up</h3>
+  <p class="lead">Reuniões de acompanhamento do PE — os registros de cada rodada ficam no histórico de cada ação.</p>
+  <div class="card" id="painel-rodadas"></div>
+
+  <h3>Ações por responsável</h3>
+  <div class="tbl"><table id="painel-resp"></table></div>
+</section>
+
+<!-- ============ AÇÕES ============ -->
+<section id="acoes">
+  <div class="km"><span class="marco">Prioridade G×U×T</span><h2>Ações Estratégicas</h2></div>
+  <p class="lead">Toque numa ação para abrir: KPI, meta, recursos, investimento e o <b>histórico de follow-ups</b> — registre o acompanhamento de cada reunião ali mesmo. Tudo é salvo automaticamente e sincronizado entre os aparelhos.</p>
+
+  <div class="card exec-resumo">
+    <div class="exec-num"><b id="exec-count">0</b> de 25 concluídas</div>
+    <div class="exec-barra"><div id="exec-bar"></div></div>
+    <div id="exec-late" class="exec-late-chip" hidden>&#9888; <b id="exec-late-n">0</b> atrasada(s)</div>
+  </div>
+
+  <div class="ac-filtros" role="group" aria-label="Filtros">
+    <span>Responsável:</span>
+    <button type="button" class="ord-btn f-resp active" data-resp="todos">Todos</button>
+    <button type="button" class="ord-btn f-resp" data-resp="Samuel">Samuel</button>
+    <button type="button" class="ord-btn f-resp" data-resp="Maicon">Maicon</button>
+    <button type="button" class="ord-btn f-resp" data-resp="Gabrielle">Gabrielle</button>
+    <span style="flex:1"></span>
+    <span>Ordenar:</span>
+    <button type="button" class="ord-btn f-ord active" data-ord="gut">G×U×T</button>
+    <button type="button" class="ord-btn f-ord" data-ord="prazo">Prazo</button>
+  </div>
+  <div style="margin:4px 0 10px"><span class="sync-chip" id="sync-chip">&#9729; Nuvem: conectando…</span></div>
+
+  <div id="ac-cards" aria-label="Lista de ações estratégicas"></div>
+</section>
+
+<!-- ============ DIAGNÓSTICO ============ -->
+<section id="diagnostico">
+  <div class="km"><span class="marco">Consulta</span><h2>Diagnóstico de Maturidade</h2></div>
+  <p class="lead">Avaliação da empresa em 7 dimensões (nota máxima 20 por dimensão). <b>Pontuação total: 81 de 140.</b></p>
+  <div class="tbl"><table>
+    <tr><th>Dimensão</th><th>Nota</th><th>Leitura</th></tr>
+    <tr><td>Gestão do Negócio</td><td><b>14</b>/20</td><td>Melhor dimensão</td></tr>
+    <tr><td>Resultados</td><td><b>13</b>/20</td><td>—</td></tr>
+    <tr><td>Contabilidade &amp; Finanças</td><td><b>12</b>/20</td><td>—</td></tr>
+    <tr><td>Visão e Estratégia</td><td><b>11</b>/20</td><td>—</td></tr>
+    <tr><td>Gestão Comercial</td><td><b>11</b>/20</td><td>—</td></tr>
+    <tr><td>Gestão de Operações</td><td><b>11</b>/20</td><td>—</td></tr>
+    <tr><td><b>Gestão de Pessoas</b></td><td><b>9</b>/20</td><td><b>Dimensão mais frágil</b></td></tr>
+  </table></div>
+
+  <h3>Matriz de Gargalos</h3>
+  <p class="lead">O que limita o desempenho do negócio — os três primeiros são os priorizados.</p>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>Gargalo</th><th>Área</th><th>Impacto no negócio</th></tr>
+    <tr><td><b>1</b></td><td><b>Realizar mais atendimentos</b></td><td>Comercial</td><td>Não ocupa 100% da capacidade de operação</td></tr>
+    <tr><td><b>2</b></td><td><b>Desenvolvimento de time</b></td><td>Talentos Humanos</td><td>Falta de direcionamento e foco no que mais importa</td></tr>
+    <tr><td><b>3</b></td><td><b>Processos bem definidos</b></td><td>Todos os setores</td><td>Falta de priorização e saber como e o que fazer</td></tr>
+    <tr><td>·</td><td>Comunicar melhor para os clientes</td><td>Marketing</td><td>Falta de atratividade da empresa para os clientes</td></tr>
+    <tr><td>·</td><td>Cross-Sell / Up-Sell</td><td>Operação</td><td>Ticket médio baixo / atendimento</td></tr>
+    <tr><td>·</td><td>Precificação de Combustíveis</td><td>Samuel</td><td>Não existe um processo definido fora do Samuel</td></tr>
+    <tr><td>·</td><td>Turnover</td><td>Talentos Humanos</td><td>Alta rotatividade impede a formação de time</td></tr>
+    <tr><td>·</td><td>Indicadores espalhados</td><td>TI</td><td>Muito esforço para buscar as informações e para todos terem acesso</td></tr>
+  </table></div>
+
+  <h3>Dependência do Dono</h3>
+  <p class="lead">Grau em que o negócio depende do empresário em cada área (1 = independente · 5 = dependência total).</p>
+  <div class="tbl"><table>
+    <tr><th>Área / Processo</th><th>Nível</th><th>Leitura</th></tr>
+    <tr><td>Estratégia e planejamento</td><td><b>5</b></td><td>Dependência total</td></tr>
+    <tr><td>Marketing e comunicação</td><td><b>5</b></td><td>Dependência total</td></tr>
+    <tr><td>Vendas e prospecção</td><td><b>4</b></td><td>Alta dependência</td></tr>
+    <tr><td>Gestão financeira</td><td><b>4</b></td><td>Alta dependência</td></tr>
+    <tr><td>Tomada de decisões operacionais</td><td>3</td><td>Moderada</td></tr>
+    <tr><td>Liderança e gestão de pessoas</td><td>3</td><td>Moderada</td></tr>
+    <tr><td>Atendimento ao cliente</td><td>1</td><td>Independente</td></tr>
+    <tr><td>Entrega / Produção / Operação</td><td>1</td><td>Independente</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ SWOT ============ -->
+<section id="swot">
+  <div class="km"><span class="marco">Consulta</span><h2>Análise SWOT</h2></div>
+  <p class="lead">Diagnóstico estratégico — ambiente interno (forças e fraquezas) e externo (oportunidades e ameaças).</p>
+  <div class="quad">
+    <div class="card"><div class="qt">💪 Forças <span class="pill">internas</span></div><ul>
+      <li>Localização Geográfica</li><li>Talentos Humanos</li><li>Marca</li><li>Ciclo Diesel</li><li>Refeições</li></ul></div>
+    <div class="card"><div class="qt">⚠️ Fraquezas <span class="pill">internas</span></div><ul>
+      <li>Desenvolvimento de Time</li><li>Atendimento (Operações)</li><li>Estrutura (Estética + Limpeza)</li><li>Capacidade Operacional Ociosa (qtde de atendimentos)</li><li>Processos Não Estruturados</li></ul></div>
+    <div class="card"><div class="qt">🌟 Oportunidades <span class="pill amb">externas</span></div><ul>
+      <li>Pessoas 50+ buscando oportunidades de trabalho</li><li>Aplicativos (gestão de relacionamento e consumo)</li><li>Consolidação de pontos de parada (complexo / estação)</li><li>Consumo de produtos mais saudáveis</li><li>IA — geração de promoções exclusivas para o nicho de clientes</li></ul></div>
+    <div class="card"><div class="qt">🌩️ Ameaças <span class="pill amb">externas</span></div><ul>
+      <li>Informalização do trabalho (consignado + auxílios governamentais)</li><li>Diminuição do consumo de combustíveis fósseis (elétricos, híbridos)</li><li>Endividamento da população</li><li>Aumento da Necessidade de Capital de Giro</li><li>Comoditização dos veículos (baixo upsell e cross-sell)</li></ul></div>
+  </div>
+
+  <h3>Cruzamentos estratégicos</h3>
+  <div class="quad">
+    <div class="card"><div class="qt">FO — Forças + Oportunidades</div><p class="lead" style="margin-bottom:6px">Como usar nossas forças para capturar as oportunidades?</p><ul>
+      <li>Localização Geográfica + Consolidação de Pontos de Parada</li>
+      <li>Talentos Humanos + Pessoas 50+ buscando trabalho</li>
+      <li>Marca + Aplicativos (relacionamento e consumo)</li>
+      <li>Ciclo Diesel + Consolidação de Pontos de Parada</li>
+      <li>Refeições + Consumo de produtos mais saudáveis</li></ul></div>
+    <div class="card"><div class="qt">FA — Forças + Ameaças</div><p class="lead" style="margin-bottom:6px">Como usar nossas forças para neutralizar as ameaças?</p><ul>
+      <li>Talentos Humanos + Informalização do Trabalho</li>
+      <li>Localização Geográfica + Queda dos combustíveis fósseis</li>
+      <li>Refeições + Endividamento da População</li>
+      <li>Ciclo Diesel + Aumento da NCG</li>
+      <li>Marca + Queda dos combustíveis fósseis</li></ul></div>
+    <div class="card"><div class="qt">FrO — Fraquezas + Oportunidades</div><p class="lead" style="margin-bottom:6px">Como superar fraquezas para não perder oportunidades?</p><ul>
+      <li>Desenvolvimento de Time + Pessoas 50+ buscando trabalho</li>
+      <li>Atendimento (Operações) + Consolidação de pontos de parada</li>
+      <li>Estrutura (Estética + Limpeza) + Consolidação de pontos de parada</li>
+      <li>Processos Não Estruturados + IA para promoções de nicho</li>
+      <li>Atendimento (Operações) + Consumo de produtos mais saudáveis</li></ul></div>
+    <div class="card"><div class="qt">FrA — Fraquezas + Ameaças</div><p class="lead" style="margin-bottom:6px">Como reduzir fraquezas que nos expõem às ameaças?</p><ul>
+      <li>Desenvolvimento de Time + Informalização do trabalho</li>
+      <li>Atendimento (Operações) + Queda dos combustíveis fósseis</li>
+      <li>Atendimento (Operações) + Comoditização dos veículos</li>
+      <li>Estrutura (Estética + Limpeza) + Queda dos combustíveis fósseis</li>
+      <li>Capacidade Ociosa + Queda dos combustíveis fósseis</li></ul></div>
+  </div>
+</section>
+
+<!-- ============ BCG ============ -->
+<section id="bcg">
+  <div class="km"><span class="marco">Consulta</span><h2>Matriz BCG</h2></div>
+  <p class="lead">Portfólio de produtos e serviços por crescimento de mercado × participação.</p>
+  <div class="quad">
+    <div class="card"><div class="qt">⭐ Estrela <span class="pill">alto crescimento · alta participação</span></div><p class="lead" style="margin-bottom:6px">Investir para manter liderança.</p><ul>
+      <li>Refeições</li><li>Ciclo Diesel</li><li>Gasolina Aditivada</li></ul></div>
+    <div class="card"><div class="qt">🐄 Vaca Leiteira <span class="pill">baixo crescimento · alta participação</span></div><p class="lead" style="margin-bottom:6px">Extrair caixa para financiar outros.</p><ul>
+      <li>Gasolina Comum</li><li>Food</li><li>Bebidas Alcoólicas</li></ul></div>
+    <div class="card"><div class="qt">❓ Ponto de Interrogação <span class="pill amb">alto crescimento · baixa participação</span></div><p class="lead" style="margin-bottom:6px">Decidir: investir ou abandonar.</p><ul>
+      <li>Estética Automotiva</li><li>Lubrificantes</li><li>Lavagem</li></ul></div>
+    <div class="card"><div class="qt">🍍 Abacaxi <span class="pill amb">baixo crescimento · baixa participação</span></div><p class="lead" style="margin-bottom:6px">Eliminar ou manter com cautela.</p><ul>
+      <li>Presentes</li><li>Filtros Antigos</li><li>Tabaco</li></ul></div>
+  </div>
+</section>
+
+<!-- ============ CENÁRIO ============ -->
+<section id="cenario">
+  <div class="km"><span class="marco">Consulta</span><h2>Avaliação de Cenário</h2></div>
+  <p class="lead">Leitura do ambiente externo em 5 eixos: tendências, oportunidades e ameaças identificadas.</p>
+  <div id="cenario-cards"></div>
+</section>
+
+<!-- ============ ICP ============ -->
+<section id="icp">
+  <div class="km"><span class="marco">Consulta</span><h2>Cliente-Alvo (ICP)</h2></div>
+  <p class="lead">Para quem a Estação Sapatão cria o máximo de valor.</p>
+
+  <h3>Cliente primário — B2C · Consumidor Final</h3>
+  <div class="card">
+    <p><b>Segmento:</b> B2C — Consumidor Final · Classe B</p>
+    <p><b>Produtos / serviços:</b> Ciclo Otto (Gasolina, Etanol, GNV), Loja de Conveniência, Produtos Automotivos, Serviços</p>
+    <p><b>Potencial:</b> ~300–420 mil pessoas/mês passando na BR-116 (ticket médio R$ 180,00 · 26 litros)</p>
+    <p><b>Contexto do cliente:</b> usa o carro todo dia, abastecimento constante, leva os filhos na escola, tem família, passeia. Aberto a outros consumos (loja, automotivos, lavagem). Valoriza bom atendimento, banheiro limpo e qualidade de produtos.</p>
+    <p><b>Progresso que quer realizar (Job to be Done):</b> ser percebido rápido na bomba, pacote de gentilezas (parabrisa, pneus, lixinho, água do limpador, pagar no carro), entrar e sair rápido, mais quilometragem (menos paradas), estacionamento próximo, preço justo.</p>
+    <p><b>Como entregamos:</b> combustível de qualidade (mais quilometragem); pacote de gentilezas entregue parcialmente (~20%); ambiente menos sujo.</p>
+    <p><b>⚠ Fora do Job:</b> cashback agressivo de preço, App (descontos), segurança, qualidade de produtos.</p>
+    <p><b>Canal:</b> varejo (pista + loja), saída da avenida/rodovia; indicação.</p>
+    <p><b>Diferencial:</b> localização, fácil acesso, produtos de qualidade, pagamento no veículo.</p>
+    <p><b>⚠ Cliente fora do perfil que consome energia desproporcional:</b> tickets baixos (R$ 20–50).</p>
+  </div>
+
+  <h3>Cliente secundário — B2B · Frotista</h3>
+  <div class="card">
+    <p><b>Segmento:</b> B2B — Frotista</p>
+    <p><b>Produtos / serviços:</b> Ciclo Diesel, Ciclo Otto, Produtos Automotivos</p>
+    <p class="lead" style="margin-bottom:0">Demais campos do perfil ainda a preencher na próxima revisão do PE.</p>
+  </div>
+
+  <h3>Fatores qualificadores de pedido</h3>
+  <p class="lead">O mínimo que o mercado exige para estar na disputa — e onde há lacunas.</p>
+  <div class="tbl"><table>
+    <tr><th>Critério mínimo do mercado</th><th>Atendemos?</th></tr>
+    <tr><td>Qualidade de produto (sem adulteração / sem fama de)</td><td>✔ Sim</td></tr>
+    <tr><td>Preço justo (competitivo com o mercado)</td><td>✔ Sim</td></tr>
+    <tr><td>Banheiro limpo</td><td><b>Parcialmente</b></td></tr>
+    <tr><td>Atendimento rápido e cordial</td><td><b>Parcialmente</b></td></tr>
+    <tr><td>Sensação de segurança</td><td><b>Parcialmente</b></td></tr>
+  </table></div>
+</section>
+
+<!-- ============ MODELO ============ -->
+<section id="modelo">
+  <div class="km"><span class="marco">Consulta</span><h2>Modelo de Negócio</h2></div>
+
+  <h3>Core Business</h3>
+  <div class="card">
+    <p><b>Qual é o nosso core business?</b> Compra e venda de combustíveis e mercadorias.</p>
+    <p><b>Por que somos melhores nisso do que a concorrência?</b></p>
+    <ul><li>Relacionamento com fornecedores (ex.: Shell)</li><li>Bom atendimento (boa gestão de pessoas)</li><li>Bom acolhimento dos clientes (cultural — política de CS)</li></ul>
+    <p><b>⚠ Fora da entrega de valor (consome recursos):</b> diversidade absurda de produtos; holding de imóveis.</p>
+    <p><b>⚠ Receita que desvia o foco:</b> holding (inquilinos) / aluguéis.</p>
+  </div>
+
+  <h3>Análise VRIN</h3>
+  <p class="lead">Valioso · Raro · Inimitável · Não-substituível → vantagem competitiva sustentável.</p>
+  <div class="tbl"><table>
+    <tr><th>Recurso / capacidade</th><th>V</th><th>R</th><th>I</th><th>N</th><th>Sustentável?</th></tr>
+    <tr><td>Localização Geográfica</td><td>S</td><td>S</td><td>S</td><td>N</td><td>N</td></tr>
+    <tr><td>Talentos Humanos</td><td>S</td><td>S</td><td>N</td><td>S</td><td><b>S</b></td></tr>
+    <tr><td>Relacionamento c/ fornecedores (Shell)</td><td>S</td><td>N</td><td>N</td><td>S</td><td><b>S</b></td></tr>
+    <tr><td>App</td><td>S</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+    <tr><td>Loja de Conveniência</td><td>S</td><td>S</td><td>N</td><td>N</td><td><b>S</b></td></tr>
+    <tr><td>Empresa familiar em profissionalização (jeito Sapatão)</td><td>S</td><td>S</td><td>S</td><td>S</td><td><b>S</b></td></tr>
+    <tr><td>Marca</td><td>S</td><td>S</td><td>S</td><td>S</td><td><b>S</b></td></tr>
+  </table></div>
+
+  <h3>Como criamos, entregamos e capturamos valor</h3>
+  <div class="card">
+    <p><b>Para quem?</b> B2C — Consumidor Final (Classe B) · B2B — Frotista</p>
+    <p><b>Que valor?</b> B2C: agilidade, ambiente agradável e mix · B2B: qualidade de produto, qualidade de atendimento e preço</p>
+    <p><b>Como entregamos?</b> Venda presencial · Relacionamento presencial, eventos e App</p>
+    <p><b>Como geramos receita?</b> Venda de combustíveis e mercadorias − CMV − custos de operação</p>
+    <p><b>⚠ Estruturas fora da entrega de valor:</b> gestão da Holding (inquilinos)</p>
+    <p><b>⚠ Canais que consomem recursos com pouco uso dos melhores clientes:</b> Instagram? Panfletos?</p>
+  </div>
+
+  <h3>Alavancas de resultado</h3>
+  <div class="card"><span class="pill">Volume de Vendas</span><span class="pill">Ticket Médio</span><span class="pill">CMV</span><span class="pill">Mix de Gasolina Aditivada</span><span class="pill">Quantidade de Postos</span><span class="pill">App</span><span class="pill">Produtividade</span></div>
+</section>
+
+<!-- ============ CONFIG ============ -->
+<section id="config">
+  <div class="km"><span class="marco">Ajustes</span><h2>Configurações</h2></div>
+  <p class="lead">O acesso e a sincronização são <b>unificados com o Roadmap Comercial</b>: a mesma senha entra nos dois, e a mesma chave de publicação sincroniza os dois. A troca de senha continua na aba Configurações do Roadmap.</p>
+  <div class="card">
+    <p><b>Estado da nuvem:</b> <span id="cfg-status">—</span></p>
+    <div id="cfg-tem-chave" hidden>
+      <p class="lead" style="margin:8px 0">Este aparelho tem a chave de publicação — as alterações são gravadas na nuvem automaticamente.</p>
+      <button type="button" class="cfg-btn sec" id="cfg-remover">Remover a chave deste aparelho</button>
+    </div>
+    <div id="cfg-sem-chave" hidden>
+      <p class="lead" style="margin:8px 0">Sem chave de publicação: este aparelho só lê. Entre digitando a senha (a chave desce da nuvem sozinha) ou cole aqui a mesma chave usada no Roadmap.</p>
+      <input type="password" class="cfg-token" id="cfg-token" placeholder="Chave de publicação (fine-grained token)" autocomplete="off">
+      <button type="button" class="cfg-btn" id="cfg-salvar">Salvar chave neste aparelho</button>
+    </div>
+  </div>
+
+  <h3>Minha senha</h3>
+  <div class="card" style="max-width:420px">
+    <p class="lead" style="margin-bottom:8px">A senha identifica o seu usuário — vale para o Roadmap e para o Planejamento. Precisa da chave de publicação neste aparelho.</p>
+    <input type="password" class="sn-campo" id="sn-atual" placeholder="Senha atual" autocomplete="off">
+    <input type="password" class="sn-campo" id="sn-nova" placeholder="Senha nova (mínimo 6 caracteres)" autocomplete="off">
+    <input type="password" class="sn-campo" id="sn-conf" placeholder="Repetir a senha nova" autocomplete="off">
+    <button type="button" class="cfg-btn" id="sn-trocar">Alterar minha senha</button>
+    <p class="lead" id="sn-msg" style="margin-top:8px"></p>
+  </div>
+
+  <div id="cfg-usuarios" hidden>
+    <h3>Usuários e permissões</h3>
+    <p class="lead">Cada pessoa entra com a própria senha (é ela que identifica o usuário). Permissão por painel: <b>Edita</b>, <b>Só lê</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo, além de gerir os usuários.</p>
+    <div class="card">
+      <div class="tbl"><table class="us-tbl" id="us-tbl"></table></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="cfg-btn" id="us-add" style="margin-top:0">+ Adicionar usuário</button>
+        <button type="button" class="cfg-btn" id="us-salvar" style="margin-top:0;background:var(--laranja)">Salvar alterações</button>
+      </div>
+      <p class="lead" id="us-msg" style="margin-top:10px;margin-bottom:0"></p>
+    </div>
+  </div>
+</section>
+
+</main>
+</div><!-- /conteudo -->
+</div><!-- /layout -->
+
+<script>
+const links=document.querySelectorAll('.nav-link');
+const secs=document.querySelectorAll('main section');
+const sidebar=document.getElementById('sidebar');
+const scrim=document.getElementById('scrim');
+const menuBtn=document.getElementById('menu-btn');
+function fechaMenu(){sidebar.classList.remove('aberta');scrim.classList.remove('aberta');menuBtn.setAttribute('aria-expanded','false')}
+menuBtn.addEventListener('click',()=>{const abre=!sidebar.classList.contains('aberta');sidebar.classList.toggle('aberta',abre);scrim.classList.toggle('aberta',abre);menuBtn.setAttribute('aria-expanded',abre)});
+scrim.addEventListener('click',fechaMenu);
+links.forEach(l=>l.addEventListener('click',()=>{
+  if(!l.dataset.t)return;
+  links.forEach(x=>x.classList.remove('active'));
+  secs.forEach(s=>s.classList.remove('active'));
+  l.classList.add('active');
+  document.getElementById(l.dataset.t).classList.add('active');
+  const capa=l.dataset.t==='painel';
+  const hero=document.getElementById('hero'),fx=document.getElementById('hero-faixa');
+  if(hero)hero.style.display=capa?'':'none';
+  if(fx)fx.style.display=capa?'':'none';
+  fechaMenu();
+  window.scrollTo({top:0});
+}));
+document.querySelectorAll('[data-vai]').forEach(b=>b.addEventListener('click',()=>{
+  const alvo=document.querySelector('.nav-link[data-t="'+b.dataset.vai+'"]');
+  if(alvo)alvo.click();
+}));
+</script>
+
+<script>
+(function(){
+/* ============ Dados estáticos (da planilha do PE Reborn) ============ */
+const ACOES=[{"id": 1, "acao": "Script / Processo de Vendas", "kpi": "Ticket Médio", "meta": "140", "resp": "Maicon", "prazo": "2026-06-30", "recurso": "- Estruturação e padronização do script de vendas\n- Desenvolvimento de materiais de apoio (QR Code, comunicação visual)\n- Treinamento prático da equipe de pista e loja\n- Capacitação de liderança para acompanhamento e correção\n- Implementação de indicadores de performance (ticket médio e conversão)\n- Rotina de gestão, feedback e otimização contínua", "invest": "R$ 2.100,00", "g": 5, "u": 5, "t": 5, "gut": 125}, {"id": 2, "acao": "Descritivo de cargos claros e formalizados para toda companhia", "kpi": "Avaliação de Acompanhamento (Líder p/ Liderado)", "meta": "100% do time avaliado", "resp": "Gabrielle", "prazo": "2026-05-31", "recurso": "-Atendimento individual com cada colaborador\n-Duração média de 20 minutos por colaborador\n-Apresentação do descritivo de cargo impresso\n-Esclarecimento de dúvidas\n-Formalização por meio de assinatura", "invest": "R$ 3.328,00", "g": 5, "u": 5, "t": 5, "gut": 125}, {"id": 3, "acao": "Aumento da base de clientes", "kpi": "Número de clientes ativos cadastrados (B2B)", "meta": "700", "resp": "Samuel", "prazo": "2026-07-31", "recurso": "- Projeto de Geração Autônoma de Leads\n- Bonificação para time de Pista p/ Lead gerado e convertido\n- Desenvolver canais atuais para dar mais resultado (referido)\n- Novos canais de venda (linkedin, referido, etc)", "invest": "44000", "g": 5, "u": 5, "t": 5, "gut": 125}, {"id": 4, "acao": "Padronização de processos de produção", "kpi": "Tempo de produção do prato", "meta": "< 10 minutos", "resp": "Maicon", "prazo": "2026-07-31", "recurso": "", "invest": "", "g": 4, "u": 5, "t": 5, "gut": 100}, {"id": 5, "acao": "Fortalecimento da Cultura", "kpi": "Avaliação de Desempenho (Cultural)", "meta": "80% do time alinhados aos valores da empresa", "resp": "Gabrielle", "prazo": "2026-12-31", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 4, "gut": 100}, {"id": 6, "acao": "Adquirir novos postos", "kpi": "Quantidade de postos", "meta": "2", "resp": "Samuel", "prazo": "2026-08-31", "recurso": "", "invest": "2000000", "g": 5, "u": 5, "t": 4, "gut": 100}, {"id": 7, "acao": "Comunicar visualmente onde estamos (outdoor)", "kpi": "Quantidade de Outdoors na Br-116", "meta": "6", "resp": "Samuel", "prazo": "2026-04-30", "recurso": "", "invest": "30000", "g": 4, "u": 5, "t": 4, "gut": 80}, {"id": 8, "acao": "Melhoria estética da pista e pátio", "kpi": "Orçamento Mensal de Manutenção", "meta": "6500", "resp": "Maicon", "prazo": "2026-09-30", "recurso": "", "invest": "", "g": 5, "u": 4, "t": 4, "gut": 80}, {"id": 9, "acao": "Estruturação de Processos", "kpi": "Processos Mapeados e Documentados", "meta": "1", "resp": "Gabrielle", "prazo": "2026-08-31", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 3, "gut": 75}, {"id": 10, "acao": "Monitoramento do Atendimento ao Cliente", "kpi": "NPS", "meta": "0.7", "resp": "Samuel", "prazo": "2026-06-30", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 3, "gut": 75}, {"id": 11, "acao": "Ações de geração de caixa", "kpi": "Pix", "meta": "0.12", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 3, "gut": 75}, {"id": 12, "acao": "Aumentar quantidade de vendas", "kpi": "Atendimentos / dia", "meta": "3000", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 3, "gut": 75}, {"id": 13, "acao": "Aumento da percepção de remuneração média / colaborador", "kpi": "Salário / Colaborador", "meta": "250", "resp": "Gabrielle", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 14, "acao": "Melhoria dos espaços físicos compartilhados (reforma refeitório + criação de um espaço de descanso)", "kpi": "Orçamento Anual de Investimento nos Espaços para o Time", "meta": "25000", "resp": "Gabrielle", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 15, "acao": "Ampliação dos banheiros (banheiro família, deficiente, etc)", "kpi": "m2 do banheiro", "meta": "130m2", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 16, "acao": "Banheiros Caminhoneiros", "kpi": "m2 de banheiro", "meta": "40m2", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 17, "acao": "Melhoria da estrutura física (paisagismo, piso, outras coisas de infraestrutura)", "kpi": "Orçamento Anual de Investimento em Infraestrutura", "meta": "70000", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 4, "gut": 64}, {"id": 18, "acao": "Desenvolver o financeiro / controller da empresa", "kpi": "Contratação de um financeiro Sênior", "meta": "1", "resp": "Gabrielle", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 4, "t": 3, "gut": 60}, {"id": 19, "acao": "Ampliação da Loja de Conveniência (Sapatão Matriz)", "kpi": "m2", "meta": "500m2", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 4, "t": 3, "gut": 60}, {"id": 20, "acao": "Aumento de vagas de Estacionamento", "kpi": "Qtde de Vagas", "meta": "60", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 4, "t": 3, "gut": 60}, {"id": 21, "acao": "Pesquisa de Clima", "kpi": "Reconhecimento e Valorização Pessoal", "meta": "0.85", "resp": "Gabrielle", "prazo": "2026-11-30", "recurso": "", "invest": "", "g": 5, "u": 5, "t": 2, "gut": 50}, {"id": 22, "acao": "Tratamento da Base de Dados para comunicação direcionada", "kpi": "Ticket Médio do App", "meta": "250", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 4, "u": 4, "t": 3, "gut": 48}, {"id": 23, "acao": "Desenvolvimento e profissionalização dos times", "kpi": "Treinamentos", "meta": "80", "resp": "Gabrielle", "prazo": "", "recurso": "", "invest": "", "g": 5, "u": 3, "t": 3, "gut": 45}, {"id": 24, "acao": "Parceria com RHs de Empresas", "kpi": "Empresas Parceiras (abastecimento)", "meta": "10", "resp": "Samuel", "prazo": "", "recurso": "", "invest": "", "g": 3, "u": 5, "t": 3, "gut": 45}, {"id": 25, "acao": "Ampliação do horário de funcionamento", "kpi": "Fat/hora (das 22:00 às 00:00)", "meta": "9000", "resp": "Maicon", "prazo": "", "recurso": "", "invest": "", "g": 3, "u": 3, "t": 3, "gut": 27}];
+const RODADAS=["2026-03-19","2026-04-24","2026-06-05","2026-07-17","2026-08-14","2026-09-18","2026-10-30"];
+const CENARIO=[
+ {eixo:"Sociedade & Política",tend:["Não existe mais necessidade de ter CNH para se deslocar","Falta de valorização do trabalho","Mudanças nas relações de trabalho"],op:["Diminuição do valor da emissão de CNH","Modificações nos formatos e contratos de trabalho"],am:["Falta de interesse por dirigir / possuir veículos","Desinteresse em estudar e se aprimorar","Mudança da escala 6x1"]},
+ {eixo:"Economia",tend:["Falta de educação financeira","Mudança na posse: de dono a usuário de serviços","Volatilidade nos preços de energia fóssil"],op:["Promoções para motoristas de app ou locadores de veículos","Plano de contenção para gestão de crises e otimização de margens"],am:["Endividamento da população","Aumento de NCG"]},
+ {eixo:"Tecnologia & IA",tend:["IA para relacionamento com os clientes (SAC)","IA para gestão de estoque e precificação dinâmica","Plataformas digitais globais de negociação"],op:["Atendimento imediato das demandas dos clientes","Promoções exclusivas para o nicho de clientes","Aplicativos (gestão de relacionamento e consumo)"],am:["Falta de humanização do atendimento","Desvalorização das marcas locais (vínculo só às grandes marcas)"]},
+ {eixo:"Mercado & Produtos",tend:["Hubs de energia multimodais (elétrico / hidrogênio)","Mudança dos hábitos de consumo de alimentação","Serviços de assinatura e locação flexível"],op:["Consolidação de pontos de parada (complexo / estação)","Consumo de produtos mais saudáveis"],am:["Diminuição do consumo de combustíveis fósseis","Preconceito com lojas de conveniência e fast food","Comoditização dos veículos (baixo upsell e cross-sell)"]},
+ {eixo:"Setor / Mão de obra",tend:["Problemas de saúde emocional nas populações de base (NR-1)","Envelhecimento da população","Novas relações de trabalho em plataformas"],op:["Pessoas 50+ buscando oportunidades de trabalho"],am:["Falta de clareza entre investimento e resultado","Gestão das diferentes gerações","Informalização do trabalho (consignado + auxílios)"]}
+];
+
+/* ============ Estado editável (status, novo prazo, follow-ups) ============ */
+const SEED={"1": {"status": "andamento", "novoPrazo": "2026-08-31", "followups": [{"data": "2026-03-19", "texto": "Revisão da Matriz GUT com priorização de 3 projetos para serem tocados no primeiro momento."}, {"data": "2026-04-24", "texto": "- TM Atual (mar/26) = R$ 147,67 (muito movimentado pelo Diesel)\n- Padrão de Atendimento Começou previsto para início de execução em 22/04.\n- Revisto esse ponto: Implementação de indicadores de performance (ticket médio e qtde de atendimentos)\n- Feedbacks + Escuta Ativa são foco até a próxima avaliação\n- Meta poderá ser reavaliada por conta da precificação do Combustível + Crescimento Volume de Diesel"}, {"data": "2026-06-05", "texto": "- TM Atual (mai/26) R$ 122,00\n- Padrão de Atendimento está sendo implementado em Junho/26\n- Acompanhamento é necessário para execução\n- Investimanto  R$ 260,00 + R$ 120,00 impressão manuais\n- Valores com horas de reuniões com líderes para montagem dos materias a ser calculada."}, {"data": "2026-07-17", "texto": "- TM (JUN/26) 126,70 Atual (JUL/26) 135,93\n- Padrão de Atendimento implementado em Junho/26\n- Liderança está executando! Percebe-se que boa parte da equipe já pratica o: Bem vindo ao Sapatão de forma mais natural.\n- Link do Manual de Padrão de Atendimento:"}]}, "2": {"status": "andamento", "novoPrazo": "2026-08-31", "followups": [{"data": "2026-04-24", "texto": "- Descritivos estão sendo finalizados\n- Serão apresentados em Maio/26"}, {"data": "2026-06-05", "texto": "- Apresentado o Descritivo para em torno de 40% do time (faltando turno da manhã em NH e todo time de EV)\n- Expectativa de 2 semanas para apresentação\n- Avaliação de Acompanhamento será executada até o fim de Junho/26"}, {"data": "2026-07-17", "texto": "- Apresentado para todo o time Operacional (sem contar a nova unidade)\n- Documentos assinados e dentro do Sólides\n- Falta dos outros setores\n- Avaliação de Acompanhamento ainda não foi executada (31/08)"}]}, "3": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-04-24", "texto": "- 536 clientes em Março (cenário Diesel)\n- 466 parcial em Abril\n- Projeto de Geração Autônoma p/ Maio\n- Verificar Indiplus / Captação de Leads na Pista (Vela PubliTech)\n- Treinamento de abordagem p/ time de Pista (Samuel)"}, {"data": "2026-06-05", "texto": "- 510 clientes em Maio\n- Acréscimo de 25 clientes (maio e uma perda de 38 clientes (maio)\n- SDR automático rodou em Maio e está rodando (+-20 leads)\n- Indiplus rodou fim de Maio (13 leads gerados)\n- Treinamento sobre Comercial p/ Time (Fabrício)"}, {"data": "2026-07-17", "texto": "- 530 clientes em Junho\n- 109 clientes inativos (Criado processo de reativação de clientes)\n- Indiplus c/ pgto de R$ 10,00 p/ Lead gerado a partir de Julho\n- SDR automatizado não resultou em novos clientes, em revisão c/ Axion"}]}, "4": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-07-17", "texto": "- Mapeamento das receitas de cozinha (90% pronto)"}]}, "5": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-07-17", "texto": "- Redesenho de Cultura em fase final de construção\n- Validação com sócios, diretoria e lideranças da operação"}]}, "6": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-06-05", "texto": "- Entrada no 4 Colônias entre fim de Junho e 01/07."}, {"data": "2026-07-17", "texto": "- Assumimos o Sapatão 4 Colônias em 01/07 (900k de investimento)\n- 1 posto em Campo Bom (Charrua) negado\n- 1 posto em Estância Velha (Vitória) em negociação"}]}, "7": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-06-05", "texto": "- Realizada a instalação de 6, mais 2 serão instalados em Junho"}, {"data": "2026-07-17", "texto": "- Todos Outdoors instalados (7 ao todo)\n- 2 novos serão instalados na RS-239"}]}, "8": {"status": "andamento", "novoPrazo": "", "followups": []}, "9": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-07-17", "texto": "- Mapeamento de processos dentro do TH realizados\n- Ainda falta a confecção dos POPs                                                                                                                                                                                                                                                               - falta começar em outros setores"}]}, "10": {"status": "andamento", "novoPrazo": "2026-09-30", "followups": []}, "11": {"status": "andamento", "novoPrazo": "", "followups": [{"data": "2026-07-17", "texto": "- Cashback em Dobro se utilizado App do Sapatão e pago no Pix"}]}, "12": {"status": "andamento", "novoPrazo": "", "followups": []}, "13": {"status": "andamento", "novoPrazo": "", "followups": []}, "14": {"status": "andamento", "novoPrazo": "", "followups": []}, "15": {"status": "andamento", "novoPrazo": "", "followups": []}, "16": {"status": "andamento", "novoPrazo": "", "followups": []}, "17": {"status": "andamento", "novoPrazo": "", "followups": []}, "18": {"status": "andamento", "novoPrazo": "", "followups": []}, "19": {"status": "andamento", "novoPrazo": "", "followups": []}, "20": {"status": "andamento", "novoPrazo": "", "followups": []}, "21": {"status": "andamento", "novoPrazo": "", "followups": []}, "22": {"status": "andamento", "novoPrazo": "", "followups": []}, "23": {"status": "andamento", "novoPrazo": "", "followups": []}, "24": {"status": "andamento", "novoPrazo": "", "followups": []}, "25": {"status": "andamento", "novoPrazo": "", "followups": []}};
+const EXEC={};
+ACOES.forEach(a=>{EXEC[a.id]=JSON.parse(JSON.stringify(SEED[a.id]||{status:'andamento',novoPrazo:a.novoPrazo||'',followups:[]}))});
+const CHAVE_LS='sapatao-pe-v1';
+let salvoEm=0;
+try{
+  const sv=JSON.parse(localStorage.getItem(CHAVE_LS)||'null');
+  if(sv&&sv.dados){Object.keys(sv.dados).forEach(k=>{if(EXEC[k])EXEC[k]=sv.dados[k];});salvoEm=sv.salvoEm||1;}
+}catch(e){}
+function gravaLocal(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:1,salvoEm:salvoEm,dados:EXEC}));}catch(e){}}
+function quem(){const A=window.sapataoAuth;return (A&&A.user&&A.user.nome)||'';}
+function salva(){if(document.body.classList.contains('so-leitura'))return;salvoEm=Date.now();gravaLocal();agendaPublicacao();renderAll();renderPainel();}
+
+const aberto=new Set();
+let filtro={resp:'todos',ord:'gut'};
+function hojeLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+const HOJE=hojeLocal();
+function fmt(iso){if(!iso)return'—';const p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function prazoEfetivo(a){return EXEC[a.id].novoPrazo||a.prazo||'';}
+function atrasada(a){const p=prazoEfetivo(a);return EXEC[a.id].status!=='concluido'&&p&&p<HOJE;}
+
+/* ============ Cartões das ações ============ */
+const cards=document.getElementById('ac-cards');
+function lista(){
+  let l=ACOES.slice();
+  if(filtro.resp!=='todos')l=l.filter(a=>a.resp===filtro.resp);
+  l.sort((a,b)=>{
+    const da=EXEC[a.id].status==='concluido'?1:0,db=EXEC[b.id].status==='concluido'?1:0;
+    if(da!==db)return da-db;
+    if(filtro.ord==='prazo'){
+      const pa=prazoEfetivo(a)||'9999',pb=prazoEfetivo(b)||'9999';
+      return pa.localeCompare(pb)||(b.gut-a.gut)||(a.id-b.id);
+    }
+    return (b.gut-a.gut)||(a.id-b.id);
+  });
+  return l;
+}
+function fuHtml(a){
+  const e=EXEC[a.id];
+  let h='<div class="fu-lista">';
+  if(!e.followups.length)h+='<div class="fu-vazio">Nenhum follow-up registrado ainda.</div>';
+  e.followups.forEach((f,i)=>{
+    const ap=f.apagado;
+    h+='<div class="fu-item'+(ap?' fu-apagado':'')+'"><span class="fu-data">'+fmt(f.data)+'</span>'
+      +'<div style="flex:1"><div class="fu-texto-view">'+esc(f.texto)+'</div>'
+      +(f.por&&!ap?'<div class="fu-por">— '+esc(f.por)+'</div>':'')
+      +(ap?'<div class="fu-apagado-nota">apagado em '+fmt(ap.em)+(ap.por?' por '+esc(ap.por):'')+'</div>':'')
+      +'</div>'
+      +(ap?'':'<button type="button" class="fu-del" data-i="'+i+'" title="Apagar este follow-up (fica o registro)">&#10005;</button>')
+      +'</div>';
+  });
+  h+='</div><div class="fu-novo"><div class="fu-linha"><label>Novo follow-up</label><input type="date" class="fu-data-in" value="'+HOJE+'"></div><textarea class="fu-texto" placeholder="O que foi visto nesta rodada? Avanços, números, pendências…"></textarea><button type="button" class="fu-add">Registrar follow-up</button></div>';
+  return h;
+}
+function renderAll(){
+  const l=lista();
+  let done=0,late=0;
+  ACOES.forEach(a=>{if(EXEC[a.id].status==='concluido')done++;if(atrasada(a))late++;});
+  cards.innerHTML=l.map(a=>{
+    const e=EXEC[a.id],ok=e.status==='concluido',lt=atrasada(a),ab=aberto.has(a.id);
+    return '<div class="acard'+(ok?' done':'')+(lt?' late':'')+(ab?' open':'')+'" data-acao="'+a.id+'">'
+      +'<button type="button" class="acard-head" aria-expanded="'+ab+'">'
+      +'<span class="acard-num">'+a.id+'</span><span class="acard-tit">'+esc(a.acao)+'</span>'
+      +'<span class="acard-flags">'
+      +(lt?'<span class="flag late">&#9888; Atrasada</span>':'')
+      +(ok?'<span class="flag ok">&#10004; Concluída</span>':'')
+      +'<span class="flag gut'+(a.gut>=100?' alta':'')+'">GUT '+a.gut+'</span>'
+      +'<span class="flag resp">'+esc(a.resp)+'</span>'
+      +'</span><span class="acard-chev"></span></button>'
+      +'<div class="acard-body">'
+      +'<div class="ameta">'
+      +'<div class="it"><span class="l">KPI</span><span class="v">'+esc(a.kpi)+'</span></div>'
+      +'<div class="it"><span class="l">Meta</span><span class="v">'+esc(a.meta)+'</span></div>'
+      +'<div class="it"><span class="l">Prazo original</span><span class="v">'+fmt(a.prazo)+'</span></div>'
+      +'<div class="it"><span class="l">G · U · T</span><span class="v">'+a.g+' · '+a.u+' · '+a.t+' = <b>'+a.gut+'</b></span></div>'
+      +(a.invest?'<div class="it"><span class="l">Investimento projetado</span><span class="v">'+esc(a.invest)+'</span></div>':'')
+      +'</div>'
+      +(a.recurso?'<div class="arec">'+esc(a.recurso)+'</div>':'')
+      +'<div class="ameta">'
+      +'<div class="it acard-campo"><label>Status</label><select class="exec-status'+(ok?' ok':'')+'" aria-label="Status da ação '+a.id+'"><option value="andamento"'+(ok?'':' selected')+'>Em andamento</option><option value="concluido"'+(ok?' selected':'')+'>&#10004; Concluída</option></select></div>'
+      +'<div class="it acard-campo"><label>Novo prazo</label><input type="date" class="exec-data" value="'+e.novoPrazo+'" aria-label="Novo prazo da ação '+a.id+'"></div>'
+      +'</div>'
+      +'<h3 style="margin-top:8px">Follow-ups</h3>'+fuHtml(a)
+      +'</div></div>';
+  }).join('');
+  document.getElementById('exec-count').textContent=done;
+  document.getElementById('bomba-done').textContent=done;
+  document.getElementById('exec-bar').style.width=(done/ACOES.length*100)+'%';
+  const lc=document.getElementById('exec-late');lc.hidden=!late;document.getElementById('exec-late-n').textContent=late;
+}
+cards.addEventListener('click',ev=>{
+  const card=ev.target.closest('.acard');if(!card)return;
+  const id=+card.dataset.acao;
+  if(ev.target.closest('.acard-head')){
+    if(aberto.has(id))aberto.delete(id);else aberto.add(id);
+    renderAll();return;
+  }
+  if(ev.target.classList.contains('fu-add')){
+    const t=card.querySelector('.fu-texto').value.trim();
+    const d=card.querySelector('.fu-data-in').value||HOJE;
+    if(!t){card.querySelector('.fu-texto').focus();return;}
+    const novo={data:d,texto:t};
+    if(quem())novo.por=quem();
+    EXEC[id].followups.push(novo);
+    EXEC[id].followups.sort((x,y)=>x.data.localeCompare(y.data));
+    salva();return;
+  }
+  if(ev.target.classList.contains('fu-del')){
+    const i=+ev.target.dataset.i;
+    if(confirm('Apagar este follow-up? Ele continua no histórico, riscado, com o registro de quem apagou.')){
+      EXEC[id].followups[i].apagado={em:HOJE,por:quem()||undefined};
+      salva();
+    }
+    return;
+  }
+});
+cards.addEventListener('change',ev=>{
+  const card=ev.target.closest('.acard');if(!card)return;
+  const id=+card.dataset.acao;
+  if(ev.target.classList.contains('exec-status')){EXEC[id].status=ev.target.value;salva();}
+  if(ev.target.classList.contains('exec-data')){EXEC[id].novoPrazo=ev.target.value;salva();}
+});
+document.querySelectorAll('.f-resp').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.f-resp').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');filtro.resp=b.dataset.resp;renderAll();
+}));
+document.querySelectorAll('.f-ord').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.f-ord').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');filtro.ord=b.dataset.ord;renderAll();
+}));
+
+/* ============ Painel de início ============ */
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function renderPainel(){
+  const alvo=document.getElementById('painel-acoes');if(!alvo)return;
+  const comPrazo=[],semPrazo=[],done=[];
+  ACOES.forEach(a=>{
+    if(EXEC[a.id].status==='concluido')done.push(a);
+    else if(prazoEfetivo(a))comPrazo.push(a);
+    else semPrazo.push(a);
+  });
+  comPrazo.sort((a,b)=>prazoEfetivo(a).localeCompare(prazoEfetivo(b))||(b.gut-a.gut));
+  semPrazo.sort((a,b)=>(b.gut-a.gut)||(a.id-b.id));
+  function linha(a,ok){
+    const p=prazoEfetivo(a),lt=atrasada(a);
+    const badge=p?fmt(p).slice(0,5):('G '+a.gut);
+    return '<div class="prazo'+(ok?' done':'')+'"><div class="data'+(ok?' ok':(lt?' urgente':''))+'">'+(ok?'&#10004; ':'')+badge+'</div>'
+      +'<div class="acao"><b>'+esc(a.acao)+'</b><div class="meta-line">'+esc(a.resp)+' · '+esc(a.kpi)+' · (GUT '+a.gut+')'
+      +(lt?' · <b style="color:var(--laranja-escuro)">atrasada</b>':'')+'</div></div></div>';
+  }
+  let html='',mes='';
+  comPrazo.forEach((a,i)=>{
+    const m=MESES[+prazoEfetivo(a).slice(5,7)-1]+' '+prazoEfetivo(a).slice(0,4).slice(2);
+    if(m!==mes){html+='<h3'+(i===0?' style="margin-top:4px"':'')+'>'+MESES[+prazoEfetivo(a).slice(5,7)-1]+'</h3>';mes=m;}
+    html+=linha(a,false);
+  });
+  if(semPrazo.length){
+    html+='<h3>Sem prazo definido — por prioridade</h3>';
+    semPrazo.forEach(a=>{html+=linha(a,false);});
+  }
+  if(done.length){
+    html+='<h3>Concluídas ('+done.length+' de '+ACOES.length+')</h3>';
+    done.forEach(a=>{html+=linha(a,true);});
+  }
+  alvo.innerHTML=html;
+  /* rodadas */
+  const rod=document.getElementById('painel-rodadas');
+  rod.innerHTML=RODADAS.map(r=>'<span class="pill'+(r>=HOJE?' amb':'')+'" style="margin-bottom:6px">'+fmt(r)+'</span>').join(' ');
+  const prox=RODADAS.find(r=>r>=HOJE);
+  document.getElementById('bomba-fu').innerHTML=prox?fmt(prox).slice(0,5):'—';
+  /* por responsável */
+  const tr={};ACOES.forEach(a=>{tr[a.resp]=tr[a.resp]||{t:0,d:0};tr[a.resp].t++;if(EXEC[a.id].status==='concluido')tr[a.resp].d++;});
+  document.getElementById('painel-resp').innerHTML='<tr><th>Responsável</th><th>Ações</th><th>Concluídas</th></tr>'
+    +Object.keys(tr).sort().map(r=>'<tr><td>'+esc(r)+'</td><td>'+tr[r].t+'</td><td>'+tr[r].d+'</td></tr>').join('');
+}
+
+/* ============ Cenário (cartões) ============ */
+(function(){
+  const alvo=document.getElementById('cenario-cards');
+  alvo.innerHTML=CENARIO.map(c=>'<div class="card"><div class="qt" style="font-weight:700;font-size:14.5px;margin-bottom:6px">'+c.eixo+'</div>'
+    +'<p style="margin:6px 0"><b>Tendências:</b></p><ul>'+c.tend.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'
+    +'<p style="margin:6px 0"><b>Oportunidades:</b></p><ul>'+c.op.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'
+    +'<p style="margin:6px 0"><b>Ameaças / riscos:</b></p><ul>'+c.am.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>').join('');
+})();
+
+/* ============ Sincronização (mesma chave do Roadmap) ============ */
+const SYNC_API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/estrategia/pe-execucoes.json';
+const KEY_API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/chave.enc.json';
+const LS_TOKEN='sapatao-sync-token';
+const chipEl=document.getElementById('sync-chip');
+let syncTimer=null;
+function tokenSync(){try{return localStorage.getItem(LS_TOKEN)||''}catch(e){return ''}}
+function b64enc(str){return btoa(unescape(encodeURIComponent(str)));}
+function b64dec(str){return decodeURIComponent(escape(atob(str.replace(/\s/g,''))));}
+const cfgStatus=document.getElementById('cfg-status'),cfgTem=document.getElementById('cfg-tem-chave'),cfgSem=document.getElementById('cfg-sem-chave');
+function atualizaCfg(){if(!cfgTem)return;const t=!!tokenSync();cfgTem.hidden=!t;cfgSem.hidden=t;}
+function chip(classe,txt){if(chipEl){chipEl.className='sync-chip'+(classe?' '+classe:'');chipEl.innerHTML='&#9729; '+txt;}if(cfgStatus)cfgStatus.textContent=txt.replace(/^Nuvem: /,'');}
+let chaveInvalida=false,limiteApi=false,tentouRecuperarChave=false;
+async function leRemoto(){
+  const h={'Accept':'application/vnd.github+json'};
+  if(tokenSync())h['Authorization']='Bearer '+tokenSync();
+  let r=await fetch(SYNC_API+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  if((r.status===401||r.status===403)&&tokenSync()){
+    limiteApi=(r.status===403&&r.headers.get('x-ratelimit-remaining')==='0');
+    chaveInvalida=!limiteApi;
+    r=await fetch(SYNC_API+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+  }else if(r.ok){chaveInvalida=false;limiteApi=false;}
+  if(r.status===404)return{sha:null,salvoEm:0,dados:null};
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  let doc={};try{doc=JSON.parse(b64dec(j.content));}catch(e){}
+  return{sha:j.sha,salvoEm:doc.salvoEm||0,dados:doc.dados||null};
+}
+async function recuperaChaveNuvem(){
+  const A=window.sapataoAuth;
+  if(tentouRecuperarChave||!A||!A.pw)return false;
+  tentouRecuperarChave=true;
+  try{localStorage.removeItem(LS_TOKEN);}catch(e){}
+  chaveInvalida=false;atualizaCfg();
+  await buscaChaveNuvem();
+  return !!tokenSync();
+}
+async function publica(){
+  if(!tokenSync()){chip('','Nuvem: só leitura — saia e entre com a senha para ativar a publicação');return;}
+  try{
+    chip('pendente','Nuvem: publicando…');
+    const rem=await leRemoto();
+    if(limiteApi){chip('pendente','Nuvem: limite da API do GitHub — tento de novo em instantes');clearTimeout(syncTimer);syncTimer=setTimeout(publica,90000);return;}
+    if(chaveInvalida){
+      if(await recuperaChaveNuvem()){agendaPublicacao();return;}
+      chip('erro','Nuvem: chave inválida ou expirada — troque em Configurações');return;
+    }
+    if(rem.dados&&rem.salvoEm>salvoEm){aplicaRemoto(rem);return;}
+    const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
+    const body={message:'chore: sincroniza follow-ups do Planejamento Estratégico (automático)',branch:'main',
+                content:b64enc(JSON.stringify({v:1,salvoEm:salvoEm,dados:EXEC},null,2))};
+    if(rem.sha)body.sha=rem.sha;
+    const r=await fetch(SYNC_API,{method:'PUT',headers:h,body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    chip('ok','Nuvem: sincronizado');
+  }catch(e){
+    chip('erro','Nuvem: falha ao publicar — vou tentar de novo');
+    clearTimeout(syncTimer);syncTimer=setTimeout(publica,20000);
+  }
+}
+function agendaPublicacao(){clearTimeout(syncTimer);syncTimer=setTimeout(publica,2500);}
+function aplicaRemoto(rem){
+  Object.keys(rem.dados).forEach(k=>{if(EXEC[k])EXEC[k]=rem.dados[k];});
+  salvoEm=rem.salvoEm;gravaLocal();renderAll();renderPainel();chip('ok','Nuvem: sincronizado');
+}
+async function iniciaSync(){
+  try{
+    const rem=await leRemoto();
+    if(rem.dados&&rem.salvoEm>salvoEm){aplicaRemoto(rem);}
+    else if(salvoEm>rem.salvoEm){agendaPublicacao();}
+    else if(chaveInvalida){
+      if(await recuperaChaveNuvem())return;
+      chip('erro','Nuvem: chave expirada — saia e entre com a senha, ou cole outra em Configurações');
+    }
+    else if(limiteApi)chip('pendente','Nuvem: limite da API do GitHub — dados locais por enquanto');
+    else chip(tokenSync()?'ok':'','Nuvem: '+(tokenSync()?'sincronizado':'leitura automática — publicação desativada'));
+  }catch(e){chip('erro','Nuvem: sem conexão — dados locais');}
+}
+if(chipEl)chipEl.addEventListener('click',()=>{
+  const A=window.sapataoAuth;
+  if(!(A&&A.user&&A.user.admin))return;
+  const l=document.querySelector('.nav-link[data-t="config"]');if(l)l.click();
+});
+const cfgSalvar=document.getElementById('cfg-salvar'),cfgRemover=document.getElementById('cfg-remover'),cfgCampo=document.getElementById('cfg-token');
+if(cfgSalvar)cfgSalvar.addEventListener('click',()=>{
+  const v=cfgCampo.value.trim();
+  if(!v){cfgCampo.focus();return;}
+  try{localStorage.setItem(LS_TOKEN,v);}catch(e){}
+  cfgCampo.value='';atualizaCfg();iniciaSync();
+  const A=window.sapataoAuth;
+  if(A&&A.pw)window.sapataoChave.garante().then(ok=>{if(ok)chip('ok','Nuvem: chave guardada também na nuvem — os outros aparelhos do seu usuário recebem ao entrar com a senha');});
+});
+if(cfgRemover)cfgRemover.addEventListener('click',()=>{
+  try{localStorage.removeItem(LS_TOKEN);}catch(e){}
+  atualizaCfg();iniciaSync();
+});
+/* cofre da chave compartilhado (auth.js): envelope por usuário */
+async function buscaChaveNuvem(){
+  const ok=await window.sapataoChave.busca();
+  if(ok){atualizaCfg();iniciaSync();chip('ok','Nuvem: chave recebida da nuvem — este aparelho já publica');}
+  else if(tokenSync()&&window.sapataoAuth&&window.sapataoAuth.pw)window.sapataoChave.garante();
+}
+document.addEventListener('sapatao-login',buscaChaveNuvem);
+
+/* ============ Usuário logado: nome, permissão e administração ============ */
+function aplicaPermissao(){
+  const A=window.sapataoAuth;
+  const ed=!A||!A.user||A.podeEditar('pe');
+  document.body.classList.toggle('so-leitura',!ed);
+  const n1=document.querySelector('.user .n1');
+  if(n1&&A&&A.user)n1.textContent=A.user.nome;
+  /* Configurações inteira é só para admin */
+  const adm=!!(A&&A.user&&A.user.admin);
+  const usAdm=document.getElementById('cfg-usuarios');
+  if(usAdm)usAdm.hidden=!adm;
+  const cfgNav=document.querySelector('.nav-link[data-t="config"]');
+  if(cfgNav){
+    cfgNav.style.display=adm?'':'none';
+    const grupo=cfgNav.previousElementSibling;
+    if(grupo&&grupo.classList.contains('grupo'))grupo.style.display=adm?'':'none';
+    if(!adm&&document.getElementById('config').classList.contains('active')){
+      const p=document.querySelector('.nav-link[data-t="painel"]');if(p)p.click();
+    }
+  }
+  if(!ed)renderAll();
+}
+document.addEventListener('sapatao-auth',aplicaPermissao);
+document.addEventListener('sapatao-login',aplicaPermissao);
+
+/* ---- minha senha ---- */
+const API_US='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/usuarios.json';
+const snMsg=document.getElementById('sn-msg'),snBtn=document.getElementById('sn-trocar');
+function snDiz(t,erro){if(snMsg){snMsg.textContent=t;snMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
+async function usuariosDoRepo(comToken){
+  const h={'Accept':'application/vnd.github+json'};
+  if(comToken&&tokenSync())h['Authorization']='Bearer '+tokenSync();
+  const g=await fetch(API_US+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  if(g.status===401||g.status===403)throw new Error('a chave de publicação é inválida ou expirou');
+  if(!g.ok)throw new Error('HTTP '+g.status+' ao ler os usuários');
+  const j=await g.json();
+  return{sha:j.sha,doc:JSON.parse(b64dec(j.content))};
+}
+async function gravaUsuarios(doc,sha,msg){
+  const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
+  const r=await fetch(API_US,{method:'PUT',headers:h,body:JSON.stringify({message:msg,branch:'main',content:b64enc(JSON.stringify(doc,null,1)),sha:sha})});
+  if(r.status===401||r.status===403)throw new Error('a chave de publicação é inválida ou expirou');
+  if(!r.ok)throw new Error('HTTP '+r.status+' ao gravar');
+  try{localStorage.setItem('sapatao-usuarios-cache-v1',JSON.stringify({v:1,usuarios:doc.usuarios}));}catch(e){}
+}
+if(snBtn)snBtn.addEventListener('click',async ()=>{
+  const A=window.sapataoAuth;
+  const atual=document.getElementById('sn-atual').value;
+  const nova=document.getElementById('sn-nova').value;
+  const conf=document.getElementById('sn-conf').value;
+  if(!A||!A.user){snDiz('Recarregue a página e tente de novo.',true);return;}
+  if(!tokenSync()){snDiz('Este aparelho precisa da chave de publicação (quadro Nuvem acima) para gravar a senha.',true);return;}
+  if(nova.length<6){snDiz('A senha nova precisa de pelo menos 6 caracteres.',true);return;}
+  if(nova!==conf){snDiz('A confirmação não bate com a senha nova.',true);return;}
+  snBtn.disabled=true;snDiz('Gravando senha nova…');
+  try{
+    const{sha,doc}=await usuariosDoRepo(true);
+    const eu=(doc.usuarios||[]).find(u=>u.id===A.user.id);
+    if(!eu)throw new Error('seu usuário não está na lista');
+    if(A.sha256(atual)!==eu.hash){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
+    const novoHash=A.sha256(nova);
+    eu.hash=novoHash;
+    await gravaUsuarios(doc,sha,'chore: altera a senha do usuário '+eu.nome+' (via Configurações)');
+    const sess=JSON.stringify({u:eu.id,h:novoHash});
+    try{
+      if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,sess);
+      if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,sess);
+    }catch(e){}
+    A.user.hash=novoHash;A.pw=nova;
+    window.sapataoChave.garante();
+    ['sn-atual','sn-nova','sn-conf'].forEach(i=>document.getElementById(i).value='');
+    snDiz('Senha alterada! Este aparelho continua conectado; os seus outros aparelhos vão pedir a senha nova.');
+  }catch(e){snDiz('Não consegui gravar ('+e.message+').',true);}
+  snBtn.disabled=false;
+});
+
+/* ---- administração de usuários (só admin) ---- */
+const usTbl=document.getElementById('us-tbl'),usMsg=document.getElementById('us-msg');
+let usDoc=null,usSha=null,usEnvelopes=[];
+function usDiz(t,erro){if(usMsg){usMsg.textContent=t;usMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
+function usRender(){
+  if(!usDoc)return;
+  const PERMS=[['edita','Edita'],['le','Só lê'],['nao','Sem acesso']];
+  const sel=(v,cls,i)=>'<select class="'+cls+'" data-i="'+i+'">'+PERMS.map(p=>'<option value="'+p[0]+'"'+(v===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select>';
+  usTbl.innerHTML='<tr><th>Usuário</th><th>Roadmap</th><th>Planejamento</th><th>Admin</th><th>Ativo</th><th>Senha</th></tr>'
+    +usDoc.usuarios.map((u,i)=>{
+      const p=u.perm||{};
+      return '<tr><td><input type="text" class="us-nome" data-i="'+i+'" value="'+esc(u.nome)+'"></td>'
+        +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.roadmap||'nao','us-roadmap',i))+'</td>'
+        +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.pe||'nao','us-pe',i))+'</td>'
+        +'<td><input type="checkbox" class="us-admin" data-i="'+i+'"'+(u.admin?' checked':'')+'></td>'
+        +'<td><input type="checkbox" class="us-ativo" data-i="'+i+'"'+(u.ativo!==false?' checked':'')+'></td>'
+        +'<td><button type="button" class="us-mini us-senha" data-i="'+i+'">redefinir</button></td></tr>';
+    }).join('');
+}
+async function usCarrega(){
+  try{const r=await usuariosDoRepo(true);usDoc=r.doc;usSha=r.sha;usRender();usDiz('');}
+  catch(e){usDiz('Não consegui carregar a lista ('+e.message+').',true);}
+}
+function usId(nome){
+  const base=nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'usuario';
+  let id=base,n=2;
+  while(usDoc.usuarios.some(u=>u.id===id)){id=base+'-'+n;n++;}
+  return id;
+}
+if(usTbl){
+  usTbl.addEventListener('change',ev=>{
+    const i=+ev.target.dataset.i,u=usDoc&&usDoc.usuarios[i];if(!u)return;
+    u.perm=u.perm||{};
+    if(ev.target.classList.contains('us-nome'))u.nome=ev.target.value.trim()||u.nome;
+    if(ev.target.classList.contains('us-roadmap'))u.perm.roadmap=ev.target.value;
+    if(ev.target.classList.contains('us-pe'))u.perm.pe=ev.target.value;
+    if(ev.target.classList.contains('us-admin')){u.admin=ev.target.checked;usRender();}
+    if(ev.target.classList.contains('us-ativo'))u.ativo=ev.target.checked;
+  });
+  usTbl.addEventListener('click',ev=>{
+    if(!ev.target.classList.contains('us-senha'))return;
+    const i=+ev.target.dataset.i,u=usDoc.usuarios[i];
+    const s=prompt('Nova senha para '+u.nome+' (mínimo 6 caracteres):');
+    if(s===null)return;
+    if(s.length<6){usDiz('Senha muito curta — nada foi alterado.',true);return;}
+    u.hash=window.sapataoAuth.sha256(s);
+    usEnvelopes.push({id:u.id,senha:s});
+    usDiz('Senha de '+u.nome+' pronta — clique em "Salvar alterações" para gravar.');
+  });
+  document.getElementById('us-add').addEventListener('click',()=>{
+    if(!usDoc)return;
+    const nome=prompt('Nome do novo usuário:');
+    if(!nome||!nome.trim())return;
+    const s=prompt('Senha inicial de '+nome.trim()+' (mínimo 6 caracteres):');
+    if(s===null)return;
+    if(s.length<6){usDiz('Senha muito curta — usuário não criado.',true);return;}
+    const novoId=usId(nome.trim());
+    usDoc.usuarios.push({id:novoId,nome:nome.trim(),hash:window.sapataoAuth.sha256(s),admin:false,ativo:true,perm:{roadmap:'le',pe:'le'}});
+    usEnvelopes.push({id:novoId,senha:s});
+    usRender();
+    usDiz('Usuário criado com permissão "Só lê" nos dois painéis — ajuste e clique em "Salvar alterações".');
+  });
+  document.getElementById('us-salvar').addEventListener('click',async ()=>{
+    const A=window.sapataoAuth;
+    if(!usDoc)return;
+    if(!tokenSync()){usDiz('Este aparelho precisa da chave de publicação para gravar.',true);return;}
+    const eu=usDoc.usuarios.find(u=>u.id===A.user.id);
+    if(eu){eu.admin=true;eu.ativo=true;} /* ninguém se tranca para fora */
+    if(!usDoc.usuarios.some(u=>u.admin&&u.ativo!==false)){usDiz('É preciso ter ao menos um admin ativo.',true);return;}
+    usDiz('Gravando…');
+    try{
+      await gravaUsuarios(usDoc,usSha,'chore: atualiza usuários e permissões (via Configurações)');
+      A.usuarios=usDoc.usuarios;
+      /* envelope da chave de publicação para cada senha criada/redefinida:
+         a chave chega sozinha nos aparelhos da pessoa ao entrar */
+      for(const env of usEnvelopes)await window.sapataoChave.garantePara(env.id,env.senha);
+      usEnvelopes=[];
+      usDiz('Usuários gravados! As permissões valem no próximo acesso de cada um.');
+      usCarrega();
+    }catch(e){usDiz('Não consegui gravar ('+e.message+').',true);}
+  });
+  const navCfg=document.querySelector('.nav-link[data-t="config"]');
+  if(navCfg)navCfg.addEventListener('click',()=>{const A=window.sapataoAuth;if(A&&A.user&&A.user.admin)usCarrega();});
+}
+
+renderAll();renderPainel();atualizaCfg();aplicaPermissao();
+iniciaSync();buscaChaveNuvem();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)iniciaSync();});
+})();
+</script>
+</body>
+</html>
