@@ -108,7 +108,7 @@
     '.sptx-titulo{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:30px;line-height:1.1;color:#004438;margin:0 0 6px}' +
     '.sptx-titulo i{color:#EC6C22;font-style:italic}' +
     '.sptx-sub{font-size:13.5px;color:#3D6B60;margin:0 0 18px}' +
-    '.sptx-faixa{height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,#EC6C22 0 28px,#004438 28px 48px);margin:0 0 22px}' +
+    '.sptx-faixa{height:1px;background:#D8D8D3;margin:0 0 22px}' +
     '.sptx-gate label.sptx-l{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3D6B60;margin-bottom:6px}' +
     '.sptx-gate input[type=password]{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:12px 14px;border:1.5px solid #D8D8D3;border-radius:10px;color:#004438;outline:none}' +
     '.sptx-gate input[type=password]:focus{border-color:#EC6C22}' +
