@@ -150,7 +150,7 @@
     d.className = 'sptx-gate';
     d.innerHTML = '<div class="sptx-card"><div class="sptx-eyebrow">Estação Sapatão</div>'
       + '<h1 class="sptx-titulo">Sem <i>acesso</i></h1>'
-      + '<p class="sptx-sub">O usuário <b>' + (A.user ? A.user.nome : '') + '</b> não tem acesso a este painel. Fale com o Samuel para liberar a permissão.</p>'
+      + '<p class="sptx-sub">O usuário <b>' + (A.user ? A.user.nome : '') + '</b> não tem acesso a este painel. Fale com o administrador para liberar a permissão.</p>'
       + '<button type="button" class="sptx-btn" onclick="location.href=\'../index.html\'">&#8592; Voltar à página inicial</button>'
       + '<button type="button" class="sptx-btn" style="background:none;color:#3D6B60;margin-top:8px" onclick="window.sapataoSair()">Entrar com outro usuário</button></div>';
     function poe() { document.body.appendChild(d); }
