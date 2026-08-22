@@ -867,6 +867,17 @@ function aplicaPermissao(){
   document.body.classList.toggle('so-leitura',!ed);
   const n1=document.querySelector('.user .n1');
   if(n1&&A&&A.user)n1.textContent=A.user.nome;
+  /* Configurações é só para admin */
+  const adm=!!(A&&A.user&&A.user.admin);
+  const cfgNav=document.querySelector('.nav-link[data-t="config"]');
+  if(cfgNav){
+    cfgNav.style.display=adm?'':'none';
+    const grupo=cfgNav.previousElementSibling;
+    if(grupo&&grupo.classList.contains('grupo'))grupo.style.display=adm?'':'none';
+    if(!adm&&document.getElementById('config').classList.contains('active')){
+      const p=document.querySelector('.nav-link[data-t="painel"]');if(p)p.click();
+    }
+  }
 }
 aplicaPermissao();
 document.addEventListener('sapatao-auth',aplicaPermissao);
@@ -1080,7 +1091,7 @@ async function leRemoto(){
   return{sha:j.sha,salvoEm:doc.salvoEm||0,dados:doc.dados||null};
 }
 async function publica(){
-  if(!tokenSync()){chip('','Nuvem: s\u00f3 leitura \u2014 ative em Configura\u00e7\u00f5es');return;}
+  if(!tokenSync()){chip('','Nuvem: só leitura — saia e entre com a senha para ativar a publicação');return;}
   try{
     chip('pendente','Nuvem: publicando\u2026');
     const rem=await leRemoto();
@@ -1132,6 +1143,8 @@ async function iniciaSync(){
   }catch(e){chip('erro','Nuvem: sem conex\u00e3o \u2014 dados locais');}
 }
 if(chipEl)chipEl.addEventListener('click',function(){
+  const A=window.sapataoAuth;
+  if(!(A&&A.user&&A.user.admin))return;
   const l=document.querySelector('.nav-link[data-t="config"]');if(l)l.click();
 });
 const cfgSalvar=document.getElementById('cfg-salvar'),cfgRemover=document.getElementById('cfg-remover'),cfgCampo=document.getElementById('cfg-token');

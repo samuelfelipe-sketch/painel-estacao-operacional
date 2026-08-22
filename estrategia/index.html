@@ -833,7 +833,7 @@ async function recuperaChaveNuvem(){
   return !!tokenSync();
 }
 async function publica(){
-  if(!tokenSync()){chip('','Nuvem: só leitura — ative em Configurações');return;}
+  if(!tokenSync()){chip('','Nuvem: só leitura — saia e entre com a senha para ativar a publicação');return;}
   try{
     chip('pendente','Nuvem: publicando…');
     const rem=await leRemoto();
@@ -873,7 +873,11 @@ async function iniciaSync(){
     else chip(tokenSync()?'ok':'','Nuvem: '+(tokenSync()?'sincronizado':'leitura automática — publicação desativada'));
   }catch(e){chip('erro','Nuvem: sem conexão — dados locais');}
 }
-if(chipEl)chipEl.addEventListener('click',()=>{const l=document.querySelector('.nav-link[data-t="config"]');if(l)l.click();});
+if(chipEl)chipEl.addEventListener('click',()=>{
+  const A=window.sapataoAuth;
+  if(!(A&&A.user&&A.user.admin))return;
+  const l=document.querySelector('.nav-link[data-t="config"]');if(l)l.click();
+});
 const cfgSalvar=document.getElementById('cfg-salvar'),cfgRemover=document.getElementById('cfg-remover'),cfgCampo=document.getElementById('cfg-token');
 if(cfgSalvar)cfgSalvar.addEventListener('click',()=>{
   const v=cfgCampo.value.trim();
@@ -902,8 +906,19 @@ function aplicaPermissao(){
   document.body.classList.toggle('so-leitura',!ed);
   const n1=document.querySelector('.user .n1');
   if(n1&&A&&A.user)n1.textContent=A.user.nome;
-  const adm=document.getElementById('cfg-usuarios');
-  if(adm)adm.hidden=!(A&&A.user&&A.user.admin);
+  /* Configurações inteira é só para admin */
+  const adm=!!(A&&A.user&&A.user.admin);
+  const usAdm=document.getElementById('cfg-usuarios');
+  if(usAdm)usAdm.hidden=!adm;
+  const cfgNav=document.querySelector('.nav-link[data-t="config"]');
+  if(cfgNav){
+    cfgNav.style.display=adm?'':'none';
+    const grupo=cfgNav.previousElementSibling;
+    if(grupo&&grupo.classList.contains('grupo'))grupo.style.display=adm?'':'none';
+    if(!adm&&document.getElementById('config').classList.contains('active')){
+      const p=document.querySelector('.nav-link[data-t="painel"]');if(p)p.click();
+    }
+  }
   if(!ed)renderAll();
 }
 document.addEventListener('sapatao-auth',aplicaPermissao);
@@ -962,7 +977,7 @@ if(snBtn)snBtn.addEventListener('click',async ()=>{
 
 /* ---- administração de usuários (só admin) ---- */
 const usTbl=document.getElementById('us-tbl'),usMsg=document.getElementById('us-msg');
-let usDoc=null,usSha=null;
+let usDoc=null,usSha=null,usEnvelopes=[];
 function usDiz(t,erro){if(usMsg){usMsg.textContent=t;usMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
 function usRender(){
   if(!usDoc)return;
@@ -1006,6 +1021,7 @@ if(usTbl){
     if(s===null)return;
     if(s.length<6){usDiz('Senha muito curta — nada foi alterado.',true);return;}
     u.hash=window.sapataoAuth.sha256(s);
+    usEnvelopes.push({id:u.id,senha:s});
     usDiz('Senha de '+u.nome+' pronta — clique em "Salvar alterações" para gravar.');
   });
   document.getElementById('us-add').addEventListener('click',()=>{
@@ -1015,7 +1031,9 @@ if(usTbl){
     const s=prompt('Senha inicial de '+nome.trim()+' (mínimo 6 caracteres):');
     if(s===null)return;
     if(s.length<6){usDiz('Senha muito curta — usuário não criado.',true);return;}
-    usDoc.usuarios.push({id:usId(nome.trim()),nome:nome.trim(),hash:window.sapataoAuth.sha256(s),admin:false,ativo:true,perm:{roadmap:'le',pe:'le'}});
+    const novoId=usId(nome.trim());
+    usDoc.usuarios.push({id:novoId,nome:nome.trim(),hash:window.sapataoAuth.sha256(s),admin:false,ativo:true,perm:{roadmap:'le',pe:'le'}});
+    usEnvelopes.push({id:novoId,senha:s});
     usRender();
     usDiz('Usuário criado com permissão "Só lê" nos dois painéis — ajuste e clique em "Salvar alterações".');
   });
@@ -1030,6 +1048,10 @@ if(usTbl){
     try{
       await gravaUsuarios(usDoc,usSha,'chore: atualiza usuários e permissões (via Configurações)');
       A.usuarios=usDoc.usuarios;
+      /* envelope da chave de publicação para cada senha criada/redefinida:
+         a chave chega sozinha nos aparelhos da pessoa ao entrar */
+      for(const env of usEnvelopes)await window.sapataoChave.garantePara(env.id,env.senha);
+      usEnvelopes=[];
       usDiz('Usuários gravados! As permissões valem no próximo acesso de cada um.');
       usCarrega();
     }catch(e){usDiz('Não consegui gravar ('+e.message+').',true);}

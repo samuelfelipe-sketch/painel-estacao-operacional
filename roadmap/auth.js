@@ -212,8 +212,14 @@
     /* garante que o envelope do usuário logado existe na nuvem (v2),
        preservando os envelopes dos outros usuários */
     garante: function () {
+      if (!A.user || !A.pw) return Promise.resolve(false);
+      return C.garantePara(A.user.id, A.pw);
+    },
+    /* grava o envelope de QUALQUER usuário (o admin usa ao criar um usuário
+       ou redefinir a senha dele — a chave chega sozinha nos aparelhos da pessoa) */
+    garantePara: function (userId, pw) {
       var token = C.token();
-      if (!token || !A.user || !A.pw || !window.crypto || !crypto.subtle) return Promise.resolve(false);
+      if (!token || !userId || !pw || !window.crypto || !crypto.subtle) return Promise.resolve(false);
       var h = { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
       var sha = null, envelopes = {};
       return fetch(KEY_URL + '?ref=main&t=' + Date.now(), { headers: h, cache: 'no-store' })
@@ -225,22 +231,22 @@
           else if (doc.ct) {
             /* migra o v1: se a senha atual abre, o envelope é deste usuário;
                senão preserva como _antiga para não perder ninguém */
-            return abreEnvelope(doc, A.pw).then(function () { /* é nosso: será reescrito */ })
+            return abreEnvelope(doc, pw).then(function () { /* é nosso: será reescrito */ })
               .catch(function () { envelopes._antiga = { salt: doc.salt, iv: doc.iv, ct: doc.ct }; });
           }
         })
         .catch(function () { /* arquivo ainda não existe */ })
         .then(function () {
-          if (envelopes[A.user.id]) {
+          if (envelopes[userId]) {
             /* já existe: confere se a senha atual abre; se abrir, nada a fazer */
-            return abreEnvelope(envelopes[A.user.id], A.pw).then(function () { return 'ok'; }).catch(function () { return 'regrava'; });
+            return abreEnvelope(envelopes[userId], pw).then(function () { return 'ok'; }).catch(function () { return 'regrava'; });
           }
           return 'regrava';
         })
         .then(function (st) {
           if (st === 'ok') return true;
-          return fechaEnvelope(token, A.pw).then(function (env) {
-            envelopes[A.user.id] = env;
+          return fechaEnvelope(token, pw).then(function (env) {
+            envelopes[userId] = env;
             var body = {
               message: 'chore: guarda a chave de publicação criptografada (nuvem)', branch: 'main',
               content: b64enc(JSON.stringify({ v: 2, envelopes: envelopes }, null, 2))
