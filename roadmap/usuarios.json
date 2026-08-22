@@ -7,7 +7,21 @@
    "hash": "d2a841835b53ff10c938d88d247151e4cb36bb6c9047c8f7b9affe799d97f7c1",
    "admin": true,
    "ativo": true,
-   "perm": { "roadmap": "edita", "pe": "edita" }
+   "perm": {
+    "roadmap": "edita",
+    "pe": "edita"
+   }
+  },
+  {
+   "id": "teste",
+   "nome": "Teste",
+   "hash": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
+   "admin": false,
+   "ativo": true,
+   "perm": {
+    "roadmap": "le",
+    "pe": "nao"
+   }
   }
  ]
 }
