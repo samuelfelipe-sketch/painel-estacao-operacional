@@ -149,6 +149,7 @@
   function anuncia() { try { document.dispatchEvent(new CustomEvent('sapatao-auth', { detail: { user: A.user } })); } catch (e) {} }
 
   function bloqueiaSemAcesso() {
+    if (document.querySelector('.sptx-gate')) return; /* já está na tela — não duplica nem pisca */
     garanteEstilo();
     document.documentElement.classList.add('sptx-lock');
     var d = document.createElement('div');
@@ -419,7 +420,18 @@
         lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v = x; });
         if (!v) { window.sapataoSair(); return; }
         A.user = v;
-        if (!A.temAcesso(APP)) { location.reload(); return; }
+        /* sem permissão confirmada na lista fresca: se a tela "Sem acesso" já
+           está no ar, fica como está (recarregar aqui fazia a tela piscar em
+           loop); se a página estava aberta (acesso revogado agora), recarrega
+           uma única vez para limpar o conteúdo — na volta o cache já vem
+           atualizado e a tela trava antes de qualquer conteúdo entrar */
+        if (!A.temAcesso(APP)) {
+          if (document.querySelector('.sptx-gate')) return;
+          location.reload(); return;
+        }
+        /* tinha caído na tela "Sem acesso" pelo cache, mas a permissão acabou
+           de ser liberada: um único reload destrava (sem loop — na volta há acesso) */
+        if (document.querySelector('.sptx-gate')) { location.reload(); return; }
         anuncia();
       }).catch(function () {});
       if (!A.temAcesso(APP)) { bloqueiaSemAcesso(); return; }
