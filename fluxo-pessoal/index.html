@@ -137,6 +137,7 @@ ol.pend li{margin-bottom:9px;font-size:.86rem}
 .qhelp:hover{color:#6A503B;border-color:#F0DCC8;background:#FBF4EC}
 .qpop{display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;max-width:560px;background:#FBF4EC;border:1px solid #F0DCC8;border-radius:8px;padding:12px 14px;font-size:.8rem;color:#6A503B;line-height:1.55;z-index:40;box-shadow:0 6px 18px rgba(28,42,36,.12)}
 .qhelp:hover ~ .qpop,.qpop.on{display:block}
+body.is-admin .qwrap.admin-only{display:flex}
 #modal{position:fixed;inset:0;background:rgba(16,49,43,.55);display:none;align-items:flex-end;justify-content:center;z-index:50}
 #modal.on{display:flex}
 #modal .box{background:#fff;border-radius:16px 16px 0 0;max-width:620px;width:100%;max-height:78vh;overflow-y:auto;padding:18px}
@@ -353,9 +354,12 @@ details.cfg[open] > summary{margin-bottom:12px}
       <label>Crescimento da renda (% ao ano) <input id="p27-renda" type="text" inputmode="decimal"></label>
       <label>Reajuste das despesas (% ao ano) <input id="p27-desp" type="text" inputmode="decimal"></label>
     </div>
-    <button class="btn" id="p27-aplicar">Aplicar premissas</button>
+    <div class="qwrap">
+      <button class="btn" id="p27-aplicar">Aplicar premissas</button>
+      <button type="button" class="qhelp" aria-label="Explicação das premissas">?</button>
+      <div class="qpop">Valem para a visão "2027 — projeção" no Fluxo. Ficam guardadas criptografadas no cofre e sincronizadas entre os aparelhos.</div>
+    </div>
     <div class="mini" id="p27-msg" style="margin-top:8px"></div>
-    <div class="note">Valem para a visão "2027 — projeção" no Fluxo. Ficam guardadas criptografadas no cofre e sincronizadas entre os aparelhos.</div>
   </details>
   <details class="card cfg">
     <summary>Metas — alvos</summary>
@@ -365,14 +369,20 @@ details.cfg[open] > summary{margin-bottom:12px}
       <label>Meta de patrimônio (R$) <input id="mt-alvo" type="text" inputmode="decimal"></label>
       <label>Rendimento das reservas (% a.a.) <input id="mt-rend" type="text" inputmode="decimal"></label>
     </div>
-    <button class="btn" id="mt-aplicar">Aplicar metas</button>
+    <div class="qwrap">
+      <button class="btn" id="mt-aplicar">Aplicar metas</button>
+      <button type="button" class="qhelp" aria-label="Explicação das metas">?</button>
+      <div class="qpop">O progresso das metas aparece na aba <b>Patrimônio</b>.</div>
+    </div>
     <div class="mini" id="mt-msg" style="margin-top:8px"></div>
-    <div class="note">O progresso das metas aparece na aba <b>Patrimônio</b>.</div>
   </details>
   <details class="card cfg">
     <summary>Usuários com acesso</summary>
     <div class="tbl-wrap" id="ac-lista"></div>
-    <div class="note admin-only" style="display:block">Como administrador, você cria e exclui usuários. Cada pessoa entra com o próprio usuário e senha — a senha nunca fica gravada em lugar nenhum, ela é a chave que abre os dados.</div>
+    <div class="qwrap admin-only" style="margin-top:8px">
+      <button type="button" class="qhelp" aria-label="Como funcionam os usuários">?</button>
+      <div class="qpop">Como administrador, você cria e exclui usuários. Cada pessoa entra com o próprio usuário e senha — a senha nunca fica gravada em lugar nenhum, ela é a chave que abre os dados.</div>
+    </div>
   </details>
   <details class="card cfg admin-only">
     <summary>Criar usuário</summary>
@@ -407,12 +417,13 @@ details.cfg[open] > summary{margin-bottom:12px}
     <div class="formgrid" id="gh-form">
       <label class="full">Chave do GitHub <input type="password" id="gh-token" autocomplete="off" placeholder="github_pat_…"></label>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div class="qwrap" style="gap:8px">
       <button class="btn" id="gh-save">Ativar publicação automática</button>
       <button class="btn sm danger" id="gh-off" style="display:none">desativar</button>
+      <button type="button" class="qhelp" aria-label="Como funciona a publicação automática">?</button>
+      <div class="qpop">Com isso ativo, toda alteração (acessos, importações, documentos) vai sozinha para a base — em ~1 minuto vale em todos os aparelhos. Como gerar a chave (2 min): github.com → foto de perfil → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens → Fine-grained tokens</b> → Generate new token → Repository access: <b>Only select repositories</b> → <i>painel-estacao-operacional</i> → Permissions → <b>Contents: Read and write</b> → Generate → cole aqui. A chave fica guardada <b>criptografada</b> dentro do cofre, nunca em texto aberto.</div>
     </div>
     <div class="mini" id="gh-msg" style="margin-top:8px"></div>
-    <div class="note">Com isso ativo, toda alteração (acessos, importações, documentos) vai sozinha para a base — em ~1 minuto vale em todos os aparelhos. Como gerar a chave (2 min): github.com → foto de perfil → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens → Fine-grained tokens</b> → Generate new token → Repository access: <b>Only select repositories</b> → <i>painel-estacao-operacional</i> → Permissions → <b>Contents: Read and write</b> → Generate → cole aqui. A chave fica guardada <b>criptografada</b> dentro do cofre, nunca em texto aberto.</div>
   </details>
   <details class="card cfg admin-only">
     <summary>Classificação inteligente (IA)</summary>
@@ -420,12 +431,13 @@ details.cfg[open] > summary{margin-bottom:12px}
     <div class="formgrid" id="ia-form">
       <label class="full">Chave da API da Anthropic <input type="password" id="ia-key" autocomplete="off" placeholder="sk-ant-…"></label>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div class="qwrap" style="gap:8px">
       <button class="btn" id="ia-save">Ativar classificação com IA</button>
       <button class="btn sm danger" id="ia-off" style="display:none">desativar</button>
+      <button type="button" class="qhelp" aria-label="Como funciona a classificação com IA">?</button>
+      <div class="qpop">Com isso ativo, o site chama o <b>Claude</b> (a mesma IA daqui do Cowork) ao ler extratos e faturas: o que as regras fixas não reconhecem é classificado pela IA seguindo a tua metodologia, marcado com ✨ para conferência — e dá até para ler faturas coladas em formato bagunçado (texto de PDF, por exemplo). Como obter a chave (2 min): <b>console.anthropic.com</b> → API Keys → Create Key → cole aqui. Ela fica guardada <b>criptografada</b> no cofre. Apenas descrições e valores dos lançamentos são enviados para classificar; custo típico: centavos por fatura.</div>
     </div>
     <div class="mini" id="ia-msg" style="margin-top:8px"></div>
-    <div class="note">Com isso ativo, o site chama o <b>Claude</b> (a mesma IA daqui do Cowork) ao ler extratos e faturas: o que as regras fixas não reconhecem é classificado pela IA seguindo a tua metodologia, marcado com ✨ para conferência — e dá até para ler faturas coladas em formato bagunçado (texto de PDF, por exemplo). Como obter a chave (2 min): <b>console.anthropic.com</b> → API Keys → Create Key → cole aqui. Ela fica guardada <b>criptografada</b> no cofre. Apenas descrições e valores dos lançamentos são enviados para classificar; custo típico: centavos por fatura.</div>
   </details>
   <details class="card cfg">
     <summary>Sincronização</summary>
