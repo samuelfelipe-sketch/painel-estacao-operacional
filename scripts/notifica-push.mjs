@@ -13,14 +13,16 @@ import { createPrivateKey, privateDecrypt, createDecipheriv, constants } from 'c
 /* sem título: o iPhone mostra só o nome do app ("Sapatão") e o texto —
    por isso o nome do painel vai dentro do próprio texto */
 const msg = process.env.MENSAGEM_COMMIT || '';
-let autor = '', corpo = '', urlAlvo = '';
+let autor = '', corpo = '', urlAlvo = '', tipo = '';
 let m = msg.match(/novo follow-up de (.+) na ação (\d+)/i);
 if (m) {
   autor = m[1];
+  tipo = 'fu';
   corpo = `Novo follow-up de ${m[1]} na ação ${m[2]} do Planejamento Estratégico.`;
   urlAlvo = './estrategia/#notificacoes';
 } else if ((m = msg.match(/(?:chore:\s*)?(.+?) (concluiu|reabriu) a ação (\d+) do (Roadmap Comercial|Planejamento Estratégico)/i))) {
   autor = m[1];
+  tipo = 'est';
   corpo = `${m[1]} ${m[2]} a ação ${m[3]} do ${m[4]}.`;
   urlAlvo = /roadmap/i.test(m[4]) ? './roadmap/guia.html' : './estrategia/#notificacoes';
 }
@@ -53,9 +55,11 @@ const doc = JSON.parse(readFileSync('roadmap/push-subs.json', 'utf8'));
 const entradas = Object.entries(doc.subs || {});
 if (!entradas.length) { console.log('nenhum aparelho inscrito'); process.exit(0); }
 
-let ok = 0, falha = 0, proprios = 0;
+let ok = 0, falha = 0, proprios = 0, optaram = 0;
 for (const [id, ent] of entradas) {
   if (autorId && ent.u === autorId) { proprios++; continue; }
+  const pref = ent.pref || {};
+  if (pref[tipo] === false) { optaram++; continue; }
   try {
     const aes = privateDecrypt({ key: chave, padding: constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' }, Buffer.from(ent.env.ek, 'base64'));
     const iv = Buffer.from(ent.env.iv, 'base64');
@@ -70,4 +74,4 @@ for (const [id, ent] of entradas) {
     console.log('aparelho ' + id + ': falhou (' + (e.statusCode || e.message) + ')');
   }
 }
-console.log('notificações enviadas: ' + ok + ' | falhas: ' + falha + ' | aparelhos do autor pulados: ' + proprios);
+console.log('notificações enviadas: ' + ok + ' | falhas: ' + falha + ' | aparelhos do autor pulados: ' + proprios + ' | preferiram não receber: ' + optaram);
