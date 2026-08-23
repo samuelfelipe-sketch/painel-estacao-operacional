@@ -35,15 +35,16 @@ html{scroll-behavior:smooth;background:var(--fundo)}
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
 body{font-family:'Archivo',sans-serif;background:var(--fundo);color:var(--verde);line-height:1.55;font-size:15.5px}
 
-/* ---------- Barra superior (mobile) ---------- */
-.topbar{display:none;position:sticky;top:0;z-index:70;background:var(--verde);color:#fff;padding:12px 16px;align-items:center;gap:12px}
+/* ---------- Barra superior (sempre visível) ---------- */
+.topbar{display:flex;position:sticky;top:0;z-index:70;background:var(--verde);color:#fff;padding:12px 16px;align-items:center;gap:12px;min-height:58px;box-sizing:border-box}
 .topbar button{background:none;border:1.5px solid rgba(255,255,255,.4);border-radius:6px;color:#fff;font-size:18px;line-height:1;padding:6px 10px;cursor:pointer}
 .topbar .t{font-family:'Fraunces',serif;font-weight:600;font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .t i{color:var(--laranja);font-style:italic}
 
 /* ---------- Layout ---------- */
 .layout{display:flex;min-height:100vh}
-aside{width:var(--sidebar-w);flex-shrink:0;background:var(--verde);color:#EBEBEA;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+aside{width:var(--sidebar-w);flex-shrink:0;background:var(--verde);color:#EBEBEA;display:flex;flex-direction:column;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
+@media (min-width:901px){#menu-btn{display:none}}
 .brand{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,.12)}
 .brand .placa{background:#EBEBEA;border-radius:10px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
 .brand .placa .p2{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--verde-suave)}
@@ -151,7 +152,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
   main.wrap>section#gut{max-width:none}
 }
 @media (max-width:900px){
-  .topbar{display:flex}
   aside{position:fixed;left:0;top:0;bottom:0;z-index:80;transform:translateX(-100%);transition:transform .22s;height:100dvh}
   aside.aberta{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.35)}
   .scrim{position:fixed;inset:0;background:rgba(0,20,15,.45);z-index:75;opacity:0;pointer-events:none;transition:opacity .22s}
@@ -176,13 +176,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
   table{font-size:13px}
 }
 @media (min-width:901px){.scrim{display:none}}
-.topo-acoes{position:fixed;top:18px;right:22px;z-index:60;display:flex;gap:10px}
-.btn-print{display:inline-flex;align-items:center;gap:9px;background:#FFFFFF;color:#3D4A5C;border:1px solid #C9D2DC;border-radius:999px;padding:9px 18px;font-family:'Archivo',sans-serif;font-weight:600;font-size:14.5px;cursor:pointer;box-shadow:0 2px 8px rgba(20,30,45,.10)}
-.btn-print:hover{background:#F4F6F8;border-color:#AEBBC9}
-.btn-print:focus-visible{outline:2px solid #3D4A5C;outline-offset:2px}
-.btn-sino{padding:9px 13px}
-@media (max-width:900px){.topo-acoes{display:none}}
-@media print{aside,.topbar,.scrim,.topo-acoes,.faixa,.km-btn-row{display:none!important}body{background:#fff}header{padding-top:0}main{padding:0 0 20px}@page{margin:12mm}}
+@media print{aside,.topbar,.scrim,.faixa,.km-btn-row{display:none!important}body{background:#fff}header{padding-top:0}main{padding:0 0 20px}@page{margin:12mm}}
 
 /* --- execução do plano --- */
 .exec-resumo{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
@@ -276,7 +270,6 @@ body.so-leitura #nv-abrir,body.so-leitura #nv-form,body.so-leitura .nv-rem{displ
   <button type="button" onclick="location.href='../estrategia/#notificacoes'" aria-label="Notificações" title="Notificações"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
 </div>
 <div class="scrim" id="scrim"></div>
-<div class="topo-acoes"><button class="btn-print btn-sino" onclick="location.href='../estrategia/#notificacoes'" title="Notificações" aria-label="Notificações"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button><button class="btn-print" onclick="window.print()" title="Imprimir a tela atual"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span>Imprimir / PDF</span></button></div>
 <div class="layout">
 <aside id="sidebar">
   <div class="brand">
