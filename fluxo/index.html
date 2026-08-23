@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#004438">
+<title>Fluxo de Caixa — Estação Sapatão</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E %3Cdefs%3E %3ClinearGradient id=%22bg%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E %3Cstop offset=%220%22 stop-color=%22%230B5748%22/%3E %3Cstop offset=%221%22 stop-color=%22%2300332A%22/%3E %3C/linearGradient%3E %3C/defs%3E %3Crect width=%22512%22 height=%22512%22 fill=%22url(%23bg)%22/%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%22164%22 fill=%22none%22 stroke=%22%23F5F3EC%22 stroke-width=%2230%22 opacity=%220.85%22/%3E %3Cpolygon points=%22256,110 312,256 200,256%22 fill=%22%23EC6C22%22/%3E %3Cpolygon points=%22256,402 200,256 312,256%22 fill=%22%23F5F3EC%22 opacity=%220.8%22/%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%2224%22 fill=%22%2300332A%22/%3E %3C/svg%3E">
+<script>window.SAPATAO_APP='fluxo';</script>
+<script src="../roadmap/auth.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--fundo:#F4F6F9;--card:#FFFFFF;--verde:#004438;--verde-suave:#3D6B60;--laranja:#EC6C22;--laranja-escuro:#C2531A;--linha:#E4E9F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Archivo',sans-serif;background:var(--fundo);color:#16211C;line-height:1.55;font-size:15.5px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;position:sticky;top:0;z-index:70;background:#fff;color:#16211C;padding:12px 16px;align-items:center;gap:12px;min-height:58px;box-sizing:border-box}
+.topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:#16211C;font-size:18px;line-height:1;padding:6px 10px;cursor:pointer}
+.topbar .t{font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;flex:1;color:#16211C}
+.wrap{max-width:880px;margin:0 auto;padding:34px 22px 40px;width:100%}
+.card{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:22px 20px;box-shadow:0 1px 4px rgba(20,30,45,.05)}
+.card h2{font-family:'Archivo',sans-serif;font-weight:800;font-size:22px;color:#16211C;margin-bottom:10px}
+.lead{color:#5F6C7B;font-size:14.5px;margin:8px 0}
+.pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.06em;padding:2px 8px;border-radius:20px;background:#E3EAE7;color:var(--verde);text-transform:uppercase}
+#fx-frame{border:0;width:100%;height:calc(100vh - 58px);display:none;background:#fff}
+#fx-espera[hidden]{display:none}
+</style>
+<link rel="stylesheet" href="../tema.css">
+</head>
+<body>
+<div class="topbar">
+  <button type="button" onclick="location.href='../index.html'" aria-label="Voltar à central de acessos" title="Central de acessos">&#8592;</button>
+  <div class="t">Fluxo de Caixa</div>
+</div>
+<div class="wrap" id="fx-espera">
+  <div class="card">
+    <h2>Fluxo de Caixa do grupo</h2>
+    <p class="lead">Status: <span class="pill" id="fx-status">verificando&hellip;</span></p>
+    <p class="lead" id="fx-msg">Procurando a última publicação da ferramenta&hellip;</p>
+  </div>
+</div>
+<iframe id="fx-frame" title="Fluxo de Caixa"></iframe>
+<script>
+(function(){
+/* A ferramenta (HTML autossuficiente) fica publicada CIFRADA em
+   fluxo/dados.enc.json — mesmo cofre dos painéis: só abre com a chave dos
+   dados no aparelho. Cache local (ainda cifrado) para abrir na hora. */
+const CACHE='sapatao-fluxo-v1';
+const st=document.getElementById('fx-status'),msg=document.getElementById('fx-msg');
+const espera=document.getElementById('fx-espera'),frame=document.getElementById('fx-frame');
+let bootado=false;
+function diz(pill,texto){st.textContent=pill;msg.textContent=texto;}
+function mostra(html){
+  if(bootado)return;bootado=true;
+  espera.hidden=true;frame.style.display='block';
+  frame.srcdoc=html;
+}
+async function pega(){
+  const path='fluxo/dados.enc.json';
+  try{
+    const rr=await fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/'+path+'?t='+Date.now(),{cache:'no-store'});
+    if(rr.ok)return await rr.json();
+    if(rr.status===404)return null;
+  }catch(e){}
+  const r=await fetch('https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/'+path+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,'')))));
+}
+async function abreDoc(doc){
+  if(!doc||doc.enc!==1)return false;
+  if(!window.sapataoCofre.dek())await window.sapataoCofre.baixaDekPeloToken();
+  const ab=await window.sapataoCofre.decifra(doc);
+  if(!ab||!ab.html)return false;
+  mostra(ab.html);
+  return true;
+}
+async function carrega(){
+  const A=window.sapataoAuth;
+  if(!A||!A.user||!A.temAcesso('fluxo'))return; /* o auth.js cuida da tela */
+  /* cache primeiro (abre na hora), rede em segundo plano */
+  try{
+    const c=JSON.parse(localStorage.getItem(CACHE)||'null');
+    if(c&&await abreDoc(c)){atualiza();return;}
+  }catch(e){}
+  await atualiza(true);
+}
+async function atualiza(primeira){
+  try{
+    const doc=await pega();
+    if(!doc){
+      if(!bootado)diz('em preparação','A ferramenta ainda não foi publicada aqui. Assim que a primeira versão for gravada em fluxo/dados.enc.json, esta página passa a abri-la automaticamente.');
+      return;
+    }
+    if(doc.enc===1){try{localStorage.setItem(CACHE,JSON.stringify(doc));}catch(e){}}
+    if(primeira){
+      const ok=await abreDoc(doc);
+      if(!ok)diz('sem a chave','Este aparelho ainda não tem a chave dos dados. Saia e entre com o seu usuário e senha na central para destravar.');
+    }
+  }catch(e){
+    if(!bootado)diz('sem conexão','Não consegui verificar a publicação agora. Confira a internet e recarregue a página.');
+  }
+}
+document.addEventListener('sapatao-login',carrega);
+carrega();
+})();
+</script>
+</body>
+</html>
