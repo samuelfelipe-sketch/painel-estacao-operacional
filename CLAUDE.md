@@ -44,6 +44,7 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 
 ## Regras de trabalho
 - **Antes de commitar, sempre `git pull --rebase`**: o site faz commits automáticos (execucoes.json, auth.js) e o Samuel abre PRs por sessões na nuvem.
+- **Abertura rápida dos painéis**: o bundle de conteúdo fica em cache local AINDA CIFRADO (`sapatao-conteudo-roadmap-v1`/`sapatao-conteudo-pe-v1`) — o painel abre do cache e revalida em segundo plano; o Sair limpa esses caches. No login, se a DEK já está no aparelho, o destrava não espera o PBKDF2 da chave de publicação.
 - Conflito em `roadmap/execucoes.json`: ficar com a versão remota (é a base de dados viva).
 - Repositório é **público** e os DADOS SÃO SENSÍVEIS: todo conteúdo de negócio vive CIFRADO (AES-256-GCM) nos arquivos `*-conteudo.json`, `execucoes.json` e `pe-execucoes.json`. A chave dos dados (DEK) só existe: no localStorage dos aparelhos autorizados (`sapatao-dek-v1`), dentro dos envelopes por usuário (`chave.enc.json`, aberto pela senha) e em `dek.enc.json` (aberto pela chave de publicação). **NUNCA commitar dados de negócio em texto claro** — nem em HTML, nem em JSON, nem em commits antigos (o histórico foi limpo por isso). Os apps cifram/decifram no navegador via `window.sapataoCofre`.
 - Nada de tokens ou senhas em texto claro no código.
