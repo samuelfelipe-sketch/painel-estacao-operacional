@@ -143,7 +143,20 @@
   window.sapataoSair = function () {
     try { sessionStorage.removeItem(CHAVE); } catch (e) {}
     try { localStorage.removeItem(CHAVE); } catch (e) {}
-    location.reload();
+    /* aproveita a saída para rebuscar os arquivos do app direto da rede
+       (atualiza o cache do navegador) e conferir se há sw.js novo — assim a
+       próxima carga já vem com a última versão publicada do site */
+    var base = '';
+    try { var sc = document.querySelector('script[src*="auth.js"]'); if (sc) base = sc.src.replace(/roadmap\/auth\.js.*$/, ''); } catch (e) {}
+    var alvos = ['', 'tema.css', 'roadmap/auth.js', 'roadmap/guia.html', 'estrategia/', 'configuracoes/'];
+    var refresca = base
+      ? Promise.all(alvos.map(function (u) { return fetch(base + u, { cache: 'reload' }).catch(function () {}); }))
+      : Promise.resolve();
+    try { if (navigator.serviceWorker) navigator.serviceWorker.getRegistration(base || undefined).then(function (r) { if (r) r.update(); }).catch(function () {}); } catch (e) {}
+    var foi = false;
+    function vai() { if (foi) return; foi = true; location.reload(); }
+    refresca.then(vai, vai);
+    setTimeout(vai, 2500); /* rede lenta não prende o Sair */
   };
 
   function anuncia() { try { document.dispatchEvent(new CustomEvent('sapatao-auth', { detail: { user: A.user } })); } catch (e) {} }
