@@ -461,6 +461,8 @@ function salva(){if(document.body.classList.contains('so-leitura'))return;salvoE
 const aberto=new Set();
 let filtro={resp:'todos',ord:'gut'};
 function hojeLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+/* instante local (YYYY-MM-DDTHH:MM) — usado para ordenar as notificações */
+function agoraISO(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}
 const HOJE=hojeLocal();
 function fmt(iso){if(!iso)return'—';const p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -561,17 +563,18 @@ cards.addEventListener('click',ev=>{
     if(document.body.classList.contains('so-followup'))return;
     const d=card.querySelector('.rn-data').value;
     if(!d){card.querySelector('.rn-data').focus();return;}
-    const rn={em:HOJE,para:d};
+    const rn={em:HOJE,para:d,h:agoraISO()};
     if(quem())rn.por=quem();
     EXEC[id].renegs.push(rn);
     EXEC[id].novoPrazo=d; /* compatibilidade com dados antigos */
+    notificaReneg(id);
     salva();return;
   }
   if(ev.target.classList.contains('fu-add')){
     const t=card.querySelector('.fu-texto').value.trim();
     const d=card.querySelector('.fu-data-in').value||HOJE;
     if(!t){card.querySelector('.fu-texto').focus();return;}
-    const novo={data:d,texto:t};
+    const novo={data:d,texto:t,em:agoraISO()};
     if(quem())novo.por=quem();
     EXEC[id].followups.push(novo);
     EXEC[id].followups.sort((x,y)=>x.data.localeCompare(y.data));
@@ -602,12 +605,15 @@ cards.addEventListener('click',ev=>{
 /* o commit do follow-up leva autor e nº da ação na mensagem (dado não
    sensível) — o workflow de push nativo usa isso para montar o aviso.
    O texto do follow-up nunca sai do cofre. */
-let fuNovoAviso=null,estadoAviso=null;
+let fuNovoAviso=null,estadoAviso=null,rngAviso=null;
 function notificaFollowUp(id){
   fuNovoAviso={por:quem()||'alguém',acao:id};
 }
 function notificaEstado(id,verbo){
   estadoAviso={por:quem()||'alguém',acao:id,verbo:verbo};
+}
+function notificaReneg(id){
+  rngAviso={por:quem()||'alguém',acao:id};
 }
 cards.addEventListener('change',ev=>{
   const card=ev.target.closest('.acard');if(!card)return;
@@ -618,7 +624,7 @@ cards.addEventListener('change',ev=>{
     EXEC[id].status=ev.target.value;
     if(ev.target.value==='concluido'&&!EXEC[id].dataConclusao)EXEC[id].dataConclusao=HOJE;
     if(ev.target.value!==antes){
-      if(ev.target.value==='concluido'){EXEC[id].concluidaPor=quem()||'';notificaEstado(id,'concluiu');}
+      if(ev.target.value==='concluido'){EXEC[id].concluidaPor=quem()||'';EXEC[id].concluidaEm=agoraISO();notificaEstado(id,'concluiu');}
       else if(antes==='concluido')notificaEstado(id,'reabriu');
     }
     salva();
@@ -751,6 +757,7 @@ async function publica(){
     let carga={v:1,salvoEm:salvoEm,dados:EXEC};
     if(window.sapataoCofre.dek())carga=await window.sapataoCofre.cifra(carga);
     let msg='chore: sincroniza follow-ups do Planejamento Estratégico (automático)';
+    if(rngAviso)msg='chore: '+rngAviso.por+' renegociou a ação '+rngAviso.acao+' do Planejamento Estratégico (automático)';
     if(estadoAviso)msg='chore: '+estadoAviso.por+' '+estadoAviso.verbo+' a ação '+estadoAviso.acao+' do Planejamento Estratégico (automático)';
     if(fuNovoAviso)msg='chore: novo follow-up de '+fuNovoAviso.por+' na ação '+fuNovoAviso.acao+' (automático)';
     const body={message:msg,branch:'main',
@@ -758,7 +765,8 @@ async function publica(){
     if(rem.sha)body.sha=rem.sha;
     const r=await fetch(SYNC_API,{method:'PUT',headers:h,body:JSON.stringify(body)});
     if(!r.ok)throw new Error('HTTP '+r.status);
-    fuNovoAviso=null;estadoAviso=null;
+    fuNovoAviso=null;estadoAviso=null;rngAviso=null;
+    atualizaCalendario();
     chip('ok','Nuvem: sincronizado');
   }catch(e){
     chip('erro','Nuvem: falha ao publicar — vou tentar de novo');
@@ -766,6 +774,25 @@ async function publica(){
   }
 }
 function agendaPublicacao(){clearTimeout(syncTimer);syncTimer=setTimeout(publica,2500);}
+/* calendário público de prazos (só nº da ação + prazo + status — nada de
+   conteúdo): o robô diário usa para os lembretes de "vence amanhã"/"atrasada" */
+async function atualizaCalendario(){
+  try{
+    if(!tokenSync())return;
+    const frag={};
+    ACOES.forEach(a=>{frag[a.id]={p:prazoEfetivo(a)||'',s:EXEC[a.id].status||'andamento'};});
+    const url='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/calendario.json';
+    const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
+    const g=await fetch(url+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+    let doc={v:1},sha=null;
+    if(g.ok){const j=await g.json();sha=j.sha;try{doc=JSON.parse(b64docdec(j.content));}catch(e){}}
+    if(JSON.stringify(doc.pe||null)===JSON.stringify(frag))return;
+    doc.pe=frag;
+    const body={message:'chore: atualiza calendário de prazos (automático)',branch:'main',content:b64enc(JSON.stringify(doc))};
+    if(sha)body.sha=sha;
+    await fetch(url,{method:'PUT',headers:h,body:JSON.stringify(body)});
+  }catch(e){/* sem calendário hoje, tenta na próxima publicação */}
+}
 function aplicaRemoto(rem){
   Object.keys(rem.dados).forEach(k=>{if(EXEC[k])EXEC[k]=normaliza(rem.dados[k]);});
   salvoEm=rem.salvoEm;gravaLocal();renderAll();renderPainel();pintaSino();chip('ok','Nuvem: sincronizado');
@@ -1005,12 +1032,14 @@ function notifTodas(){
   const l=[];
   ACOES.forEach(a=>{
     const e=EXEC[a.id];
-    (e.followups||[]).forEach(f=>{if(!f.apagado)l.push({id:a.id,tit:a.acao,data:f.data,por:f.por||'',txt:f.texto,tp:'f'});});
-    if(e.status==='concluido'&&e.dataConclusao)l.push({id:a.id,tit:a.acao,data:e.dataConclusao,por:e.concluidaPor||'',txt:'Ação concluída ✓',tp:'c'});
+    (e.followups||[]).forEach(f=>{if(!f.apagado)l.push({id:a.id,tit:a.acao,data:f.data,por:f.por||'',txt:f.texto,tp:'f',ord:f.em||f.data});});
+    if(e.status==='concluido'&&e.dataConclusao)l.push({id:a.id,tit:a.acao,data:e.dataConclusao,por:e.concluidaPor||'',txt:'Ação concluída ✓',tp:'c',ord:e.concluidaEm||e.dataConclusao});
+    (e.renegs||[]).forEach(r=>{if(r.em)l.push({id:a.id,tit:a.acao,data:r.em,por:r.por||'',txt:'Prazo renegociado para '+fmt(r.para),tp:'r',ord:r.h||r.em});});
   });
-  l.sort((x,y)=>y.data.localeCompare(x.data)||y.id-x.id);
+  l.sort((x,y)=>(y.ord||'').localeCompare(x.ord||'')||y.id-x.id);
   return l;
 }
+function notifHora(x){return x.ord&&x.ord.length>10?' '+x.ord.slice(11,16):'';}
 function pintaSino(){
   const vistos=notifVistos();
   const n=notifTodas().filter(x=>!notifMinha(x)&&!vistos.has(notifChave(x))).length;
@@ -1020,7 +1049,7 @@ function renderNotifs(){
   const vistos=notifVistos(),l=notifTodas();
   if(!l.length){notifLista.innerHTML='<div class="notif-vazio">Nenhuma novidade ainda. Follow-ups e conclusões de ações aparecem aqui.</div>';return;}
   notifLista.innerHTML=l.map(x=>'<div class="notif-item'+((vistos.has(notifChave(x))||notifMinha(x))?'':' nova')+'" data-acao="'+x.id+'" role="button" tabindex="0">'
-    +'<div class="notif-meta">'+fmt(x.data)+(x.por?' — '+esc(x.por):'')+'</div>'
+    +'<div class="notif-meta">'+fmt(x.data)+notifHora(x)+(x.por?' — '+esc(x.por):'')+'</div>'
     +'<div class="notif-acao">Ação '+x.id+' · '+esc(x.tit)+'</div>'
     +'<div class="notif-txt">'+esc(x.txt)+'</div></div>').join('');
 }

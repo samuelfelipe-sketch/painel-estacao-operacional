@@ -408,6 +408,15 @@
           lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v2 = x; });
           A.user = v2; anuncia();
         }).catch(function () {});
+      } else {
+        /* a sessão não bate com o cache local (senha trocada há pouco,
+           aparelho sem cache): confere a lista fresca antes de desistir */
+        usuariosFrescos().then(function (lista) {
+          A.usuarios = lista;
+          var v2 = null;
+          lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v2 = x; });
+          if (v2) { A.user = v2; anuncia(); }
+        }).catch(function () {});
       }
     }
     return;
