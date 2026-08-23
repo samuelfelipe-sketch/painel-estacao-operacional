@@ -97,3 +97,4 @@ td{color:var(--tinta);border-bottom:1px solid #EEF1F5}
 .notif-pe a{color:var(--verde,#004438);font-weight:600}
 .sino-b{position:relative}
 .sino-dot{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--laranja,#EC6C22);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none}
+.sino-dot[hidden]{display:none}
