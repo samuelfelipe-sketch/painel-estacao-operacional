@@ -48,7 +48,7 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 - Repositório é **público** e os DADOS SÃO SENSÍVEIS: todo conteúdo de negócio vive CIFRADO (AES-256-GCM) nos arquivos `*-conteudo.json`, `execucoes.json` e `pe-execucoes.json`. A chave dos dados (DEK) só existe: no localStorage dos aparelhos autorizados (`sapatao-dek-v1`), dentro dos envelopes por usuário (`chave.enc.json`, aberto pela senha) e em `dek.enc.json` (aberto pela chave de publicação). **NUNCA commitar dados de negócio em texto claro** — nem em HTML, nem em JSON, nem em commits antigos (o histórico foi limpo por isso). Os apps cifram/decifram no navegador via `window.sapataoCofre`.
 - Nada de tokens ou senhas em texto claro no código.
 - Testar localmente com `python3 -m http.server` (as páginas usam `auth.js` externo e fetch — não funcionam bem abrindo o arquivo direto).
-- GitHub Pages publica em ~1–2 min após o push; favicon e `auth.js` podem ficar até ~10 min no cache do navegador.
+- GitHub Pages publica em ~1–2 min após o push; favicon e `auth.js` podem ficar até ~10 min no cache do navegador. Atalho: o botão **Sair** rebusca os arquivos do app direto da rede (fetch `cache:'reload'` + update do sw) — sair e entrar força a versão mais nova.
 - Senhas/usuários: gerir pela aba Configurações (admin) — grava `roadmap/usuarios.json`. Manualmente: hash = SHA-256 da senha no `usuarios.json` (e o fallback do Samuel em `auth.js`).
 - Mensagens de commit em português, estilo `feat:`/`fix:`/`chore:`.
 
