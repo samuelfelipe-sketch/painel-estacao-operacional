@@ -98,12 +98,12 @@ footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
   <div class="cards">
     <a class="card" href="roadmap/guia.html">
       <div class="t">Roadmap Comercial &#128274;</div>
-      <div class="d">Guia de execução comercial da rede, com acompanhamento sincronizado entre aparelhos. Acesso por senha.</div>
+      <div class="d">Guia de execução comercial da rede.</div>
       <span class="go">Entrar →</span>
     </a>
     <a class="card" href="estrategia/">
       <div class="t">Planejamento Estratégico &#128274;</div>
-      <div class="d">Acompanhamento das ações estratégicas e dos follow-ups das reuniões. Mesma senha do Roadmap.</div>
+      <div class="d">Acompanhamento das ações estratégicas e dos follow-ups das reuniões.</div>
       <span class="go">Entrar →</span>
     </a>
     <a class="card" href="roadmap/resumo.html">
@@ -237,11 +237,21 @@ async function eventosTodos(){
       const base={};
       Object.keys((ct&&ct.dados&&ct.dados.EXECUCOES)||{}).forEach(id=>base[id]=Object.assign({},ct.dados.EXECUCOES[id]));
       Object.keys((ex&&ex.dados)||{}).forEach(id=>base[id]=Object.assign(base[id]||{},ex.dados[id]));
+      /* novas seguem a numeração sequencial das oficiais (18, 19…) — mesma
+         conta do Guia, para dados antigos ainda gravados com 101+ */
+      const novasL=((ex&&ex.novas)||[]).filter(n=>n&&n.id&&n.criadaEm).slice()
+        .sort((a,b)=>((a.em||a.criadaEm||'')+'').localeCompare((b.em||b.criadaEm||'')+'')||a.id-b.id);
+      let prox=18;
+      novasL.forEach(n=>{
+        if(n.id!==prox&&base[n.id]!==undefined&&base[prox]===undefined){base[prox]=base[n.id];delete base[n.id];}
+        n.id=prox;prox++;
+      });
       Object.keys(base).forEach(id=>{
         const e=base[id]||{};
-        if(e.status==='concluido'&&e.data)out.lista.push({painel:'rc',id:+id,tit:tit[id]||'',data:e.data,por:e.por||'',txt:'Ação concluída ✓',tp:'c',ord:e.quando||e.data});
+        const nv=novasL.find(n=>n.id===+id);
+        if(e.status==='concluido'&&e.data)out.lista.push({painel:'rc',id:+id,tit:tit[id]||(nv&&nv.acao)||'',data:e.data,por:e.por||'',txt:'Ação concluída ✓',tp:'c',ord:e.quando||e.data});
       });
-      ((ex&&ex.novas)||[]).forEach(n=>{if(n&&n.id&&n.criadaEm)out.lista.push({painel:'rc',id:n.id,tit:n.acao||'',data:n.criadaEm,por:n.por||'',txt:'Ação nova adicionada ao plano',tp:'n',ord:n.em||n.criadaEm});});
+      novasL.forEach(n=>out.lista.push({painel:'rc',id:n.id,tit:n.acao||'',data:n.criadaEm,por:n.por||'',txt:'Ação nova adicionada ao plano',tp:'n',ord:n.em||n.criadaEm}));
       out.rc=true;
     }catch(e){if(e.message==='sem-chave')out.trave=true;}
   }
