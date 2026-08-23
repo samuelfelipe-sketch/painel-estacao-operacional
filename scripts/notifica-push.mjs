@@ -14,8 +14,16 @@ const m = msg.match(/novo follow-up de (.+) na ação (\d+)/i);
 if (!m) { console.log('commit sem follow-up novo — nada a enviar'); process.exit(0); }
 const corpo = `Novo follow-up de ${m[1]} na ação ${m[2]}.`;
 
-const pub = process.env.VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY, subsPriv = process.env.SUBS_PRIVATE_KEY_B64;
+/* Segredos colados no GitHub costumam vir com espaços ou quebra de linha no
+   fim — aparamos tudo antes de validar. */
+const limpa = (s) => (s || '').replace(/\s+/g, '');
+const pub = limpa(process.env.VAPID_PUBLIC_KEY), priv = limpa(process.env.VAPID_PRIVATE_KEY), subsPriv = limpa(process.env.SUBS_PRIVATE_KEY_B64);
 if (!pub || !priv || !subsPriv) { console.log('segredos ausentes (VAPID_PRIVATE_KEY / PUSH_SUBS_PRIVATE_KEY) — configure em Settings > Secrets'); process.exit(0); }
+const bytes = (b64) => { try { return Buffer.from(b64.replace(/-/g, '+').replace(/_/g, '/'), 'base64').length; } catch { return 0; } };
+if (bytes(priv) !== 32 || bytes(pub) !== 65) {
+  console.log('ERRO: chave VAPID com formato inesperado — regrave o secret VAPID_PRIVATE_KEY em Settings > Secrets and variables > Actions colando só o valor da chave.');
+  process.exit(1);
+}
 webpush.setVapidDetails('mailto:samuel@estacaosapatao.com.br', pub, priv);
 const chave = createPrivateKey({ key: Buffer.from(subsPriv, 'base64'), format: 'der', type: 'pkcs8' });
 
