@@ -60,12 +60,34 @@ const st=document.getElementById('fx-status'),msg=document.getElementById('fx-ms
 const espera=document.getElementById('fx-espera'),frame=document.getElementById('fx-frame');
 let bootado=false;
 function diz(pill,texto){st.textContent=pill;msg.textContent=texto;}
+/* pele Estação Sapatão sobre a ferramenta: mesma tipografia, cartões e
+   cabeçalhos de tabela dos painéis, e sem os textos instrucionais — tudo
+   injetado na exibição, sem alterar o arquivo publicado */
+const SKIN='<style>'
+ +"@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@600&display=swap');"
+ +".viz-root{font-family:'Archivo',sans-serif!important;--page:#F4F6F9;--surface-1:#FFFFFF;--border:#E4E9F0;--grid:#E4E9F0;--text-primary:#16211C;--text-secondary:#5F6C7B;--text-muted:#8A95A1;--baseline:#D7DEE6}"
+ +"body{font-family:'Archivo',sans-serif!important}"
+ +".wrap>.sub:not(#status){display:none}"
+ +".desc{display:none}"
+ +"footer{display:none}"
+ +".brandlogo-l,.brandlogo-d{display:none!important}"
+ +"h1{font-family:'Archivo',sans-serif;font-weight:800;color:#16211C}"
+ +"h2{font-family:'Archivo',sans-serif;font-weight:800;color:#16211C}"
+ +".card{border-radius:14px;box-shadow:0 1px 4px rgba(20,30,45,.05)}"
+ +".sheet thead th{background:#0E3E36!important;color:#fff!important;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.04em}"
+ +".sheet thead th.prev{color:#CFE0DA!important}"
+ +".sheet td{font-family:'IBM Plex Mono',monospace;font-size:12px}"
+ +".sheet td.cat{font-family:'Archivo',sans-serif}"
+ +".navsel,.navbtn{font-family:'Archivo',sans-serif;border-radius:12px}"
+ +'</style>';
 function mostra(html){
   if(bootado)return;bootado=true;
   espera.hidden=true;frame.style.display='block';
   /* o site é claro; trava a ferramenta no tema claro dela mesmo com o
      aparelho em modo escuro (ela respeita data-theme="light") */
-  frame.srcdoc=html.replace(/<html(?=[\s>])/i,'<html data-theme="light"');
+  let h=html.replace(/<html(?=[\s>])/i,'<html data-theme="light"');
+  h=/<\/body>/i.test(h)?h.replace(/<\/body>/i,SKIN+'</body>'):h+SKIN;
+  frame.srcdoc=h;
 }
 async function pega(){
   const path='fluxo/dados.enc.json';
