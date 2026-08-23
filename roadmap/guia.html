@@ -222,6 +222,12 @@ tr.late td{background:#FCF0ED!important}
 /* usuário sem permissão de edição: campos travados */
 body.so-leitura .exec-status,body.so-leitura .exec-data,body.so-leitura .exec-obs{pointer-events:none;opacity:.65;background:#F4F4F2!important}
 body.so-leitura #btn-importar{display:none}
+body.so-leitura #nv-abrir,body.so-leitura #nv-form,body.so-leitura .nv-rem{display:none}
+.pill.nova{background:#F7E1D1;color:var(--laranja-escuro)}
+.nv-grid{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:720px){.nv-grid{grid-template-columns:2fr 1fr 1fr 1fr 1fr}}
+#nv-form input,#nv-form select{font-family:'Archivo',sans-serif;font-size:14px;border:1px solid var(--linha);border-radius:8px;padding:9px 11px;background:#fff;color:var(--verde);width:100%;box-sizing:border-box}
+.nv-rem{background:none;border:none;color:#8C1D18;font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline}
 
 /* cartões (celular) */
 #exec-cards{display:none}
@@ -483,11 +489,26 @@ async function cifraArquivo(path){
 function boot(){
 const CHAVE_LS='sapatao-execucoes-v1';
 let salvoEm=0;
+/* ações criadas DEPOIS da imersão: vivem na base de dados (não no roadmap
+   oficial) e carregam autor + data de criação — rastreáveis pelo selo NOVA */
+let NOVAS=[];
+function aplicaNovas(lista){
+  NOVAS=(lista||[]).filter(function(n){return n&&n.id&&n.acao&&n.prazo;});
+  ACOES=ACOES.filter(function(a){return !a.nova;});
+  NOVAS.forEach(function(n){
+    ACOES.push({id:n.id,acao:n.acao,bloco:n.bloco||'—',resp:n.resp||'—',prazo:n.prazo,gut:n.gut||0,nova:true,criadaEm:n.criadaEm||'',por:n.por||''});
+    if(!EXECUCOES[n.id])EXECUCOES[n.id]={status:'aberto',data:'',obs:''};
+  });
+}
 try{
   const sv=JSON.parse(localStorage.getItem(CHAVE_LS)||'null');
-  if(sv&&sv.dados){Object.keys(sv.dados).forEach(function(k){if(EXECUCOES[k])Object.assign(EXECUCOES[k],sv.dados[k]);});salvoEm=sv.salvoEm||1;}
+  if(sv){
+    aplicaNovas(sv.novas);
+    if(sv.dados)Object.keys(sv.dados).forEach(function(k){if(EXECUCOES[k])Object.assign(EXECUCOES[k],sv.dados[k]);});
+    salvoEm=sv.salvoEm||1;
+  }
 }catch(e){/* ambiente sem localStorage (ex.: artefato) — segue sem persistência */}
-function gravaLocal(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:2,salvoEm:salvoEm,dados:EXECUCOES}));}catch(e){}}
+function gravaLocal(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:2,salvoEm:salvoEm,dados:EXECUCOES,novas:NOVAS}));}catch(e){}}
 function salva(){if(document.body.classList.contains('so-leitura'))return;salvoEm=Date.now();gravaLocal();agendaPublicacao();}
 const aberto=new Set();
 let ordem={chave:'prazo',dir:1};
@@ -504,6 +525,19 @@ const HOJE=hojeLocal();
 function fmt(iso){const p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function estaAtrasada(a){return EXECUCOES[a.id].status!=='concluido'&&a.prazo<HOJE;}
+function novaBadge(a){return ' <span class="pill nova" title="Criada p\u00f3s-imers\u00e3o'+(a.criadaEm?' em '+fmt(a.criadaEm):'')+(a.por?' por '+esc(a.por):'')+'">NOVA</span>';}
+document.addEventListener('click',function(e){
+  const b=e.target.closest('.nv-rem');if(!b)return;
+  if(document.body.classList.contains('so-leitura'))return;
+  const id=+b.dataset.rem;
+  const n=NOVAS.find(function(x){return x.id===id;});
+  if(!n)return;
+  if(!confirm('Remover a a\u00e7\u00e3o "'+n.acao+'" do plano? (S\u00f3 a\u00e7\u00f5es p\u00f3s-imers\u00e3o podem ser removidas.)'))return;
+  NOVAS=NOVAS.filter(function(x){return x.id!==id;});
+  delete EXECUCOES[id];
+  aplicaNovas(NOVAS);
+  salva();renderAll();
+});
 function opcoes(ok,id){return '<option value="aberto"'+(ok?'':' selected')+'>Em aberto</option><option value="concluido"'+(ok?' selected':'')+'>&#10004; Concluído</option>';}
 function ordenadas(){
   const l=ACOES.slice();
@@ -535,7 +569,7 @@ function renderPainel(){
     const e=EXECUCOES[a.id],late=!ok&&a.prazo<HOJE;
     const badge=ok?fmt(e.data||a.prazo).slice(0,5):fmt(a.prazo).slice(0,5);
     return '<div class="prazo'+(ok?' done':'')+'"><div class="data'+(ok?' ok':(late?' urgente':''))+'">'+(ok?'&#10004; ':'')+badge+'</div>'
-      +'<div class="acao"><b>'+a.acao+'</b><div class="meta-line">'+a.bloco+' · '+a.resp+' · ('+a.gut+')'
+      +'<div class="acao"><b>'+a.acao+'</b>'+(a.nova?' <span class="pill nova">NOVA</span>':'')+'<div class="meta-line">'+a.bloco+' · '+a.resp+' · ('+a.gut+')'
       +(ok?' · concluída em '+fmt(e.data||a.prazo):(late?' · <b style="color:var(--laranja-escuro)">atrasada</b>':''))+'</div></div></div>';
   }
   let html='',mesAtual='';
@@ -577,7 +611,7 @@ function renderAll(){
     const e=EXECUCOES[a.id],ok=e.status==='concluido',late=estaAtrasada(a);
     if(ok)done++;if(late)atrasadas++;
     return '<tr data-acao="'+a.id+'" class="'+(ok?'done':'')+(late?' late':'')+'">'
-      +'<td><b>'+a.id+'</b></td><td>'+a.acao+'</td><td>'+a.bloco+'</td><td>'+a.resp+'</td>'
+      +'<td><b>'+a.id+'</b></td><td>'+a.acao+(a.nova?novaBadge(a)+'<div><button type="button" class="nv-rem" data-rem="'+a.id+'">remover</button></div>':'')+'</td><td>'+a.bloco+'</td><td>'+a.resp+'</td>'
       +'<td style="white-space:nowrap">'+fmt(a.prazo)+(late?'<span class="tag-late">&#9888; Atrasada</span>':'')+'</td>'
       +'<td><b'+(a.gut>=125?' style="color:var(--laranja)"':'')+'>'+a.gut+'</b></td>'
       +'<td><select class="exec-status'+(ok?' ok':'')+'" aria-label="Status da ação '+a.id+'">'+opcoes(ok,a.id)+'</select></td>'
@@ -588,12 +622,12 @@ function renderAll(){
     const e=EXECUCOES[a.id],ok=e.status==='concluido',late=estaAtrasada(a),ab=aberto.has(a.id);
     return '<div class="acard'+(ok?' done':'')+(late?' late':'')+(ab?' open':'')+'" data-acao="'+a.id+'">'
       +'<button type="button" class="acard-head" aria-expanded="'+ab+'">'
-      +'<span class="acard-num">'+a.id+'</span><span class="acard-tit">'+a.acao+'</span>'
+      +'<span class="acard-num">'+a.id+'</span><span class="acard-tit">'+a.acao+(a.nova?novaBadge(a):'')+'</span>'
       +'<span class="acard-flags">'+(late?'<span class="flag late">&#9888; Atrasada</span>':'')
       +'<span class="flag '+(ok?'ok':'aberta')+'">'+(ok?'&#10004; Concluída':'Em aberto')+'</span></span>'
       +'<span class="acard-chev"></span></button>'
       +'<div class="acard-body">'
-      +'<div class="acard-meta">'+a.bloco+' · '+a.resp+' · Prazo <b>'+fmt(a.prazo)+'</b> · G×U×T <b>'+a.gut+'</b></div>'
+      +'<div class="acard-meta">'+a.bloco+' · '+a.resp+' · Prazo <b>'+fmt(a.prazo)+'</b> · G×U×T <b>'+a.gut+'</b>'+(a.nova?'<br>Criada p\u00f3s-imers\u00e3o'+(a.criadaEm?' em '+fmt(a.criadaEm):'')+(a.por?' por '+esc(a.por):'')+' · <button type="button" class="nv-rem" data-rem="'+a.id+'">remover</button>':'')+'</div>'
       +'<div class="acard-campo"><label>Status</label><select class="exec-status'+(ok?' ok':'')+'" aria-label="Status da ação '+a.id+'">'+opcoes(ok,a.id)+'</select></div>'
       +'<div class="acard-campo"><label>Data de execução</label><input type="date" class="exec-data" value="'+e.data+'" aria-label="Data de execução da ação '+a.id+'"></div>'
       +'<div class="acard-campo"><label>Observações</label><textarea class="exec-obs" placeholder="Observações…" aria-label="Observações da ação '+a.id+'">'+esc(e.obs)+'</textarea></div>'
@@ -643,7 +677,7 @@ document.querySelectorAll('th.th-sort').forEach(function(th){th.addEventListener
 /* --- Exportar / importar os dados preenchidos --- */
 var btnExp=document.getElementById('btn-exportar'),btnImp=document.getElementById('btn-importar'),impFile=document.getElementById('imp-file');
 if(btnExp)btnExp.addEventListener('click',function(){
-  var blob=new Blob([JSON.stringify({v:1,exportadoEm:hojeLocal(),dados:EXECUCOES},null,2)],{type:'application/json'});
+  var blob=new Blob([JSON.stringify({v:1,exportadoEm:hojeLocal(),dados:EXECUCOES,novas:NOVAS},null,2)],{type:'application/json'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sapatao-execucoes-'+hojeLocal()+'.json';
   document.body.appendChild(a);a.click();a.remove();
 });
@@ -654,6 +688,7 @@ if(impFile)impFile.addEventListener('change',function(){
   r.onload=function(){
     try{
       var j=JSON.parse(r.result),d=j.dados||j,n=0;
+      if(Array.isArray(j.novas)&&j.novas.length){aplicaNovas(j.novas);n+=j.novas.length;}
       Object.keys(d).forEach(function(k){if(EXECUCOES[k]&&d[k]&&typeof d[k]==='object'){Object.assign(EXECUCOES[k],d[k]);n++;}});
       salva();renderAll();
       alert(n?('Dados de '+n+' a\u00e7\u00f5es importados com sucesso.'):'Nenhum dado reconhecido nesse arquivo.');
@@ -662,6 +697,47 @@ if(impFile)impFile.addEventListener('change',function(){
   };
   r.readAsText(f);
 });
+/* --- adicionar ação (pós-imersão) --- */
+(function(){
+  const barra=document.querySelector('#gut .exec-ordem');
+  if(!barra)return;
+  const btn=document.createElement('button');
+  btn.type='button';btn.id='nv-abrir';btn.className='ord-btn';
+  btn.textContent='+ Adicionar a\u00e7\u00e3o';
+  barra.appendChild(btn);
+  const form=document.createElement('div');
+  form.id='nv-form';form.className='card';form.hidden=true;
+  form.innerHTML='<h3 style="margin-top:2px">Nova a\u00e7\u00e3o \u2014 p\u00f3s-imers\u00e3o</h3>'
+    +'<p class="lead" style="margin:4px 0 10px">Entra no plano com o selo <span class="pill nova">NOVA</span>: fica registrado que ela nasceu depois do Roadmap da imers\u00e3o, com autor e data de cria\u00e7\u00e3o. As 17 a\u00e7\u00f5es oficiais n\u00e3o mudam.</p>'
+    +'<div class="nv-grid">'
+    +'<input type="text" id="nv-acao" placeholder="A\u00e7\u00e3o (o que ser\u00e1 feito)" maxlength="140">'
+    +'<select id="nv-bloco" aria-label="Pilar"><option>Mentalidade</option><option>Pessoas</option><option>Processos</option><option>Atra\u00e7\u00e3o</option><option>Convers\u00e3o</option><option>Escala</option></select>'
+    +'<input type="text" id="nv-resp" placeholder="Respons\u00e1vel">'
+    +'<input type="date" id="nv-prazo" aria-label="Prazo">'
+    +'<input type="number" id="nv-gut" placeholder="G\u00d7U\u00d7T (opcional)" min="0" max="125">'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="cfg-btn" id="nv-salvar" style="margin-top:0">Adicionar ao plano</button><button type="button" class="ord-btn" id="nv-cancelar">Cancelar</button></div>'
+    +'<p class="lead" id="nv-msg" style="margin:8px 0 0;color:#8C1D18"></p>';
+  barra.parentNode.insertBefore(form,barra.nextSibling);
+  btn.addEventListener('click',function(){form.hidden=!form.hidden;if(!form.hidden)document.getElementById('nv-acao').focus();});
+  document.getElementById('nv-cancelar').addEventListener('click',function(){form.hidden=true;});
+  document.getElementById('nv-salvar').addEventListener('click',function(){
+    const acao=document.getElementById('nv-acao').value.trim();
+    const prazo=document.getElementById('nv-prazo').value;
+    const resp=document.getElementById('nv-resp').value.trim();
+    const gut=Math.max(0,Math.min(125,+document.getElementById('nv-gut').value||0));
+    const msg=document.getElementById('nv-msg');
+    if(!acao){msg.textContent='Escreva a a\u00e7\u00e3o.';return;}
+    if(!prazo){msg.textContent='Escolha o prazo.';return;}
+    let id=100;ACOES.forEach(function(a){if(a.id>id)id=a.id;});id++;
+    const A=window.sapataoAuth;
+    NOVAS.push({id:id,acao:acao,bloco:document.getElementById('nv-bloco').value,resp:resp||'\u2014',prazo:prazo,gut:gut,criadaEm:HOJE,por:(A&&A.user?A.user.nome:'')});
+    aplicaNovas(NOVAS);
+    salva();renderAll();
+    msg.textContent='';form.hidden=true;
+    document.getElementById('nv-acao').value='';document.getElementById('nv-resp').value='';document.getElementById('nv-prazo').value='';document.getElementById('nv-gut').value='';
+  });
+})();
 renderAll();
 
 /* --- Sincronização automática entre aparelhos ---
@@ -702,7 +778,7 @@ async function leRemoto(){
     if(!ab)throw new Error('sem a chave dos dados');
     doc=ab;
   }
-  return{sha:j.sha,salvoEm:doc.salvoEm||0,dados:doc.dados||null};
+  return{sha:j.sha,salvoEm:doc.salvoEm||0,dados:doc.dados||null,novas:doc.novas||[]};
 }
 async function publica(){
   if(!tokenSync()){chip('','Nuvem: só leitura — saia e entre com a senha para ativar a publicação');return;}
@@ -716,7 +792,7 @@ async function publica(){
     }
     if(rem.dados&&rem.salvoEm>salvoEm){aplicaRemoto(rem);return;}
     const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
-    let carga={v:2,salvoEm:salvoEm,dados:EXECUCOES};
+    let carga={v:2,salvoEm:salvoEm,dados:EXECUCOES,novas:NOVAS};
     if(window.sapataoCofre.dek())carga=await window.sapataoCofre.cifra(carga);
     const body={message:'chore: sincroniza execu\u00e7\u00f5es do Roadmap Comercial (autom\u00e1tico)',branch:'main',
                 content:b64enc(JSON.stringify(carga,null,2))};
@@ -742,6 +818,7 @@ async function recuperaChaveNuvem(){
   return !!tokenSync();
 }
 function aplicaRemoto(rem){
+  aplicaNovas(rem.novas||[]);
   Object.keys(rem.dados).forEach(function(k){if(EXECUCOES[k])Object.assign(EXECUCOES[k],rem.dados[k]);});
   salvoEm=rem.salvoEm;gravaLocal();renderAll();chip('ok','Nuvem: sincronizado');
 }
