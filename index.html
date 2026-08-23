@@ -282,7 +282,7 @@ function renderNotifsCentral(ev){
   if(!ev.lista.length){notifLista.innerHTML='<div class="notif-vazio">Nenhuma novidade ainda. Follow-ups, conclusões e ações novas aparecem aqui.</div>';return;}
   notifLista.innerHTML=ev.lista.map(x=>'<div class="notif-item'+((vPE&&(x.painel==='pe'?vPE:vRC).has(chaveDe(x))||minhaN(x))?'':' nova')+'" data-painel="'+x.painel+'" role="button" tabindex="0">'
     +'<div class="notif-meta">'+fmtN(x.data)+horaN(x.ord)+(x.por?' — '+escN(x.por):'')+'</div>'
-    +'<div class="notif-acao">'+(x.painel==='pe'?'Planejamento':'Roadmap')+' · Ação '+x.id+(x.tit?' · '+escN(x.tit):'')+'</div>'
+    +'<div class="notif-acao">'+(x.painel==='pe'?'Planejamento Estratégico':'Roadmap Comercial')+' · Ação '+x.id+(x.tit?' · '+escN(x.tit):'')+'</div>'
     +'<div class="notif-txt">'+escN(x.txt)+'</div></div>').join('');
 }
 async function abreNotifsCentral(){
