@@ -11,7 +11,7 @@ self.addEventListener('push', function (e) {
     body: dados.body || 'Novidade nos painéis.',
     icon: 'icon-192.png',
     badge: 'icon-192.png',
-    data: { url: dados.url || './estrategia/' }
+    data: { url: dados.url || './estrategia/#notificacoes' }
   };
   e.waitUntil(self.registration.showNotification(titulo, opcoes));
 });
