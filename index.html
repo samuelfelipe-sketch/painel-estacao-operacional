@@ -40,6 +40,9 @@ h1 span{color:var(--laranja);font-style:italic}
 .login-linha button:hover{background:var(--laranja-escuro)}
 .login-erro{color:#8C1D18;font-size:12.5px;margin-top:8px;display:none}
 .login-erro.on{display:block}
+a.card.card-sem{opacity:.55;filter:grayscale(.4);pointer-events:none;border-left-color:var(--linha)}
+a.card.card-sem .go{display:none}
+a.card .selo-sem{display:inline-block;margin-top:14px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--verde-suave);background:#E3E3E0;border-radius:20px;padding:4px 12px}
 .login-ok{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
 .login-ok[hidden],.login-box [hidden]{display:none!important}
 .login-ok .sair{font-weight:700;font-size:12.5px;color:#8C1D18;background:none;border:1px solid #E8B3AE;border-radius:14px;padding:4px 12px;cursor:pointer}
@@ -126,6 +129,20 @@ function pinta(){
   form.hidden=!!logado;ok.hidden=!logado;
   document.getElementById('login-titulo').textContent=logado?'Sessão ativa em todos os painéis':'Entrar uma vez — vale para todos os painéis';
   if(logado)document.getElementById('lg-nome').textContent=A.user.nome;
+  aplicaAcessoCards();
+}
+/* logado sem permissão num painel: o cartão fica esmaecido, sem clique,
+   com o selo "Sem acesso" — deslogado vê tudo normal */
+function aplicaAcessoCards(){
+  [['roadmap/guia.html','roadmap'],['estrategia/','pe']].forEach(function(par){
+    const card=document.querySelector('a.card[href="'+par[0]+'"]');
+    if(!card)return;
+    const sem=!!(A&&A.user)&&!A.temAcesso(par[1]);
+    card.classList.toggle('card-sem',sem);
+    let selo=card.querySelector('.selo-sem');
+    if(sem&&!selo){selo=document.createElement('span');selo.className='selo-sem';selo.textContent='Sem acesso — fale com o administrador';card.appendChild(selo);}
+    if(!sem&&selo)selo.remove();
+  });
 }
 async function entrar(){
   const u=document.getElementById('lg-user').value,s=document.getElementById('lg-senha').value;
