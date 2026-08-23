@@ -52,7 +52,7 @@ td{color:var(--tinta);border-bottom:1px solid #EEF1F5}
 .topbar{background:#fff;color:var(--tinta);box-shadow:0 1px 0 #E9EDF2}
 .topbar img{display:none} /* o logo horizontal é claro — some no fundo branco */
 .topbar .t{font-family:'Archivo',sans-serif;font-weight:700;color:var(--tinta)}
-.topbar .t i{color:var(--laranja);font-style:normal}
+.topbar .t i{color:inherit;font-style:normal}
 .topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:var(--tinta);box-shadow:var(--sombra)}
 
 /* ---------- menu lateral: logo 20% menor ---------- */
