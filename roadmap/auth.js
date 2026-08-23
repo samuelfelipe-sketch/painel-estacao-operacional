@@ -143,6 +143,8 @@
   window.sapataoSair = function () {
     try { sessionStorage.removeItem(CHAVE); } catch (e) {}
     try { localStorage.removeItem(CHAVE); } catch (e) {}
+    /* solta as cópias locais do conteúdo: a próxima entrada baixa tudo fresco */
+    try { localStorage.removeItem('sapatao-conteudo-roadmap-v1'); localStorage.removeItem('sapatao-conteudo-pe-v1'); } catch (e) {}
     /* aproveita a saída para rebuscar os arquivos do app direto da rede
        (atualiza o cache do navegador) e conferir se há sw.js novo — assim a
        próxima carga já vem com a última versão publicada do site */
