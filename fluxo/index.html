@@ -64,22 +64,45 @@ function diz(pill,texto){st.textContent=pill;msg.textContent=texto;}
    cabeçalhos de tabela dos painéis, e sem os textos instrucionais — tudo
    injetado na exibição, sem alterar o arquivo publicado */
 const SKIN='<style>'
- +"@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@600&display=swap');"
- +".viz-root{font-family:'Archivo',sans-serif!important;--page:#F4F6F9;--surface-1:#FFFFFF;--border:#E4E9F0;--grid:#E4E9F0;--text-primary:#16211C;--text-secondary:#5F6C7B;--text-muted:#8A95A1;--baseline:#D7DEE6}"
+ +"@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');"
+ +".viz-root{font-family:'Archivo',sans-serif!important;--page:#F4F6F9;--surface-1:#FFFFFF;--border:#EBEEF3;--grid:#E4E9F0;--text-primary:#16211C;--text-secondary:#5F6C7B;--text-muted:#8A95A1;--baseline:#D7DEE6}"
  +"body{font-family:'Archivo',sans-serif!important}"
  +".wrap>.sub:not(#status){display:none}"
  +".desc{display:none}"
  +"footer{display:none}"
  +".brandlogo-l,.brandlogo-d{display:none!important}"
- +"h1{font-family:'Archivo',sans-serif;font-weight:800;color:#16211C}"
- +"h2{font-family:'Archivo',sans-serif;font-weight:800;color:#16211C}"
- +".card{border-radius:14px;box-shadow:0 1px 4px rgba(20,30,45,.05)}"
+ /* título no padrão dos painéis: Archivo 800 grande, 2ª palavra laranja */
+ +"h1{font-family:'Archivo',sans-serif;font-weight:800;letter-spacing:-.01em;color:#16211C;font-size:clamp(22px,5.5vw,38px);line-height:1.1}"
+ +"h1 span{color:#EC6C22}"
+ /* linha de status discreta, em mono, como os rótulos dos painéis */
+ +"#status{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.03em;color:#8A95A1;margin-top:6px}"
+ /* títulos dos cartões = rótulos de seção dos painéis (mono, caps) */
+ +".card h2{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#5F6C7B;margin-bottom:10px}"
+ +".card{border:1px solid #EBEEF3;border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.06),0 2px 6px rgba(16,24,40,.05)}"
+ /* KPIs no visual das .bomba dos painéis: borda lateral laranja,
+    rótulo mono em caixa alta, valor mono grande e escuro */
+ +".tile{border:1px solid #EBEEF3;border-left:5px solid #EC6C22;border-radius:14px;box-shadow:0 1px 2px rgba(16,24,40,.06),0 2px 6px rgba(16,24,40,.05)}"
+ +".tile .label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5F6C7B}"
+ +".tile .value{font-family:'IBM Plex Mono',monospace;font-size:23px;font-weight:600;margin-top:4px}"
  +".sheet thead th{background:#0E3E36!important;color:#fff!important;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.04em}"
+ +".sheet thead th:first-child{border-radius:10px 0 0 0}"
+ +".sheet thead th:last-child{border-radius:0 10px 0 0}"
  +".sheet thead th.prev{color:#CFE0DA!important}"
  +".sheet td{font-family:'IBM Plex Mono',monospace;font-size:12px}"
  +".sheet td.cat{font-family:'Archivo',sans-serif}"
- +".navsel,.navbtn{font-family:'Archivo',sans-serif;border-radius:12px}"
- +'</style>';
+ /* controles de navegação = botões brancos da barra do site */
+ +".navsel,.navbtn{font-family:'Archivo',sans-serif;font-weight:700;color:#16211C;border:1px solid #E4E9F0;border-radius:12px;box-shadow:0 1px 2px rgba(16,24,40,.06),0 2px 6px rgba(16,24,40,.05)}"
+ +".navbtn{background:#fff}"
+ +".navsel{background-color:#fff}"
+ +".navbtn:hover{background:#F7F9FB}"
+ +".navinfo{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.03em;color:#8A95A1}"
+ /* pílulas de alternância (semanal/mensal etc.) como as pills do site */
+ +".fcbtn,.trbtn{border-radius:999px;font-family:'Archivo',sans-serif;font-weight:700}"
+ +'</style>'
+ /* título "Fluxo de caixa AAAA — ..." vira "Fluxo de Caixa" no padrão do site */
+ +'<scr'+'ipt>(function(){var h=document.querySelector("h1");'
+ +'if(h&&/fluxo de caixa/i.test(h.textContent)){h.innerHTML="Fluxo de <span>Caixa</span>";}'
+ +'})();<\/scr'+'ipt>';
 function mostra(html){
   if(bootado)return;bootado=true;
   espera.hidden=true;frame.style.display='block';
