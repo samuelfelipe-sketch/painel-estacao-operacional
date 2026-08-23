@@ -506,6 +506,20 @@ let salvoEm=0;
 /* ações criadas DEPOIS da imersão: vivem na base de dados (não no roadmap
    oficial) e carregam autor + data de criação — rastreáveis pelo selo NOVA */
 let NOVAS=[];
+/* numeração sequencial: as novas seguem as oficiais (18, 19…) na ordem de
+   criação; dados antigos com 101+ são renumerados aqui (e as entradas de
+   status/obs acompanham) — mesma conta em todo aparelho, resultado igual */
+function renumeraNovas(lista,dados){
+  lista=(lista||[]).filter(function(n){return n&&n.id;}).slice()
+    .sort(function(a,b){return ((a.em||a.criadaEm||'')+'').localeCompare((b.em||b.criadaEm||'')+'')||a.id-b.id;});
+  let prox=1;ACOES.forEach(function(a){if(!a.nova&&a.id>=prox)prox=a.id+1;});
+  if(prox<18)prox=18;
+  lista.forEach(function(n){
+    if(n.id!==prox&&dados&&dados[n.id]!==undefined&&dados[prox]===undefined){dados[prox]=dados[n.id];delete dados[n.id];}
+    n.id=prox;prox++;
+  });
+  return lista;
+}
 function aplicaNovas(lista){
   NOVAS=(lista||[]).filter(function(n){return n&&n.id&&n.acao&&n.prazo;});
   ACOES=ACOES.filter(function(a){return !a.nova;});
@@ -517,7 +531,7 @@ function aplicaNovas(lista){
 try{
   const sv=JSON.parse(localStorage.getItem(CHAVE_LS)||'null');
   if(sv){
-    aplicaNovas(sv.novas);
+    aplicaNovas(renumeraNovas(sv.novas,sv.dados||{}));
     if(sv.dados)Object.keys(sv.dados).forEach(function(k){if(EXECUCOES[k])Object.assign(EXECUCOES[k],sv.dados[k]);});
     salvoEm=sv.salvoEm||1;
   }
@@ -773,7 +787,7 @@ if(impFile)impFile.addEventListener('change',function(){
     const msg=document.getElementById('nv-msg');
     if(!acao){msg.textContent='Escreva a a\u00e7\u00e3o.';return;}
     if(!prazo){msg.textContent='Escolha o prazo.';return;}
-    let id=100;ACOES.forEach(function(a){if(a.id>id)id=a.id;});id++;
+    let id=17;ACOES.forEach(function(a){if(a.id>id)id=a.id;});id++;
     const A=window.sapataoAuth;
     NOVAS.push({id:id,acao:acao,bloco:document.getElementById('nv-bloco').value,resp:resp||'\u2014',prazo:prazo,gut:gut,criadaEm:HOJE,em:agoraISO(),por:(A&&A.user?A.user.nome:'')});
     aplicaNovas(NOVAS);
@@ -901,7 +915,7 @@ async function recuperaChaveNuvem(){
   return !!tokenSync();
 }
 function aplicaRemoto(rem){
-  aplicaNovas(rem.novas||[]);
+  aplicaNovas(renumeraNovas(rem.novas||[],rem.dados||{}));
   Object.keys(rem.dados).forEach(function(k){if(EXECUCOES[k])Object.assign(EXECUCOES[k],rem.dados[k]);});
   salvoEm=rem.salvoEm;gravaLocal();renderAll();chip('ok','Nuvem: sincronizado');
 }
