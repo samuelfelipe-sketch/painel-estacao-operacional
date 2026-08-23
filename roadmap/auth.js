@@ -158,7 +158,7 @@
       + '<h1 class="sptx-titulo">Sem <i>acesso</i></h1>'
       + '<p class="sptx-sub">O usuário <b>' + (A.user ? A.user.nome : '') + '</b> não tem acesso a este painel. Fale com o administrador para liberar a permissão.</p>'
       + '<button type="button" class="sptx-btn" onclick="location.href=\'../index.html\'">&#8592; Voltar à página inicial</button>'
-      + '<button type="button" class="sptx-btn" style="background:none;color:#3D6B60;margin-top:8px" onclick="window.sapataoSair()">Entrar com outro usuário</button></div>';
+      + '<button type="button" class="sptx-btn" style="background:none;color:#5F6C7B;margin-top:8px;box-shadow:none" onclick="window.sapataoSair()">Entrar com outro usuário</button></div>';
     function poe() { document.body.appendChild(d); }
     if (document.body) poe(); else document.addEventListener('DOMContentLoaded', poe);
   }
@@ -347,24 +347,24 @@
   var SPTX_CSS =
     'html.sptx-lock body{overflow:hidden}' +
     'html.sptx-lock body>*:not(.sptx-gate){display:none!important}' +
-    '.sptx-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px;background:#004438;font-family:"Archivo",-apple-system,sans-serif}' +
-    '.sptx-card{background:#fff;border-radius:16px;padding:36px 30px 30px;width:100%;max-width:390px;box-shadow:0 24px 60px rgba(0,0,0,.35)}' +
-    '.sptx-eyebrow{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:#EC6C22;margin-bottom:10px}' +
-    '.sptx-titulo{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:30px;line-height:1.1;color:#004438;margin:0 0 6px}' +
-    '.sptx-titulo i{color:#EC6C22;font-style:italic}' +
-    '.sptx-sub{font-size:13.5px;color:#3D6B60;margin:0 0 18px}' +
-    '.sptx-faixa{height:1px;background:#D8D8D3;margin:0 0 22px}' +
-    '.sptx-gate label.sptx-l{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3D6B60;margin-bottom:6px}' +
-    '.sptx-gate input[type=password],.sptx-gate input[type=text]{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:12px 14px;border:1.5px solid #D8D8D3;border-radius:10px;color:#004438;outline:none;background:#fff}' +
+    '.sptx-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px;background:#F4F6F9;font-family:"Archivo",-apple-system,sans-serif}' +
+    '.sptx-card{background:#fff;border:1px solid #EBEEF3;border-radius:18px;padding:36px 30px 30px;width:100%;max-width:390px;box-shadow:0 1px 2px rgba(16,24,40,.06),0 8px 28px rgba(16,24,40,.08)}' +
+    '.sptx-eyebrow{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:#5F6C7B;margin-bottom:10px}' +
+    '.sptx-titulo{font-family:"Archivo",-apple-system,sans-serif;font-weight:800;letter-spacing:-.01em;font-size:29px;line-height:1.1;color:#16211C;margin:0 0 6px}' +
+    '.sptx-titulo i{color:#EC6C22;font-style:normal}' +
+    '.sptx-sub{font-size:13.5px;color:#5F6C7B;margin:0 0 18px}' +
+    '.sptx-faixa{height:1px;background:#E4E9F0;margin:0 0 22px}' +
+    '.sptx-gate label.sptx-l{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5F6C7B;margin-bottom:6px}' +
+    '.sptx-gate input[type=password],.sptx-gate input[type=text]{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:12px 14px;border:1px solid #E4E9F0;border-radius:12px;color:#16211C;outline:none;background:#fff}' +
     '.sptx-gate input[type=password]:focus,.sptx-gate input[type=text]:focus{border-color:#EC6C22}' +
     '.sptx-campo{margin-bottom:14px}' +
-    '.sptx-erro{display:none;color:#8C1D18;background:#F9DEDC;border:1px solid #E8B3AE;border-radius:8px;font-size:13px;padding:8px 12px;margin-top:10px}' +
+    '.sptx-erro{display:none;color:#8C1D18;background:#F9DEDC;border:1px solid #E8B3AE;border-radius:10px;font-size:13px;padding:8px 12px;margin-top:10px}' +
     '.sptx-erro.on{display:block}' +
-    '.sptx-lembrar{display:flex;align-items:center;gap:8px;font-size:13px;color:#3D6B60;margin:14px 0 18px;cursor:pointer}' +
+    '.sptx-lembrar{display:flex;align-items:center;gap:8px;font-size:13px;color:#5F6C7B;margin:14px 0 18px;cursor:pointer}' +
     '.sptx-lembrar input{accent-color:#004438;width:16px;height:16px}' +
-    '.sptx-btn{width:100%;font-family:inherit;font-size:15px;font-weight:700;color:#fff;background:#EC6C22;border:none;border-radius:10px;padding:13px;cursor:pointer;transition:background .15s}' +
-    '.sptx-btn:hover{background:#C2531A}' +
-    '.sptx-rodape{font-size:11.5px;color:#3D6B60;text-align:center;margin-top:16px}' +
+    '.sptx-btn{width:100%;font-family:inherit;font-size:15px;font-weight:700;color:#fff;background:#004438;border:none;border-radius:12px;padding:13px;cursor:pointer;transition:background .15s;box-shadow:0 1px 2px rgba(16,24,40,.08)}' +
+    '.sptx-btn:hover{background:#00352C}' +
+    '.sptx-rodape{font-size:11.5px;color:#5F6C7B;text-align:center;margin-top:16px}' +
     '@keyframes sptxShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}' +
     '.sptx-card.shake{animation:sptxShake .35s}';
 
