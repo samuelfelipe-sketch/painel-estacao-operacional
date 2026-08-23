@@ -941,6 +941,18 @@ if(usTbl){
   if(navCfg)navCfg.addEventListener('click',()=>{const A=window.sapataoAuth;if(A&&A.user&&A.user.admin)usCarrega();});
 }
 
+/* nuvem acima dos filtros (o HTML vem do cofre) */
+(function(){
+  const filtros=document.querySelector('#acoes .ac-filtros');
+  const ch=document.getElementById('sync-chip');
+  if(!filtros||!ch)return;
+  const antiga=ch.parentElement;
+  const linha=document.createElement('div');
+  linha.style.cssText='margin:14px 0 0';
+  linha.appendChild(ch);
+  filtros.parentNode.insertBefore(linha,filtros);
+  if(antiga&&!antiga.children.length)antiga.remove();
+})();
 renderAll();renderPainel();atualizaCfg();aplicaPermissao();
 iniciaSync();buscaChaveNuvem();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)iniciaSync();});

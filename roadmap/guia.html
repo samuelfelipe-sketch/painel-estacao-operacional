@@ -697,6 +697,20 @@ if(impFile)impFile.addEventListener('change',function(){
   };
   r.readAsText(f);
 });
+/* --- barra do plano: nuvem em cima, sem Exportar/Importar --- */
+(function(){
+  const barra=document.querySelector('#gut .exec-ordem');
+  const ch=document.getElementById('sync-chip');
+  if(!barra||!ch)return;
+  ['btn-exportar','btn-importar','imp-file'].forEach(function(id){const el=document.getElementById(id);if(el)el.remove();});
+  document.querySelectorAll('#gut .lead,#gut p').forEach(function(p){
+    if(/Exportar dados/.test(p.innerHTML))p.innerHTML=p.innerHTML.replace(/\s*Use <b>Exportar dados<\/b>[^.]*\./,' Tudo sincroniza sozinho entre os aparelhos pela nuvem.');
+  });
+  const linha=document.createElement('div');
+  linha.style.cssText='margin:14px 0 0';
+  linha.appendChild(ch);
+  barra.parentNode.insertBefore(linha,barra);
+})();
 /* --- adicionar ação (pós-imersão) --- */
 (function(){
   const barra=document.querySelector('#gut .exec-ordem');
