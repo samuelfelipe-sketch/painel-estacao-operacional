@@ -44,15 +44,19 @@ tr:last-child td{border-bottom:none}
 .btn:hover{background:var(--verde-escuro)}
 .btn.destaque{background:var(--laranja)}
 .btn.sec{background:#fff;color:#8C1D18;border:1px solid #E8B3AE}
-.voltar{display:inline-block;font-weight:700;font-size:13px;color:var(--verde);background:#fff;border:1.5px solid var(--linha);border-radius:20px;padding:8px 16px;text-decoration:none;margin-bottom:22px}
-.voltar:hover{border-color:var(--laranja);color:var(--laranja-escuro)}
+.topbar{display:flex;position:sticky;top:0;z-index:70;background:#fff;color:#16211C;padding:12px 16px;align-items:center;gap:12px;min-height:58px;box-sizing:border-box}
+.topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:#16211C;font-size:18px;line-height:1;padding:6px 10px;cursor:pointer}
+.topbar .t{font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;flex:1;color:#16211C}
 .campo:focus,.us-tbl select:focus{outline:2px solid var(--laranja);outline-offset:1px}
 </style>
 <link rel="stylesheet" href="../tema.css">
 </head>
 <body>
+<div class="topbar">
+  <button type="button" onclick="location.href='../index.html'" aria-label="Voltar à central de acessos" title="Central de acessos">&#8592;</button>
+  <div class="t">Configura&ccedil;&otilde;es</div>
+</div>
 <div class="wrap">
-  <a class="voltar" href="../index.html">&#8592; Central de acessos</a>
   <div class="eyebrow">Estação Sapatão · Ajustes</div>
   <h1>Configurações</h1>
   <p class="sub">Conta, sincronização e usuários — num lugar só, para todos os painéis.</p>
