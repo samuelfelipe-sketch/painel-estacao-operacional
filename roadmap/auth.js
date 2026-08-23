@@ -193,9 +193,12 @@
     ls: LS_TOKEN,
     token: function () { try { return localStorage.getItem(LS_TOKEN) || ''; } catch (e) { return ''; } },
     grava: function (t) { try { if (t) localStorage.setItem(LS_TOKEN, t); else localStorage.removeItem(LS_TOKEN); } catch (e) {} },
-    /* baixa e abre o envelope do usuário logado (quando não há chave local) */
+    /* baixa e abre o envelope do usuário logado (quando falta a chave de
+       publicação OU a chave dos dados — um token velho no aparelho não pode
+       impedir a recuperação: o envelope traz o token atual e a DEK juntos) */
     busca: function () {
-      if (C.token() || !A.user || !A.pw || !window.crypto || !crypto.subtle) return Promise.resolve(false);
+      if (!A.user || !A.pw || !window.crypto || !crypto.subtle) return Promise.resolve(false);
+      if (C.token() && window.sapataoCofre.dek()) return Promise.resolve(false); /* já tem tudo */
       return fetch(KEY_URL + '?ref=main&t=' + Date.now(), { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' })
         .then(function (r) { if (!r.ok) throw 0; return r.json(); })
         .then(function (j) {
@@ -212,6 +215,9 @@
               var p = null; try { p = JSON.parse(t); } catch (e) {}
               if (p && p.t) { C.grava(p.t); if (p.k) window.sapataoCofre.gravaDek(p.k); }
               else C.grava(t);
+              /* envelope antigo sem a DEK: tenta o canal reserva com o token
+                 recém-recebido (dek.enc.json embrulhado pelo token) */
+              if (!window.sapataoCofre.dek()) return window.sapataoCofre.baixaDekPeloToken().then(function () { return true; });
               return true;
             }).catch(function () { return tenta(i + 1); });
           };
