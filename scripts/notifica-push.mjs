@@ -24,7 +24,7 @@ if (m) {
   autor = m[1];
   tipo = 'est';
   corpo = `${m[1]} ${m[2]} a ação ${m[3]} do ${m[4]}.`;
-  urlAlvo = /roadmap/i.test(m[4]) ? './roadmap/guia.html' : './estrategia/#notificacoes';
+  urlAlvo = /roadmap/i.test(m[4]) ? './roadmap/guia.html#notificacoes' : './estrategia/#notificacoes';
 }
 if (!corpo) { console.log('commit sem novidade para avisar — nada a enviar'); process.exit(0); }
 

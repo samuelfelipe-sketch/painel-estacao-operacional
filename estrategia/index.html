@@ -155,26 +155,7 @@ tr:last-child td{border-bottom:none}
 .sync-chip.ok{color:#1D6B3C;background:#E7F2EA;border-color:#BFDCC9}
 .sync-chip.erro{color:#8C1D18;background:#F9DEDC;border-color:#E8B3AE}
 .sync-chip.pendente{color:#92400E;background:#FEF3C7;border-color:#FDE68A}
-/* painel de notificações (histórico de follow-ups) */
-.notif-scrim{position:fixed;inset:0;background:rgba(15,25,20,.45);z-index:80;display:none}
-.notif-scrim.aberta{display:block}
-.notif-pane{position:fixed;z-index:81;top:0;right:0;bottom:0;width:min(430px,100%);background:#F4F6F9;box-shadow:-8px 0 30px rgba(20,30,45,.18);display:none;flex-direction:column}
-.notif-pane.aberta{display:flex}
-.notif-head{display:flex;align-items:center;gap:10px;padding:16px 18px;background:#fff;border-bottom:1px solid #E4E9F0}
-.notif-head h2{font-family:'Archivo',sans-serif;font-weight:800;font-size:18px;color:#16211C;margin:0;flex:1}
-.notif-x{background:#fff;border:1px solid #E4E9F0;border-radius:10px;font-size:15px;line-height:1;padding:6px 11px;cursor:pointer;color:#16211C}
-.notif-lista{flex:1;overflow-y:auto;padding:14px 16px}
-.notif-item{background:#fff;border:1px solid #E4E9F0;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(20,30,45,.05);cursor:pointer}
-.notif-item:hover{border-color:#C9D2DC}
-.notif-item.nova{border-left:4px solid var(--laranja,#EC6C22)}
-.notif-meta{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5F6C7B;margin-bottom:5px}
-.notif-acao{font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;color:var(--verde,#004438);margin-bottom:4px}
-.notif-txt{font-size:13.5px;color:#16211C;white-space:pre-wrap}
-.notif-vazio{color:#5F6C7B;text-align:center;padding:30px 10px}
-.notif-pe{padding:12px 16px;background:#fff;border-top:1px solid #E4E9F0;font-size:13px}
-.notif-pe a{color:var(--verde,#004438);font-weight:600}
-.sino-b{position:relative}
-.sino-dot{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--laranja,#EC6C22);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none}
+/* painel de notificações: estilos compartilhados no tema.css */
 
 /* --- filtros --- */
 .ac-filtros{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:13px;color:var(--verde-suave);flex-wrap:wrap}
@@ -637,7 +618,7 @@ cards.addEventListener('change',ev=>{
     EXEC[id].status=ev.target.value;
     if(ev.target.value==='concluido'&&!EXEC[id].dataConclusao)EXEC[id].dataConclusao=HOJE;
     if(ev.target.value!==antes){
-      if(ev.target.value==='concluido')notificaEstado(id,'concluiu');
+      if(ev.target.value==='concluido'){EXEC[id].concluidaPor=quem()||'';notificaEstado(id,'concluiu');}
       else if(antes==='concluido')notificaEstado(id,'reabriu');
     }
     salva();
@@ -1010,36 +991,43 @@ if(usTbl){
   filtros.parentNode.insertBefore(linha,filtros);
   if(antiga&&!antiga.children.length)antiga.remove();
 })();
-/* ============ Notificações: histórico de follow-ups ============ */
+/* ============ Notificações: follow-ups e conclusões ============ */
 const notifPane=document.getElementById('notif-pane'),notifScrim=document.getElementById('notif-scrim'),notifLista=document.getElementById('notif-lista');
 const LS_NOTIF='sapatao-notif-vistos-v1';
-function notifChave(id,f){let h=5381;const s=f.texto||'';for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return id+'|'+f.data+'|'+(f.por||'')+'|'+h;}
+function notifChave(x){
+  if(x.tp==='f'){let h=5381;const s=x.txt||'';for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return x.id+'|'+x.data+'|'+(x.por||'')+'|'+h;}
+  return x.tp+'|'+x.id+'|'+x.data+'|'+(x.por||'');
+}
 function notifVistos(){try{return new Set(JSON.parse(localStorage.getItem(LS_NOTIF)||'[]'));}catch(e){return new Set();}}
-/* follow-up registrado pelo próprio usuário já nasce lido para ele */
-function notifMinha(f){const eu=quem();return !!(eu&&f.por===eu);}
+/* o que o próprio usuário fez já nasce lido para ele */
+function notifMinha(x){const eu=quem();return !!(eu&&x.por===eu);}
 function notifTodas(){
   const l=[];
-  ACOES.forEach(a=>{(EXEC[a.id].followups||[]).forEach(f=>{if(!f.apagado)l.push({id:a.id,tit:a.acao,f:f});});});
-  l.sort((x,y)=>y.f.data.localeCompare(x.f.data)||y.id-x.id);
+  ACOES.forEach(a=>{
+    const e=EXEC[a.id];
+    (e.followups||[]).forEach(f=>{if(!f.apagado)l.push({id:a.id,tit:a.acao,data:f.data,por:f.por||'',txt:f.texto,tp:'f'});});
+    if(e.status==='concluido'&&e.dataConclusao)l.push({id:a.id,tit:a.acao,data:e.dataConclusao,por:e.concluidaPor||'',txt:'Ação concluída ✓',tp:'c'});
+  });
+  l.sort((x,y)=>y.data.localeCompare(x.data)||y.id-x.id);
   return l;
 }
 function pintaSino(){
   const vistos=notifVistos();
-  const n=notifTodas().filter(x=>!notifMinha(x.f)&&!vistos.has(notifChave(x.id,x.f))).length;
+  const n=notifTodas().filter(x=>!notifMinha(x)&&!vistos.has(notifChave(x))).length;
   document.querySelectorAll('.sino-dot').forEach(d=>{d.hidden=!n;d.textContent=n>99?'99+':n;});
 }
 function renderNotifs(){
   const vistos=notifVistos(),l=notifTodas();
-  if(!l.length){notifLista.innerHTML='<div class="notif-vazio">Nenhum follow-up registrado ainda. Quando alguém registrar um no Planejamento, ele aparece aqui.</div>';return;}
-  notifLista.innerHTML=l.map(x=>'<div class="notif-item'+((vistos.has(notifChave(x.id,x.f))||notifMinha(x.f))?'':' nova')+'" data-acao="'+x.id+'" role="button" tabindex="0">'
-    +'<div class="notif-meta">'+fmt(x.f.data)+(x.f.por?' — '+esc(x.f.por):'')+'</div>'
+  if(!l.length){notifLista.innerHTML='<div class="notif-vazio">Nenhuma novidade ainda. Follow-ups e conclusões de ações aparecem aqui.</div>';return;}
+  notifLista.innerHTML=l.map(x=>'<div class="notif-item'+((vistos.has(notifChave(x))||notifMinha(x))?'':' nova')+'" data-acao="'+x.id+'" role="button" tabindex="0">'
+    +'<div class="notif-meta">'+fmt(x.data)+(x.por?' — '+esc(x.por):'')+'</div>'
     +'<div class="notif-acao">Ação '+x.id+' · '+esc(x.tit)+'</div>'
-    +'<div class="notif-txt">'+esc(x.f.texto)+'</div></div>').join('');
+    +'<div class="notif-txt">'+esc(x.txt)+'</div></div>').join('');
 }
 window.abreNotifs=function(){
   renderNotifs();
   notifPane.classList.add('aberta');notifScrim.classList.add('aberta');
-  try{localStorage.setItem(LS_NOTIF,JSON.stringify(notifTodas().map(x=>notifChave(x.id,x.f))));}catch(e){}
+  try{localStorage.setItem(LS_NOTIF,JSON.stringify(notifTodas().map(x=>notifChave(x))));}catch(e){}
   pintaSino();
 };
 function fechaNotifs(){notifPane.classList.remove('aberta');notifScrim.classList.remove('aberta');}
