@@ -77,7 +77,7 @@ tr:last-child td{border-bottom:none}
 
   <h3 id="notificacoes">Notificações no celular</h3>
   <div class="card" style="max-width:520px">
-    <p class="lead" style="margin-bottom:8px">Receba a notificação oficial do aparelho quando alguém registrar um follow-up no Planejamento Estratégico. <b>No iPhone:</b> primeiro adicione o site à Tela de Início (Compartilhar &rarr; Adicionar à Tela de Início) e abra por lá.</p>
+    <p class="lead" style="margin-bottom:8px">Receba a notificação oficial do aparelho quando acontecer algo nos painéis: follow-ups, ações concluídas ou reabertas, prazos renegociados e lembretes de prazo. <b>No iPhone:</b> primeiro adicione o site à Tela de Início (Compartilhar &rarr; Adicionar à Tela de Início) e abra por lá.</p>
     <p style="margin-bottom:10px">Neste aparelho: <span class="pill" id="np-status">verificando&hellip;</span></p>
     <button type="button" class="btn" id="np-ativar" hidden>Ativar notificações neste aparelho</button>
     <button type="button" class="btn sec" id="np-desativar" hidden>Desativar neste aparelho</button>
@@ -409,7 +409,7 @@ if(npAtivar)npAtivar.addEventListener('click',async()=>{
     doc.subs[id]={u:A2.user.id,em:new Date().toISOString().slice(0,10),pref:{fu:npPFu.checked,est:npPEst.checked,rng:npPRng.checked,przo7:npP7.checked,przo1:npP1.checked,przo0:npP0.checked,przoAt:npPAt.checked},env:env};
     await gravaSubs(doc,sha,'chore: registra aparelho para notificações push');
     try{localStorage.setItem(LS_PUSH,id);}catch(e){}
-    npDiz('Notificações ativadas neste aparelho! O primeiro follow-up novo já avisa você.');
+    npDiz('Notificações ativadas neste aparelho! O próximo aviso dos painéis já chega aqui.');
   }catch(e){npDiz('Não consegui ativar ('+e.message+').',true);}
   npAtivar.disabled=false;npPinta();
 });

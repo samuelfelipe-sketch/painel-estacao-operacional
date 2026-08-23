@@ -207,8 +207,9 @@ th.th-sort .seta{color:var(--laranja)}
 .exec-data{width:140px}
 input.exec-obs{width:100%;min-width:110px}
 input.exec-data{width:126px}
-/* no plano, o aviso fica abaixo da data para a tabela caber em notebook */
-#gut .tag-late{display:block;margin:4px 0 0;width:max-content}
+/* na TABELA do plano, o aviso fica abaixo da data para caber em notebook
+   (só dentro de célula — no texto corrido o selo segue na linha) */
+#gut td .tag-late{display:block;margin:4px 0 0;width:max-content}
 .exec-obs:focus,.exec-data:focus,.exec-status:focus{outline:2px solid var(--laranja);outline-offset:1px}
 tr.done td{background:#F0F7F1!important;color:var(--verde-suave)}
 tr.done td:nth-child(2){text-decoration:line-through;text-decoration-thickness:1.5px}
@@ -748,7 +749,7 @@ if(impFile)impFile.addEventListener('change',function(){
   if(!barra||!ch)return;
   ['btn-exportar','btn-importar','imp-file'].forEach(function(id){const el=document.getElementById(id);if(el)el.remove();});
   document.querySelectorAll('#gut .lead,#gut p').forEach(function(p){
-    if(/Exportar dados/.test(p.innerHTML))p.innerHTML=p.innerHTML.replace(/\s*Use <b>Exportar dados<\/b>[^.]*\./,' Tudo sincroniza sozinho entre os aparelhos pela nuvem.');
+    if(/Exportar dados|fica salvo automaticamente/.test(p.innerHTML))p.innerHTML=p.innerHTML.replace(/\s*Tudo o que você preencher[\s\S]*$/,' Tudo o que você preencher <b>sincroniza sozinho entre os aparelhos</b> e sai na impressão.');
   });
   const linha=document.createElement('div');
   linha.style.cssText='margin:14px 0 0';
@@ -766,7 +767,7 @@ if(impFile)impFile.addEventListener('change',function(){
   const form=document.createElement('div');
   form.id='nv-form';form.className='card';form.hidden=true;
   form.innerHTML='<h3 style="margin-top:2px">Nova a\u00e7\u00e3o \u2014 p\u00f3s-imers\u00e3o</h3>'
-    +'<p class="lead" style="margin:4px 0 10px">Entra no plano com o selo <span class="pill nova">NOVA</span>: fica registrado que ela nasceu depois do Roadmap da imers\u00e3o, com autor e data de cria\u00e7\u00e3o. As 17 a\u00e7\u00f5es oficiais n\u00e3o mudam.</p>'
+    +'<p class="lead" style="margin:4px 0 10px">Entra no plano com o selo <span class="pill nova">NOVA</span>: fica registrado que ela nasceu depois do Roadmap da imers\u00e3o, com autor e data de cria\u00e7\u00e3o. As a\u00e7\u00f5es oficiais n\u00e3o mudam.</p>'
     +'<div class="nv-grid">'
     +'<input type="text" id="nv-acao" placeholder="A\u00e7\u00e3o (o que ser\u00e1 feito)" maxlength="140">'
     +'<select id="nv-bloco" aria-label="Pilar"><option>Mentalidade</option><option>Pessoas</option><option>Processos</option><option>Atra\u00e7\u00e3o</option><option>Convers\u00e3o</option><option>Escala</option></select>'
@@ -1061,6 +1062,21 @@ function notifVai(ev){
 }
 notifLista.addEventListener('click',notifVai);
 notifLista.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();notifVai(ev);}});
+/* os KPIs do topo levam à seção certa (Plano de Ação; 'Pilar mais crítico' abre o pilar) */
+(function(){
+  const hb=document.getElementById('hero-bombas');if(!hb)return;
+  hb.addEventListener('click',function(e){
+    const b=e.target.closest('.bomba');if(!b)return;
+    const lbl=((b.querySelector('.lbl')||{}).textContent||'');
+    let alvo='gut';
+    if(/pilar/i.test(lbl)){
+      const v=(((b.querySelector('.val')||{}).textContent)||'').trim().split(/\s/)[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      if(document.querySelector('.nav-link[data-t="'+v+'"]'))alvo=v;
+    }
+    const nav=document.querySelector('.nav-link[data-t="'+alvo+'"]');if(nav)nav.click();
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+})();
 const _renderAllSemSino=renderAll;renderAll=function(){_renderAllSemSino();pintaSino();};
 pintaSino();
 if(location.hash==='#notificacoes'){history.replaceState(null,'',location.pathname+location.search);window.abreNotifs();}
