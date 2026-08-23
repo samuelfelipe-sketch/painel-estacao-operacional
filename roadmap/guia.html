@@ -498,7 +498,7 @@ function aplicaNovas(lista){
   NOVAS=(lista||[]).filter(function(n){return n&&n.id&&n.acao&&n.prazo;});
   ACOES=ACOES.filter(function(a){return !a.nova;});
   NOVAS.forEach(function(n){
-    ACOES.push({id:n.id,acao:n.acao,bloco:n.bloco||'—',resp:n.resp||'—',prazo:n.prazo,gut:n.gut||0,nova:true,criadaEm:n.criadaEm||'',por:n.por||''});
+    ACOES.push({id:n.id,acao:n.acao,bloco:n.bloco||'—',resp:n.resp||'—',prazo:n.prazo,gut:n.gut||0,nova:true,criadaEm:n.criadaEm||'',em:n.em||'',por:n.por||''});
     if(!EXECUCOES[n.id])EXECUCOES[n.id]={status:'aberto',data:'',obs:''};
   });
 }
@@ -523,6 +523,7 @@ const lateChip=document.getElementById('exec-late');
 const lateN=document.getElementById('exec-late-n');
 
 function hojeLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function agoraISO(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}
 const HOJE=hojeLocal();
 function fmt(iso){const p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -665,7 +666,7 @@ function trata(e){
     ex.status=e.target.value;if(ex.status==='concluido'&&!ex.data)ex.data=hojeLocal();
     if(ex.status!==antes){
       const A=window.sapataoAuth;
-      if(ex.status==='concluido'){ex.por=(A&&A.user&&A.user.nome)||'';notificaEstado(+cont.dataset.acao,'concluiu');}
+      if(ex.status==='concluido'){ex.por=(A&&A.user&&A.user.nome)||'';ex.quando=agoraISO();notificaEstado(+cont.dataset.acao,'concluiu');}
       else if(antes==='concluido')notificaEstado(+cont.dataset.acao,'reabriu');
     }
   }
@@ -762,7 +763,7 @@ if(impFile)impFile.addEventListener('change',function(){
     if(!prazo){msg.textContent='Escolha o prazo.';return;}
     let id=100;ACOES.forEach(function(a){if(a.id>id)id=a.id;});id++;
     const A=window.sapataoAuth;
-    NOVAS.push({id:id,acao:acao,bloco:document.getElementById('nv-bloco').value,resp:resp||'\u2014',prazo:prazo,gut:gut,criadaEm:HOJE,por:(A&&A.user?A.user.nome:'')});
+    NOVAS.push({id:id,acao:acao,bloco:document.getElementById('nv-bloco').value,resp:resp||'\u2014',prazo:prazo,gut:gut,criadaEm:HOJE,em:agoraISO(),por:(A&&A.user?A.user.nome:'')});
     aplicaNovas(NOVAS);
     salva();renderAll();
     msg.textContent='';form.hidden=true;
@@ -833,6 +834,7 @@ async function publica(){
     const r=await fetch(SYNC_API,{method:'PUT',headers:h,body:JSON.stringify(body)});
     if(!r.ok)throw new Error('HTTP '+r.status);
     estadoAviso=null;
+    atualizaCalendario();
     chip('ok','Nuvem: sincronizado');
   }catch(e){
     chip('erro','Nuvem: falha ao publicar \u2014 vou tentar de novo');
@@ -840,6 +842,25 @@ async function publica(){
   }
 }
 function agendaPublicacao(){clearTimeout(syncTimer);syncTimer=setTimeout(publica,2500);}
+/* calendário público de prazos (só nº da ação + prazo + status — nada de
+   conteúdo): o robô diário usa para os lembretes de "vence amanhã"/"atrasada" */
+async function atualizaCalendario(){
+  try{
+    if(!tokenSync())return;
+    const frag={};
+    ACOES.forEach(function(a){const ex=EXECUCOES[a.id]||{};frag[a.id]={p:a.prazo||'',s:ex.status||'aberto'};});
+    const url='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/calendario.json';
+    const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
+    const g=await fetch(url+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+    let doc={v:1},sha=null;
+    if(g.ok){const j=await g.json();sha=j.sha;try{doc=JSON.parse(b64docdec(j.content));}catch(e){}}
+    if(JSON.stringify(doc.rc||null)===JSON.stringify(frag))return;
+    doc.rc=frag;
+    const body={message:'chore: atualiza calendário de prazos (automático)',branch:'main',content:b64enc(JSON.stringify(doc))};
+    if(sha)body.sha=sha;
+    await fetch(url,{method:'PUT',headers:h,body:JSON.stringify(body)});
+  }catch(e){/* sem calendário hoje, tenta na próxima publicação */}
+}
 async function recuperaChaveNuvem(){
   /* a chave local morreu (expirou ou foi regenerada): se a senha está em
      memória, descarta a cópia velha e baixa a versão nova gravada na nuvem */
@@ -957,12 +978,13 @@ function notifTodas(){
   const l=[];
   ACOES.forEach(function(a){
     const ex=EXECUCOES[a.id]||{};
-    if(ex.status==='concluido'&&ex.data)l.push({id:a.id,tit:a.acao,data:ex.data,por:ex.por||'',txt:'Ação concluída ✓',tp:'c'});
-    if(a.nova&&a.criadaEm)l.push({id:a.id,tit:a.acao,data:a.criadaEm,por:a.por||'',txt:'Ação nova adicionada ao plano',tp:'n'});
+    if(ex.status==='concluido'&&ex.data)l.push({id:a.id,tit:a.acao,data:ex.data,por:ex.por||'',txt:'Ação concluída ✓',tp:'c',ord:ex.quando||ex.data});
+    if(a.nova&&a.criadaEm)l.push({id:a.id,tit:a.acao,data:a.criadaEm,por:a.por||'',txt:'Ação nova adicionada ao plano',tp:'n',ord:a.em||a.criadaEm});
   });
-  l.sort(function(x,y){return y.data.localeCompare(x.data)||y.id-x.id;});
+  l.sort(function(x,y){return (y.ord||'').localeCompare(x.ord||'')||y.id-x.id;});
   return l;
 }
+function notifHora(x){return x.ord&&x.ord.length>10?' '+x.ord.slice(11,16):'';}
 function pintaSino(){
   const vistos=notifVistos();
   const n=notifTodas().filter(function(x){return !notifMinha(x)&&!vistos.has(notifChave(x));}).length;
@@ -972,7 +994,7 @@ function renderNotifs(){
   const vistos=notifVistos(),l=notifTodas();
   if(!l.length){notifLista.innerHTML='<div class="notif-vazio">Nenhuma novidade ainda. Conclusões e ações novas do plano aparecem aqui.</div>';return;}
   notifLista.innerHTML=l.map(function(x){return '<div class="notif-item'+((vistos.has(notifChave(x))||notifMinha(x))?'':' nova')+'" data-acao="'+x.id+'" role="button" tabindex="0">'
-    +'<div class="notif-meta">'+fmt(x.data)+(x.por?' — '+esc(x.por):'')+'</div>'
+    +'<div class="notif-meta">'+fmt(x.data)+notifHora(x)+(x.por?' — '+esc(x.por):'')+'</div>'
     +'<div class="notif-acao">Ação '+x.id+' · '+esc(x.tit)+'</div>'
     +'<div class="notif-txt">'+esc(x.txt)+'</div></div>';}).join('');
 }

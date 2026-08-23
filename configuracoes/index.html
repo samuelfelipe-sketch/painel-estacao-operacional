@@ -81,6 +81,8 @@ tr:last-child td{border-bottom:none}
       <p class="lead" style="margin-bottom:6px"><b style="color:var(--verde)">O que avisar neste aparelho:</b></p>
       <label style="display:block;margin:5px 0;cursor:pointer"><input type="checkbox" id="np-p-fu" checked> Novos follow-ups</label>
       <label style="display:block;margin:5px 0;cursor:pointer"><input type="checkbox" id="np-p-est" checked> Ações concluídas ou reabertas</label>
+      <label style="display:block;margin:5px 0;cursor:pointer"><input type="checkbox" id="np-p-rng" checked> Prazos renegociados</label>
+      <label style="display:block;margin:5px 0;cursor:pointer"><input type="checkbox" id="np-p-przo" checked> Lembrete diário de prazos (vence amanhã / atrasou)</label>
     </div>
     <p class="lead" id="np-msg" style="margin-top:8px;margin-bottom:0"></p>
   </div>
@@ -302,7 +304,7 @@ const SUBS_PUB_JWK={"kty":"RSA","n":"0OEv1g6eHJbJyYokRxzcbryWVc78i7qOKzIm5Fvf-s0
 const API_SUBS='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/push-subs.json';
 const LS_PUSH='sapatao-push-id';
 const npStatus=document.getElementById('np-status'),npAtivar=document.getElementById('np-ativar'),npDesativar=document.getElementById('np-desativar'),npMsg=document.getElementById('np-msg');
-const npPrefs=document.getElementById('np-prefs'),npPFu=document.getElementById('np-p-fu'),npPEst=document.getElementById('np-p-est');
+const npPrefs=document.getElementById('np-prefs'),npPFu=document.getElementById('np-p-fu'),npPEst=document.getElementById('np-p-est'),npPRng=document.getElementById('np-p-rng'),npPPrzo=document.getElementById('np-p-przo');
 function npDiz(t,erro){if(npMsg){npMsg.textContent=t;npMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
 function pushSuportado(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
 function b64uToU8(s){s=s.replace(/-/g,'+').replace(/_/g,'/');const pad='='.repeat((4-s.length%4)%4);return Uint8Array.from(atob(s+pad),c=>c.charCodeAt(0));}
@@ -355,7 +357,7 @@ async function npCarregaPrefs(){
     if(!id)return;
     const{doc}=await subsDoc();
     const p=(doc.subs[id]&&doc.subs[id].pref)||{};
-    npPFu.checked=p.fu!==false;npPEst.checked=p.est!==false;
+    npPFu.checked=p.fu!==false;npPEst.checked=p.est!==false;npPRng.checked=p.rng!==false;npPPrzo.checked=p.przo!==false;
     npPrefsProntas=true;
   }catch(e){}
 }
@@ -366,13 +368,15 @@ async function npSalvaPrefs(){
     if(!id)return;
     const{sha,doc}=await subsDoc();
     if(!doc.subs[id])return;
-    doc.subs[id].pref={fu:npPFu.checked,est:npPEst.checked};
+    doc.subs[id].pref={fu:npPFu.checked,est:npPEst.checked,rng:npPRng.checked,przo:npPPrzo.checked};
     await gravaSubs(doc,sha,'chore: ajusta preferências de notificações do aparelho');
     npDiz('Preferência salva.');
   }catch(e){npDiz('Não consegui salvar a preferência ('+e.message+').',true);}
 }
 if(npPFu)npPFu.addEventListener('change',npSalvaPrefs);
 if(npPEst)npPEst.addEventListener('change',npSalvaPrefs);
+if(npPRng)npPRng.addEventListener('change',npSalvaPrefs);
+if(npPPrzo)npPPrzo.addEventListener('change',npSalvaPrefs);
 if(npAtivar)npAtivar.addEventListener('click',async()=>{
   const A2=window.sapataoAuth;
   if(!(A2&&A2.user)){npDiz('Entre pela central antes de ativar.',true);return;}
@@ -387,7 +391,7 @@ if(npAtivar)npAtivar.addEventListener('click',async()=>{
     let id='';try{id=localStorage.getItem(LS_PUSH)||'';}catch(e){}
     if(!id){id=u8b64(crypto.getRandomValues(new Uint8Array(6))).replace(/[^a-zA-Z0-9]/g,'').slice(0,8)||('ap'+Date.now());}
     const{sha,doc}=await subsDoc();
-    doc.subs[id]={u:A2.user.id,em:new Date().toISOString().slice(0,10),pref:{fu:npPFu.checked,est:npPEst.checked},env:env};
+    doc.subs[id]={u:A2.user.id,em:new Date().toISOString().slice(0,10),pref:{fu:npPFu.checked,est:npPEst.checked,rng:npPRng.checked,przo:npPPrzo.checked},env:env};
     await gravaSubs(doc,sha,'chore: registra aparelho para notificações push');
     try{localStorage.setItem(LS_PUSH,id);}catch(e){}
     npDiz('Notificações ativadas neste aparelho! O primeiro follow-up novo já avisa você.');

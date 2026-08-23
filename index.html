@@ -45,6 +45,10 @@ a.card.card-sem .go{display:none}
 a.card .selo-sem{display:inline-block;margin-top:14px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--verde-suave);background:#E3E3E0;border-radius:20px;padding:4px 12px}
 .login-ok{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
 .login-ok[hidden],.login-box [hidden]{display:none!important}
+.sino-central{position:fixed;top:16px;right:16px;z-index:70;background:#fff;border:1px solid #E4E9F0;border-radius:999px;padding:10px 12px;cursor:pointer;color:#16211C;box-shadow:0 2px 8px rgba(20,30,45,.10)}
+.sino-central:hover{background:#F4F6F8}
+.sino-central[hidden]{display:none}
+.sino-central svg{display:block}
 .login-ok .sair{font-weight:700;font-size:12.5px;color:#8C1D18;background:none;border:1px solid #E8B3AE;border-radius:14px;padding:4px 12px;cursor:pointer}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:8px}
 a.card{display:block;background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:22px 20px;text-decoration:none;color:var(--verde);transition:transform .15s,box-shadow .15s;border-top:4px solid var(--laranja)}
@@ -119,6 +123,13 @@ footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
     </div>
   </div>
 </div>
+<button type="button" class="sino-central sino-b" id="sino-central" hidden aria-label="Notificações" title="Notificações"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="sino-dot" hidden>0</span></button>
+<div class="notif-scrim" id="notif-scrim"></div>
+<div class="notif-pane" id="notif-pane" role="dialog" aria-label="Notificações">
+  <div class="notif-head"><h2>Notificações</h2><button type="button" class="notif-x" id="notif-x" aria-label="Fechar">&#10005;</button></div>
+  <div class="notif-lista" id="notif-lista"><div class="notif-vazio">Carregando&hellip;</div></div>
+  <div class="notif-pe"><a href="configuracoes/#notificacoes">Ativar as notificações neste aparelho &rarr;</a></div>
+</div>
 <footer><i>Estação Sapatão</i></footer>
 <script>
 (function(){
@@ -154,14 +165,126 @@ async function entrar(){
   const user=await A.login(u,s);
   if(!user){erro.classList.add('on');return;}
   document.getElementById('lg-senha').value='';
-  pinta();
+  pintaTudo();
   /* baixa a chave de publicação e a chave dos dados para este aparelho */
   try{await window.sapataoChave.busca();await window.sapataoCofre.baixaDekPeloToken();}catch(e){}
+  evCache=null;pintaSinoCentral();
 }
 document.getElementById('lg-entrar').addEventListener('click',entrar);
 document.getElementById('lg-senha').addEventListener('keydown',e=>{if(e.key==='Enter')entrar();});
-pinta();
-document.addEventListener('sapatao-auth',pinta);
+
+/* ============ Sino da central: notificações dos dois painéis ============ */
+const sinoBtn=document.getElementById('sino-central');
+const notifPane=document.getElementById('notif-pane'),notifScrim=document.getElementById('notif-scrim'),notifLista=document.getElementById('notif-lista');
+const API_RAIZ='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/';
+const LSN_PE='sapatao-notif-vistos-v1',LSN_RC='sapatao-notif-roadmap-vistos-v1';
+function b64d(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
+function escN(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtN(iso){if(!iso)return'';const p=iso.slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function horaN(ord){return ord&&ord.length>10?' '+ord.slice(11,16):'';}
+function hashTx(s){let h=5381;s=s||'';for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return h;}
+function lsSet(k){try{return new Set(JSON.parse(localStorage.getItem(k)||'[]'));}catch(e){return new Set();}}
+function chaveDe(x){return x.painel==='pe'&&x.tp==='f'?(x.id+'|'+x.data+'|'+(x.por||'')+'|'+hashTx(x.txt)):(x.tp+'|'+x.id+'|'+x.data+'|'+(x.por||''));}
+function minhaN(x){return !!(A&&A.user&&x.por&&x.por===A.user.nome);}
+async function pegaDoc(path){
+  const r=await fetch(API_RAIZ+path+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  let doc=JSON.parse(b64d(j.content));
+  if(doc&&doc.enc===1){
+    if(!window.sapataoCofre.dek())await window.sapataoCofre.baixaDekPeloToken();
+    doc=await window.sapataoCofre.decifra(doc);
+    if(!doc)throw new Error('sem-chave');
+  }
+  return doc;
+}
+let evCache=null;
+async function eventosTodos(){
+  if(evCache)return evCache;
+  const out={lista:[],pe:false,rc:false,trave:false};
+  if(!(A&&A.user))return out;
+  if(A.temAcesso('pe')){
+    try{
+      const ex=await pegaDoc('estrategia/pe-execucoes.json');
+      const ct=await pegaDoc('estrategia/pe-conteudo.json');
+      const tit={};((ct&&ct.dados&&ct.dados.ACOES)||[]).forEach(a=>tit[a.id]=a.acao);
+      const base={};
+      const seed=(ct&&ct.dados&&ct.dados.SEED)||{};
+      Object.keys(seed).forEach(id=>base[id]=seed[id]);
+      Object.keys((ex&&ex.dados)||{}).forEach(id=>base[id]=ex.dados[id]);
+      Object.keys(base).forEach(id=>{
+        const e=base[id]||{};
+        (e.followups||[]).forEach(f=>{if(!f.apagado)out.lista.push({painel:'pe',id:+id,tit:tit[id]||'',data:f.data,por:f.por||'',txt:f.texto,tp:'f',ord:f.em||f.data});});
+        if(e.status==='concluido'&&e.dataConclusao)out.lista.push({painel:'pe',id:+id,tit:tit[id]||'',data:e.dataConclusao,por:e.concluidaPor||'',txt:'Ação concluída ✓',tp:'c',ord:e.concluidaEm||e.dataConclusao});
+        (e.renegs||[]).forEach(r=>{if(r.em)out.lista.push({painel:'pe',id:+id,tit:tit[id]||'',data:r.em,por:r.por||'',txt:'Prazo renegociado para '+fmtN(r.para),tp:'r',ord:r.h||r.em});});
+      });
+      out.pe=true;
+    }catch(e){if(e.message==='sem-chave')out.trave=true;}
+  }
+  if(A.temAcesso('roadmap')){
+    try{
+      const ex=await pegaDoc('roadmap/execucoes.json');
+      const ct=await pegaDoc('roadmap/guia-conteudo.json');
+      const tit={};((ct&&ct.dados&&ct.dados.ACOES)||[]).forEach(a=>tit[a.id]=a.acao);
+      const base={};
+      Object.keys((ct&&ct.dados&&ct.dados.EXECUCOES)||{}).forEach(id=>base[id]=Object.assign({},ct.dados.EXECUCOES[id]));
+      Object.keys((ex&&ex.dados)||{}).forEach(id=>base[id]=Object.assign(base[id]||{},ex.dados[id]));
+      Object.keys(base).forEach(id=>{
+        const e=base[id]||{};
+        if(e.status==='concluido'&&e.data)out.lista.push({painel:'rc',id:+id,tit:tit[id]||'',data:e.data,por:e.por||'',txt:'Ação concluída ✓',tp:'c',ord:e.quando||e.data});
+      });
+      ((ex&&ex.novas)||[]).forEach(n=>{if(n&&n.id&&n.criadaEm)out.lista.push({painel:'rc',id:n.id,tit:n.acao||'',data:n.criadaEm,por:n.por||'',txt:'Ação nova adicionada ao plano',tp:'n',ord:n.em||n.criadaEm});});
+      out.rc=true;
+    }catch(e){if(e.message==='sem-chave')out.trave=true;}
+  }
+  out.lista.sort((x,y)=>(y.ord||'').localeCompare(x.ord||'')||y.id-x.id);
+  if(out.pe||out.rc)evCache=out; /* sem dados (rede/chave), tenta de novo na próxima */
+  return out;
+}
+function naoLidas(ev){
+  const vPE=lsSet(LSN_PE),vRC=lsSet(LSN_RC);
+  return ev.lista.filter(x=>!minhaN(x)&&!(x.painel==='pe'?vPE:vRC).has(chaveDe(x))).length;
+}
+async function pintaSinoCentral(){
+  if(!(A&&A.user))return;
+  try{
+    const ev=await eventosTodos();
+    const n=naoLidas(ev);
+    document.querySelectorAll('.sino-dot').forEach(d=>{d.hidden=!n;d.textContent=n>99?'99+':n;});
+  }catch(e){}
+}
+function renderNotifsCentral(ev){
+  const vPE=lsSet(LSN_PE),vRC=lsSet(LSN_RC);
+  if(ev.trave&&!ev.lista.length){notifLista.innerHTML='<div class="notif-vazio">Este aparelho ainda não tem a chave dos dados. Saia e entre com a senha para destravar.</div>';return;}
+  if(!ev.lista.length){notifLista.innerHTML='<div class="notif-vazio">Nenhuma novidade ainda. Follow-ups, conclusões e ações novas aparecem aqui.</div>';return;}
+  notifLista.innerHTML=ev.lista.map(x=>'<div class="notif-item'+((vPE&&(x.painel==='pe'?vPE:vRC).has(chaveDe(x))||minhaN(x))?'':' nova')+'" data-painel="'+x.painel+'" role="button" tabindex="0">'
+    +'<div class="notif-meta">'+fmtN(x.data)+horaN(x.ord)+(x.por?' — '+escN(x.por):'')+'</div>'
+    +'<div class="notif-acao">'+(x.painel==='pe'?'Planejamento':'Roadmap')+' · Ação '+x.id+(x.tit?' · '+escN(x.tit):'')+'</div>'
+    +'<div class="notif-txt">'+escN(x.txt)+'</div></div>').join('');
+}
+async function abreNotifsCentral(){
+  notifPane.classList.add('aberta');notifScrim.classList.add('aberta');
+  notifLista.innerHTML='<div class="notif-vazio">Carregando&hellip;</div>';
+  const ev=await eventosTodos();
+  renderNotifsCentral(ev);
+  try{
+    if(ev.pe)localStorage.setItem(LSN_PE,JSON.stringify(ev.lista.filter(x=>x.painel==='pe').map(chaveDe)));
+    if(ev.rc)localStorage.setItem(LSN_RC,JSON.stringify(ev.lista.filter(x=>x.painel==='rc').map(chaveDe)));
+  }catch(e){}
+  document.querySelectorAll('.sino-dot').forEach(d=>{d.hidden=true;});
+}
+function fechaNotifsCentral(){notifPane.classList.remove('aberta');notifScrim.classList.remove('aberta');}
+sinoBtn.addEventListener('click',abreNotifsCentral);
+document.getElementById('notif-x').addEventListener('click',fechaNotifsCentral);
+notifScrim.addEventListener('click',fechaNotifsCentral);
+notifLista.addEventListener('click',ev=>{
+  const it=ev.target.closest('.notif-item');if(!it||!it.dataset.painel)return;
+  location.href=it.dataset.painel==='pe'?'estrategia/#notificacoes':'roadmap/guia.html#notificacoes';
+});
+const _pintaBase=pinta;
+function pintaTudo(){_pintaBase();sinoBtn.hidden=!(A&&A.user);if(A&&A.user)pintaSinoCentral();}
+pintaTudo();
+document.addEventListener('sapatao-auth',pintaTudo);
 })();
 </script>
 </body>

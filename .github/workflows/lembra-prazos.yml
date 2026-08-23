@@ -1,0 +1,24 @@
+name: Lembrete diário de prazos
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # 09:00 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lembrar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save web-push@3
+      - run: node scripts/lembra-prazos.mjs
+        env:
+          VAPID_PUBLIC_KEY: BEduLLWzJ5vBcC6wgokW5Yq_NL-x8y5nDtzfUQqvmXdXwQVb0j2dRO-OHCkCzoouyhH0KhS1EQEwY3ECDx_V_Hc
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          SUBS_PRIVATE_KEY_B64: ${{ secrets.PUSH_SUBS_PRIVATE_KEY }}
