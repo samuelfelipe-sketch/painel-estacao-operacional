@@ -1046,6 +1046,17 @@ if(usTbl){
   filtros.parentNode.insertBefore(linha,filtros);
   if(antiga&&!antiga.children.length)antiga.remove();
 })();
+/* os KPIs do topo levam à seção certa */
+(function(){
+  const hb=document.getElementById('hero-bombas');if(!hb)return;
+  hb.addEventListener('click',ev=>{
+    const b=ev.target.closest('.bomba');if(!b)return;
+    const lbl=((b.querySelector('.lbl')||{}).textContent||'');
+    const alvo=/maturidade/i.test(lbl)?'diagnostico':'acoes';
+    const nav=document.querySelector('.nav-link[data-t="'+alvo+'"]');if(nav)nav.click();
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+})();
 /* ============ Notificações: follow-ups e conclusões ============ */
 const notifPane=document.getElementById('notif-pane'),notifScrim=document.getElementById('notif-scrim'),notifLista=document.getElementById('notif-lista');
 const LS_NOTIF='sapatao-notif-vistos-v1';
