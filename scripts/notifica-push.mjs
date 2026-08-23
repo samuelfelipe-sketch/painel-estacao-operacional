@@ -1,4 +1,5 @@
-/* Envia a notificação push nativa quando um follow-up novo chega ao
+/* Envia a notificação push nativa quando chega um follow-up novo ou uma
+   ação muda de estado (concluída/reaberta) no Roadmap Comercial ou no
    Planejamento Estratégico. Roda no GitHub Actions:
    - a mensagem do commit traz autor e nº da ação (dados não sensíveis);
    - as inscrições dos aparelhos ficam cifradas em roadmap/push-subs.json
@@ -10,9 +11,20 @@ import { readFileSync } from 'fs';
 import { createPrivateKey, privateDecrypt, createDecipheriv, constants } from 'crypto';
 
 const msg = process.env.MENSAGEM_COMMIT || '';
-const m = msg.match(/novo follow-up de (.+) na ação (\d+)/i);
-if (!m) { console.log('commit sem follow-up novo — nada a enviar'); process.exit(0); }
-const corpo = `Novo follow-up de ${m[1]} na ação ${m[2]}.`;
+let autor = '', titulo = '', corpo = '', urlAlvo = '';
+let m = msg.match(/novo follow-up de (.+) na ação (\d+)/i);
+if (m) {
+  autor = m[1];
+  titulo = 'Planejamento Estratégico';
+  corpo = `Novo follow-up de ${m[1]} na ação ${m[2]}.`;
+  urlAlvo = './estrategia/#notificacoes';
+} else if ((m = msg.match(/(?:chore:\s*)?(.+?) (concluiu|reabriu) a ação (\d+) do (Roadmap Comercial|Planejamento Estratégico)/i))) {
+  autor = m[1];
+  titulo = m[4];
+  corpo = `${m[1]} ${m[2]} a ação ${m[3]}.`;
+  urlAlvo = /roadmap/i.test(m[4]) ? './roadmap/guia.html' : './estrategia/#notificacoes';
+}
+if (!corpo) { console.log('commit sem novidade para avisar — nada a enviar'); process.exit(0); }
 
 /* Segredos colados no GitHub costumam vir com espaços ou quebra de linha no
    fim — aparamos tudo antes de validar. */
@@ -27,12 +39,23 @@ if (bytes(priv) !== 32 || bytes(pub) !== 65) {
 webpush.setVapidDetails('mailto:samuel@estacaosapatao.com.br', pub, priv);
 const chave = createPrivateKey({ key: Buffer.from(subsPriv, 'base64'), format: 'der', type: 'pkcs8' });
 
+/* quem fez a ação não recebe o próprio aviso: o nome do commit é resolvido
+   para o id de usuário via usuarios.json e os aparelhos dele são pulados */
+const norm = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+let autorId = '';
+try {
+  const us = JSON.parse(readFileSync('roadmap/usuarios.json', 'utf8'));
+  const u = (us.usuarios || []).find((x) => norm(x.nome) === norm(autor) || norm(x.id) === norm(autor));
+  if (u) autorId = u.id;
+} catch { /* sem usuarios.json legível, avisa todo mundo */ }
+
 const doc = JSON.parse(readFileSync('roadmap/push-subs.json', 'utf8'));
 const entradas = Object.entries(doc.subs || {});
 if (!entradas.length) { console.log('nenhum aparelho inscrito'); process.exit(0); }
 
-let ok = 0, falha = 0;
+let ok = 0, falha = 0, proprios = 0;
 for (const [id, ent] of entradas) {
+  if (autorId && ent.u === autorId) { proprios++; continue; }
   try {
     const aes = privateDecrypt({ key: chave, padding: constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' }, Buffer.from(ent.env.ek, 'base64'));
     const iv = Buffer.from(ent.env.iv, 'base64');
@@ -40,11 +63,11 @@ for (const [id, ent] of entradas) {
     const dec = createDecipheriv('aes-256-gcm', aes, iv);
     dec.setAuthTag(ct.subarray(ct.length - 16));
     const sub = JSON.parse(Buffer.concat([dec.update(ct.subarray(0, ct.length - 16)), dec.final()]).toString('utf8'));
-    await webpush.sendNotification(sub, JSON.stringify({ title: 'Planejamento Estratégico', body: corpo, url: './estrategia/#notificacoes' }), { TTL: 3600 });
+    await webpush.sendNotification(sub, JSON.stringify({ title: titulo, body: corpo, url: urlAlvo }), { TTL: 3600 });
     ok++;
   } catch (e) {
     falha++;
     console.log('aparelho ' + id + ': falhou (' + (e.statusCode || e.message) + ')');
   }
 }
-console.log('notificações enviadas: ' + ok + ' | falhas: ' + falha);
+console.log('notificações enviadas: ' + ok + ' | falhas: ' + falha + ' | aparelhos do autor pulados: ' + proprios);

@@ -1,10 +1,11 @@
-name: Notificação push de follow-up
+name: Notificação push dos painéis
 
 on:
   push:
     branches: [main]
     paths:
       - 'estrategia/pe-execucoes.json'
+      - 'roadmap/execucoes.json'
 
 permissions:
   contents: read

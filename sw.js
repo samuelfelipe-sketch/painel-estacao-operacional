@@ -19,9 +19,10 @@ self.addEventListener('push', function (e) {
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var url = (e.notification.data && e.notification.data.url) || './';
+  var painel = url.indexOf('roadmap') >= 0 ? 'roadmap' : 'estrategia';
   e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (lista) {
     for (var i = 0; i < lista.length; i++) {
-      if (lista[i].url.indexOf('estrategia') >= 0 && 'focus' in lista[i]) return lista[i].focus();
+      if (lista[i].url.indexOf(painel) >= 0 && 'focus' in lista[i]) return lista[i].focus();
     }
     return clients.openWindow(url);
   }));

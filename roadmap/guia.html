@@ -644,10 +644,24 @@ function renderAll(){
   });
   renderPainel();
 }
+/* mudança de status vira aviso na mensagem do commit (só autor, verbo e nº
+   da ação — dado não sensível); o robô de push manda para os OUTROS usuários */
+let estadoAviso=null;
+function notificaEstado(id,verbo){
+  const A=window.sapataoAuth;
+  estadoAviso={por:(A&&A.user&&A.user.nome)||'alguém',acao:id,verbo:verbo};
+}
 function trata(e){
   const cont=e.target.closest('[data-acao]');if(!cont)return;
   const ex=EXECUCOES[+cont.dataset.acao];if(!ex)return;
-  if(e.target.classList.contains('exec-status')){ex.status=e.target.value;if(ex.status==='concluido'&&!ex.data)ex.data=hojeLocal();}
+  if(e.target.classList.contains('exec-status')){
+    const antes=ex.status;
+    ex.status=e.target.value;if(ex.status==='concluido'&&!ex.data)ex.data=hojeLocal();
+    if(ex.status!==antes){
+      if(ex.status==='concluido')notificaEstado(+cont.dataset.acao,'concluiu');
+      else if(antes==='concluido')notificaEstado(+cont.dataset.acao,'reabriu');
+    }
+  }
   else if(e.target.classList.contains('exec-data'))ex.data=e.target.value;
   else if(e.target.classList.contains('exec-obs'))ex.obs=e.target.value;
   else return;
@@ -804,11 +818,14 @@ async function publica(){
     const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
     let carga={v:2,salvoEm:salvoEm,dados:EXECUCOES,novas:NOVAS};
     if(window.sapataoCofre.dek())carga=await window.sapataoCofre.cifra(carga);
-    const body={message:'chore: sincroniza execu\u00e7\u00f5es do Roadmap Comercial (autom\u00e1tico)',branch:'main',
+    let msg='chore: sincroniza execu\u00e7\u00f5es do Roadmap Comercial (autom\u00e1tico)';
+    if(estadoAviso)msg='chore: '+estadoAviso.por+' '+estadoAviso.verbo+' a a\u00e7\u00e3o '+estadoAviso.acao+' do Roadmap Comercial (autom\u00e1tico)';
+    const body={message:msg,branch:'main',
                 content:b64enc(JSON.stringify(carga,null,2))};
     if(rem.sha)body.sha=rem.sha;
     const r=await fetch(SYNC_API,{method:'PUT',headers:h,body:JSON.stringify(body)});
     if(!r.ok)throw new Error('HTTP '+r.status);
+    estadoAviso=null;
     chip('ok','Nuvem: sincronizado');
   }catch(e){
     chip('erro','Nuvem: falha ao publicar \u2014 vou tentar de novo');
