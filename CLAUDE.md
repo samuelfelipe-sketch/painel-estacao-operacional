@@ -28,8 +28,9 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 | `reborn-imersao.html`, `context.md`, `scripts/`, `.github/workflows/` | legado do painel operacional | — |
 
 ## Identidade visual (todas as páginas, exceto o Método Reborn)
-- Cores: verde `#004438` (escuro `#00352C`, suave `#3D6B60`), laranja `#EC6C22` (escuro `#C2531A`), fundo `#EBEBEA`, cartão `#FFF`, linha `#D8D8D3`.
-- Fontes (Google Fonts): **Fraunces** (títulos, itálico laranja para destaque), **Archivo** (corpo), **IBM Plex Mono** (rótulos/eyebrows em caixa alta).
+- **`tema.css` (raiz)** é o tema oficial, no estilo do dashboard.estacaosapatao.com.br: fundo cinza-frio `#F4F6F9`, cartões brancos arredondados com sombra, títulos **Archivo bold escuros** (`#16211C`, apoio `#5F6C7B`), tabelas com cabeçalho verde-escuro e texto branco em mono, KPIs (`.bomba`) com borda lateral laranja, pílulas de status, topbar branca no celular. É linkado DEPOIS do `<style>` de cada página (central, configurações, guia, estrategia, plano) e sobrescreve o estilo local — mudanças de identidade vão nele.
+- Cores de marca: verde `#004438` (escuro `#00352C`, suave `#3D6B60`), laranja `#EC6C22` (escuro `#C2531A`).
+- Fontes (Google Fonts): **Archivo** (títulos bold e corpo), **IBM Plex Mono** (rótulos/números). Fraunces ficou restrita ao Método Reborn e ao logo.
 - Ícones/favicons seguem a família do `fluxo-pessoal/icon.svg`: fundo verde degradê, formas creme `#F5F3EC`, acento laranja.
 
 ## Como o Guia funciona (roadmap/guia.html)

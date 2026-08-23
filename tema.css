@@ -1,0 +1,75 @@
+/* ============================================================
+   Tema Dashboard — Estação Sapatão
+   Carregado DEPOIS do <style> de cada página: aproxima a central,
+   as configurações, o Roadmap Comercial, o Planejamento Estratégico
+   e o Plano de Ação do visual do dashboard.estacaosapatao.com.br.
+   ============================================================ */
+:root{
+  --fundo:#F4F6F9;
+  --linha:#E4E9F0;
+  --tinta:#16211C;        /* títulos e números */
+  --tinta-suave:#5F6C7B;  /* subtítulos e textos de apoio */
+  --sombra:0 1px 2px rgba(16,24,40,.06),0 2px 6px rgba(16,24,40,.05);
+}
+body{background:var(--fundo);color:var(--tinta)}
+
+/* ---------- cartões: brancos, bem arredondados, sombra suave ---------- */
+.card,details.card,.login-box{border:1px solid #EBEEF3;border-radius:16px;box-shadow:var(--sombra)}
+a.card,.card-off{border:1px solid #EBEEF3;border-radius:18px;border-top:none;box-shadow:var(--sombra)}
+a.card{border-left:5px solid var(--laranja)}
+.card-off{border-left:5px solid var(--linha)}
+a.card:hover{box-shadow:0 10px 24px rgba(16,24,40,.10)}
+
+/* ---------- títulos sem serifa, escuros (como no dashboard) ---------- */
+h1{font-family:'Archivo',sans-serif;font-weight:800;letter-spacing:-.01em;color:var(--tinta)}
+h1 span{color:var(--laranja);font-style:normal}
+h2{font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.005em;color:var(--tinta)}
+a.card .t,.card-off .t{font-family:'Archivo',sans-serif;font-weight:700;letter-spacing:-.005em}
+.sub,.lead{color:var(--tinta-suave)}
+.lema{color:var(--tinta-suave)}
+
+/* rótulos de seção em mono, cinza-azulado ("RITMO MENSAL") */
+h3{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;letter-spacing:.18em;color:var(--tinta-suave);border-bottom:none;padding-bottom:0}
+
+/* ---------- tabelas: cabeçalho verde-escuro, números escuros ---------- */
+th{background:var(--verde);color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10.5px;letter-spacing:.14em;border-bottom:none;padding:10px}
+th:first-child{border-radius:10px 0 0 0}
+th:last-child{border-radius:0 10px 0 0}
+th.th-sort:hover{background:var(--verde-escuro)}
+th.th-sort .seta{color:#FFD9BE}
+td{color:var(--tinta);border-bottom:1px solid #EEF1F5}
+
+/* ---------- pílulas e selos ---------- */
+.pill,.flag,.tag-late,.selo{border-radius:999px;font-weight:700}
+
+/* ---------- KPIs do hero: borda lateral colorida, valor escuro ---------- */
+.bomba{border:1px solid #EBEEF3;border-left:5px solid var(--laranja);border-radius:14px;box-shadow:var(--sombra)}
+.bomba::before{display:none}
+.bomba .lbl{color:var(--tinta-suave)}
+.bomba .val{color:var(--tinta)}
+.bomba .val small{color:var(--tinta-suave)}
+
+/* ---------- topbar (celular): branca, botão de menu quadrado arredondado ---------- */
+.topbar{background:#fff;color:var(--tinta);box-shadow:0 1px 0 #E9EDF2}
+.topbar img{display:none} /* o logo horizontal é claro — some no fundo branco */
+.topbar .t{color:var(--tinta)}
+.topbar .t i{color:var(--laranja)}
+.topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:var(--tinta);box-shadow:var(--sombra)}
+
+/* ---------- menu lateral: item ativo em pílula clara ---------- */
+.nav-link{border-left:none;border-radius:0 999px 999px 0;margin-right:12px}
+.nav-link.active{background:rgba(255,255,255,.12);color:#fff}
+
+/* ---------- botões e chips ---------- */
+.km-btn,.btn-print,.ord-btn,.sync-chip{border-radius:14px}
+.cfg-btn,.sn-campo,.cfg-token{border-radius:10px}
+
+/* ---------- tela "Sem acesso" acompanha o tema ---------- */
+.sptx-card .sptx-titulo{font-family:'Archivo',sans-serif;font-weight:800;font-style:normal}
+.sptx-card .sptx-titulo i{font-style:normal}
+
+/* ---------- impressão continua limpa ---------- */
+@media print{
+  body{background:#fff}
+  .card,details.card,a.card,.bomba{box-shadow:none}
+}
