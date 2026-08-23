@@ -10,18 +10,18 @@ import webpush from 'web-push';
 import { readFileSync } from 'fs';
 import { createPrivateKey, privateDecrypt, createDecipheriv, constants } from 'crypto';
 
+/* sem título: o iPhone mostra só o nome do app ("Sapatão") e o texto —
+   por isso o nome do painel vai dentro do próprio texto */
 const msg = process.env.MENSAGEM_COMMIT || '';
-let autor = '', titulo = '', corpo = '', urlAlvo = '';
+let autor = '', corpo = '', urlAlvo = '';
 let m = msg.match(/novo follow-up de (.+) na ação (\d+)/i);
 if (m) {
   autor = m[1];
-  titulo = 'Planejamento Estratégico';
-  corpo = `Novo follow-up de ${m[1]} na ação ${m[2]}.`;
+  corpo = `Novo follow-up de ${m[1]} na ação ${m[2]} do Planejamento Estratégico.`;
   urlAlvo = './estrategia/#notificacoes';
 } else if ((m = msg.match(/(?:chore:\s*)?(.+?) (concluiu|reabriu) a ação (\d+) do (Roadmap Comercial|Planejamento Estratégico)/i))) {
   autor = m[1];
-  titulo = m[4];
-  corpo = `${m[1]} ${m[2]} a ação ${m[3]}.`;
+  corpo = `${m[1]} ${m[2]} a ação ${m[3]} do ${m[4]}.`;
   urlAlvo = /roadmap/i.test(m[4]) ? './roadmap/guia.html' : './estrategia/#notificacoes';
 }
 if (!corpo) { console.log('commit sem novidade para avisar — nada a enviar'); process.exit(0); }
@@ -63,7 +63,7 @@ for (const [id, ent] of entradas) {
     const dec = createDecipheriv('aes-256-gcm', aes, iv);
     dec.setAuthTag(ct.subarray(ct.length - 16));
     const sub = JSON.parse(Buffer.concat([dec.update(ct.subarray(0, ct.length - 16)), dec.final()]).toString('utf8'));
-    await webpush.sendNotification(sub, JSON.stringify({ title: titulo, body: corpo, url: urlAlvo }), { TTL: 3600 });
+    await webpush.sendNotification(sub, JSON.stringify({ title: '', body: corpo, url: urlAlvo }), { TTL: 3600 });
     ok++;
   } catch (e) {
     falha++;

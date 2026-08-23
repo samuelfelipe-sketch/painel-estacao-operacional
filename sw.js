@@ -6,7 +6,8 @@ self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim(
 self.addEventListener('push', function (e) {
   var dados = {};
   try { dados = e.data ? e.data.json() : {}; } catch (err) { dados = { body: e.data && e.data.text() }; }
-  var titulo = dados.title || 'Estação Sapatão';
+  /* título vazio de propósito: o iPhone já mostra o nome do app ("Sapatão") */
+  var titulo = dados.title || '';
   var opcoes = {
     body: dados.body || 'Novidade nos painéis.',
     icon: 'icon-192.png',

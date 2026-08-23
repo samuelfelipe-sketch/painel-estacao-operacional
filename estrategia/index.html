@@ -1014,6 +1014,8 @@ const notifPane=document.getElementById('notif-pane'),notifScrim=document.getEle
 const LS_NOTIF='sapatao-notif-vistos-v1';
 function notifChave(id,f){let h=5381;const s=f.texto||'';for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return id+'|'+f.data+'|'+(f.por||'')+'|'+h;}
 function notifVistos(){try{return new Set(JSON.parse(localStorage.getItem(LS_NOTIF)||'[]'));}catch(e){return new Set();}}
+/* follow-up registrado pelo próprio usuário já nasce lido para ele */
+function notifMinha(f){const eu=quem();return !!(eu&&f.por===eu);}
 function notifTodas(){
   const l=[];
   ACOES.forEach(a=>{(EXEC[a.id].followups||[]).forEach(f=>{if(!f.apagado)l.push({id:a.id,tit:a.acao,f:f});});});
@@ -1022,13 +1024,13 @@ function notifTodas(){
 }
 function pintaSino(){
   const vistos=notifVistos();
-  const n=notifTodas().filter(x=>!vistos.has(notifChave(x.id,x.f))).length;
+  const n=notifTodas().filter(x=>!notifMinha(x.f)&&!vistos.has(notifChave(x.id,x.f))).length;
   document.querySelectorAll('.sino-dot').forEach(d=>{d.hidden=!n;d.textContent=n>99?'99+':n;});
 }
 function renderNotifs(){
   const vistos=notifVistos(),l=notifTodas();
   if(!l.length){notifLista.innerHTML='<div class="notif-vazio">Nenhum follow-up registrado ainda. Quando alguém registrar um no Planejamento, ele aparece aqui.</div>';return;}
-  notifLista.innerHTML=l.map(x=>'<div class="notif-item'+(vistos.has(notifChave(x.id,x.f))?'':' nova')+'">'
+  notifLista.innerHTML=l.map(x=>'<div class="notif-item'+((vistos.has(notifChave(x.id,x.f))||notifMinha(x.f))?'':' nova')+'">'
     +'<div class="notif-meta">'+fmt(x.f.data)+(x.f.por?' — '+esc(x.f.por):'')+'</div>'
     +'<div class="notif-acao">Ação '+x.id+' · '+esc(x.tit)+'</div>'
     +'<div class="notif-txt">'+esc(x.f.texto)+'</div></div>').join('');
