@@ -284,8 +284,6 @@ body.so-leitura #btn-importar{display:none}
       <button class="nav-link" data-t="cola"><span class="dot"></span>Cola Rápida</button>
       <button class="nav-link" data-t="roadmap"><span class="dot"></span>Roadmap Oficial</button>
       <button class="nav-link" data-t="gut"><span class="dot"></span>Plano de Ação</button>
-    <div class="grupo">Ajustes</div>
-      <button class="nav-link" data-t="config"><span class="dot"></span>Configura&ccedil;&otilde;es</button>
     <div class="grupo">Central</div>
       <a class="nav-link" href="../index.html" style="text-decoration:none"><span class="dot"></span>&#8592; Central de acessos</a>
   </div>
@@ -341,7 +339,6 @@ body.so-leitura #btn-importar{display:none}
 
 
 <!-- ============ CONFIGURAÇÕES ============ -->
-<section id="config"></section>
 
 </main>
 
@@ -419,37 +416,6 @@ async function pegaJsonApi(url){
   const j=await r.json();
   return{sha:j.sha,doc:JSON.parse(b64docdec(j.content))};
 }
-function montaConfig(){
-  const el=document.getElementById('config');if(!el)return;
-  el.innerHTML='<div class="km"><span class="marco">Ajustes</span><h2>Configurações</h2></div>'
-  +'<p class="lead">Conta e sincronização — o mesmo acesso vale para o Roadmap Comercial e para o Planejamento Estratégico.</p>'
-  +'<div class="card">'
-  +'<p><b>Estado da nuvem:</b> <span id="cfg-status">verificando…</span></p>'
-  +'<div id="cfg-tem-chave" hidden>'
-  +'<p class="lead" style="margin:8px 0">✔ Este aparelho tem a chave de publicação — as alterações são gravadas na nuvem automaticamente.</p>'
-  +'<button type="button" class="cfg-btn sec" id="cfg-remover">Remover a chave deste aparelho</button>'
-  +'</div>'
-  +'<div id="cfg-sem-chave" hidden>'
-  +'<p class="lead" style="margin:8px 0">Sem chave de publicação: este aparelho só lê. Entre pela central digitando a senha (a chave desce da nuvem sozinha) ou cole aqui a chave — fine-grained token com <b>Contents: Read and write</b> só neste repositório. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Criar chave no GitHub →</a></p>'
-  +'<input type="password" class="cfg-token" id="cfg-token" placeholder="Chave de publicação (github_pat_…)" autocomplete="off">'
-  +'<button type="button" class="cfg-btn" id="cfg-salvar">Salvar chave neste aparelho</button>'
-  +'</div>'
-  +'</div>'
-  +'<h3>Minha senha</h3>'
-  +'<div class="card" style="max-width:420px">'
-  +'<p class="lead" style="margin-bottom:8px">A senha é do seu usuário e vale para todos os painéis. Precisa da chave de publicação neste aparelho.</p>'
-  +'<input type="password" class="sn-campo" id="sn-atual" placeholder="Senha atual" autocomplete="off">'
-  +'<input type="password" class="sn-campo" id="sn-nova" placeholder="Senha nova (mínimo 6 caracteres)" autocomplete="off">'
-  +'<input type="password" class="sn-campo" id="sn-conf" placeholder="Repetir a senha nova" autocomplete="off">'
-  +'<button type="button" class="cfg-btn" id="sn-trocar">Alterar minha senha</button>'
-  +'<p class="lead" id="sn-msg" style="margin-top:8px"></p>'
-  +'</div>'
-  +'<div id="cfg-usuarios" data-central="1">'
-  +'<h3>Usuários e permissões</h3>'
-  +'<div class="card"><p class="lead" style="margin-bottom:10px">A administração de usuários fica nas <b>Configurações da central</b> — um lugar só para todos os painéis.</p>'
-  +'<button type="button" class="cfg-btn" style="margin-top:0" onclick="location.href=\'../configuracoes/\'">Abrir Configurações da central →</button></div>'
-  +'</div>';
-}
 function telaTravada(msg){
   let d=document.getElementById('tela-travada');
   if(!d){d=document.createElement('div');d.id='tela-travada';d.className='wrap';const mn=document.querySelector('main');mn.parentNode.insertBefore(d,mn);}
@@ -480,7 +446,6 @@ async function destrava(){
   }
   bootado=true;destravou();
   Object.keys(doc.secoes||{}).forEach(function(id){const el=document.getElementById(id);if(el)el.innerHTML=doc.secoes[id];});
-  montaConfig(); /* a aba Configurações é do shell — o HTML do bundle é ignorado */
   ACOES=doc.dados.ACOES;EXECUCOES=doc.dados.EXECUCOES;
   boot();
   if(eraAberto)migraCriptografia();
