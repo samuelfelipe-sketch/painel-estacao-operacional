@@ -187,10 +187,18 @@ function lsSet(k){try{return new Set(JSON.parse(localStorage.getItem(k)||'[]'));
 function chaveDe(x){return x.painel==='pe'&&x.tp==='f'?(x.id+'|'+x.data+'|'+(x.por||'')+'|'+hashTx(x.txt)):(x.tp+'|'+x.id+'|'+x.data+'|'+(x.por||''));}
 function minhaN(x){return !!(A&&A.user&&x.por&&x.por===A.user.nome);}
 async function pegaDoc(path){
-  const r=await fetch(API_RAIZ+path+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  const j=await r.json();
-  let doc=JSON.parse(b64d(j.content));
+  /* raw primeiro: leitura pública não conta no limite da API do GitHub */
+  let doc=null;
+  try{
+    const rr=await fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/'+path+'?t='+Date.now(),{cache:'no-store'});
+    if(rr.ok)doc=await rr.json();
+  }catch(e){}
+  if(!doc){
+    const r=await fetch(API_RAIZ+path+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    doc=JSON.parse(b64d(j.content));
+  }
   if(doc&&doc.enc===1){
     if(!window.sapataoCofre.dek())await window.sapataoCofre.baixaDekPeloToken();
     doc=await window.sapataoCofre.decifra(doc);

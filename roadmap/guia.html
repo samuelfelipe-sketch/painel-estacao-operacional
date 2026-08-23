@@ -417,7 +417,19 @@ const CONTEUDO_API='https://api.github.com/repos/samuelfelipe-sketch/painel-esta
 let bootado=false,conteudoAbertoRemoto=false;
 function b64docdec(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
 async function pegaJsonApi(url){
-  const r=await fetch(url+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+  /* sem chave de publicação, lê pelo raw (não conta no limite de 60/h da
+     API do GitHub); com chave, a API autenticada tem limite folgado */
+  let t='';try{t=(window.sapataoChave&&window.sapataoChave.token())||'';}catch(e){}
+  const path=url.split('/contents/')[1];
+  if(!t){
+    try{
+      const rr=await fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/'+path+'?t='+Date.now(),{cache:'no-store'});
+      if(rr.ok)return{sha:null,doc:await rr.json()};
+    }catch(e){}
+  }
+  const h={'Accept':'application/vnd.github+json'};
+  if(t)h['Authorization']='Bearer '+t;
+  const r=await fetch(url+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();
   return{sha:j.sha,doc:JSON.parse(b64docdec(j.content))};
@@ -792,6 +804,22 @@ function atualizaCfg(){if(!cfgTem)return;const t=!!tokenSync();cfgTem.hidden=!t;
 function chip(classe,txt){if(chipEl){chipEl.className='sync-chip'+(classe?' '+classe:'');chipEl.innerHTML='&#9729; '+txt;}if(cfgStatus)cfgStatus.textContent=txt.replace(/^Nuvem: /,'');}
 let chaveInvalida=false,limiteApi=false,tentouRecuperarChave=false;
 async function leRemoto(){
+  if(!tokenSync()){
+    /* só leitura: o raw não conta no limite da API */
+    try{
+      const rr=await fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/roadmap/execucoes.json?t='+Date.now(),{cache:'no-store'});
+      if(rr.status===404)return{sha:null,salvoEm:0,dados:null};
+      if(rr.ok){
+        let doc=await rr.json();
+        if(doc&&doc.enc===1){
+          const ab=await window.sapataoCofre.decifra(doc);
+          if(!ab)throw new Error('sem a chave dos dados');
+          doc=ab;
+        }
+        return{sha:null,salvoEm:doc.salvoEm||0,dados:doc.dados||null,novas:doc.novas||[]};
+      }
+    }catch(e){if((e.message||'').indexOf('chave')>=0)throw e;}
+  }
   const h={'Accept':'application/vnd.github+json'};
   if(tokenSync())h['Authorization']='Bearer '+tokenSync();
   let r=await fetch(SYNC_API+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
