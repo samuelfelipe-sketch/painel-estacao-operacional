@@ -17,7 +17,7 @@ try { cal = JSON.parse(readFileSync('roadmap/calendario.json', 'utf8')); }
 catch { console.log('sem roadmap/calendario.json ainda — o site publica na próxima alteração dos painéis'); process.exit(0); }
 
 const dia = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(t);
-const hoje = dia(new Date()), amanha = dia(new Date(Date.now() + 864e5)), ontem = dia(new Date(Date.now() - 864e5));
+const hoje = dia(new Date()), amanha = dia(new Date(Date.now() + 864e5)), ontem = dia(new Date(Date.now() - 864e5)), seteDias = dia(new Date(Date.now() + 7 * 864e5));
 const ddmm = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
 const listaIds = (ids) => (ids.length > 1 ? 'ações ' : 'ação ') + ids.join(', ');
 
@@ -28,21 +28,23 @@ const PAINEIS = [
 const avisos = [];
 for (const [k, nome, url] of PAINEIS) {
   const acoes = cal[k] || {};
-  const vHoje = [], vAmanha = [], recem = [], antigas = [];
+  const vHoje = [], vAmanha = [], vSemana = [], recem = [], antigas = [];
   for (const id of Object.keys(acoes)) {
     const a = acoes[id];
     if (!a || !a.p || a.s === 'concluido') continue;
     if (a.p === hoje) vHoje.push(id);
     else if (a.p === amanha) vAmanha.push(id);
+    else if (a.p === seteDias) vSemana.push(id);
     else if (a.p === ontem) recem.push(id);
     else if (a.p < hoje) antigas.push(id);
   }
-  /* avisa quando algo vence hoje/amanhã ou acabou de atrasar; as atrasadas
-     antigas só pegam carona nesses dias (para não apitar todo dia à toa) */
-  if (!vHoje.length && !vAmanha.length && !recem.length) continue;
+  /* avisa quando algo vence hoje/amanhã, entra na janela de 7 dias ou acabou
+     de atrasar; as atrasadas antigas só pegam carona (não apita todo dia) */
+  if (!vHoje.length && !vAmanha.length && !vSemana.length && !recem.length) continue;
   const partes = [];
   if (vHoje.length) partes.push('Vence hoje: ' + listaIds(vHoje) + '.');
   if (vAmanha.length) partes.push('Vence amanhã (' + ddmm(amanha) + '): ' + listaIds(vAmanha) + '.');
+  if (vSemana.length) partes.push('Vence em 7 dias (' + ddmm(seteDias) + '): ' + listaIds(vSemana) + '.');
   if (recem.length) partes.push('Atrasou: ' + listaIds(recem) + ' (venceu ' + ddmm(ontem) + ').');
   if (antigas.length) partes.push('Já atrasada' + (antigas.length > 1 ? 's' : '') + ': ' + listaIds(antigas) + '.');
   avisos.push({ titulo: 'Prazos do ' + nome, corpo: partes.join(' '), url });
