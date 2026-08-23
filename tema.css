@@ -55,6 +55,8 @@ td{color:var(--tinta);border-bottom:1px solid #EEF1F5}
 .topbar .t i{color:var(--laranja);font-style:normal}
 .topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:var(--tinta);box-shadow:var(--sombra)}
 
+/* ---------- menu lateral: logo 20% menor ---------- */
+.brand .placa img{max-width:157px}
 /* ---------- menu lateral: item ativo em pílula clara ---------- */
 .nav-link{border-left:none;border-radius:0 999px 999px 0;margin-right:12px}
 .nav-link.active{background:rgba(255,255,255,.12);color:#fff}
