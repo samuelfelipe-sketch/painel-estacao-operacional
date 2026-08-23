@@ -623,20 +623,12 @@ cards.addEventListener('click',ev=>{
     return;
   }
 });
-/* Aviso no celular (app ntfy): quando alguém registra um follow-up, um
-   resumo SEM o conteúdo (só autor e número da ação) vai para o tópico
-   abaixo — quem assina o tópico no app recebe a notificação na hora.
-   O texto do follow-up nunca sai do cofre. */
-const NTFY_TOPICO='estacao-sapatao-pe-fb44d7a7';
 /* o commit do follow-up leva autor e nº da ação na mensagem (dado não
-   sensível) — o workflow de push nativo usa isso para montar o aviso */
+   sensível) — o workflow de push nativo usa isso para montar o aviso.
+   O texto do follow-up nunca sai do cofre. */
 let fuNovoAviso=null;
 function notificaFollowUp(id){
   fuNovoAviso={por:quem()||'alguém',acao:id};
-  try{
-    fetch('https://ntfy.sh/'+NTFY_TOPICO,{method:'POST',headers:{'Title':'Planejamento Estrategico','Tags':'spiral_note_pad'},
-      body:'Novo follow-up de '+(quem()||'alguém')+' na ação '+id+'.'});
-  }catch(e){/* melhor perder o aviso do que travar o registro */}
 }
 cards.addEventListener('change',ev=>{
   const card=ev.target.closest('.acard');if(!card)return;
