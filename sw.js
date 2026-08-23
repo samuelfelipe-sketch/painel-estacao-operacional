@@ -1,36 +1,28 @@
-const CACHE_NAME = 'painel-es-v4';
-const ASSETS = [
-  './index.html',
-  './manifest.json',
-];
+/* Service worker da Estação Sapatão — só para as notificações push.
+   Sem cache: as páginas continuam vindo sempre frescas da rede. */
+self.addEventListener('install', function () { self.skipWaiting(); });
+self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
-  self.skipWaiting();
+self.addEventListener('push', function (e) {
+  var dados = {};
+  try { dados = e.data ? e.data.json() : {}; } catch (err) { dados = { body: e.data && e.data.text() }; }
+  var titulo = dados.title || 'Estação Sapatão';
+  var opcoes = {
+    body: dados.body || 'Novidade nos painéis.',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    data: { url: dados.url || './estrategia/' }
+  };
+  e.waitUntil(self.registration.showNotification(titulo, opcoes));
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.map(key => key !== CACHE_NAME && caches.delete(key)))
-  ));
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', e => {
-  const url = e.request.url;
-
-  // Navegações e data.json: sempre rede primeiro (cache só como reserva offline)
-  if (e.request.mode === 'navigate' || url.includes('data.json')) {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match('./index.html'))
-    );
-    return;
-  }
-
-  // Demais recursos: Cache First
-  e.respondWith(
-    caches.match(e.request)
-      .then(r => r || fetch(e.request))
-      .catch(() => caches.match('./index.html'))
-  );
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (lista) {
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].url.indexOf('estrategia') >= 0 && 'focus' in lista[i]) return lista[i].focus();
+    }
+    return clients.openWindow(url);
+  }));
 });

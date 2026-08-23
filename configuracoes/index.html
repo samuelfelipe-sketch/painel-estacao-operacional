@@ -71,6 +71,15 @@ tr:last-child td{border-bottom:none}
     <p class="lead" id="sn-msg" style="margin-top:8px;margin-bottom:0"></p>
   </div>
 
+  <h3>Notificações no celular</h3>
+  <div class="card" style="max-width:520px">
+    <p class="lead" style="margin-bottom:8px">Receba a notificação oficial do aparelho quando alguém registrar um follow-up no Planejamento Estratégico. <b>No iPhone:</b> primeiro adicione o site à Tela de Início (Compartilhar &rarr; Adicionar à Tela de Início) e abra por lá.</p>
+    <p style="margin-bottom:10px">Neste aparelho: <span class="pill" id="np-status">verificando&hellip;</span></p>
+    <button type="button" class="btn" id="np-ativar" hidden>Ativar notificações neste aparelho</button>
+    <button type="button" class="btn sec" id="np-desativar" hidden>Desativar neste aparelho</button>
+    <p class="lead" id="np-msg" style="margin-top:8px;margin-bottom:0"></p>
+  </div>
+
   <div id="sec-admin" hidden>
     <h3>Sincronização (nuvem)</h3>
     <div class="card">
@@ -277,6 +286,95 @@ document.getElementById('us-salvar').addEventListener('click',async ()=>{
 pinta();
 document.addEventListener('sapatao-auth',pinta);
 document.addEventListener('sapatao-login',()=>{window.sapataoChave.busca().then(()=>{pinta();});});
+
+/* ============ Notificações push nativas (Web App) ============
+   O aparelho se inscreve no push do navegador; a inscrição vai CIFRADA
+   (AES-GCM + RSA-OAEP, chave pública abaixo) para roadmap/push-subs.json.
+   Quem envia é o workflow do GitHub, com as chaves privadas guardadas
+   como segredos do repositório — nada sensível fica público. */
+const VAPID_PUB='BEduLLWzJ5vBcC6wgokW5Yq_NL-x8y5nDtzfUQqvmXdXwQVb0j2dRO-OHCkCzoouyhH0KhS1EQEwY3ECDx_V_Hc';
+const SUBS_PUB_JWK={"kty":"RSA","n":"0OEv1g6eHJbJyYokRxzcbryWVc78i7qOKzIm5Fvf-s0XqIfNBLvetg7EqIn0Bc8QCBdMzldJukJaa941esnwZ_80SKeX_mgEVpw0-kBkeJ6KdeX2S0i1ibakoLBMbigUwqH3-EhqiYycHpITa2Hbp-irapWjk2pCjkI6DCXHvTOvDKzkVczLaooDtUgkrJXaZABiti4kZ9yEB3E1cpJko2bu-xfeFMqSNUoypZuuWX2BBXoDtkJhxfjsY4eREiDvL55KOg7FVkV_Ulk8RIfrLPhj6GZ3mfsZLkyzNYQqKu_wPgma-gfgwF_dCiRFgkIxRGke90fKxBV2CmBLE5UiXQ","e":"AQAB"};
+const API_SUBS='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/push-subs.json';
+const LS_PUSH='sapatao-push-id';
+const npStatus=document.getElementById('np-status'),npAtivar=document.getElementById('np-ativar'),npDesativar=document.getElementById('np-desativar'),npMsg=document.getElementById('np-msg');
+function npDiz(t,erro){if(npMsg){npMsg.textContent=t;npMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
+function pushSuportado(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
+function b64uToU8(s){s=s.replace(/-/g,'+').replace(/_/g,'/');const pad='='.repeat((4-s.length%4)%4);return Uint8Array.from(atob(s+pad),c=>c.charCodeAt(0));}
+function u8b64(buf){const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
+async function cifraSub(texto){
+  const aes=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt']);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},aes,new TextEncoder().encode(texto));
+  const rsa=await crypto.subtle.importKey('jwk',Object.assign({alg:'RSA-OAEP-256',ext:true},SUBS_PUB_JWK),{name:'RSA-OAEP',hash:'SHA-256'},false,['encrypt']);
+  const raw=await crypto.subtle.exportKey('raw',aes);
+  const ek=await crypto.subtle.encrypt({name:'RSA-OAEP'},rsa,raw);
+  return {ek:u8b64(ek),iv:u8b64(iv),ct:u8b64(ct)};
+}
+async function subsDoc(){
+  const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+token()};
+  const g=await fetch(API_SUBS+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  if(g.status===404)return{sha:null,doc:{v:1,subs:{}}};
+  if(!g.ok)throw new Error('HTTP '+g.status);
+  const j=await g.json();
+  return{sha:j.sha,doc:JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,'')))))};
+}
+async function gravaSubs(doc,sha,msg){
+  const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+token(),'Content-Type':'application/json'};
+  const body={message:msg,branch:'main',content:b64enc(JSON.stringify(doc,null,1))};
+  if(sha)body.sha=sha;
+  const r=await fetch(API_SUBS,{method:'PUT',headers:h,body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('HTTP '+r.status+' ao gravar');
+}
+async function npPinta(){
+  if(!npStatus)return;
+  if(!pushSuportado()){
+    npStatus.textContent='indisponível neste navegador';
+    npDiz('No iPhone, adicione o site à Tela de Início e abra por lá — aí o botão aparece.');
+    npAtivar.hidden=true;npDesativar.hidden=true;return;
+  }
+  const reg=await navigator.serviceWorker.getRegistration('../');
+  const sub=reg&&await reg.pushManager.getSubscription();
+  npStatus.textContent=sub?'ativas':'desligadas';
+  npAtivar.hidden=!!sub;npDesativar.hidden=!sub;
+}
+if(npAtivar)npAtivar.addEventListener('click',async()=>{
+  const A2=window.sapataoAuth;
+  if(!(A2&&A2.user)){npDiz('Entre pela central antes de ativar.',true);return;}
+  if(!token()){npDiz('Este aparelho ainda não tem a chave de publicação — saia e entre digitando a senha, e tente de novo.',true);return;}
+  npAtivar.disabled=true;npDiz('Ativando…');
+  try{
+    const reg=await navigator.serviceWorker.register('../sw.js');
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){npDiz('Permissão de notificação negada — libere em Ajustes e tente de novo.',true);npAtivar.disabled=false;return;}
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uToU8(VAPID_PUB)});
+    const env=await cifraSub(JSON.stringify(sub.toJSON()));
+    let id='';try{id=localStorage.getItem(LS_PUSH)||'';}catch(e){}
+    if(!id){id=u8b64(crypto.getRandomValues(new Uint8Array(6))).replace(/[^a-zA-Z0-9]/g,'').slice(0,8)||('ap'+Date.now());}
+    const{sha,doc}=await subsDoc();
+    doc.subs[id]={u:A2.user.id,em:new Date().toISOString().slice(0,10),env:env};
+    await gravaSubs(doc,sha,'chore: registra aparelho para notificações push');
+    try{localStorage.setItem(LS_PUSH,id);}catch(e){}
+    npDiz('Notificações ativadas neste aparelho! O primeiro follow-up novo já avisa você.');
+  }catch(e){npDiz('Não consegui ativar ('+e.message+').',true);}
+  npAtivar.disabled=false;npPinta();
+});
+if(npDesativar)npDesativar.addEventListener('click',async()=>{
+  npDesativar.disabled=true;npDiz('Desativando…');
+  try{
+    const reg=await navigator.serviceWorker.getRegistration('../');
+    const sub=reg&&await reg.pushManager.getSubscription();
+    if(sub)await sub.unsubscribe();
+    let id='';try{id=localStorage.getItem(LS_PUSH)||'';}catch(e){}
+    if(id&&token()){
+      const{sha,doc}=await subsDoc();
+      if(doc.subs[id]){delete doc.subs[id];await gravaSubs(doc,sha,'chore: remove aparelho das notificações push');}
+    }
+    try{localStorage.removeItem(LS_PUSH);}catch(e){}
+    npDiz('Notificações desativadas neste aparelho.');
+  }catch(e){npDiz('Não consegui desativar ('+e.message+').',true);}
+  npDesativar.disabled=false;npPinta();
+});
+npPinta();
 })();
 </script>
 </body>
