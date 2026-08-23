@@ -63,7 +63,9 @@ function diz(pill,texto){st.textContent=pill;msg.textContent=texto;}
 function mostra(html){
   if(bootado)return;bootado=true;
   espera.hidden=true;frame.style.display='block';
-  frame.srcdoc=html;
+  /* o site é claro; trava a ferramenta no tema claro dela mesmo com o
+     aparelho em modo escuro (ela respeita data-theme="light") */
+  frame.srcdoc=html.replace(/<html(?=[\s>])/i,'<html data-theme="light"');
 }
 async function pega(){
   const path='fluxo/dados.enc.json';
