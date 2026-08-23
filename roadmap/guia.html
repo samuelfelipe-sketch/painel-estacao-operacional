@@ -549,7 +549,25 @@ function renderPainel(){
   alvo.innerHTML=html;
 }
 
+/* KPIs do topo acompanham o Plano de Ação (o HTML vem estático do cofre) */
+function atualizaBombas(){
+  document.querySelectorAll('#hero-bombas .bomba').forEach(function(b){
+    const l=(b.querySelector('.lbl')||{textContent:''}).textContent;
+    const v=b.querySelector('.val');if(!v)return;
+    if(/pr[o\u00f3]ximo prazo/i.test(l)){
+      const pend=ACOES.filter(function(a){return EXECUCOES[a.id]&&EXECUCOES[a.id].status!=='concluido';});
+      if(!pend.length){v.innerHTML='&#10003; <small>todas conclu\u00eddas</small>';return;}
+      let prox=null;pend.forEach(function(a){if(!prox||a.prazo<prox)prox=a.prazo;});
+      const n=pend.filter(function(a){return a.prazo===prox;}).length;
+      const late=prox<HOJE;
+      v.innerHTML=fmt(prox).slice(0,5)+' <small>'+n+(n>1?' a\u00e7\u00f5es':' a\u00e7\u00e3o')+(late?' \u00b7 atrasada':'')+'</small>';
+      v.style.color=late?'#C2531A':'';
+    }
+    if(/a[\u00e7c][\u00f5o]es no plano/i.test(l))v.textContent=String(ACOES.length);
+  });
+}
 function renderAll(){
+  atualizaBombas();
   const lista=ordenadas();
   let done=0,atrasadas=0;
   tbody.innerHTML=lista.map(function(a){
