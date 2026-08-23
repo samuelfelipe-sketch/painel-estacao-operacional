@@ -204,12 +204,15 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 th.th-sort{cursor:pointer;user-select:none;white-space:nowrap}
 th.th-sort:hover{color:var(--laranja-escuro)}
 th.th-sort .seta{color:var(--laranja)}
-#tbl-exec{min-width:1120px}
+#tbl-exec{min-width:940px}
 .exec-status,.exec-data,.exec-obs{font-family:'Archivo',sans-serif;font-size:13px;color:var(--verde);background:#fff;border:1px solid var(--linha);border-radius:6px;padding:6px 8px}
 .exec-status{cursor:pointer}
 .exec-status.ok{background:#E7F2EA;border-color:#9CC4A9;color:#1D6B3C;font-weight:700}
 .exec-data{width:140px}
-input.exec-obs{width:210px}
+input.exec-obs{width:100%;min-width:110px}
+input.exec-data{width:126px}
+/* no plano, o aviso fica abaixo da data para a tabela caber em notebook */
+#gut .tag-late{display:block;margin:4px 0 0;width:max-content}
 .exec-obs:focus,.exec-data:focus,.exec-status:focus{outline:2px solid var(--laranja);outline-offset:1px}
 tr.done td{background:#F0F7F1!important;color:var(--verde-suave)}
 tr.done td:nth-child(2){text-decoration:line-through;text-decoration-thickness:1.5px}
