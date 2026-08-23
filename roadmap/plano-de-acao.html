@@ -82,26 +82,44 @@ td.prazo{white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:13px
 
 <script>
 (async function(){
-  /* as ações vêm do mesmo cofre cifrado do Guia (roadmap/guia-conteudo.json) */
-  const API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/guia-conteudo.json';
+  /* as ações vêm do mesmo cofre cifrado do Guia (roadmap/guia-conteudo.json);
+     as criadas pós-imersão vêm de roadmap/execucoes.json e entram com selo NOVA */
   const alvo=document.getElementById('linhas');
   function aviso(t){alvo.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--verde-suave)">'+t+'</td></tr>';}
   function fmt(iso){if(!iso)return'—';const p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  async function pega(path){
+    try{
+      const rr=await fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/'+path+'?t='+Date.now(),{cache:'no-store'});
+      if(rr.ok)return await rr.json();
+    }catch(e){}
+    const r=await fetch('https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/'+path+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+    if(!r.ok)throw 0;
+    return JSON.parse(decodeURIComponent(escape(atob((await r.json()).content.replace(/\s/g,'')))));
+  }
   async function carrega(){
     let doc;
-    try{
-      const r=await fetch(API+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
-      if(!r.ok)throw 0;
-      doc=JSON.parse(decodeURIComponent(escape(atob((await r.json()).content.replace(/\s/g,'')))));
-    }catch(e){aviso('Sem conexão para carregar as ações — recarregue a página.');return;}
+    try{doc=await pega('roadmap/guia-conteudo.json');}
+    catch(e){aviso('Sem conexão para carregar as ações — recarregue a página.');return;}
     if(doc.enc===1){
       if(!window.sapataoCofre.dek())await window.sapataoCofre.baixaDekPeloToken();
       doc=await window.sapataoCofre.decifra(doc);
       if(!doc){aviso('&#128274; Dados protegidos — abra o Guia de Execução e entre com usuário e senha neste aparelho, depois volte aqui.');return;}
     }
-    const l=doc.dados.ACOES.slice().sort((a,b)=>(b.gut-a.gut)||(a.id-b.id));
-    alvo.innerHTML=l.map((a,i)=>'<tr><td class="num">'+(i+1)+'</td><td>'+esc(a.acao)+'</td><td>'+esc(a.bloco)+'</td><td>'+esc(a.resp)+'</td><td class="prazo">'+fmt(a.prazo)+'</td><td class="gut'+(a.gut>=125?' max':'')+'">'+a.gut+'</td></tr>').join('');
+    let novas=[];
+    try{
+      let ex=await pega('roadmap/execucoes.json');
+      if(ex&&ex.enc===1)ex=await window.sapataoCofre.decifra(ex);
+      if(ex&&ex.novas){
+        novas=ex.novas.filter(n=>n&&n.id&&n.acao&&n.prazo).slice()
+          .sort((a,b)=>((a.em||a.criadaEm||'')+'').localeCompare((b.em||b.criadaEm||'')+'')||a.id-b.id);
+        let prox=18;novas.forEach(n=>{n.id=prox++;n.nova=true;});
+      }
+    }catch(e){/* sem as novas nesta carga, a tabela sai com as oficiais */}
+    const l=doc.dados.ACOES.slice().concat(novas).sort((a,b)=>((b.gut||0)-(a.gut||0))||(a.id-b.id));
+    alvo.innerHTML=l.map((a,i)=>'<tr><td class="num">'+(i+1)+'</td><td>'+esc(a.acao)
+      +(a.nova?' <span style="font-weight:700;font-size:9px;letter-spacing:.08em;color:#C2531A;background:#F7E1D1;border-radius:10px;padding:1px 7px;vertical-align:middle">NOVA</span>':'')
+      +'</td><td>'+esc(a.bloco)+'</td><td>'+esc(a.resp)+'</td><td class="prazo">'+fmt(a.prazo)+'</td><td class="gut'+((a.gut||0)>=125?' max':'')+'">'+(a.gut||0)+'</td></tr>').join('');
   }
   document.addEventListener('sapatao-login',carrega);
   carrega();

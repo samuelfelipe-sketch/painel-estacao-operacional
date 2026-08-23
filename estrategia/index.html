@@ -753,7 +753,9 @@ function b64enc(str){return btoa(unescape(encodeURIComponent(str)));}
 function b64dec(str){return decodeURIComponent(escape(atob(str.replace(/\s/g,''))));}
 const cfgStatus=document.getElementById('cfg-status'),cfgTem=document.getElementById('cfg-tem-chave'),cfgSem=document.getElementById('cfg-sem-chave');
 function atualizaCfg(){if(!cfgTem)return;const t=!!tokenSync();cfgTem.hidden=!t;cfgSem.hidden=t;}
-function chip(classe,txt){if(chipEl){chipEl.className='sync-chip'+(classe?' '+classe:'');chipEl.innerHTML='&#9729; '+txt;}if(cfgStatus)cfgStatus.textContent=txt.replace(/^Nuvem: /,'');}
+/* o chip da nuvem só aparece quando algo pede atenção (erro, chave,
+   publicação desligada) — sincronizado/publicando ficam invisíveis */
+function chip(classe,txt){if(chipEl){chipEl.className='sync-chip'+(classe?' '+classe:'');chipEl.innerHTML='&#9729; '+txt;chipEl.hidden=(classe==='ok'||classe==='pendente');}if(cfgStatus)cfgStatus.textContent=txt.replace(/^Nuvem: /,'');}
 let chaveInvalida=false,limiteApi=false,tentouRecuperarChave=false;
 async function leRemoto(){
   if(!tokenSync()){
@@ -1069,6 +1071,7 @@ if(usTbl){
   const filtros=document.querySelector('#acoes .ac-filtros');
   const ch=document.getElementById('sync-chip');
   if(!filtros||!ch)return;
+  ch.hidden=true; /* só aparece se a sincronização pedir atenção */
   const antiga=ch.parentElement;
   const linha=document.createElement('div');
   linha.style.cssText='margin:14px 0 0';

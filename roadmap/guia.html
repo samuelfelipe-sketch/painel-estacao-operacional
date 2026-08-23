@@ -777,6 +777,7 @@ if(impFile)impFile.addEventListener('change',function(){
   const barra=document.querySelector('#gut .exec-ordem');
   const ch=document.getElementById('sync-chip');
   if(!barra||!ch)return;
+  ch.hidden=true; /* só aparece se a sincronização pedir atenção */
   ['btn-exportar','btn-importar','imp-file'].forEach(function(id){const el=document.getElementById(id);if(el)el.remove();});
   document.querySelectorAll('#gut .lead,#gut p').forEach(function(p){
     if(/Exportar dados|fica salvo automaticamente/.test(p.innerHTML))p.innerHTML=p.innerHTML.replace(/\s*Tudo o que você preencher[\s\S]*$/,' Tudo o que você preencher <b>sincroniza sozinho entre os aparelhos</b> e sai na impressão.');
@@ -846,7 +847,9 @@ function b64enc(str){return btoa(unescape(encodeURIComponent(str)));}
 function b64dec(str){return decodeURIComponent(escape(atob(str.replace(/\s/g,''))));}
 const cfgStatus=document.getElementById('cfg-status'),cfgTem=document.getElementById('cfg-tem-chave'),cfgSem=document.getElementById('cfg-sem-chave');
 function atualizaCfg(){if(!cfgTem)return;const t=!!tokenSync();cfgTem.hidden=!t;cfgSem.hidden=t;}
-function chip(classe,txt){if(chipEl){chipEl.className='sync-chip'+(classe?' '+classe:'');chipEl.innerHTML='&#9729; '+txt;}if(cfgStatus)cfgStatus.textContent=txt.replace(/^Nuvem: /,'');}
+/* o chip da nuvem só aparece quando algo pede atenção (erro, chave,
+   publicação desligada) — sincronizado/publicando ficam invisíveis */
+function chip(classe,txt){if(chipEl){chipEl.className='sync-chip'+(classe?' '+classe:'');chipEl.innerHTML='&#9729; '+txt;chipEl.hidden=(classe==='ok'||classe==='pendente');}if(cfgStatus)cfgStatus.textContent=txt.replace(/^Nuvem: /,'');}
 let chaveInvalida=false,limiteApi=false,tentouRecuperarChave=false;
 async function leRemoto(){
   if(!tokenSync()){
