@@ -23,6 +23,7 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 | `estrategia/index.html` | **Planejamento Estratégico** — 25 ações do PE Reborn (KPI, meta, G×U×T, prazos, follow-ups por reunião) + abas de consulta (maturidade, SWOT, BCG, cenário, ICP, modelo de negócio). Usa o MESMO `roadmap/auth.js` (senha e sessão unificadas) e a mesma chave de publicação | senha |
 | `estrategia/pe-execucoes.json` | **base de dados** do PE (status/novo prazo/follow-ups) — CIFRADA — commits automáticos `chore: sincroniza follow-ups do Planejamento Estratégico (automático)` | — |
 | `estrategia/pe-conteudo.json` | conteúdo sensível do PE (25 ações, diagnóstico, SWOT etc.) — CIFRADO | — |
+| `fluxo/index.html` | **Fluxo de Caixa** (shell): usa o auth.js (`SAPATAO_APP='fluxo'`, permissão `fluxo` — admin sempre entra) e abre a ferramenta publicada CIFRADA em `fluxo/dados.enc.json` (`cofre.cifra({html})`) num iframe, com cache local `sapatao-fluxo-v1`; sem publicação, mostra "em preparação". Pipeline OneDrive→publicação ainda por construir (BRIEF do Samuel) | senha (admin) |
 | `painel-operacional.html` | Painel Operacional (faturamento por canal). **Desativado por ora** — `data.json` vazio desde maio (token da API do dashboard expirou) | aberto |
 | `fluxo-pessoal/` | app de finanças pessoais — LOGIN E USUÁRIOS PRÓPRIOS, dados cifrados dentro dele (não usa o auth.js; não mexer sem pedido) | login próprio |
 | `reborn-imersao.html`, `context.md`, `scripts/`, `.github/workflows/` | legado do painel operacional | — |
