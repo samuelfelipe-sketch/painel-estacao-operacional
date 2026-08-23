@@ -71,10 +71,6 @@ td{color:var(--tinta);border-bottom:1px solid #EEF1F5}
 .km-btn:active,button[data-vai]:active{background:#EFF2F6!important}
 .cfg-btn,.sn-campo,.cfg-token{border-radius:10px}
 
-/* ---------- tela "Sem acesso" acompanha o tema ---------- */
-.sptx-card .sptx-titulo{font-family:'Archivo',sans-serif;font-weight:800;font-style:normal}
-.sptx-card .sptx-titulo i{font-style:normal}
-
 /* ---------- impressão continua limpa ---------- */
 @media print{
   body{background:#fff}
