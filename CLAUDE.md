@@ -54,7 +54,6 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 
 ## Notificações de follow-up (PE)
 - **Tela de notificações**: o sino na topbar/desktop dos painéis abre um painel lateral no PE (`window.abreNotifs`, âncora `estrategia/#notificacoes`) com o histórico de follow-ups (sem apagados, mais recentes primeiro), destaque laranja + contador de não lidos (localStorage `sapatao-notif-vistos-v1`) e link para ativar o push do aparelho. No Guia o sino leva a `../estrategia/#notificacoes`; o toque na notificação push também abre essa tela.
-- **ntfy** (provisório): ao registrar follow-up, o PE manda "Novo follow-up de X na ação N" ao tópico `estacao-sapatao-pe-fb44d7a7` (app ntfy). Remover quando o push nativo estiver validado.
 - **Push nativo (Web App)**: `sw.js` + `manifest.json` na raiz; cartão "Notificações no celular" nas Configurações centrais inscreve o aparelho (Push API) e grava a inscrição CIFRADA (AES-GCM + RSA-OAEP) em `roadmap/push-subs.json`. O commit do follow-up leva `novo follow-up de X na ação N` na mensagem; o workflow `.github/workflows/notifica-push.yml` roda `scripts/notifica-push.mjs`, decifra as inscrições e envia via Web Push. Segredos do repositório: `VAPID_PRIVATE_KEY` e `PUSH_SUBS_PRIVATE_KEY` (chaves privadas; as públicas estão no código). No iPhone só funciona com o site adicionado à Tela de Início. Conteúdo do follow-up NUNCA sai do cofre — o aviso é só autor + nº da ação.
 
 ## Pendências conhecidas
