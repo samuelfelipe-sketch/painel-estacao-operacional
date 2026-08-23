@@ -26,7 +26,6 @@ h1 span{color:var(--laranja);font-style:normal}
 h2{font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.005em;color:var(--tinta)}
 a.card .t,.card-off .t{font-family:'Archivo',sans-serif;font-weight:700;letter-spacing:-.005em}
 .sub,.lead{color:var(--tinta-suave)}
-.lema{color:var(--tinta-suave)}
 
 /* rótulos de seção em mono, cinza-azulado ("RITMO MENSAL") */
 h3{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;letter-spacing:.18em;color:var(--tinta-suave);border-bottom:none;padding-bottom:0}
@@ -52,8 +51,8 @@ td{color:var(--tinta);border-bottom:1px solid #EEF1F5}
 /* ---------- topbar (celular): branca, botão de menu quadrado arredondado ---------- */
 .topbar{background:#fff;color:var(--tinta);box-shadow:0 1px 0 #E9EDF2}
 .topbar img{display:none} /* o logo horizontal é claro — some no fundo branco */
-.topbar .t{color:var(--tinta)}
-.topbar .t i{color:var(--laranja)}
+.topbar .t{font-family:'Archivo',sans-serif;font-weight:700;color:var(--tinta)}
+.topbar .t i{color:var(--laranja);font-style:normal}
 .topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:var(--tinta);box-shadow:var(--sombra)}
 
 /* ---------- menu lateral: item ativo em pílula clara ---------- */
@@ -61,7 +60,13 @@ td{color:var(--tinta);border-bottom:1px solid #EEF1F5}
 .nav-link.active{background:rgba(255,255,255,.12);color:#fff}
 
 /* ---------- botões e chips ---------- */
-.km-btn,.btn-print,.ord-btn,.sync-chip{border-radius:14px}
+.btn-print,.ord-btn,.sync-chip{border-radius:14px}
+/* atalhos "Abrir Plano de Ação" / "Abrir Ações Estratégicas" no estilo dos
+   botões da barra: brancos, quadrados arredondados, sombra suave
+   (o !important vence os estilos inline que vêm no conteúdo cifrado) */
+.km-btn,button[data-vai]{background:#fff!important;border:1px solid #E4E9F0!important;border-radius:14px!important;color:var(--verde)!important;font-weight:700!important;box-shadow:var(--sombra);padding:13px 26px!important}
+.km-btn:hover,button[data-vai]:hover{background:#F7F9FB!important}
+.km-btn:active,button[data-vai]:active{background:#EFF2F6!important}
 .cfg-btn,.sn-campo,.cfg-token{border-radius:10px}
 
 /* ---------- tela "Sem acesso" acompanha o tema ---------- */
