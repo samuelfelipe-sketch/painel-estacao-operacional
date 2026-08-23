@@ -206,6 +206,7 @@ tr:last-child td{border-bottom:none}
 .fu-texto-view{flex:1;font-size:13.5px;white-space:pre-line;color:var(--verde)}
 .fu-del{background:none;border:none;color:#B3261E;font-size:15px;cursor:pointer;padding:0 4px;flex-shrink:0;opacity:.55}
 .fu-del:hover{opacity:1}
+.fu-purge{background:none;border:none;color:#8C1D18;font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;font-style:normal}
 .fu-vazio{font-size:13px;color:var(--verde-suave);font-style:italic;padding:6px 0}
 .fu-novo{margin-top:10px;background:#F7F7F5;border:1px dashed var(--linha);border-radius:8px;padding:10px 12px}
 .fu-novo .fu-linha{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
@@ -450,6 +451,7 @@ try{
 }catch(e){}
 function gravaLocal(){try{localStorage.setItem(CHAVE_LS,JSON.stringify({v:1,salvoEm:salvoEm,dados:EXEC}));}catch(e){}}
 function quem(){const A=window.sapataoAuth;return (A&&A.user&&A.user.nome)||'';}
+function ehAdmin(){const A=window.sapataoAuth;return !!(A&&A.user&&A.user.admin);}
 function salva(){if(document.body.classList.contains('so-leitura'))return;salvoEm=Date.now();gravaLocal();agendaPublicacao();renderAll();renderPainel();}
 
 const aberto=new Set();
@@ -497,7 +499,8 @@ function fuHtml(a){
     h+='<div class="fu-item'+(ap?' fu-apagado':'')+'"><span class="fu-data">'+fmt(f.data)+'</span>'
       +'<div style="flex:1"><div class="fu-texto-view">'+esc(f.texto)+'</div>'
       +(f.por&&!ap?'<div class="fu-por">— '+esc(f.por)+'</div>':'')
-      +(ap?'<div class="fu-apagado-nota">apagado em '+fmt(ap.em)+(ap.por?' por '+esc(ap.por):'')+'</div>':'')
+      +(ap?'<div class="fu-apagado-nota">apagado em '+fmt(ap.em)+(ap.por?' por '+esc(ap.por):'')
+        +(ehAdmin()?' · <button type="button" class="fu-purge" data-i="'+i+'">excluir de vez</button>':'')+'</div>':'')
       +'</div>'
       +(ap?'':'<button type="button" class="fu-del" data-i="'+i+'" title="Apagar este follow-up (fica o registro)">&#10005;</button>')
       +'</div>';
@@ -575,6 +578,18 @@ cards.addEventListener('click',ev=>{
     const i=+ev.target.dataset.i;
     if(confirm('Apagar este follow-up? Ele continua no histórico, riscado, com o registro de quem apagou.')){
       EXEC[id].followups[i].apagado={em:HOJE,por:quem()||undefined};
+      salva();
+    }
+    return;
+  }
+  if(ev.target.classList.contains('fu-purge')){
+    /* só admin, e só sobre follow-ups já apagados: remove o registro de vez */
+    if(!ehAdmin())return;
+    const i=+ev.target.dataset.i;
+    const f=EXEC[id].followups[i];
+    if(!f||!f.apagado)return;
+    if(confirm('Excluir DE VEZ este follow-up apagado? Ele some do histórico para sempre.')){
+      EXEC[id].followups.splice(i,1);
       salva();
     }
     return;
