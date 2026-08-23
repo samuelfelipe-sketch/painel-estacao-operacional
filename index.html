@@ -131,17 +131,20 @@ function pinta(){
   if(logado)document.getElementById('lg-nome').textContent=A.user.nome;
   aplicaAcessoCards();
 }
-/* logado sem permissão num painel: o cartão fica esmaecido, sem clique,
-   com o selo "Sem acesso" — deslogado vê tudo normal */
+/* cartões com cadeado: deslogado, ficam esmaecidos pedindo o login;
+   logado, só esmaece o painel sem permissão (Método Reborn é sempre aberto) */
 function aplicaAcessoCards(){
-  [['roadmap/guia.html','roadmap'],['estrategia/','pe']].forEach(function(par){
+  const logado=!!(A&&A.user);
+  [['roadmap/guia.html','roadmap'],['estrategia/','pe'],['configuracoes/','config']].forEach(function(par){
     const card=document.querySelector('a.card[href="'+par[0]+'"]');
     if(!card)return;
-    const sem=!!(A&&A.user)&&!A.temAcesso(par[1]);
+    const sem=!logado||(par[1]!=='config'&&!A.temAcesso(par[1]));
     card.classList.toggle('card-sem',sem);
     let selo=card.querySelector('.selo-sem');
-    if(sem&&!selo){selo=document.createElement('span');selo.className='selo-sem';selo.textContent='Sem acesso — fale com o administrador';card.appendChild(selo);}
-    if(!sem&&selo)selo.remove();
+    if(sem){
+      if(!selo){selo=document.createElement('span');selo.className='selo-sem';card.appendChild(selo);}
+      selo.textContent=logado?'Sem acesso — fale com o administrador':'Entre acima para acessar';
+    }else if(selo)selo.remove();
   });
 }
 async function entrar(){
