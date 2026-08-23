@@ -23,6 +23,8 @@ body{font-family:'Archivo',sans-serif;background:var(--fundo);color:#16211C;line
 .card h2{font-family:'Archivo',sans-serif;font-weight:800;font-size:22px;color:#16211C;margin-bottom:10px}
 .lead{color:#5F6C7B;font-size:14.5px;margin:8px 0}
 .pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.06em;padding:2px 8px;border-radius:20px;background:#E3EAE7;color:var(--verde);text-transform:uppercase}
+.btn-pub{font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;color:#fff;background:var(--verde);border:none;border-radius:8px;padding:9px 18px;cursor:pointer;margin-top:10px}
+#fx-arq{margin-top:6px;font-family:'Archivo',sans-serif;font-size:13.5px}
 #fx-frame{border:0;width:100%;height:calc(100vh - 58px);display:none;background:#fff}
 #fx-espera[hidden]{display:none}
 </style>
@@ -38,6 +40,13 @@ body{font-family:'Archivo',sans-serif;background:var(--fundo);color:#16211C;line
     <h2>Fluxo de Caixa do grupo</h2>
     <p class="lead">Status: <span class="pill" id="fx-status">verificando&hellip;</span></p>
     <p class="lead" id="fx-msg">Procurando a última publicação da ferramenta&hellip;</p>
+  </div>
+  <div class="card" id="fx-pub" hidden style="margin-top:16px">
+    <h2>Publicar a ferramenta</h2>
+    <p class="lead">Escolha o arquivo <b>fluxo_caixa_rede.html</b> (o mais recente da pasta Ferramenta do OneDrive, baixado para este aparelho). Ele é comprimido, cifrado aqui no navegador e publicado — só quem tem a chave dos dados consegue abrir.</p>
+    <input type="file" id="fx-arq" accept=".html,.htm">
+    <br><button type="button" class="btn-pub" id="fx-publicar">Cifrar e publicar</button>
+    <p class="lead" id="fx-pub-msg" style="margin-bottom:0"></p>
   </div>
 </div>
 <iframe id="fx-frame" title="Fluxo de Caixa"></iframe>
@@ -69,17 +78,36 @@ async function pega(){
   const j=await r.json();
   return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,'')))));
 }
+async function gzipB64(str){
+  const cs=new CompressionStream('gzip');
+  const ab=await new Response(new Blob([str]).stream().pipeThrough(cs)).arrayBuffer();
+  let s='';new Uint8Array(ab).forEach(b=>s+=String.fromCharCode(b));return btoa(s);
+}
+async function gunzipB64(b64){
+  const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+  const ds=new DecompressionStream('gzip');
+  const ab=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
+  return new TextDecoder().decode(ab);
+}
 async function abreDoc(doc){
   if(!doc||doc.enc!==1)return false;
   if(!window.sapataoCofre.dek())await window.sapataoCofre.baixaDekPeloToken();
   const ab=await window.sapataoCofre.decifra(doc);
-  if(!ab||!ab.html)return false;
-  mostra(ab.html);
+  if(!ab)return false;
+  let html=ab.html||'';
+  if(!html&&ab.gz){
+    if(!window.DecompressionStream){diz('navegador antigo','Este navegador não abre o formato publicado — atualize o sistema do aparelho.');return true;}
+    html=await gunzipB64(ab.gz);
+  }
+  if(!html)return false;
+  mostra(html);
   return true;
 }
+const modoPublicar=/[?#]publicar/.test(location.href);
 async function carrega(){
   const A=window.sapataoAuth;
   if(!A||!A.user||!A.temAcesso('fluxo'))return; /* o auth.js cuida da tela */
+  if(modoPublicar){diz('publicação manual','Modo de publicação: a ferramenta não é aberta nesta tela.');preparaPublicar();return;}
   /* cache primeiro (abre na hora), rede em segundo plano */
   try{
     const c=JSON.parse(localStorage.getItem(CACHE)||'null');
@@ -87,11 +115,46 @@ async function carrega(){
   }catch(e){}
   await atualiza(true);
 }
+/* --- publicação manual (admin): cifra o HTML da ferramenta neste aparelho --- */
+function preparaPublicar(){
+  const A=window.sapataoAuth;
+  if(!(A&&A.user&&A.user.admin))return;
+  document.getElementById('fx-pub').hidden=false;
+}
+document.getElementById('fx-publicar').addEventListener('click',async()=>{
+  const msgEl=document.getElementById('fx-pub-msg');
+  const f=document.getElementById('fx-arq').files[0];
+  if(!f){msgEl.textContent='Escolha o arquivo primeiro.';return;}
+  const tok=window.sapataoChave.token();
+  if(!tok){msgEl.textContent='Este aparelho não tem a chave de publicação — saia e entre com a senha na central.';return;}
+  if(!window.sapataoCofre.dek()){msgEl.textContent='Este aparelho não tem a chave dos dados — saia e entre com a senha na central.';return;}
+  msgEl.textContent='Cifrando e publicando…';
+  try{
+    const html=await f.text();
+    if(!/<html|<body|<!doctype/i.test(html.slice(0,2000))){msgEl.textContent='Esse arquivo não parece ser a ferramenta (esperava um HTML).';return;}
+    const carga={v:1,em:new Date().toISOString().slice(0,16)};
+    if(window.CompressionStream)carga.gz=await gzipB64(html);else carga.html=html;
+    const cifrado=await window.sapataoCofre.cifra(carga);
+    const url='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/fluxo/dados.enc.json';
+    const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tok,'Content-Type':'application/json'};
+    let sha=null;
+    try{const g=await fetch(url+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});if(g.ok)sha=(await g.json()).sha;}catch(e){}
+    const body={message:'chore: publica a ferramenta do Fluxo de Caixa (manual)',branch:'main',content:btoa(unescape(encodeURIComponent(JSON.stringify(cifrado))))};
+    if(sha)body.sha=sha;
+    const r=await fetch(url,{method:'PUT',headers:h,body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    try{localStorage.setItem(CACHE,JSON.stringify(cifrado));}catch(e){}
+    msgEl.textContent='Publicado! Recarregue a página (ou tire o "?publicar" do endereço) para abrir a ferramenta.';
+  }catch(e){msgEl.textContent='Não consegui publicar ('+e.message+').';}
+});
 async function atualiza(primeira){
   try{
     const doc=await pega();
     if(!doc){
-      if(!bootado)diz('em preparação','A ferramenta ainda não foi publicada aqui. Assim que a primeira versão for gravada em fluxo/dados.enc.json, esta página passa a abri-la automaticamente.');
+      if(!bootado){
+        diz('em preparação','A ferramenta ainda não foi publicada. Sendo admin, use o cartão abaixo para publicar a primeira versão.');
+        preparaPublicar();
+      }
       return;
     }
     if(doc.enc===1){try{localStorage.setItem(CACHE,JSON.stringify(doc));}catch(e){}}
