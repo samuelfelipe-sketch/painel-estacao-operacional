@@ -102,3 +102,4 @@ td{color:var(--tinta);border-bottom:1px solid #EEF1F5}
 /* KPIs do topo são atalhos clicáveis */
 #hero-bombas .bomba{cursor:pointer;transition:border-color .15s,transform .12s}
 #hero-bombas .bomba:hover{border-color:var(--laranja,#EC6C22);transform:translateY(-1px)}
+.sync-chip[hidden]{display:none}
