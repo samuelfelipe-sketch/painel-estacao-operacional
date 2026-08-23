@@ -1,0 +1,26 @@
+name: Notificação push de follow-up
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'estrategia/pe-execucoes.json'
+
+permissions:
+  contents: read
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save web-push@3
+      - run: node scripts/notifica-push.mjs
+        env:
+          MENSAGEM_COMMIT: ${{ github.event.head_commit.message }}
+          VAPID_PUBLIC_KEY: BEduLLWzJ5vBcC6wgokW5Yq_NL-x8y5nDtzfUQqvmXdXwQVb0j2dRO-OHCkCzoouyhH0KhS1EQEwY3ECDx_V_Hc
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          SUBS_PRIVATE_KEY_B64: ${{ secrets.PUSH_SUBS_PRIVATE_KEY }}

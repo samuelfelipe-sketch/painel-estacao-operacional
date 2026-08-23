@@ -600,7 +600,11 @@ cards.addEventListener('click',ev=>{
    abaixo — quem assina o tópico no app recebe a notificação na hora.
    O texto do follow-up nunca sai do cofre. */
 const NTFY_TOPICO='estacao-sapatao-pe-fb44d7a7';
+/* o commit do follow-up leva autor e nº da ação na mensagem (dado não
+   sensível) — o workflow de push nativo usa isso para montar o aviso */
+let fuNovoAviso=null;
 function notificaFollowUp(id){
+  fuNovoAviso={por:quem()||'alguém',acao:id};
   try{
     fetch('https://ntfy.sh/'+NTFY_TOPICO,{method:'POST',headers:{'Title':'Planejamento Estrategico','Tags':'spiral_note_pad'},
       body:'Novo follow-up de '+(quem()||'alguém')+' na ação '+id+'.'});
@@ -742,11 +746,14 @@ async function publica(){
     const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tokenSync(),'Content-Type':'application/json'};
     let carga={v:1,salvoEm:salvoEm,dados:EXEC};
     if(window.sapataoCofre.dek())carga=await window.sapataoCofre.cifra(carga);
-    const body={message:'chore: sincroniza follow-ups do Planejamento Estratégico (automático)',branch:'main',
+    let msg='chore: sincroniza follow-ups do Planejamento Estratégico (automático)';
+    if(fuNovoAviso)msg='chore: novo follow-up de '+fuNovoAviso.por+' na ação '+fuNovoAviso.acao+' (automático)';
+    const body={message:msg,branch:'main',
                 content:b64enc(JSON.stringify(carga,null,2))};
     if(rem.sha)body.sha=rem.sha;
     const r=await fetch(SYNC_API,{method:'PUT',headers:h,body:JSON.stringify(body)});
     if(!r.ok)throw new Error('HTTP '+r.status);
+    fuNovoAviso=null;
     chip('ok','Nuvem: sincronizado');
   }catch(e){
     chip('erro','Nuvem: falha ao publicar — vou tentar de novo');
