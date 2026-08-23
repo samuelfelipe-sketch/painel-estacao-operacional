@@ -40,7 +40,7 @@ for (const [id, ent] of entradas) {
     const dec = createDecipheriv('aes-256-gcm', aes, iv);
     dec.setAuthTag(ct.subarray(ct.length - 16));
     const sub = JSON.parse(Buffer.concat([dec.update(ct.subarray(0, ct.length - 16)), dec.final()]).toString('utf8'));
-    await webpush.sendNotification(sub, JSON.stringify({ title: 'Planejamento Estratégico', body: corpo, url: '../estrategia/' }), { TTL: 3600 });
+    await webpush.sendNotification(sub, JSON.stringify({ title: 'Planejamento Estratégico', body: corpo, url: './estrategia/#notificacoes' }), { TTL: 3600 });
     ok++;
   } catch (e) {
     falha++;
