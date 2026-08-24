@@ -12,6 +12,17 @@
    suficiente para uso interno, não para dados sensíveis.
    ============================================================ */
 (function () {
+  /* iPad com o site instalado como app: o iPadOS desenha os controles da
+     janela (as três bolinhas) flutuando sobre o canto superior esquerdo,
+     em cima do botão de voltar. A classe abre espaço (regras no tema.css). */
+  try {
+    var ehApp = navigator.standalone === true ||
+      (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    var ehIpad = /iPad/.test(navigator.userAgent) ||
+      (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+    if (ehApp && ehIpad) document.documentElement.classList.add('app-janela');
+  } catch (e) {}
+
   /* Fallback embutido (mantém o Samuel entrando mesmo sem rede).
      A lista viva fica em roadmap/usuarios.json. */
   var USUARIOS_FALLBACK = [
