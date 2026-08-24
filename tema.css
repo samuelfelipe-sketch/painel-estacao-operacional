@@ -1,0 +1,112 @@
+/* ============================================================
+   Tema Dashboard — Estação Sapatão
+   Carregado DEPOIS do <style> de cada página: aproxima a central,
+   as configurações, o Roadmap Comercial, o Planejamento Estratégico
+   e o Plano de Ação do visual do dashboard.estacaosapatao.com.br.
+   ============================================================ */
+:root{
+  --fundo:#F4F6F9;
+  --linha:#E4E9F0;
+  --tinta:#16211C;        /* títulos e números */
+  --tinta-suave:#5F6C7B;  /* subtítulos e textos de apoio */
+  --sombra:0 1px 2px rgba(16,24,40,.06),0 2px 6px rgba(16,24,40,.05);
+}
+body{background:var(--fundo);color:var(--tinta)}
+
+/* ---------- cartões: brancos, bem arredondados, sombra suave ---------- */
+.card,details.card,.login-box{border:1px solid #EBEEF3;border-radius:16px;box-shadow:var(--sombra)}
+a.card,.card-off{border:1px solid #EBEEF3;border-radius:18px;border-top:none;box-shadow:var(--sombra)}
+a.card{border-left:5px solid var(--laranja)}
+.card-off{border-left:5px solid var(--linha)}
+a.card:hover{box-shadow:0 10px 24px rgba(16,24,40,.10)}
+
+/* ---------- títulos sem serifa, escuros (como no dashboard) ---------- */
+h1{font-family:'Archivo',sans-serif;font-weight:800;letter-spacing:-.01em;color:var(--tinta);font-size:clamp(20px,6.5vw,42px);white-space:nowrap}
+h1 span{color:var(--laranja);font-style:normal}
+h2{font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.005em;color:var(--tinta)}
+a.card .t,.card-off .t{font-family:'Archivo',sans-serif;font-weight:700;letter-spacing:-.005em}
+.sub,.lead{color:var(--tinta-suave)}
+
+/* rótulos de seção em mono, cinza-azulado ("RITMO MENSAL") */
+h3{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;letter-spacing:.18em;color:var(--tinta-suave);border-bottom:none;padding-bottom:0}
+
+/* ---------- tabelas: cabeçalho verde-escuro, números escuros ---------- */
+th{background:var(--verde);color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10.5px;letter-spacing:.14em;border-bottom:none;padding:10px}
+th:first-child{border-radius:10px 0 0 0}
+th:last-child{border-radius:0 10px 0 0}
+th.th-sort:hover{background:var(--verde-escuro)}
+th.th-sort .seta{color:#FFD9BE}
+td{color:var(--tinta);border-bottom:1px solid #EEF1F5}
+
+/* ---------- pílulas e selos ---------- */
+.pill,.flag,.tag-late,.selo{border-radius:999px;font-weight:700}
+
+/* ---------- KPIs do hero: borda lateral colorida, valor escuro ---------- */
+.bomba{border:1px solid #EBEEF3;border-left:5px solid var(--laranja);border-radius:14px;box-shadow:var(--sombra)}
+.bomba::before{display:none}
+.bomba .lbl{color:var(--tinta-suave)}
+.bomba .val{color:var(--tinta)}
+.bomba .val small{color:var(--tinta-suave)}
+
+/* ---------- topbar (celular): branca, botão de menu quadrado arredondado ---------- */
+.topbar{background:#fff;color:var(--tinta);box-shadow:0 1px 0 #E9EDF2}
+.topbar img{display:none} /* o logo horizontal é claro — some no fundo branco */
+.topbar .t{font-family:'Archivo',sans-serif;font-weight:700;color:var(--tinta)}
+.topbar .t i{color:inherit;font-style:normal}
+.topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:var(--tinta);box-shadow:var(--sombra)}
+
+/* ---------- menu lateral: logo 20% menor ---------- */
+.brand .placa img{max-width:157px}
+/* ---------- menu lateral: item ativo em pílula clara ---------- */
+.nav-link{border-left:none;border-radius:0 999px 999px 0;margin-right:12px}
+.nav-link.active{background:rgba(255,255,255,.12);color:#fff}
+
+/* ---------- botões e chips ---------- */
+.btn-print,.ord-btn,.sync-chip{border-radius:14px}
+/* atalhos "Abrir Plano de Ação" / "Abrir Ações Estratégicas" no estilo dos
+   botões da barra: brancos, quadrados arredondados, sombra suave
+   (o !important vence os estilos inline que vêm no conteúdo cifrado) */
+.km-btn,button[data-vai]{background:#fff!important;border:1px solid #E4E9F0!important;border-radius:14px!important;color:var(--verde)!important;font-weight:700!important;box-shadow:var(--sombra);padding:13px 26px!important}
+.km-btn:hover,button[data-vai]:hover{background:#F7F9FB!important}
+.km-btn:active,button[data-vai]:active{background:#EFF2F6!important}
+.cfg-btn,.sn-campo,.cfg-token{border-radius:10px}
+
+/* ---------- impressão continua limpa ---------- */
+@media print{
+  body{background:#fff}
+  .card,details.card,a.card,.bomba{box-shadow:none}
+}
+
+/* ---------- painel de notificações (sino dos painéis) ---------- */
+.notif-scrim{position:fixed;inset:0;background:rgba(15,25,20,.45);z-index:80;display:none}
+.notif-scrim.aberta{display:block}
+.notif-pane{position:fixed;z-index:81;top:0;right:0;bottom:0;width:min(430px,100%);background:#F4F6F9;box-shadow:-8px 0 30px rgba(20,30,45,.18);display:none;flex-direction:column}
+.notif-pane.aberta{display:flex}
+.notif-head{display:flex;align-items:center;gap:10px;padding:16px 18px;background:#fff;border-bottom:1px solid #E4E9F0}
+.notif-head h2{font-family:'Archivo',sans-serif;font-weight:800;font-size:18px;color:#16211C;margin:0;flex:1}
+.notif-x{background:#fff;border:1px solid #E4E9F0;border-radius:10px;font-size:15px;line-height:1;padding:6px 11px;cursor:pointer;color:#16211C}
+.notif-lista{flex:1;overflow-y:auto;padding:14px 16px}
+.notif-item{background:#fff;border:1px solid #E4E9F0;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(20,30,45,.05);cursor:pointer}
+.notif-item:hover{border-color:#C9D2DC}
+.notif-item.nova{border-left:4px solid var(--laranja,#EC6C22)}
+.notif-meta{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5F6C7B;margin-bottom:5px}
+.notif-acao{font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;color:var(--verde,#004438);margin-bottom:4px}
+.notif-txt{font-size:13.5px;color:#16211C;white-space:pre-wrap}
+.notif-vazio{color:#5F6C7B;text-align:center;padding:30px 10px}
+.notif-pe{padding:12px 16px;background:#fff;border-top:1px solid #E4E9F0;font-size:13px}
+.notif-pe a{color:var(--verde,#004438);font-weight:600}
+.sino-b{position:relative}
+.sino-dot{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--laranja,#EC6C22);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none}
+.sino-dot[hidden]{display:none}
+
+/* ---------- iPad com o site instalado como app ---------- */
+/* o iPadOS desenha os controles da janela (as três bolinhas) por cima do
+   canto superior esquerdo — a classe app-janela (posta pelo auth.js) abre
+   espaço para o botão de voltar em todas as barras */
+html.app-janela .topbar{padding-left:92px}
+html.app-janela .btn-voltar{left:92px}
+
+/* KPIs do topo são atalhos clicáveis */
+#hero-bombas .bomba{cursor:pointer;transition:border-color .15s,transform .12s}
+#hero-bombas .bomba:hover{border-color:var(--laranja,#EC6C22);transform:translateY(-1px)}
+.sync-chip[hidden]{display:none}

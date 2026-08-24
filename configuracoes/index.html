@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Configurações — Estação Sapatão</title>
+<meta name="theme-color" content="#004438">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20512%20512%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230B5748%22/%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2300332A%22/%3E%20%3C/linearGradient%3E%20%3C/defs%3E%20%3Crect%20width%3D%22512%22%20height%3D%22512%22%20fill%3D%22url(%23bg)%22/%3E%20%3Ccircle%20cx%3D%22256%22%20cy%3D%22186%22%20r%3D%2278%22%20fill%3D%22none%22%20stroke%3D%22%23F5F3EC%22%20stroke-width%3D%2230%22/%3E%20%3Cpath%20d%3D%22M130%20420%20q126%20-150%20252%200%22%20fill%3D%22none%22%20stroke%3D%22%23F5F3EC%22%20stroke-width%3D%2230%22%20stroke-linecap%3D%22round%22/%3E%20%3Ccircle%20cx%3D%22256%22%20cy%3D%22186%22%20r%3D%2226%22%20fill%3D%22%23EC6C22%22/%3E%20%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>window.SAPATAO_APP='config';</script>
+<script src="../roadmap/auth.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --fundo:#EBEBEA;--card:#FFFFFF;--verde:#004438;--verde-escuro:#00352C;--verde-suave:#3D6B60;
+  --laranja:#EC6C22;--laranja-escuro:#C2531A;--linha:#D8D8D3;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Archivo',sans-serif;background:var(--fundo);color:var(--verde);line-height:1.55;font-size:15.5px}
+.wrap{max-width:760px;margin:0 auto;padding:30px 18px 70px}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--laranja);margin-bottom:10px}
+h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(27px,5vw,38px);line-height:1.1}
+h1 span{color:var(--laranja);font-style:italic}
+.sub{color:var(--verde-suave);margin-top:10px;font-size:14.5px}
+h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:var(--laranja-escuro);margin:26px 0 8px;border-bottom:2px solid var(--laranja);display:inline-block;padding-bottom:3px}
+.card{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:16px 18px;margin:10px 0}
+.lead{color:var(--verde-suave);font-size:14px;margin-bottom:10px}
+.pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.06em;padding:2px 8px;border-radius:20px;background:#E3EAE7;color:var(--verde);text-transform:uppercase}
+.pill.ok{background:#E7F2EA;color:#1D6B3C}
+.pill.off{background:#F9DEDC;color:#8C1D18}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;text-align:left;background:#F4F4F2;color:var(--verde);padding:8px;border-bottom:2px solid var(--laranja)}
+td{padding:8px;border-bottom:1px solid var(--linha);vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.tbl{overflow-x:auto;border:1px solid var(--linha);border-radius:10px;background:var(--card)}
+.us-tbl select,.us-tbl input[type=text]{font-family:'Archivo',sans-serif;font-size:12.5px;border:1px solid var(--linha);border-radius:6px;padding:5px 7px;background:#fff;color:var(--verde);max-width:130px}
+.us-mini{font-family:'Archivo',sans-serif;font-weight:600;font-size:12px;color:var(--verde);background:#fff;border:1px solid var(--linha);border-radius:14px;padding:4px 11px;cursor:pointer}
+.us-mini:hover{border-color:var(--verde-suave)}
+.campo{width:100%;font-family:'Archivo',sans-serif;font-size:14px;border:1px solid var(--linha);border-radius:8px;padding:9px 11px;background:#fff;color:var(--verde);margin:4px 0}
+.campo-mono{font-family:'IBM Plex Mono',monospace;font-size:12.5px}
+.btn{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#fff;background:var(--verde);border:none;border-radius:8px;padding:9px 16px;cursor:pointer;margin-top:8px}
+.btn:hover{background:var(--verde-escuro)}
+.btn.destaque{background:var(--laranja)}
+.btn.sec{background:#fff;color:#8C1D18;border:1px solid #E8B3AE}
+.topbar{display:flex;position:sticky;top:0;z-index:70;background:#fff;color:#16211C;padding:12px 16px;align-items:center;gap:12px;min-height:58px;box-sizing:border-box}
+.topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:#16211C;font-size:18px;line-height:1;padding:6px 10px;cursor:pointer}
+.topbar .t{font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;flex:1;color:#16211C}
+.campo:focus,.us-tbl select:focus{outline:2px solid var(--laranja);outline-offset:1px}
+</style>
+<link rel="stylesheet" href="../tema.css">
+</head>
+<body>
+<div class="topbar">
+  <button type="button" onclick="location.href='../index.html'" aria-label="Voltar à central de acessos" title="Central de acessos">&#8592;</button>
+  <div class="t">Configura&ccedil;&otilde;es</div>
+</div>
+<div class="wrap">
+  <div class="eyebrow">Estação Sapatão · Ajustes</div>
+  <h1>Configurações</h1>
+  <p class="sub">Conta, sincronização e usuários — num lugar só, para todos os painéis.</p>
+
+  <h3>Minha conta</h3>
+  <div class="card">
+    <p style="margin-bottom:10px">Conectado como <b id="ct-nome">—</b> <span class="pill" id="ct-papel" hidden>admin</span></p>
+    <button type="button" class="btn sec" style="margin-top:0" onclick="window.sapataoSair()">Sair — pedir usuário e senha de novo</button>
+  </div>
+  <div class="card" style="max-width:430px">
+    <p class="lead" style="margin-bottom:8px"><b style="color:var(--verde)">Trocar a minha senha.</b> Vale para o Roadmap e para o Planejamento. Precisa da chave de publicação neste aparelho.</p>
+    <input type="password" class="campo" id="sn-atual" placeholder="Senha atual" autocomplete="off">
+    <input type="password" class="campo" id="sn-nova" placeholder="Senha nova (mínimo 6 caracteres)" autocomplete="off">
+    <input type="password" class="campo" id="sn-conf" placeholder="Repetir a senha nova" autocomplete="off">
+    <button type="button" class="btn" id="sn-trocar">Alterar minha senha</button>
+    <p class="lead" id="sn-msg" style="margin-top:8px;margin-bottom:0"></p>
+  </div>
+
+  <h3 id="notificacoes">Notificações no celular</h3>
+  <div class="card" style="max-width:520px">
+    <p class="lead" style="margin-bottom:8px">Receba a notificação oficial do aparelho quando acontecer algo nos painéis: follow-ups, ações concluídas ou reabertas, prazos renegociados e lembretes de prazo. <b>No iPhone:</b> primeiro adicione o site à Tela de Início (Compartilhar &rarr; Adicionar à Tela de Início) e abra por lá.</p>
+    <p style="margin-bottom:10px">Neste aparelho: <span class="pill" id="np-status">verificando&hellip;</span></p>
+    <button type="button" class="btn" id="np-ativar" hidden>Ativar notificações neste aparelho</button>
+    <button type="button" class="btn sec" id="np-desativar" hidden>Desativar neste aparelho</button>
+    <div id="np-prefs" hidden style="margin-top:12px">
+      <p class="lead" style="margin-bottom:6px"><b style="color:var(--verde)">O que avisar neste aparelho:</b></p>
+      <label style="display:block;margin:5px 0;cursor:pointer"><input type="checkbox" id="np-p-fu" checked> Novos follow-ups</label>
+      <label style="display:block;margin:5px 0;cursor:pointer"><input type="checkbox" id="np-p-est" checked> Ações concluídas ou reabertas</label>
+      <label style="display:block;margin:5px 0;cursor:pointer"><input type="checkbox" id="np-p-rng" checked> Prazos renegociados</label>
+      <p class="lead" style="margin:10px 0 2px"><b style="color:var(--verde)">Lembrete diário de prazos:</b></p>
+      <label style="display:block;margin:5px 0 5px 18px;cursor:pointer"><input type="checkbox" id="np-p-przo7" checked> 7 dias antes</label>
+      <label style="display:block;margin:5px 0 5px 18px;cursor:pointer"><input type="checkbox" id="np-p-przo1" checked> Na véspera</label>
+      <label style="display:block;margin:5px 0 5px 18px;cursor:pointer"><input type="checkbox" id="np-p-przo0" checked> No dia do vencimento</label>
+      <label style="display:block;margin:5px 0 5px 18px;cursor:pointer"><input type="checkbox" id="np-p-przoat" checked> Quando atrasar</label>
+    </div>
+    <p class="lead" id="np-msg" style="margin-top:8px;margin-bottom:0"></p>
+  </div>
+
+  <div id="sec-admin" hidden>
+    <h3>Sincronização (nuvem)</h3>
+    <div class="card">
+      <p style="margin-bottom:6px">Chave de publicação neste aparelho: <span class="pill" id="cs-token">—</span></p>
+      <p style="margin-bottom:10px">Chave dos dados (criptografia) neste aparelho: <span class="pill" id="cs-dek">—</span></p>
+      <div id="cs-tem" hidden>
+        <button type="button" class="btn sec" style="margin-top:0" id="cs-remover">Remover a chave de publicação deste aparelho</button>
+      </div>
+      <div id="cs-sem" hidden>
+        <p class="lead">Cole a chave de publicação (fine-grained token do GitHub, Contents Read/Write só neste repositório):</p>
+        <input type="password" class="campo campo-mono" id="cs-campo" placeholder="Chave de publicação" autocomplete="off">
+        <button type="button" class="btn" id="cs-salvar">Salvar chave neste aparelho</button>
+      </div>
+      <p class="lead" id="cs-msg" style="margin-top:8px;margin-bottom:0"></p>
+    </div>
+
+    <h3>Usuários e permissões</h3>
+    <p class="lead">Cada pessoa entra com o próprio usuário e senha. Permissão por painel: <b>Edita</b>, <b>Só follow-ups</b> (só no Planejamento), <b>Só lê</b> ou <b>Sem acesso</b>; no Fluxo de Caixa é <b>Acessa</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo.</p>
+    <div class="card">
+      <div class="tbl"><table class="us-tbl" id="us-tbl"></table></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn" id="us-add" style="margin-top:0">+ Adicionar usuário</button>
+        <button type="button" class="btn destaque" id="us-salvar" style="margin-top:0">Salvar alterações</button>
+      </div>
+      <p class="lead" id="us-msg" style="margin-top:10px;margin-bottom:0"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const API_US='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/usuarios.json';
+function b64enc(str){return btoa(unescape(encodeURIComponent(str)));}
+function b64dec(str){return decodeURIComponent(escape(atob(str.replace(/\s/g,''))));}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function token(){return window.sapataoChave.token();}
+
+function pinta(){
+  const A=window.sapataoAuth;
+  if(A&&A.user){
+    document.getElementById('ct-nome').textContent=A.user.nome;
+    document.getElementById('ct-papel').hidden=!A.user.admin;
+    document.getElementById('sec-admin').hidden=!A.user.admin;
+    if(A.user.admin){pintaChaves();usCarrega();}
+  }
+}
+function pintaChaves(){
+  const t=!!token(),d=!!window.sapataoCofre.dek();
+  const ct=document.getElementById('cs-token');ct.textContent=t?'presente':'ausente';ct.className='pill '+(t?'ok':'off');
+  const cd=document.getElementById('cs-dek');cd.textContent=d?'presente':'ausente';cd.className='pill '+(d?'ok':'off');
+  document.getElementById('cs-tem').hidden=!t;
+  document.getElementById('cs-sem').hidden=t;
+}
+function csDiz(t,erro){const m=document.getElementById('cs-msg');m.textContent=t;m.style.color=erro?'#8C1D18':'#1D6B3C';}
+document.getElementById('cs-salvar').addEventListener('click',async ()=>{
+  const v=document.getElementById('cs-campo').value.trim();
+  if(!v){document.getElementById('cs-campo').focus();return;}
+  window.sapataoChave.grava(v);
+  document.getElementById('cs-campo').value='';
+  const A=window.sapataoAuth;
+  if(!window.sapataoCofre.dek())await window.sapataoCofre.baixaDekPeloToken();
+  if(A&&A.pw){
+    const ok=await window.sapataoChave.garante();
+    csDiz(ok?'Chave salva e guardada na nuvem — seus outros aparelhos recebem ao entrar com a senha.':'Chave salva neste aparelho.');
+  }else csDiz('Chave salva neste aparelho. Para guardá-la na nuvem, saia e entre com a senha e cole de novo.');
+  pintaChaves();
+});
+document.getElementById('cs-remover').addEventListener('click',()=>{
+  window.sapataoChave.grava('');
+  csDiz('Chave de publicação removida deste aparelho.');
+  pintaChaves();
+});
+
+/* ---- minha senha ---- */
+const snMsg=document.getElementById('sn-msg'),snBtn=document.getElementById('sn-trocar');
+function snDiz(t,erro){snMsg.textContent=t;snMsg.style.color=erro?'#8C1D18':'#1D6B3C';}
+async function usuariosDoRepo(){
+  const h={'Accept':'application/vnd.github+json'};
+  if(token())h['Authorization']='Bearer '+token();
+  const g=await fetch(API_US+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  if(g.status===401||g.status===403)throw new Error('a chave de publicação é inválida ou expirou');
+  if(!g.ok)throw new Error('HTTP '+g.status+' ao ler os usuários');
+  const j=await g.json();
+  return{sha:j.sha,doc:JSON.parse(b64dec(j.content))};
+}
+async function gravaUsuarios(doc,sha,msg){
+  const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+token(),'Content-Type':'application/json'};
+  const r=await fetch(API_US,{method:'PUT',headers:h,body:JSON.stringify({message:msg,branch:'main',content:b64enc(JSON.stringify(doc,null,1)),sha:sha})});
+  if(r.status===401||r.status===403)throw new Error('a chave de publicação é inválida ou expirou');
+  if(!r.ok)throw new Error('HTTP '+r.status+' ao gravar');
+  try{localStorage.setItem('sapatao-usuarios-cache-v1',JSON.stringify({v:1,usuarios:doc.usuarios}));}catch(e){}
+}
+snBtn.addEventListener('click',async ()=>{
+  const A=window.sapataoAuth;
+  const atual=document.getElementById('sn-atual').value;
+  const nova=document.getElementById('sn-nova').value;
+  const conf=document.getElementById('sn-conf').value;
+  if(!A||!A.user){snDiz('Recarregue a página e tente de novo.',true);return;}
+  if(!token()){snDiz('Este aparelho precisa da chave de publicação para gravar a senha — fale com o administrador.',true);return;}
+  if(nova.length<6){snDiz('A senha nova precisa de pelo menos 6 caracteres.',true);return;}
+  if(nova!==conf){snDiz('A confirmação não bate com a senha nova.',true);return;}
+  snBtn.disabled=true;snDiz('Gravando senha nova…');
+  try{
+    const{sha,doc}=await usuariosDoRepo();
+    const eu=(doc.usuarios||[]).find(u=>u.id===A.user.id);
+    if(!eu)throw new Error('seu usuário não está na lista');
+    if(A.sha256(atual)!==eu.hash){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
+    eu.hash=A.sha256(nova);
+    await gravaUsuarios(doc,sha,'chore: altera a senha do usuário '+eu.nome+' (via Configurações)');
+    const sess=JSON.stringify({u:eu.id,h:eu.hash});
+    try{
+      if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,sess);
+      if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,sess);
+    }catch(e){}
+    A.user.hash=eu.hash;A.pw=nova;
+    window.sapataoChave.garante();
+    ['sn-atual','sn-nova','sn-conf'].forEach(i=>document.getElementById(i).value='');
+    snDiz('Senha alterada! Este aparelho continua conectado; os seus outros aparelhos vão pedir a senha nova.');
+  }catch(e){snDiz('Não consegui gravar ('+e.message+').',true);}
+  snBtn.disabled=false;
+});
+
+/* ---- administração de usuários (admin) ---- */
+const usTbl=document.getElementById('us-tbl'),usMsg=document.getElementById('us-msg');
+let usDoc=null,usSha=null,usEnvelopes=[];
+function usDiz(t,erro){usMsg.textContent=t;usMsg.style.color=erro?'#8C1D18':'#1D6B3C';}
+const PERMS=[['edita','Edita'],['le','Só lê'],['nao','Sem acesso']];
+const PERMS_PE=[['edita','Edita'],['followup','Só follow-ups'],['le','Só lê'],['nao','Sem acesso']];
+const PERMS_FLUXO=[['le','Acessa'],['nao','Sem acesso']];
+function sel(v,cls,i,ops){return '<select class="'+cls+'" data-i="'+i+'">'+(ops||PERMS).map(p=>'<option value="'+p[0]+'"'+(v===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select>';}
+function usRender(){
+  if(!usDoc)return;
+  usTbl.innerHTML='<tr><th>Usuário</th><th>Roadmap</th><th>Planejamento</th><th>Fluxo de Caixa</th><th>Admin</th><th>Ativo</th><th>Senha</th></tr>'
+    +usDoc.usuarios.map((u,i)=>{
+      const p=u.perm||{};
+      return '<tr><td><input type="text" class="us-nome" data-i="'+i+'" value="'+esc(u.nome)+'"></td>'
+        +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.roadmap||'nao','us-roadmap',i))+'</td>'
+        +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.pe||'nao','us-pe',i,PERMS_PE))+'</td>'
+        +'<td>'+(u.admin?'<span class="pill">acessa</span>':sel(p.fluxo||'nao','us-fluxo',i,PERMS_FLUXO))+'</td>'
+        +'<td><input type="checkbox" class="us-admin" data-i="'+i+'"'+(u.admin?' checked':'')+'></td>'
+        +'<td><input type="checkbox" class="us-ativo" data-i="'+i+'"'+(u.ativo!==false?' checked':'')+'></td>'
+        +'<td><button type="button" class="us-mini us-senha" data-i="'+i+'">redefinir</button></td></tr>';
+    }).join('');
+}
+async function usCarrega(){
+  try{const r=await usuariosDoRepo();usDoc=r.doc;usSha=r.sha;usRender();usDiz('');}
+  catch(e){usDiz('Não consegui carregar a lista ('+e.message+').',true);}
+}
+function usId(nome){
+  const base=nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'usuario';
+  let id=base,n=2;
+  while(usDoc.usuarios.some(u=>u.id===id)){id=base+'-'+n;n++;}
+  return id;
+}
+usTbl.addEventListener('change',ev=>{
+  const i=+ev.target.dataset.i,u=usDoc&&usDoc.usuarios[i];if(!u)return;
+  u.perm=u.perm||{};
+  if(ev.target.classList.contains('us-nome'))u.nome=ev.target.value.trim()||u.nome;
+  if(ev.target.classList.contains('us-roadmap'))u.perm.roadmap=ev.target.value;
+  if(ev.target.classList.contains('us-pe'))u.perm.pe=ev.target.value;
+  if(ev.target.classList.contains('us-fluxo'))u.perm.fluxo=ev.target.value;
+  if(ev.target.classList.contains('us-admin')){u.admin=ev.target.checked;usRender();}
+  if(ev.target.classList.contains('us-ativo'))u.ativo=ev.target.checked;
+});
+usTbl.addEventListener('click',ev=>{
+  if(!ev.target.classList.contains('us-senha'))return;
+  const i=+ev.target.dataset.i,u=usDoc.usuarios[i];
+  const s=prompt('Nova senha para '+u.nome+' (mínimo 6 caracteres):');
+  if(s===null)return;
+  if(s.length<6){usDiz('Senha muito curta — nada foi alterado.',true);return;}
+  u.hash=window.sapataoAuth.sha256(s);
+  usEnvelopes.push({id:u.id,senha:s});
+  usDiz('Senha de '+u.nome+' pronta — clique em "Salvar alterações" para gravar.');
+});
+document.getElementById('us-add').addEventListener('click',()=>{
+  if(!usDoc)return;
+  const nome=prompt('Nome do novo usuário:');
+  if(!nome||!nome.trim())return;
+  const s=prompt('Senha inicial de '+nome.trim()+' (mínimo 6 caracteres):');
+  if(s===null)return;
+  if(s.length<6){usDiz('Senha muito curta — usuário não criado.',true);return;}
+  const novoId=usId(nome.trim());
+  usDoc.usuarios.push({id:novoId,nome:nome.trim(),hash:window.sapataoAuth.sha256(s),admin:false,ativo:true,perm:{roadmap:'le',pe:'le',fluxo:'nao'}});
+  usEnvelopes.push({id:novoId,senha:s});
+  usRender();
+  usDiz('Usuário criado com permissão "Só lê" nos dois painéis — ajuste e clique em "Salvar alterações".');
+});
+document.getElementById('us-salvar').addEventListener('click',async ()=>{
+  const A=window.sapataoAuth;
+  if(!usDoc)return;
+  if(!token()){usDiz('Este aparelho precisa da chave de publicação para gravar.',true);return;}
+  const eu=usDoc.usuarios.find(u=>u.id===A.user.id);
+  if(eu){eu.admin=true;eu.ativo=true;} /* ninguém se tranca para fora */
+  if(!usDoc.usuarios.some(u=>u.admin&&u.ativo!==false)){usDiz('É preciso ter ao menos um admin ativo.',true);return;}
+  usDiz('Gravando…');
+  try{
+    await gravaUsuarios(usDoc,usSha,'chore: atualiza usuários e permissões (via Configurações)');
+    A.usuarios=usDoc.usuarios;
+    /* envelope da chave (token + chave dos dados) para cada senha criada/redefinida */
+    for(const env of usEnvelopes)await window.sapataoChave.garantePara(env.id,env.senha);
+    usEnvelopes=[];
+    usDiz('Usuários gravados! As permissões valem no próximo acesso de cada um.');
+    usCarrega();
+  }catch(e){usDiz('Não consegui gravar ('+e.message+').',true);}
+});
+
+pinta();
+document.addEventListener('sapatao-auth',pinta);
+document.addEventListener('sapatao-login',()=>{window.sapataoChave.busca().then(()=>{pinta();});});
+
+/* ============ Notificações push nativas (Web App) ============
+   O aparelho se inscreve no push do navegador; a inscrição vai CIFRADA
+   (AES-GCM + RSA-OAEP, chave pública abaixo) para roadmap/push-subs.json.
+   Quem envia é o workflow do GitHub, com as chaves privadas guardadas
+   como segredos do repositório — nada sensível fica público. */
+const VAPID_PUB='BEduLLWzJ5vBcC6wgokW5Yq_NL-x8y5nDtzfUQqvmXdXwQVb0j2dRO-OHCkCzoouyhH0KhS1EQEwY3ECDx_V_Hc';
+const SUBS_PUB_JWK={"kty":"RSA","n":"0OEv1g6eHJbJyYokRxzcbryWVc78i7qOKzIm5Fvf-s0XqIfNBLvetg7EqIn0Bc8QCBdMzldJukJaa941esnwZ_80SKeX_mgEVpw0-kBkeJ6KdeX2S0i1ibakoLBMbigUwqH3-EhqiYycHpITa2Hbp-irapWjk2pCjkI6DCXHvTOvDKzkVczLaooDtUgkrJXaZABiti4kZ9yEB3E1cpJko2bu-xfeFMqSNUoypZuuWX2BBXoDtkJhxfjsY4eREiDvL55KOg7FVkV_Ulk8RIfrLPhj6GZ3mfsZLkyzNYQqKu_wPgma-gfgwF_dCiRFgkIxRGke90fKxBV2CmBLE5UiXQ","e":"AQAB"};
+const API_SUBS='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/roadmap/push-subs.json';
+const LS_PUSH='sapatao-push-id';
+const npStatus=document.getElementById('np-status'),npAtivar=document.getElementById('np-ativar'),npDesativar=document.getElementById('np-desativar'),npMsg=document.getElementById('np-msg');
+const npPrefs=document.getElementById('np-prefs'),npPFu=document.getElementById('np-p-fu'),npPEst=document.getElementById('np-p-est'),npPRng=document.getElementById('np-p-rng');
+const npP7=document.getElementById('np-p-przo7'),npP1=document.getElementById('np-p-przo1'),npP0=document.getElementById('np-p-przo0'),npPAt=document.getElementById('np-p-przoat');
+function npDiz(t,erro){if(npMsg){npMsg.textContent=t;npMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
+function pushSuportado(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
+function b64uToU8(s){s=s.replace(/-/g,'+').replace(/_/g,'/');const pad='='.repeat((4-s.length%4)%4);return Uint8Array.from(atob(s+pad),c=>c.charCodeAt(0));}
+function u8b64(buf){const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
+async function cifraSub(texto){
+  const aes=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt']);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},aes,new TextEncoder().encode(texto));
+  const rsa=await crypto.subtle.importKey('jwk',Object.assign({alg:'RSA-OAEP-256',ext:true},SUBS_PUB_JWK),{name:'RSA-OAEP',hash:'SHA-256'},false,['encrypt']);
+  const raw=await crypto.subtle.exportKey('raw',aes);
+  const ek=await crypto.subtle.encrypt({name:'RSA-OAEP'},rsa,raw);
+  return {ek:u8b64(ek),iv:u8b64(iv),ct:u8b64(ct)};
+}
+async function subsDoc(){
+  const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+token()};
+  const g=await fetch(API_SUBS+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});
+  if(g.status===404)return{sha:null,doc:{v:1,subs:{}}};
+  if(!g.ok)throw new Error('HTTP '+g.status);
+  const j=await g.json();
+  return{sha:j.sha,doc:JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,'')))))};
+}
+async function gravaSubs(doc,sha,msg){
+  const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+token(),'Content-Type':'application/json'};
+  const body={message:msg,branch:'main',content:b64enc(JSON.stringify(doc,null,1))};
+  if(sha)body.sha=sha;
+  const r=await fetch(API_SUBS,{method:'PUT',headers:h,body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('HTTP '+r.status+' ao gravar');
+}
+async function npPinta(){
+  if(!npStatus)return;
+  if(!pushSuportado()){
+    npStatus.textContent='indisponível neste navegador';
+    npDiz('No iPhone, adicione o site à Tela de Início e abra por lá — aí o botão aparece.');
+    npAtivar.hidden=true;npDesativar.hidden=true;return;
+  }
+  const reg=await navigator.serviceWorker.getRegistration('../');
+  const sub=reg&&await reg.pushManager.getSubscription();
+  npStatus.textContent=sub?'ativas':'desligadas';
+  npAtivar.hidden=!!sub;npDesativar.hidden=!sub;
+  npPrefs.hidden=!sub;
+  if(sub)npCarregaPrefs();
+}
+/* preferências do aparelho (quais avisos receber) — guardadas junto da
+   inscrição em push-subs.json; sem marcação = recebe tudo */
+let npPrefsProntas=false;
+async function npCarregaPrefs(){
+  if(npPrefsProntas||!token())return;
+  try{
+    let id='';try{id=localStorage.getItem(LS_PUSH)||'';}catch(e){}
+    if(!id)return;
+    const{doc}=await subsDoc();
+    const p=(doc.subs[id]&&doc.subs[id].pref)||{};
+    npPFu.checked=p.fu!==false;npPEst.checked=p.est!==false;npPRng.checked=p.rng!==false;
+    /* pref antiga przo (tudo junto) vale como padrão das quatro novas */
+    const base=p.przo!==false;
+    npP7.checked=p.przo7!==undefined?p.przo7!==false:base;
+    npP1.checked=p.przo1!==undefined?p.przo1!==false:base;
+    npP0.checked=p.przo0!==undefined?p.przo0!==false:base;
+    npPAt.checked=p.przoAt!==undefined?p.przoAt!==false:base;
+    npPrefsProntas=true;
+  }catch(e){}
+}
+async function npSalvaPrefs(){
+  if(!token()){npDiz('Sem a chave de publicação neste aparelho, não dá para salvar a preferência.',true);return;}
+  try{
+    let id='';try{id=localStorage.getItem(LS_PUSH)||'';}catch(e){}
+    if(!id)return;
+    const{sha,doc}=await subsDoc();
+    if(!doc.subs[id])return;
+    doc.subs[id].pref={fu:npPFu.checked,est:npPEst.checked,rng:npPRng.checked,przo7:npP7.checked,przo1:npP1.checked,przo0:npP0.checked,przoAt:npPAt.checked};
+    await gravaSubs(doc,sha,'chore: ajusta preferências de notificações do aparelho');
+    npDiz('Preferência salva.');
+  }catch(e){npDiz('Não consegui salvar a preferência ('+e.message+').',true);}
+}
+if(npPFu)npPFu.addEventListener('change',npSalvaPrefs);
+if(npPEst)npPEst.addEventListener('change',npSalvaPrefs);
+if(npPRng)npPRng.addEventListener('change',npSalvaPrefs);
+[npP7,npP1,npP0,npPAt].forEach(function(el){if(el)el.addEventListener('change',npSalvaPrefs);});
+if(npAtivar)npAtivar.addEventListener('click',async()=>{
+  const A2=window.sapataoAuth;
+  if(!(A2&&A2.user)){npDiz('Entre pela central antes de ativar.',true);return;}
+  if(!token()){npDiz('Este aparelho ainda não tem a chave de publicação — saia e entre digitando a senha, e tente de novo.',true);return;}
+  npAtivar.disabled=true;npDiz('Ativando…');
+  try{
+    const reg=await navigator.serviceWorker.register('../sw.js');
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){npDiz('Permissão de notificação negada — libere em Ajustes e tente de novo.',true);npAtivar.disabled=false;return;}
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uToU8(VAPID_PUB)});
+    const env=await cifraSub(JSON.stringify(sub.toJSON()));
+    let id='';try{id=localStorage.getItem(LS_PUSH)||'';}catch(e){}
+    if(!id){id=u8b64(crypto.getRandomValues(new Uint8Array(6))).replace(/[^a-zA-Z0-9]/g,'').slice(0,8)||('ap'+Date.now());}
+    const{sha,doc}=await subsDoc();
+    doc.subs[id]={u:A2.user.id,em:new Date().toISOString().slice(0,10),pref:{fu:npPFu.checked,est:npPEst.checked,rng:npPRng.checked,przo7:npP7.checked,przo1:npP1.checked,przo0:npP0.checked,przoAt:npPAt.checked},env:env};
+    await gravaSubs(doc,sha,'chore: registra aparelho para notificações push');
+    try{localStorage.setItem(LS_PUSH,id);}catch(e){}
+    npDiz('Notificações ativadas neste aparelho! O próximo aviso dos painéis já chega aqui.');
+  }catch(e){npDiz('Não consegui ativar ('+e.message+').',true);}
+  npAtivar.disabled=false;npPinta();
+});
+if(npDesativar)npDesativar.addEventListener('click',async()=>{
+  npDesativar.disabled=true;npDiz('Desativando…');
+  try{
+    const reg=await navigator.serviceWorker.getRegistration('../');
+    const sub=reg&&await reg.pushManager.getSubscription();
+    if(sub)await sub.unsubscribe();
+    let id='';try{id=localStorage.getItem(LS_PUSH)||'';}catch(e){}
+    if(id&&token()){
+      const{sha,doc}=await subsDoc();
+      if(doc.subs[id]){delete doc.subs[id];await gravaSubs(doc,sha,'chore: remove aparelho das notificações push');}
+    }
+    try{localStorage.removeItem(LS_PUSH);}catch(e){}
+    npDiz('Notificações desativadas neste aparelho.');
+  }catch(e){npDiz('Não consegui desativar ('+e.message+').',true);}
+  npDesativar.disabled=false;npPinta();
+});
+npPinta();
+})();
+</script>
+</body>
+</html>

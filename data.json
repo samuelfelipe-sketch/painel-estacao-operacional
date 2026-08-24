@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "empresa": "Estação Sapatão",
+    "periodo": "—",
+    "dia_atual": 0,
+    "dias_no_mes": 1,
+    "atualizado_em": "—"
+  },
+  "cards": [],
+  "aceleradores": [],
+  "top_produtos": [],
+  "unidades": [
+    "ESTAÇÃO SAPATÃO",
+    "SAPATÃO ESTÂNCIA"
+  ],
+  "api": {
+    "base_url": "https://dashboard.estacaosapatao.com.br",
+    "endpoints": {
+      "cards": "/api/dashboard/cards?ano={ano}&meses={mes}",
+      "aceleradores": "/api/dashboard/aceleradores?ano={ano}&meses={mes}",
+      "top_produtos": "/api/dashboard/top-produtos?ano={ano}&meses={mes}",
+      "evolucao": "/api/dashboard/evolucao-mensal?",
+      "unidades": "/api/dashboard/filtros/unidades",
+      "periodos": "/api/dashboard/filtros/periodos"
+    },
+    "auth": {
+      "tipo": "Bearer Token",
+      "header": "Authorization",
+      "token_storage": "localStorage['token']"
+    }
+  },
+  "acoes": []
+}

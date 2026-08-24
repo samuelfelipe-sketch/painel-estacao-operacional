@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluxo de Caixa Pessoal — Samuel Fuhr</title>
+<!-- ícone e identidade de web app (tela de início do celular) -->
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#004438">
+<meta name="apple-mobile-web-app-title" content="Fluxo Pessoal">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- fonte carregada sem bloquear a página: se o CDN estiver lento/fora, a ferramenta abre normal -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;900&display=swap" media="print" onload="this.media='all'">
+<style>
+:root{
+  --verde:#004438; --laranja:#EC6C22; --vermelho:#B73D24; --petroleo:#10312B;
+  --papel:#F5F3EC; --card:#FFFFFF; --borda:#E4E0D5; --muted:#6E7570; --tinta:#1C2A24;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Source Sans 3',-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--papel);color:var(--tinta);font-size:15px;line-height:1.45}
+.wrap{max-width:1060px;margin:0 auto;padding:0 12px 64px}
+header{background:var(--verde);color:#fff;padding:22px 12px 18px;margin-bottom:16px}
+header .hw{max-width:1060px;margin:0 auto;padding:0 4px}
+header h1{font-size:1.35rem;font-weight:900;letter-spacing:-.01em}
+header .sub{opacity:.85;font-size:.85rem;margin-top:2px}
+.badge{display:inline-block;background:var(--laranja);color:#fff;font-weight:700;font-size:.72rem;padding:3px 10px;border-radius:99px;letter-spacing:.04em;text-transform:uppercase;margin-top:10px}
+.badge.ok{background:#0E5C46}
+.card{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:12px}
+.card h2 b{color:var(--verde)}
+/* ---------- menu lateral ---------- */
+html,body{overflow-x:hidden}
+#sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:linear-gradient(180deg,#0E3A2F,#10312B);color:#fff;z-index:60;display:flex;flex-direction:column;padding:14px 12px;transform:translateX(-100%);transition:transform .22s ease;box-shadow:4px 0 24px rgba(16,49,43,.25)}
+body.sb-open #sidebar{transform:none}
+#sb-backdrop{position:fixed;inset:0;background:rgba(16,49,43,.45);z-index:55;display:none}
+body.sb-open #sb-backdrop{display:block}
+.sb-logo{display:flex;align-items:center;gap:10px;background:#fff;color:var(--verde);border-radius:12px;padding:10px 12px;margin-bottom:16px}
+.sb-mark{width:36px;height:36px;border-radius:9px;background:var(--verde);color:#fff;font-weight:900;font-size:.85rem;display:flex;align-items:center;justify-content:center;letter-spacing:.02em}
+.sb-logo b{font-size:.9rem;line-height:1.15;display:block}
+.sb-logo small{display:block;color:var(--muted);font-size:.68rem;font-weight:600}
+#ptabs{display:flex;flex-direction:column;gap:4px;flex:1;overflow-y:auto}
+#ptabs span{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;font-size:.92rem;font-weight:600;color:rgba(255,255,255,.88);cursor:pointer}
+#ptabs span svg{width:20px;height:20px;flex:0 0 20px;opacity:.9}
+#ptabs span.on{background:rgba(255,255,255,.15);outline:1px solid rgba(255,255,255,.28)}
+#ptabs span:not(.on):hover{background:rgba(255,255,255,.08)}
+#hnav-user{display:none;flex-direction:column;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18)}
+#hnav-user .chip{background:rgba(255,255,255,.14);padding:6px 12px;border-radius:99px;font-weight:700;font-size:.8rem;text-align:center}
+#hnav-user button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:10px;padding:9px 12px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;width:100%}
+#hnav-user button:hover{background:rgba(255,255,255,.12)}
+#sb-burger{flex:0 0 auto;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#sb-burger svg{width:20px;height:20px}
+@media(min-width:1100px){
+  body{padding-left:250px}
+  #sidebar{transform:none}
+  #sb-burger{display:none}
+  #sb-backdrop{display:none!important}
+}
+.selbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+select#selper{flex:0 0 auto;font:inherit;font-weight:700;color:var(--verde);background:#fff;border:1px solid var(--borda);border-radius:8px;padding:8px 10px;min-width:150px}
+.pills{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.pills::-webkit-scrollbar{height:0}
+.pill{flex:0 0 auto;border:1px solid var(--borda);background:#fff;border-radius:99px;padding:5px 13px;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+.pill.on{background:var(--verde);border-color:var(--verde);color:#fff}
+.pill.ctr.on{background:var(--laranja);border-color:var(--laranja)}
+.selrow{margin-bottom:10px}
+.fhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fnav{display:flex;gap:6px}
+.nbtn{width:32px;height:32px;border:1px solid var(--borda);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:var(--verde);cursor:pointer;background:#fff;user-select:none}
+.nbtn.off{opacity:.25;pointer-events:none}
+.estr .bl{margin-bottom:16px}
+.estr .bl>b{display:block;color:var(--verde);font-size:.9rem;margin-bottom:8px}
+.estr .it{border-left:3px solid var(--laranja);padding:2px 0 2px 10px;margin-bottom:10px}
+.estr .it b{display:block;font-size:.85rem}
+.estr .it span{font-size:.82rem;color:#3D4A43;line-height:1.5}
+.estr ul.pts{margin:4px 0 0 0;padding-left:16px}
+.estr ul.pts li{font-size:.82rem;color:#3D4A43;line-height:1.55;margin-bottom:3px}
+.estr .numrow{display:flex;align-items:baseline;gap:12px;border-left:3px solid var(--verde);padding:4px 0 4px 10px;margin-bottom:10px}
+.estr .numrow .big{font-size:1.15rem;font-weight:900;color:var(--verde);white-space:nowrap;font-variant-numeric:tabular-nums}
+.estr .numrow span{font-size:.8rem;color:#3D4A43;line-height:1.4}
+.estr details{border:1px solid var(--borda);border-radius:8px;padding:8px 12px;margin-bottom:10px}
+.estr details summary{font-size:.85rem;font-weight:700;color:var(--verde);cursor:pointer}
+.estr details .it{margin-top:10px}
+.tabs{display:inline-flex;border:1px solid var(--borda);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.tab{padding:5px 14px;font-size:.8rem;font-weight:700;color:var(--muted);cursor:pointer;background:#fff}
+.tab.on{background:var(--petroleo);color:#fff}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 10px;font-size:.86rem;white-space:nowrap;text-align:right;border-bottom:1px solid #EFECE3}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+td.lab,th.lab{text-align:left;position:sticky;left:0;background:var(--card);max-width:230px;overflow:hidden;text-overflow:ellipsis}
+tr.grp td{font-weight:700;cursor:pointer}
+tr.grp td.lab::before{content:'▸ ';color:var(--laranja);font-size:.8em}
+tr.grp.open td.lab::before{content:'▾ '}
+tr.sub td{font-weight:400;color:#3D4A43;font-size:.82rem}
+tr.sub td.lab{padding-left:24px;cursor:pointer;text-decoration:underline dotted #C9C4B5;text-underline-offset:3px}
+tr.tot td{font-weight:900;border-top:2px solid var(--borda)}
+tr.sec td{cursor:pointer}
+tr.sec td.lab::before{content:'▸ ';color:var(--laranja);font-size:.8em}
+tr.sec.open td.lab::before{content:'▾ '}
+tr.fluxo td{background:var(--verde);color:#fff;font-weight:900;border:none}
+tr.fluxo td.lab{background:var(--verde)}
+tr.caixa td{color:var(--petroleo);font-weight:700;background:#F2F0E8}
+tr.caixa td.lab{background:#F2F0E8}
+.neg{color:var(--vermelho)}
+tr.fluxo td.neg{color:#FFD9CC}
+.prevcol{color:#8A9089;font-weight:400}
+tr.tot td.prevcol,tr.grp td.prevcol{font-weight:600;color:#8A9089}
+tr.fluxo td.prevcol{color:#BFD8CE;font-weight:700}
+.mini{font-size:.72rem;color:var(--muted);margin-top:10px;line-height:1.5}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin-bottom:8px}
+.legend b{color:var(--tinta)}
+.bars .row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.bars .n{flex:0 0 168px;font-size:.82rem;font-weight:600;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .track{flex:1;height:16px;background:#F0EDE4;border-radius:4px;overflow:hidden;display:block}
+.bars .fill{display:block;height:100%;background:var(--laranja);border-radius:4px;min-width:2px}
+.bars .v{flex:0 0 86px;font-size:.82rem;font-weight:700;font-variant-numeric:tabular-nums}
+.list li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #EFECE3;font-size:.86rem}
+.list li:last-child{border:none}
+.list .q{flex:1}
+.list .f{color:var(--muted);font-size:.76rem;display:block}
+.list .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+ol.pend{padding-left:20px}
+ol.pend li{margin-bottom:9px;font-size:.86rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #EFECE3;font-size:.85rem;gap:10px}
+.kv .k small{display:block;color:var(--muted);font-size:.74rem}
+.kv .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kv.tt{border-top:2px solid var(--borda);font-weight:900}
+.note{background:#FBF4EC;border:1px solid #F0DCC8;border-radius:8px;padding:10px 12px;font-size:.8rem;color:#6A503B;margin-top:10px}
+.qwrap{position:relative;display:flex;align-items:center;gap:10px}
+.qhelp{flex:0 0 auto;width:24px;height:24px;border-radius:50%;border:1px solid var(--borda);background:#fff;color:var(--muted);font-weight:700;font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;padding:0}
+.qhelp:hover{color:#6A503B;border-color:#F0DCC8;background:#FBF4EC}
+.qpop{display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;max-width:560px;background:#FBF4EC;border:1px solid #F0DCC8;border-radius:8px;padding:12px 14px;font-size:.8rem;color:#6A503B;line-height:1.55;z-index:40;box-shadow:0 6px 18px rgba(28,42,36,.12)}
+.qhelp:hover ~ .qpop,.qpop.on{display:block}
+body.is-admin .qwrap.admin-only{display:flex}
+#modal{position:fixed;inset:0;background:rgba(16,49,43,.55);display:none;align-items:flex-end;justify-content:center;z-index:50}
+#modal.on{display:flex}
+#modal .box{background:#fff;border-radius:16px 16px 0 0;max-width:620px;width:100%;max-height:78vh;overflow-y:auto;padding:18px}
+#modal h3{font-size:.95rem;color:var(--verde);margin-bottom:4px}
+#modal .sub{font-size:.76rem;color:var(--muted);margin-bottom:10px}
+#modal .x{float:right;border:none;background:#F0EDE4;border-radius:99px;width:30px;height:30px;font-size:1rem;cursor:pointer}
+footer{font-size:.72rem;color:var(--muted);line-height:1.6;margin-top:24px}
+
+/* ---------- login e acessos ---------- */
+#login-ov{position:fixed;inset:0;background:var(--papel);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
+#login-ov .box{background:var(--card);border:1px solid var(--borda);border-radius:16px;padding:28px 24px;max-width:380px;width:100%;box-shadow:0 8px 40px rgba(16,49,43,.12)}
+#login-ov h1{font-size:1.15rem;font-weight:900;color:var(--verde);margin-bottom:2px}
+#login-ov .sub{font-size:.8rem;color:var(--muted);margin-bottom:18px}
+#login-ov label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:12px}
+#login-ov input{display:block;width:100%;margin-top:4px;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;font:inherit;font-size:.95rem}
+#login-ov input:focus{outline:2px solid var(--verde);border-color:var(--verde)}
+#login-msg{font-size:.78rem;color:var(--vermelho);min-height:1.2em;margin-bottom:10px}
+.btn{background:var(--verde);color:#fff;border:none;border-radius:8px;padding:10px 18px;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.btn:hover{background:#0E5C46}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn.sm{padding:4px 10px;font-size:.72rem;background:#F0EDE4;color:var(--tinta)}
+.btn.sm:hover{background:var(--borda)}
+.btn.sm.danger{color:var(--vermelho)}
+.btn.wide{width:100%}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:12px}
+.formgrid label{font-size:.75rem;font-weight:700;color:var(--muted)}
+.formgrid label.full{grid-column:1/-1}
+.formgrid input,.formgrid select,.formgrid textarea{display:block;width:100%;margin-top:4px;padding:8px 10px;border:1px solid var(--borda);border-radius:8px;font:inherit;font-size:.88rem;background:#fff}
+.formgrid textarea{resize:vertical}
+@media(max-width:560px){.formgrid{grid-template-columns:1fr}}
+.admin-only{display:none}
+body.is-admin .admin-only{display:block}
+/* módulos expansíveis das Configurações */
+details.cfg > summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);-webkit-user-select:none;user-select:none}
+details.cfg > summary::-webkit-details-marker{display:none}
+details.cfg > summary::after{content:'▾';font-size:1rem;color:var(--verde);transition:transform .15s;transform:rotate(-90deg)}
+details.cfg[open] > summary::after{transform:rotate(0)}
+details.cfg[open] > summary{margin-bottom:12px}
+#hnav-user{display:none;align-items:center;gap:10px;margin-top:8px;font-size:.78rem}
+#hnav-user .chip{background:rgba(255,255,255,.14);padding:3px 12px;border-radius:99px;font-weight:700}
+#hnav-user button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:99px;padding:3px 12px;font:inherit;font-size:.75rem;cursor:pointer}
+#hnav-user button:hover{background:rgba(255,255,255,.12)}
+</style>
+</head>
+<body>
+<header><div class="hw" style="display:flex;gap:12px;align-items:flex-start">
+  <button id="sb-burger" aria-label="Abrir menu" onclick="document.body.classList.add('sb-open')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div>
+    <h1>Fluxo de Caixa Pessoal</h1>
+    <div class="sub">realizado até <b id="hcorte"></b></div>
+  </div>
+</div></header>
+
+<aside id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-mark">FC</div>
+    <div><b>Fluxo de Caixa</b><small>Pessoal · 2026</small></div>
+  </div>
+  <nav id="ptabs">
+    <span data-p="fluxo" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Fluxo</span>
+    <span data-p="docs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Transações</span>
+    <span data-p="plano"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Plano</span>
+    <span data-p="patri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Patrimônio</span>
+    <span data-p="estr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>Estratégia</span>
+    <span data-p="pend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Pendências</span>
+    <span data-p="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</span>
+  </nav>
+  <div id="hnav-user">
+    <span class="chip" id="uchip"></span>
+    <button onclick="Vault.logout()">⟶ &nbsp;Sair</button>
+  </div>
+</aside>
+<div id="sb-backdrop" onclick="document.body.classList.remove('sb-open')"></div>
+
+<div class="wrap">
+
+  <section id="page-fluxo">
+  <div class="selbar">
+    <select id="selper" onchange="selPer(this.value)"></select>
+    <div class="fnav"><span class="nbtn" id="nprev" onclick="navPer(-1)">‹</span><span class="nbtn" id="nnext" onclick="navPer(1)">›</span></div>
+  </div>
+  <div class="pills" id="centros" style="margin-bottom:10px"></div>
+
+  <div class="card">
+    <div class="fhead"><h2 style="margin-bottom:0"><b>Fluxo de caixa</b> · <span id="ftitulo"></span></h2></div>
+    <div style="height:10px"></div>
+    <div class="tabs" id="subtabs">
+      <span class="tab on" data-v="resumo">Resumo</span>
+      <span class="tab" data-v="semanas">Semanas</span>
+      <span class="tab" data-v="dias">Dias</span>
+    </div>
+    <div class="legend" id="flegend"></div>
+    <div id="fcontrols"></div>
+    <div class="tbl-wrap" id="ftabela"></div>
+    <div class="mini" id="fnota"></div>
+  </div>
+
+  <div class="card">
+    <h2>Para onde vai o dinheiro · <span id="btitulo"></span></h2>
+    <div class="bars" id="barras"></div>
+  </div>
+
+  <div class="card" id="card-agenda">
+    <h2>Agenda conhecida · set–dez</h2>
+    <ul class="list" id="agenda"></ul>
+  </div>
+
+  <div class="card" id="card-contas">
+    <h2>Contas bancárias · saldo no fim de cada mês</h2>
+    <div class="tbl-wrap" id="contas"></div>
+    <div class="mini" id="nota-contas">Giro entre contas próprias fica fora do fluxo.</div>
+  </div>
+  </section>
+
+  <section id="page-plano" style="display:none">
+  <div class="card">
+    <h2>Plano × Realizado · mediana mensal jan–jul</h2>
+    <div class="tbl-wrap" id="planotab"></div>
+    <div class="mini">Plano: tua planilha de orçamento. Realizado: mediana mensal derivada dos extratos conciliados. ✓ dentro/abaixo do plano · ▲ deriva a conter · ◆ decisão de posicionamento pós-plano (nomear verba) · ● sem linha no plano.</div>
+  </div>
+  <div class="card">
+    <h2>Remuneração 2026 · plano × ritmo</h2>
+    <div id="planorem"></div>
+  </div>
+  <div class="card estr">
+    <h2>O que a comparação ensina</h2>
+    <div id="planoins"></div>
+  </div>
+  </section>
+
+  <section id="page-patri" style="display:none">
+  <div class="card">
+    <h2>Metas</h2>
+    <div id="metas"></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h2>Reservas e investimentos</h2>
+      <div id="reservas"></div>
+      <div class="note" id="nota-reservas" style="display:none"></div>
+    </div>
+    <div class="card">
+      <h2>Patrimônio · foto do IR + eventos 2026</h2>
+      <div id="patrimonio"></div>
+    </div>
+  </div>
+
+  </section>
+
+  <section id="page-estr" style="display:none">
+  <div class="card estr">
+    <h2>Estratégia — decisões de capital</h2>
+    <div id="estrategia"></div>
+    <div class="note" id="nota-estrategia" style="display:none"></div>
+  </div>
+
+  </section>
+
+  <section id="page-pend" style="display:none">
+  <div class="card">
+    <h2>Pendências para a próxima atualização</h2>
+    <ol class="pend" id="pendencias"></ol>
+  </div>
+  </section>
+
+  <section id="page-docs" style="display:none">
+  <div class="card">
+    <h2>Transações</h2>
+    <div class="formgrid">
+      <label>Regime
+        <select id="tx-regime">
+          <option value="pag">Mês do pagamento</option>
+          <option value="comp">Mês de competência</option>
+        </select></label>
+      <label>Agrupar por
+        <select id="tx-grupo">
+          <option value="mes">Mês</option>
+          <option value="cat">Categoria</option>
+        </select></label>
+      <label>Categoria <select id="tx-cat"></select></label>
+      <label>Conta / cartão <select id="tx-org"></select></label>
+      <label class="full">Buscar <input id="tx-busca" autocomplete="off" placeholder="ex.: posto, ifood, prudential…"></label>
+    </div>
+    <div id="tx-lista" style="margin-top:6px"></div>
+    <div class="mini" style="margin-top:8px">Competência: compras de cartão contam no mês em que foram feitas (mês anterior ao pagamento da fatura); no regime de pagamento, tudo conta no dia em que saiu ou entrou na conta. Giros entre contas próprias aparecem marcados e ficam fora dos totais.</div>
+  </div>
+  <div class="card">
+    <h2>Documentos guardados</h2>
+    <div class="tbl-wrap" id="doc-lista"></div>
+    <div class="mini">Extratos importados e itens de fatura processados são arquivados aqui automaticamente, criptografados junto com os dados. Para enviar um novo extrato ou fatura, use a aba <b>Configurações</b>.</div>
+  </div>
+  </section>
+
+  <section id="page-config" style="display:none">
+  <details class="card cfg" open>
+    <summary>Importar para os lançamentos</summary>
+    <div class="formgrid">
+      <label class="full">Arquivo — extrato do banco (OFX) ou fatura do cartão (CSV) <input type="file" id="imp-file"></label>
+      <label class="full">ou cole aqui o texto da fatura <textarea id="imp-txt" rows="3" placeholder="uma linha por compra, valor no fim — ex.: POSTO SAPATAO  81,40"></textarea></label>
+    </div>
+    <div class="qwrap">
+      <button class="btn" id="imp-ler">Enviar</button>
+      <button type="button" class="qhelp" id="imp-help" aria-label="Como funciona a importação">?</button>
+      <div class="qpop" id="imp-help-pop">Só anexar e enviar — a ferramenta reconhece sozinha se é <b>extrato</b> (Sicredi ou Nubank) ou <b>fatura de cartão</b>, e no caso da fatura identifica também o cartão e o mês (dá para corrigir na revisão, se precisar). <b>Extrato</b>: ignora o que já está conciliado, classifica pelas regras do teu pipeline e nada entra sem a conciliação no centavo fechar. <b>Fatura</b>: pode ser enviada a qualquer momento, mesmo antes de fechar — fica guardada criptografada, já classificada, e entra no caixa <b>no dia do pagamento</b>, quando o débito aparecer na importação do extrato.</div>
+    </div>
+    <div class="mini" id="imp-msg" style="margin-top:8px"></div>
+    <div id="imp-review" style="margin-top:12px"></div>
+  </details>
+  <details class="card cfg">
+    <summary>Projeção 2027 — premissas</summary>
+    <div class="formgrid">
+      <label>Crescimento da renda (% ao ano) <input id="p27-renda" type="text" inputmode="decimal"></label>
+      <label>Reajuste das despesas (% ao ano) <input id="p27-desp" type="text" inputmode="decimal"></label>
+    </div>
+    <div class="qwrap">
+      <button class="btn" id="p27-aplicar">Aplicar premissas</button>
+      <button type="button" class="qhelp" aria-label="Explicação das premissas">?</button>
+      <div class="qpop">Valem para a visão "2027 — projeção" no Fluxo. Ficam guardadas criptografadas no cofre e sincronizadas entre os aparelhos.</div>
+    </div>
+    <div class="mini" id="p27-msg" style="margin-top:8px"></div>
+  </details>
+  <details class="card cfg">
+    <summary>Metas — alvos</summary>
+    <div class="formgrid">
+      <label>Emergência — alvo final (meses) <input id="mt-meses" type="text" inputmode="decimal"></label>
+      <label>Emergência — meta intermediária (meses) <input id="mt-meta1" type="text" inputmode="decimal"></label>
+      <label>Meta de patrimônio (R$) <input id="mt-alvo" type="text" inputmode="decimal"></label>
+      <label>Rendimento das reservas (% a.a.) <input id="mt-rend" type="text" inputmode="decimal"></label>
+    </div>
+    <div class="qwrap">
+      <button class="btn" id="mt-aplicar">Aplicar metas</button>
+      <button type="button" class="qhelp" aria-label="Explicação das metas">?</button>
+      <div class="qpop">O progresso das metas aparece na aba <b>Patrimônio</b>.</div>
+    </div>
+    <div class="mini" id="mt-msg" style="margin-top:8px"></div>
+  </details>
+  <details class="card cfg">
+    <summary>Usuários com acesso</summary>
+    <div class="tbl-wrap" id="ac-lista"></div>
+    <div class="qwrap admin-only" style="margin-top:8px">
+      <button type="button" class="qhelp" aria-label="Como funcionam os usuários">?</button>
+      <div class="qpop">Como administrador, você cria e exclui usuários. Cada pessoa entra com o próprio usuário e senha — a senha nunca fica gravada em lugar nenhum, ela é a chave que abre os dados.</div>
+    </div>
+  </details>
+  <details class="card cfg admin-only">
+    <summary>Criar usuário</summary>
+    <div class="formgrid">
+      <label>Usuário <input id="ac-user" autocomplete="off" placeholder="ex.: alessandra"></label>
+      <label>Nome <input id="ac-nome" placeholder="ex.: Alessandra"></label>
+      <label>Papel
+        <select id="ac-role">
+          <option value="usuario">Usuário</option>
+          <option value="admin">Administrador</option>
+        </select></label>
+      <label>Senha <input type="password" id="ac-pass" autocomplete="new-password"></label>
+      <label>Confirmar senha <input type="password" id="ac-pass2" autocomplete="new-password"></label>
+    </div>
+    <button class="btn" id="ac-add">Criar usuário</button>
+    <div class="mini" id="ac-msg" style="margin-top:8px"></div>
+  </details>
+  <details class="card cfg">
+    <summary>Alterar minha senha</summary>
+    <div class="formgrid">
+      <label>Senha atual <input type="password" id="pw-old" autocomplete="current-password"></label>
+      <label></label>
+      <label>Nova senha <input type="password" id="pw-new" autocomplete="new-password"></label>
+      <label>Confirmar nova senha <input type="password" id="pw-new2" autocomplete="new-password"></label>
+    </div>
+    <button class="btn" id="pw-change">Alterar senha</button>
+    <div class="mini" id="pw-msg" style="margin-top:8px"></div>
+  </details>
+  <details class="card cfg admin-only">
+    <summary>Publicação automática na base</summary>
+    <div class="mini" id="gh-status" style="margin-bottom:8px"></div>
+    <div class="formgrid" id="gh-form">
+      <label class="full">Chave do GitHub <input type="password" id="gh-token" autocomplete="off" placeholder="github_pat_…"></label>
+    </div>
+    <div class="qwrap" style="gap:8px">
+      <button class="btn" id="gh-save">Ativar publicação automática</button>
+      <button class="btn sm danger" id="gh-off" style="display:none">desativar</button>
+      <button type="button" class="qhelp" aria-label="Como funciona a publicação automática">?</button>
+      <div class="qpop">Com isso ativo, toda alteração (acessos, importações, documentos) vai sozinha para a base — em ~1 minuto vale em todos os aparelhos. Como gerar a chave (2 min): github.com → foto de perfil → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens → Fine-grained tokens</b> → Generate new token → Repository access: <b>Only select repositories</b> → <i>painel-estacao-operacional</i> → Permissions → <b>Contents: Read and write</b> → Generate → cole aqui. A chave fica guardada <b>criptografada</b> dentro do cofre, nunca em texto aberto.</div>
+    </div>
+    <div class="mini" id="gh-msg" style="margin-top:8px"></div>
+  </details>
+  <details class="card cfg admin-only">
+    <summary>Classificação inteligente (IA)</summary>
+    <div class="mini" id="ia-status" style="margin-bottom:8px"></div>
+    <div class="formgrid" id="ia-form">
+      <label class="full">Chave da API da Anthropic <input type="password" id="ia-key" autocomplete="off" placeholder="sk-ant-…"></label>
+    </div>
+    <div class="qwrap" style="gap:8px">
+      <button class="btn" id="ia-save">Ativar classificação com IA</button>
+      <button class="btn sm danger" id="ia-off" style="display:none">desativar</button>
+      <button type="button" class="qhelp" aria-label="Como funciona a classificação com IA">?</button>
+      <div class="qpop">Com isso ativo, o site chama o <b>Claude</b> (a mesma IA daqui do Cowork) ao ler extratos e faturas: o que as regras fixas não reconhecem é classificado pela IA seguindo a tua metodologia, marcado com ✨ para conferência — e dá até para ler faturas coladas em formato bagunçado (texto de PDF, por exemplo). Como obter a chave (2 min): <b>console.anthropic.com</b> → API Keys → Create Key → cole aqui. Ela fica guardada <b>criptografada</b> no cofre. Apenas descrições e valores dos lançamentos são enviados para classificar; custo típico: centavos por fatura.</div>
+    </div>
+    <div class="mini" id="ia-msg" style="margin-top:8px"></div>
+  </details>
+  <details class="card cfg">
+    <summary>Sincronização</summary>
+    <div id="sync-card"></div>
+  </details>
+  </section>
+
+  <footer id="fontes"></footer>
+</div>
+
+<div id="modal" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="box"><button class="x" onclick="document.getElementById('modal').classList.remove('on')">×</button>
+  <h3 id="mtit"></h3><div class="sub" id="msub"></div><ul class="list" id="mlist"></ul></div>
+</div>
+
+<!-- ======================= tela de login ======================= -->
+<div id="login-ov">
+  <form class="box" id="login-form">
+    <h1>Fluxo de Caixa Pessoal</h1>
+    <div class="sub">Área restrita — entre com seu usuário e senha</div>
+    <label>Usuário <input id="login-user" autocomplete="username" autocapitalize="none" required></label>
+    <label>Senha <input type="password" id="login-pass" autocomplete="current-password" required></label>
+    <div id="login-msg"></div>
+    <button class="btn wide" id="login-btn" type="submit">Entrar</button>
+  </form>
+</div>
+
+<script>
+/* =================================================================
+   Vault — cofre criptografado (WebCrypto, roda 100% no navegador)
+   - dados.enc.json guarda: usuários (chave-mestra embrulhada pela
+     senha de cada um, via PBKDF2-SHA256) + payload cifrado AES-GCM
+   - login correto → destrava a chave-mestra → descriptografa os dados
+   - alterações (usuários/documentos) são recriptografadas e salvas
+     no navegador; o botão "Baixar dados.enc.json" exporta o arquivo
+     para substituir na hospedagem
+   ================================================================= */
+const LS_KEY = 'fluxo_pessoal_store_v1';
+const Vault = {
+  store: null, key: null, rawKey: null, data: null, user: null, dirtyLocal: false,
+
+  b64e(buf){ const u = new Uint8Array(buf); let s=''; const CH=0x8000;
+    for (let i=0;i<u.length;i+=CH) s += String.fromCharCode.apply(null, u.subarray(i,i+CH));
+    return btoa(s); },
+  b64d(s){ const b = atob(s); const u = new Uint8Array(b.length);
+    for (let i=0;i<b.length;i++) u[i] = b.charCodeAt(i);
+    return u; },
+
+  async loadStore(){
+    let file = null, local = null;
+    try { const r = await fetch('dados.enc.json', {cache:'no-store'}); if (r.ok) file = await r.json(); } catch(e){}
+    try { const s = localStorage.getItem(LS_KEY); if (s) local = JSON.parse(s); } catch(e){}
+    if (file && local) this.store = local.mod > file.mod ? local : file;
+    else this.store = file || local;
+    this.dirtyLocal = !!(local && (!file || local.mod > file.mod));
+    return this.store;
+  },
+
+  async derive(pass, saltB64){
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      {name:'PBKDF2', hash:this.store.kdf.hash, salt:this.b64d(saltB64), iterations:this.store.kdf.iter},
+      base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+  },
+
+  async login(u, pass){
+    const rec = this.store.users.find(x => x.u.toLowerCase() === u.trim().toLowerCase());
+    if (!rec) throw new Error('Usuário ou senha incorretos.');
+    let raw;
+    try {
+      const uk = await this.derive(pass, rec.salt);
+      raw = await crypto.subtle.decrypt({name:'AES-GCM', iv:this.b64d(rec.iv)}, uk, this.b64d(rec.wk));
+    } catch(e){ throw new Error('Usuário ou senha incorretos.'); }
+    this.rawKey = raw;
+    this.key = await crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+    const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:this.b64d(this.store.payload.iv)}, this.key, this.b64d(this.store.payload.ct));
+    this.data = JSON.parse(new TextDecoder().decode(plain));
+    if (!this.data.docs) this.data.docs = [];
+    this.user = rec;
+  },
+
+  async save(){
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, this.key, new TextEncoder().encode(JSON.stringify(this.data)));
+    this.store.payload = { iv: this.b64e(iv), ct: this.b64e(ct) };
+    this.store.mod = new Date().toISOString();
+    this.dirtyLocal = true;
+    try { localStorage.setItem(LS_KEY, JSON.stringify(this.store)); }
+    catch(e){ alert('O navegador ficou sem espaço para guardar as alterações localmente. Baixe agora o dados.enc.json atualizado (aba Acessos) para não perdê-las.'); }
+    this.autoPublish();
+  },
+
+  // Publicação automática: envia o dados.enc.json atualizado para a base
+  // via API do GitHub. A chave vive criptografada dentro do próprio cofre.
+  pubStatus: null, pubHora: null, pubErro: null, _pubBusy: false, _pubAgain: false,
+  async autoPublish(){
+    const cfg = this.data && this.data.sync;
+    if (!cfg || !cfg.token || !this.dirtyLocal) { if (window.renderSync) renderSync(); return; }
+    if (this._pubBusy){ this._pubAgain = true; return; }
+    this._pubBusy = true;
+    this.pubStatus = 'publicando'; if (window.renderSync) renderSync();
+    try {
+      const api = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
+      const hdr = { Authorization: 'Bearer ' + cfg.token, Accept: 'application/vnd.github+json' };
+      const getSha = async () => {
+        const g = await fetch(`${api}?ref=${cfg.branch}`, { headers: hdr });
+        if (g.ok) return (await g.json()).sha;
+        if (g.status === 404) return null;
+        throw new Error('leitura da base: HTTP ' + g.status);
+      };
+      const body = { message: 'chore: sincroniza dados.enc.json (publicação automática)', branch: cfg.branch,
+        content: this.b64e(new TextEncoder().encode(JSON.stringify(this.store))) };
+      const sha = await getSha(); if (sha) body.sha = sha;
+      let r = await fetch(api, { method:'PUT', headers:{...hdr,'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      if (r.status === 409 || r.status === 422){
+        const s2 = await getSha(); if (s2) body.sha = s2; else delete body.sha;
+        r = await fetch(api, { method:'PUT', headers:{...hdr,'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      }
+      if (!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — chave inválida ou sem permissão' : ''));
+      this.dirtyLocal = false; this.pubStatus = 'ok'; this.pubErro = null;
+      if (window.__dataTagRefresh) window.__dataTagRefresh();   // a própria publicação não deve derrubar esta tela
+      this.pubHora = new Date().toTimeString().slice(0,5);
+    } catch(e){
+      this.pubStatus = 'erro'; this.pubErro = e.message;
+    }
+    this._pubBusy = false;
+    if (window.renderSync) renderSync();
+    if (this._pubAgain){ this._pubAgain = false; this.autoPublish(); }
+  },
+
+  exportFile(){
+    const blob = new Blob([JSON.stringify(this.store)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'dados.enc.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  },
+
+  async addUser(u, nome, role, pass){
+    if (this.user.role !== 'admin') throw new Error('Só o administrador cria usuários.');
+    if (this.store.users.some(x => x.u.toLowerCase() === u.toLowerCase())) throw new Error('Já existe um usuário com esse nome.');
+    if (!/^[a-z0-9._-]+$/i.test(u)) throw new Error('Use só letras, números, ponto, hífen ou _ no usuário.');
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const saltB64 = this.b64e(salt);
+    const uk = await this.derive(pass, saltB64);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const wk = await crypto.subtle.encrypt({name:'AES-GCM', iv}, uk, this.rawKey);
+    this.store.users.push({ u, nome, role, salt: saltB64, iv: this.b64e(iv), wk: this.b64e(wk), criado: new Date().toISOString().slice(0,10) });
+    await this.save();
+  },
+
+  async delUser(u){
+    if (this.user.role !== 'admin') throw new Error('Só o administrador exclui usuários.');
+    if (u.toLowerCase() === this.user.u.toLowerCase()) throw new Error('Você não pode excluir o próprio acesso.');
+    const resto = this.store.users.filter(x => x.u.toLowerCase() !== u.toLowerCase());
+    if (!resto.some(x => x.role === 'admin')) throw new Error('É preciso manter pelo menos um administrador.');
+    this.store.users = resto;
+    await this.save();
+  },
+
+  async changePass(oldPass, newPass){
+    const rec = this.store.users.find(x => x.u === this.user.u);
+    try {
+      const uk = await this.derive(oldPass, rec.salt);
+      await crypto.subtle.decrypt({name:'AES-GCM', iv:this.b64d(rec.iv)}, uk, this.b64d(rec.wk));
+    } catch(e){ throw new Error('Senha atual incorreta.'); }
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    rec.salt = this.b64e(salt);
+    const uk = await this.derive(newPass, rec.salt);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    rec.wk = this.b64e(await crypto.subtle.encrypt({name:'AES-GCM', iv}, uk, this.rawKey));
+    rec.iv = this.b64e(iv);
+    await this.save();
+  },
+
+  logout(){ location.reload(); },
+};
+
+function startApp(){
+  window.__VAULT_DATA__ = Vault.data;
+  document.getElementById('login-ov').style.display = 'none';
+  document.getElementById('uchip').textContent = Vault.user.nome || Vault.user.u;
+  document.getElementById('hnav-user').style.display = 'flex';
+  if (Vault.user.role === 'admin') document.body.classList.add('is-admin');
+  const s = document.createElement('script');
+  s.src = 'app.js';
+  document.body.appendChild(s);
+}
+
+(async function(){
+  const msg = document.getElementById('login-msg');
+  if (sessionStorage.getItem('fp-dados')){
+    sessionStorage.removeItem('fp-dados');
+    msg.textContent = 'Os dados foram atualizados em outro aparelho — entre novamente para carregar a versão mais recente.';
+  }
+  if (sessionStorage.getItem('fp-atualizado')){
+    sessionStorage.removeItem('fp-atualizado');
+    msg.textContent = 'A ferramenta foi atualizada — por segurança, todos os acessos foram desconectados. Entre novamente.';
+  }
+  const st = await Vault.loadStore();
+  if (!st){
+    msg.textContent = 'Arquivo de dados (dados.enc.json) não encontrado. Se você abriu o arquivo direto do computador, sirva a pasta com um servidor local ou acesse pela hospedagem.';
+    document.getElementById('login-btn').disabled = true;
+    return;
+  }
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true; btn.textContent = 'Verificando…'; msg.textContent = '';
+    try {
+      await Vault.login(document.getElementById('login-user').value, document.getElementById('login-pass').value);
+      startApp();
+    } catch(err){
+      msg.textContent = err.message;
+      btn.disabled = false; btn.textContent = 'Entrar';
+    }
+  });
+})();
+</script>
+</body>
+</html>
+

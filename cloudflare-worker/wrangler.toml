@@ -1,0 +1,16 @@
+name = "painel-estacao-trigger"
+main = "src/worker.js"
+compatibility_date = "2026-05-25"
+
+# Cron triggers — UTC. Brasília = UTC-3.
+# Três horários espaçados pra dar redundância caso algum atrase.
+[triggers]
+crons = [
+  "47 4 * * *",   # 04:47 UTC / 01:47 BR — primário
+  "47 6 * * *",   # 06:47 UTC / 03:47 BR — backup 1
+  "47 8 * * *",   # 08:47 UTC / 05:47 BR — backup 2
+]
+
+# O secret GH_PAT é configurado fora do arquivo:
+#   wrangler secret put GH_PAT
+# ou pelo dashboard da Cloudflare > Workers > Settings > Variables > Secret

@@ -1,0 +1,35 @@
+name: Update Dashboard Data
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch and update data from API
+        run: node scripts/update-data.js
+        env:
+          DASHBOARD_USER: ${{ secrets.DASHBOARD_USER }}
+          DASHBOARD_PASS: ${{ secrets.DASHBOARD_PASS }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          if git diff --quiet data.json; then
+            echo "Nenhuma mudanca detectada"
+          else
+            git add data.json
+            git commit -m "chore: update dashboard data - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git push
+          fi
