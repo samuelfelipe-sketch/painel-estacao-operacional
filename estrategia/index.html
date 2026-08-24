@@ -178,6 +178,7 @@ tr:last-child td{border-bottom:none}
 .flag.gut{background:#F4F4F2;color:var(--verde-suave);font-family:'IBM Plex Mono',monospace}
 .flag.gut.alta{background:#F7E1D1;color:var(--laranja-escuro)}
 .flag.resp{background:#E3EAE7;color:var(--verde)}
+.flag.przo{background:#F4F4F2;color:var(--verde-suave);font-family:'IBM Plex Mono',monospace}
 .flag.ok{background:#E7F2EA;color:#1D6B3C}
 .flag.late{background:#F9DEDC;color:#8C1D18}
 .acard-body{display:none;border-top:1px dashed var(--linha);padding:12px 14px}
@@ -571,6 +572,7 @@ function renderAll(){
       +(ok?'<span class="flag ok">&#10004; Concluída</span>':'')
       +'<span class="flag gut'+(a.gut>=100?' alta':'')+'">GUT '+a.gut+'</span>'
       +'<span class="flag resp">'+esc(a.resp)+'</span>'
+      +'<span class="flag przo">'+fmt(prazoEfetivo(a))+'</span>'
       +'</span><span class="acard-chev"></span></button>'
       +'<div class="acard-body">'
       +'<div class="ameta">'
