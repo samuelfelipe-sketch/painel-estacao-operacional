@@ -9,7 +9,7 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 | Caminho | O que é | Acesso |
 |---|---|---|
 | `index.html` | **Central de acessos**: login unificado (campo na página, `SAPATAO_APP='central'`) + cartões de todos os apps | aberto |
-| `configuracoes/index.html` | **Configurações centrais** (login): minha senha (todos), chave de sincronização e administração de usuários (admin). Apps apontam para cá | senha |
+| `configuracoes/index.html` | **Configurações centrais** (login): minha senha (todos); chave de sincronização, publicação da ferramenta do Fluxo (cartão "Fluxo de Caixa", mesmo fluxo do `fluxo/?publicar`) e administração de usuários (admin). Apps apontam para cá | senha |
 | `roadmap/guia.html` | **Guia de Execução** — app principal do Roadmap Comercial (método PACE, 17 ações) | senha |
 | `roadmap/plano-de-acao.html` | Plano de Ação formatado para impressão (A4 paisagem) | senha |
 | `roadmap/resumo.html` | **Método Reborn** — resumo da imersão Club Reborn. Identidade própria (navy/dourado). **Não alterar o layout.** | aberto de propósito (compartilhável) |

@@ -111,6 +111,14 @@ tr:last-child td{border-bottom:none}
       <p class="lead" id="cs-msg" style="margin-top:8px;margin-bottom:0"></p>
     </div>
 
+    <h3>Fluxo de Caixa</h3>
+    <div class="card" style="max-width:520px">
+      <p class="lead" style="margin-bottom:8px">Publique a versão mais nova da ferramenta — escolha o arquivo <b>fluxo_caixa_rede.html</b>. Ele é comprimido e cifrado aqui no navegador antes de subir; só quem tem a chave dos dados consegue abrir.</p>
+      <input type="file" id="fx-arq" accept=".html,text/html" style="margin:6px 0 10px;max-width:100%">
+      <button type="button" class="btn" id="fx-publicar" style="margin-top:0">Cifrar e publicar</button>
+      <p class="lead" id="fx-msg" style="margin-top:8px;margin-bottom:0"></p>
+    </div>
+
     <h3>Usuários e permissões</h3>
     <p class="lead">Cada pessoa entra com o próprio usuário e senha. Permissão por painel: <b>Edita</b>, <b>Só follow-ups</b> (só no Planejamento), <b>Só lê</b> ou <b>Sem acesso</b>; no Fluxo de Caixa é <b>Acessa</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo.</p>
     <div class="card">
@@ -299,6 +307,39 @@ document.getElementById('us-salvar').addEventListener('click',async ()=>{
     usDiz('Usuários gravados! As permissões valem no próximo acesso de cada um.');
     usCarrega();
   }catch(e){usDiz('Não consegui gravar ('+e.message+').',true);}
+});
+
+/* --- Fluxo de Caixa: publicar a ferramenta (mesmo fluxo do fluxo/?publicar) --- */
+async function fxGzipB64(str){
+  const cs=new CompressionStream('gzip');
+  const ab=await new Response(new Blob([str]).stream().pipeThrough(cs)).arrayBuffer();
+  let s='';new Uint8Array(ab).forEach(b=>s+=String.fromCharCode(b));return btoa(s);
+}
+document.getElementById('fx-publicar').addEventListener('click',async()=>{
+  const msgEl=document.getElementById('fx-msg');
+  const f=document.getElementById('fx-arq').files[0];
+  if(!f){msgEl.textContent='Escolha o arquivo primeiro.';return;}
+  const tok=token();
+  if(!tok){msgEl.textContent='Este aparelho não tem a chave de publicação — saia e entre com a senha na central.';return;}
+  if(!window.sapataoCofre.dek()){msgEl.textContent='Este aparelho não tem a chave dos dados — saia e entre com a senha na central.';return;}
+  msgEl.textContent='Cifrando e publicando…';
+  try{
+    const html=await f.text();
+    if(!/<html|<body|<!doctype/i.test(html.slice(0,2000))){msgEl.textContent='Esse arquivo não parece ser a ferramenta (esperava um HTML).';return;}
+    const carga={v:1,em:new Date().toISOString().slice(0,16)};
+    if(window.CompressionStream)carga.gz=await fxGzipB64(html);else carga.html=html;
+    const cifrado=await window.sapataoCofre.cifra(carga);
+    const url='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/fluxo/dados.enc.json';
+    const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tok,'Content-Type':'application/json'};
+    let sha=null;
+    try{const g=await fetch(url+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});if(g.ok)sha=(await g.json()).sha;}catch(e){}
+    const body={message:'chore: publica a ferramenta do Fluxo de Caixa (manual)',branch:'main',content:b64enc(JSON.stringify(cifrado))};
+    if(sha)body.sha=sha;
+    const r=await fetch(url,{method:'PUT',headers:h,body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    try{localStorage.setItem('sapatao-fluxo-v1',JSON.stringify(cifrado));}catch(e){}
+    msgEl.textContent='Publicado! O painel do Fluxo abre a versão nova em ~1–2 minutos.';
+  }catch(e){msgEl.textContent='Não consegui publicar ('+e.message+').';}
 });
 
 pinta();
