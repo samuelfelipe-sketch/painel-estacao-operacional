@@ -104,6 +104,10 @@ const SKIN='<style>'
     fluxo do dia e como o caixa deve encerrar (montada por script abaixo) */
  +".skin-dias{display:none;margin:6px 0 12px}"
  +"@media(max-width:1024px){.skin-dias.on{display:block}}"
+ +".skin-dias.on.force{display:block}"
+ /* botão "Dia a dia em linhas" abaixo da tabela, no estilo dos botões do site */
+ +".sd-btn{display:block;margin:12px 0 4px;background:#fff;border:1px solid #E4E9F0;border-radius:12px;padding:11px 20px;font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;color:#16211C;cursor:pointer;box-shadow:0 1px 2px rgba(16,24,40,.06),0 2px 6px rgba(16,24,40,.05)}"
+ +".sd-btn:hover{background:#F7F9FB}"
  +".skin-dias h4{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#5F6C7B;margin:0 0 2px}"
  +".skin-dias .sd-sub{font-family:'Archivo',sans-serif;font-size:11.5px;color:#8A95A1;margin-bottom:6px}"
  +".sd-row{display:flex;align-items:baseline;gap:10px;padding:5px 2px;border-bottom:1px solid #EEF1F5;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#16211C}"
@@ -123,10 +127,23 @@ const SKIN='<style>'
  +'for(i=0;i<tabs.length;i++){var c1=tabs[i].querySelector("thead tr:first-child");'
  +'if(c1&&c1.children[1]&&/^\\d{1,2}$/.test(c1.children[1].textContent.trim())&&tabs[i].querySelector("tr.cxfim")){t=tabs[i];break}}'
  +'var velho=document.getElementById("skin-dias");'
- +'if(!t||t.offsetParent===null){if(velho)velho.classList.remove("on");return}'
- +'if(velho&&velho._src===t){velho.classList.add("on");return}'
- +'if(velho)velho.remove();'
+ +'if(!t){if(velho)velho.classList.remove("on");return}'
  +'var wrap=t.closest(".sheetwrap")||t.parentElement;'
+ /* botão abaixo da tabela completa: ativa o modo Dia a dia e abre a lista */
+ +'if(!document.getElementById("sd-abrir")){'
+ +'var bt=document.createElement("button");bt.id="sd-abrir";bt.type="button";bt.className="sd-btn";'
+ +'bt.textContent="Dia a dia em linhas";'
+ +'bt.onclick=function(){var pd=document.querySelector(".fcbtn[data-mode=\\"d\\"]");'
+ +'if(pd&&typeof setFC==="function")setFC(pd,"d");'
+ +'monta();var d2=document.getElementById("skin-dias");'
+ +'if(d2){d2.classList.add("on","force");d2.scrollIntoView({behavior:"smooth",block:"start"});}};'
+ /* fora do contêiner .fcd (que some nos modos Mês/Semana) */
+ +'var modo=wrap.closest(".fcd")||wrap;'
+ +'modo.parentElement.insertBefore(bt,modo.nextSibling);}'
+ +'if(t.offsetParent===null){if(velho)velho.classList.remove("on");return}'
+ +'if(velho&&velho._src===t){velho.classList.add("on");return}'
+ +'var força=velho&&velho.classList.contains("force");'
+ +'if(velho)velho.remove();'
  +'var hs=[].slice.call(t.querySelector("thead tr:first-child").children).slice(1);'
  +'var fim=[].slice.call(t.querySelector("tr.cxfim").children).slice(1);'
  +'var flx=[].slice.call(t.querySelector("tr.fluxo").children).slice(1);'
@@ -146,7 +163,7 @@ const SKIN='<style>'
  +'+"<span class=\\"sd-f"+(real?"":" sd-prev")+(f.charAt(0)==="-"?" sd-neg":"")+"\\">"+(f||"&mdash;")+"</span>"'
  +'+"<span class=\\"sd-c"+(real?"":" sd-prev")+(c.charAt(0)==="-"?" sd-neg":"")+"\\">"+(c||"&mdash;")+"</span></div>";'
  +'k+=2});'
- +'var d=document.createElement("div");d.id="skin-dias";d.className="skin-dias on";d._src=t;'
+ +'var d=document.createElement("div");d.id="skin-dias";d.className="skin-dias on"+(força?" force":"");d._src=t;'
  +'d.innerHTML="<h4>Encerramento dia a dia</h4><div class=\\"sd-sub\\">como cada dia fecha o caixa &middot; cinza = previsto</div>"+h;'
  +'wrap.parentElement.insertBefore(d,wrap);}'
  +'var tm=null;new MutationObserver(function(){clearTimeout(tm);tm=setTimeout(monta,150)})'
