@@ -823,10 +823,20 @@ function renderCabecalho(){
   // notas pessoais vêm do cofre criptografado
   const N = D.notas || {};
   if (N.contas) document.getElementById('nota-contas').innerHTML = 'Giro entre contas próprias fica fora do fluxo. ' + esc(N.contas);
-  for (const [id, key] of [['nota-reservas','reservas'],['nota-estrategia','estrategia']]){
-    const el = document.getElementById(id);
-    if (el && N[key]){ el.textContent = N[key]; el.style.display = ''; }
+  // nota das reservas é gerada (a antiga citava datas que envelheciam);
+  // a data de cada linha vive na descrição da própria reserva
+  const elNR = document.getElementById('nota-reservas');
+  if (elNR){
+    let ult = null;
+    for (const r of D.reservas_liq.concat(D.reservas_lp)){
+      const m = String(r[2]||'').match(/atualizad[oa] (\d{2}\/\d{2}\/\d{2})/);
+      if (m && (!ult || m[1].split('/').reverse().join('') > ult.split('/').reverse().join(''))) ult = m[1];
+    }
+    elNR.textContent = `Os valores entram pelas importações e pelo Patrimônio por print — cada linha mostra a data da própria atualização${ult?` (última: ${ult})`:''}. Bitcoin a valor de mercado (oscila); política: reserva de futuro, sem resgate, com DCA mensal.`;
+    elNR.style.display = '';
   }
+  const elNE = document.getElementById('nota-estrategia');
+  if (elNE && N.estrategia){ elNE.textContent = N.estrategia; elNE.style.display = ''; }
   const nCM = Object.keys(SB.sicredi.fim).length + Object.keys(SB.nubank.fim).length;
   document.getElementById('fontes').innerHTML =
     `<b>Fontes:</b> extratos OFX Sicredi CC e Nubank (jan–${D.corte.slice(8,10)}/${MN[CORTE_M].toLowerCase()}/${ANO}) · faturas Visa Infinite e do cartão Nubank conferidas contra o total declarado · IRPF ${ANO} (ano-base ${ANO-1}). Regra de ouro: saldo inicial + recebimentos − pagamentos = saldo final real de cada conta, conciliado no centavo em ${nCM} de ${nCM} conta-mês. Transferências entre contas próprias são giro e ficam fora dos totais. Nenhum valor é digitado aqui; tudo deriva dos lançamentos e das importações conciliadas.`;
