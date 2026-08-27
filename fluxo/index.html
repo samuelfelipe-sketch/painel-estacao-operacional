@@ -27,13 +27,56 @@ body{font-family:'Archivo',sans-serif;background:var(--fundo);color:#16211C;line
 #fx-arq{margin-top:6px;font-family:'Archivo',sans-serif;font-size:13.5px}
 #fx-frame{border:0;width:100%;height:calc(100vh - 58px);display:none;background:#fff}
 #fx-espera[hidden]{display:none}
+/* ---- menu lateral do Fluxo ---- */
+#fx-scrim{position:fixed;inset:0;background:rgba(15,25,20,.45);z-index:80;display:none}
+#fx-scrim.aberta{display:block}
+#fx-menu{position:fixed;top:0;left:0;bottom:0;width:min(290px,84%);background:var(--verde);z-index:81;display:none;flex-direction:column;padding:18px 0}
+#fx-menu.aberta{display:flex}
+#fx-menu .m-t{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#CFE0DA;padding:6px 22px 12px}
+#fx-menu a{display:block;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:0 999px 999px 0;margin-right:12px;cursor:pointer}
+#fx-menu a.ativo{background:rgba(255,255,255,.14)}
+#fx-menu a:hover{background:rgba(255,255,255,.08)}
+#fx-menu .m-fim{margin-top:auto;border-top:1px solid rgba(255,255,255,.15);padding-top:8px}
+/* ---- tela Dia a dia por empresa ---- */
+#fx-diaemp{display:none}
+#fx-diaemp .wrap{max-width:1200px}
+#fx-diaemp h1{font-family:'Archivo',sans-serif;font-weight:800;letter-spacing:-.01em;font-size:clamp(22px,5vw,34px);line-height:1.1}
+#fx-diaemp h1 span{color:var(--laranja)}
+.fxde-sub{color:#5F6C7B;font-size:13.5px;margin:6px 0 14px}
+.fxde-sel{appearance:none;background:#fff;border:1px solid #E4E9F0;border-radius:12px;padding:9px 30px 9px 12px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;color:#16211C;box-shadow:0 1px 2px rgba(16,24,40,.06)}
+.fxde-tabwrap{overflow-x:auto;margin-top:12px}
+table.fxde{border-collapse:collapse;min-width:980px;width:100%}
+.fxde th{background:#0E3E36;color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10.5px;letter-spacing:.04em;padding:8px 10px;text-align:right;white-space:nowrap}
+.fxde thead tr:first-child th:first-child{border-radius:10px 0 0 0}
+.fxde thead tr:first-child th:last-child{border-radius:0 10px 0 0}
+.fxde td{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#16211C;border-bottom:1px solid #EEF1F5;padding:6px 10px;text-align:right;white-space:nowrap}
+.fxde td.dia{font-weight:700;text-align:left}
+.fxde td.sep,.fxde th.sep{border-left:1px solid #E4E9F0}
+.fxde th.sep{border-left-color:rgba(255,255,255,.22)}
+.fxde td.neg{color:#C2531A}
+.fxde td.prev2{color:#8A95A1}
 </style>
 <link rel="stylesheet" href="../tema.css">
 </head>
 <body>
 <div class="topbar">
   <button type="button" onclick="location.href='../index.html'" aria-label="Voltar à central de acessos" title="Central de acessos">&#8592;</button>
+  <button type="button" id="fx-menu-btn" aria-label="Abrir menu">&#9776;</button>
   <div class="t">Fluxo de Caixa</div>
+</div>
+<div id="fx-scrim"></div>
+<nav id="fx-menu" aria-label="Menu do Fluxo de Caixa">
+  <div class="m-t">Fluxo de Caixa</div>
+  <a id="fx-nav-fer" class="ativo">Ferramenta do caixa</a>
+  <a id="fx-nav-dia">Dia a dia por empresa</a>
+  <div class="m-fim"><a href="../index.html">&#8592; Central de acessos</a></div>
+</nav>
+<div id="fx-diaemp">
+  <div class="wrap">
+    <h1>Dia a dia <span>por empresa</span></h1>
+    <div class="fxde-sub">Fluxo do dia e caixa ao fim do dia, empresa por empresa &middot; cinza = previsto</div>
+    <div class="card"><div id="fxde-corpo"></div></div>
+  </div>
 </div>
 <div class="wrap" id="fx-espera">
   <div class="card">
@@ -176,6 +219,13 @@ const SKIN='<style>'
  +'.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["style","class"]});'
  +'monta();'
  +'})();<\/scr'+'ipt>'
+ /* ponte de dados para a tela "Dia a dia por empresa" do site (o iframe é
+    do mesmo domínio; os const da ferramenta não vão para window sozinhos) */
+ +'<scr'+'ipt>window.__fxDados={};'
+ +'try{__fxDados.DIA=DIA}catch(e){}try{__fxDados.DATA=DATA}catch(e){}'
+ +'try{__fxDados.SHORT=SHORT}catch(e){}try{__fxDados.EMP_FULL=EMP_FULL}catch(e){}'
+ +'try{__fxDados.MES_LABEL=MES_LABEL}catch(e){}try{__fxDados.STATUS=STATUS}catch(e){}'
+ +'<\/scr'+'ipt>'
  /* título "Fluxo de caixa AAAA — ..." vira "Fluxo de Caixa" no padrão do site */
  +'<scr'+'ipt>(function(){var h=document.querySelector("h1");'
  +'if(h&&/fluxo de caixa/i.test(h.textContent)){h.innerHTML="Fluxo de <span>Caixa</span>";}'
@@ -289,6 +339,72 @@ async function atualiza(primeira){
   }catch(e){
     if(!bootado)diz('sem conexão','Não consegui verificar a publicação agora. Confira a internet e recarregue a página.');
   }
+}
+/* ---- menu lateral e tela Dia a dia por empresa ---- */
+const menu=document.getElementById('fx-menu'),scrim=document.getElementById('fx-scrim');
+const telaDia=document.getElementById('fx-diaemp');
+function abreMenu(a){menu.classList.toggle('aberta',a);scrim.classList.toggle('aberta',a);}
+document.getElementById('fx-menu-btn').addEventListener('click',()=>abreMenu(true));
+scrim.addEventListener('click',()=>abreMenu(false));
+function mostraTela(dia){
+  telaDia.style.display=dia?'block':'none';
+  frame.style.display=(!dia&&bootado)?'block':'none';
+  espera.hidden=dia||bootado;
+  document.getElementById('fx-nav-fer').classList.toggle('ativo',!dia);
+  document.getElementById('fx-nav-dia').classList.toggle('ativo',dia);
+  abreMenu(false);
+  if(dia)montaDiaEmp();
+}
+document.getElementById('fx-nav-fer').addEventListener('click',()=>mostraTela(false));
+document.getElementById('fx-nav-dia').addEventListener('click',()=>mostraTela(true));
+const fmtBR=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+let fxdeMes=null;
+function montaDiaEmp(){
+  const corpo=document.getElementById('fxde-corpo');
+  const W=frame.contentWindow,X=W&&W.__fxDados;
+  if(!X||!X.DIA||!X.DATA){corpo.innerHTML='<p class="lead">A ferramenta ainda está abrindo neste aparelho — volte em "Ferramenta do caixa", espere carregar e tente de novo.</p>';return;}
+  const DIA=X.DIA,DATA=X.DATA,SHORT=X.SHORT||{},ML=X.MES_LABEL||{};
+  const meses=Object.keys(DIA).filter(m=>DIA[m]&&DIA[m].empresas).sort();
+  if(!meses.length){corpo.innerHTML='<p class="lead">Sem dados diários na publicação atual.</p>';return;}
+  if(!fxdeMes||meses.indexOf(fxdeMes)<0)fxdeMes=meses.filter(m=>(DIA[m].dias||0)>0).pop()||meses[meses.length-1];
+  const d=DIA[fxdeMes],nd=d.nd||31,corte=d.dias||0;
+  const emps=Object.keys(d.empresas);
+  const somaI=(o,i)=>{let s=0;for(const k in o){const v=o[k];s+=+(v&&v[i])||0;}return s;};
+  /* saldo inicial de cada empresa = soma dos "ini" das contas do mês;
+     fluxo do dia = entradas − saídas + intercompany (conciliação validada
+     no centavo contra os saldos oficiais do painel) */
+  const saldo={};
+  emps.forEach(e=>{
+    const me=DATA.meses&&DATA.meses[fxdeMes]&&DATA.meses[fxdeMes].empresas&&DATA.meses[fxdeMes].empresas[e];
+    saldo[e]=me&&me.contas?me.contas.reduce((s,c)=>s+(+c.ini||0),0):0;
+  });
+  const fluxoDe=(e,i)=>{
+    const src=i<corte?d.empresas[e]:(d.prev&&d.prev[e]);
+    if(!src)return null;
+    return somaI(src.cin||{},i)-somaI(src.cout||{},i)+(+(src.icw&&src.icw[i])||0);
+  };
+  let hd1='<tr><th style="text-align:left">Dia</th>',hd2='<tr><th></th>';
+  emps.forEach(e=>{hd1+='<th class="sep" colspan="2">'+(SHORT[e]||e)+'</th>';hd2+='<th class="sep">Fluxo</th><th>Fim</th>';});
+  hd1+='<th class="sep" colspan="2">Grupo</th></tr>';hd2+='<th class="sep">Fluxo</th><th>Fim</th></tr>';
+  let linhas='';
+  for(let i=0;i<nd;i++){
+    const prev=i>=corte;let gF=0,gS=0,tds='';
+    emps.forEach(e=>{
+      const f=fluxoDe(e,i);
+      if(f===null){tds+='<td class="sep">&mdash;</td><td>&mdash;</td>';return;}
+      saldo[e]+=f;gF+=f;gS+=saldo[e];
+      tds+='<td class="sep'+(prev?' prev2':'')+(f<0?' neg':'')+'">'+fmtBR(f)+'</td>'
+        +'<td class="'+(prev?'prev2 ':'')+(saldo[e]<0?'neg':'')+'">'+fmtBR(saldo[e])+'</td>';
+    });
+    linhas+='<tr><td class="dia">'+String(i+1).padStart(2,'0')+'</td>'+tds
+      +'<td class="sep'+(prev?' prev2':'')+(gF<0?' neg':'')+'"><b>'+fmtBR(gF)+'</b></td>'
+      +'<td class="'+(prev?'prev2':'')+(gS<0?' neg':'')+'"><b>'+fmtBR(gS)+'</b></td></tr>';
+  }
+  const ops=meses.map(m=>'<option value="'+m+'"'+(m===fxdeMes?' selected':'')+'>'+(ML[m]||m)+'</option>').join('');
+  corpo.innerHTML='<label style="font-size:13px;color:#5F6C7B;font-weight:600">Per&iacute;odo: </label>'
+    +'<select class="fxde-sel" id="fxde-mes">'+ops+'</select>'
+    +'<div class="fxde-tabwrap"><table class="fxde"><thead>'+hd1+hd2+'</thead><tbody>'+linhas+'</tbody></table></div>';
+  document.getElementById('fxde-mes').addEventListener('change',ev=>{fxdeMes=ev.target.value;montaDiaEmp();});
 }
 document.addEventListener('sapatao-login',carrega);
 carrega();
