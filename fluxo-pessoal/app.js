@@ -669,12 +669,27 @@ function renderMetas(){
 
 function renderPatrimonio(){
   const P = D.patrimonio;
-  let h = P.bens.map(x=>`<div class="kv"><span class="k">${x[0]}<small>${x[2]||''}</small></span><span class="v">${fmt(x[1])}</span></div>`).join('');
-  h += `<div class="kv tt"><span class="k">Bens (${P.ref})</span><span class="v">${fmt(P.bens.reduce((s,x)=>s+x[1],0))}</span></div>`;
+  // As linhas financeiras saem das reservas e dos extratos (vivas — atualizam
+  // com importações e com o Patrimônio por print). As cópias antigas dessas
+  // linhas em P.bens são ignoradas; ficam declarados só os bens não financeiros
+  // (imóvel, carro, quotas, consórcios).
+  const FIN = /^(xp\b|xp —|bitcoin|sicredi conta capital|sicredi — fundos|nubank rdb|conta sicredi|contas correntes)/i;
+  const fixos = P.bens.filter(x => !FIN.test(x[0]));
+  const din = [];
+  const xp = D.reservas_liq.filter(r => /^xp/i.test(r[0]));
+  if (xp.length) din.push(['XP — carteira', xp.reduce((s,x)=>s+x[1],0), 'soma das reservas XP (com conta investimento)']);
+  D.reservas_liq.filter(r => !/^xp/i.test(r[0])).forEach(r => din.push([r[0], r[1], r[2]]));
+  D.reservas_lp.forEach(r => din.push([r[0], r[1], r[2]]));
+  const cob = D.cobertura || {};
+  din.push(['Contas correntes (Sicredi + Nubank)', saldoFim[CORTE_M] || 0,
+    'saldos dos extratos importados' + (cob.sicredi ? ` · Sicredi até ${dbr(cob.sicredi).slice(0,5)}` : '') + (cob.nubank ? ` · Nubank até ${dbr(cob.nubank).slice(0,5)}` : '')]);
+  const bens = fixos.concat(din);
+  let h = bens.map(x=>`<div class="kv"><span class="k">${x[0]}<small>${x[2]||''}</small></span><span class="v">${fmt(x[1])}</span></div>`).join('');
+  h += `<div class="kv tt"><span class="k">Bens (${P.ref})</span><span class="v">${fmt(bens.reduce((s,x)=>s+x[1],0))}</span></div>`;
   h += P.dividas.map(x=>`<div class="kv"><span class="k">${x[0]}<small>${x[2]||''}</small></span><span class="v neg">${fmt(x[1])}</span></div>`).join('');
-  const pl = P.bens.reduce((s,x)=>s+x[1],0)+P.dividas.reduce((s,x)=>s+x[1],0);
+  const pl = bens.reduce((s,x)=>s+x[1],0)+P.dividas.reduce((s,x)=>s+x[1],0);
   h += `<div class="kv tt"><span class="k">Posição líquida declarada</span><span class="v${pl<0?' neg':''}">${fmt(pl)}</span></div>`;
-  h += `<div class="note">${P.notas}</div>`;
+  h += `<div class="note">As linhas financeiras (XP, fundos, RDB, Bitcoin, conta capital e contas correntes) vêm das reservas e dos extratos — atualizam sozinhas com as importações e com o Patrimônio por print. Imóvel, carro, quotas, consórcios e dívidas são declarados.</div>`;
   document.getElementById('patrimonio').innerHTML = h;
 }
 function renderAgenda(){
@@ -1889,7 +1904,7 @@ function impConfirmar(){
 
   Vault.save().then(()=>{
     recalcBase();
-    renderCabecalho(); renderContas(); renderMetas(); renderDocs(); renderTx(); renderAgenda(); render();
+    renderCabecalho(); renderContas(); renderMetas(); renderPatrimonio(); renderReservas(); renderDocs(); renderTx(); renderAgenda(); render();
   });
 }
 
