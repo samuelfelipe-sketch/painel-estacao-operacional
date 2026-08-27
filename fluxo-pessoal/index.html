@@ -377,6 +377,19 @@ details.cfg[open] > summary{margin-bottom:12px}
     <div class="mini" id="mt-msg" style="margin-top:8px"></div>
   </details>
   <details class="card cfg">
+    <summary>Patrimônio por print ✨</summary>
+    <div class="formgrid">
+      <label class="full">Print da posição (investimentos, poupança, corretora) <input type="file" id="pat-file" accept="image/*"></label>
+    </div>
+    <div class="qwrap">
+      <button class="btn" id="pat-ler">Ler print</button>
+      <button type="button" class="qhelp" aria-label="Como funciona o patrimônio por print">?</button>
+      <div class="qpop">Anexe a captura de tela da posição (Sicredi, Nubank, corretora…). A IA lê os nomes e valores, e você confere item por item: atualizar uma reserva existente, criar uma nova (com o prazo de resgate) ou ignorar — nada é gravado sem a sua confirmação. Precisa da classificação com IA ativa; o print não fica guardado, só os valores confirmados, criptografados no cofre como tudo aqui.</div>
+    </div>
+    <div class="mini" id="pat-msg" style="margin-top:8px"></div>
+    <div id="pat-review" style="margin-top:12px"></div>
+  </details>
+  <details class="card cfg">
     <summary>Usuários com acesso</summary>
     <div class="tbl-wrap" id="ac-lista"></div>
     <div class="qwrap admin-only" style="margin-top:8px">
