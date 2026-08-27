@@ -875,6 +875,98 @@ async function iaChamar(sistema, texto, schema, maxTokens){
   return JSON.parse(bloco.text);
 }
 
+// ---------- patrimônio por print: a IA lê a imagem, o dono confirma ----------
+let PAT = null;
+function patImagem(file){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const esc = Math.min(1, 1568 / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(img.width * esc));
+      cv.height = Math.max(1, Math.round(img.height * esc));
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      res(cv.toDataURL('image/jpeg', 0.85).split(',')[1]);
+    };
+    img.onerror = () => rej(new Error('não consegui abrir a imagem'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+const patNorm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+async function patLer(){
+  const inp = document.getElementById('pat-file'), msg = document.getElementById('pat-msg');
+  if (!inp || !inp.files.length){ msg.textContent = 'Anexe um print primeiro.'; return; }
+  if (!iaCfg()){ msg.textContent = 'Ative a classificação com IA (card abaixo) para ler prints.'; return; }
+  msg.textContent = '✨ Lendo o print…';
+  try {
+    const b64 = await patImagem(inp.files[0]);
+    const schema = { type:'object', additionalProperties:false, required:['itens'], properties:{
+      itens:{ type:'array', items:{ type:'object', additionalProperties:false, required:['nome','val'],
+        properties:{ nome:{type:'string'}, val:{type:'number'} } } } } };
+    const out = await iaChamar(
+      'Você extrai as posições de patrimônio de um print de aplicativo bancário/corretora brasileiro. Liste cada posição (fundo, poupança, CDB, cripto, conta, previdência) com o nome exato exibido e o valor atual total em reais (número). Ignore variações do dia, percentuais, rendimentos e linhas de total geral.',
+      [ { type:'image', source:{ type:'base64', media_type:'image/jpeg', data: b64 } },
+        { type:'text', text:'Extraia as posições deste print.' } ],
+      schema, 8000);
+    PAT = (out.itens || []).filter(x => x.nome && x.val > 0);
+    if (!PAT.length){ msg.textContent = 'Não achei posições no print — tente uma captura mais aproximada.'; return; }
+    msg.textContent = '';
+    patReview();
+  } catch(e){ msg.textContent = 'Não consegui ler o print (' + e.message + ').'; PAT = null; }
+}
+function patReview(){
+  const alvo = document.getElementById('pat-review'); if (!alvo || !PAT) return;
+  const ops = i => {
+    let h = '';
+    D.reservas_liq.forEach((r,j) => { h += `<option value="liq-${j}">atualizar: ${esc(r[0])} (${fmt(r[1])}${r[3]?` · D+${r[3]}`:''})</option>`; });
+    D.reservas_lp.forEach((r,j) => { h += `<option value="lp-${j}">atualizar: ${esc(r[0])} (${fmt(r[1])} · futuro)</option>`; });
+    h += '<option value="nova-liq">nova reserva disponível</option><option value="nova-lp">nova reserva de futuro</option><option value="skip">ignorar</option>';
+    return h;
+  };
+  const casa = it => {
+    const n = patNorm(it.nome);
+    let m = null;
+    D.reservas_liq.forEach((r,j) => { const rn = patNorm(r[0]); if (!m && (rn.includes(n) || n.includes(rn))) m = 'liq-'+j; });
+    D.reservas_lp.forEach((r,j) => { const rn = patNorm(r[0]); if (!m && (rn.includes(n) || n.includes(rn))) m = 'lp-'+j; });
+    return m || 'nova-liq';
+  };
+  alvo.innerHTML = `<div class="note" style="margin-bottom:10px">✨ ${PAT.length} posição(ões) lida(s) — confira e escolha o destino de cada uma antes de aplicar.</div>` +
+    PAT.map((it,i) => `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 0;border-bottom:1px solid var(--borda)">
+      <span style="flex:1;min-width:140px"><b>${esc(it.nome)}</b><br><span class="mini" style="margin:0">${fmt(it.val)}</span></span>
+      <select id="pat-sel-${i}" onchange="patPrazoVis(${i})">${ops(i)}</select>
+      <select id="pat-prazo-${i}" title="prazo de resgate"><option value="1">D+1</option><option value="5">D+5</option><option value="30" selected>D+30</option><option value="360">D+360</option></select>
+    </div>`).join('') +
+    `<div style="margin-top:12px;display:flex;gap:8px"><button class="btn" onclick="patAplicar()">Aplicar no patrimônio</button><button class="btn sm" onclick="patDescartar()">descartar</button></div>`;
+  PAT.forEach((it,i) => { document.getElementById('pat-sel-'+i).value = casa(it); patPrazoVis(i); });
+}
+function patPrazoVis(i){
+  const sel = document.getElementById('pat-sel-'+i), pz = document.getElementById('pat-prazo-'+i);
+  if (sel && pz) pz.style.display = sel.value === 'nova-liq' ? '' : 'none';
+}
+function patDescartar(){
+  PAT = null;
+  const r = document.getElementById('pat-review'); if (r) r.innerHTML = '';
+  const f = document.getElementById('pat-file'); if (f) f.value = '';
+}
+async function patAplicar(){
+  if (!PAT) return;
+  let n = 0;
+  PAT.forEach((it,i) => {
+    const sel = document.getElementById('pat-sel-'+i); if (!sel) return;
+    const v = sel.value;
+    if (v === 'skip') return;
+    if (v === 'nova-liq') D.reservas_liq.push([it.nome, it.val, 'lido de print', +document.getElementById('pat-prazo-'+i).value]);
+    else if (v === 'nova-lp') D.reservas_lp.push([it.nome, it.val, 'lido de print']);
+    else { const [b, j] = v.split('-'); (b === 'liq' ? D.reservas_liq : D.reservas_lp)[+j][1] = it.val; }
+    n++;
+  });
+  patDescartar();
+  await Vault.save();
+  renderReservas(); renderMetas(); renderPatrimonio();
+  const msg = document.getElementById('pat-msg');
+  if (msg) msg.textContent = `✓ ${n} posição(ões) aplicada(s) — o resultado está na aba Patrimônio e já foi publicado para os outros aparelhos.`;
+}
+
 function iaSistemaClassificacao(permitirGiro){
   const contas = D.contas.map(c => `${c.id} = ${c.nome} (${c.tipo==='R'?'entrada':'saída'} · ${c.grupo})`).join('\n');
   const regra = r => {
@@ -1795,6 +1887,7 @@ function impConfirmar(){
 // seguida e tudo se alinha.
 const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
 on('imp-ler', impEnviar);
+on('pat-ler', patLer);
 // ícones "?": toque abre/fecha a explicação do card (hover é só CSS).
 // Toque em outro lugar fecha; toque dentro do balão aberto não fecha.
 document.addEventListener('click', e => {
