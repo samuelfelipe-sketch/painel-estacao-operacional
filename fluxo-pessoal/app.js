@@ -904,10 +904,10 @@ async function patLer(){
     for (const f of arquivos)
       blocos.push({ type:'image', source:{ type:'base64', media_type:'image/jpeg', data: await patImagem(f) } });
     const schema = { type:'object', additionalProperties:false, required:['itens'], properties:{
-      itens:{ type:'array', items:{ type:'object', additionalProperties:false, required:['nome','val'],
-        properties:{ nome:{type:'string'}, val:{type:'number'} } } } } };
+      itens:{ type:'array', items:{ type:'object', additionalProperties:false, required:['nome','val','prazo'],
+        properties:{ nome:{type:'string'}, val:{type:'number'}, prazo:{type:['integer','null'], enum:[0,1,5,30,360,null]} } } } } };
     const out = await iaChamar(
-      'Você extrai as posições de patrimônio de prints de aplicativos bancários/corretoras brasileiros. Liste cada posição (fundo, poupança, CDB, cripto, conta, previdência) com o nome exato exibido e o valor atual total em reais (número). Se a mesma posição aparecer em mais de um print, liste uma vez só, com o valor mais completo. Ignore variações do dia, percentuais, rendimentos e linhas de total geral.',
+      'Você extrai as posições de patrimônio de prints de aplicativos bancários/corretoras brasileiros. Liste cada posição (fundo, poupança, CDB, cripto, conta, previdência) com o nome exato exibido e o valor atual total em reais (número). Se a mesma posição aparecer em mais de um print, liste uma vez só, com o valor mais completo. Ignore variações do dia, percentuais, rendimentos e linhas de total geral. Para cada posição, avalie também o PRAZO DE RESGATE em dias, escolhendo o menor entre 0, 1, 5, 30 e 360 que cubra a liquidez real: use o que o print mostrar (ex.: "liquidez diária" → 0, D+1 → 1, D+30 → 30, D+60 ou mais → 360) ou, sem essa informação, o típico do produto no Brasil (poupança/RDB/CDB com liquidez diária/conta → 0; fundo DI/CDI → 1; fundo multimercado/ações → 30; previdência, COE, CDB sem liquidez, cripto → 360). Só quando não houver base nenhuma, use null.',
       [ ...blocos, { type:'text', text:`Extraia as posições ${arquivos.length>1?'destes '+arquivos.length+' prints':'deste print'}.` } ],
       schema, 8000);
     const vistos = new Set();
@@ -942,10 +942,14 @@ function patReview(){
     PAT.map((it,i) => `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 0;border-bottom:1px solid var(--borda)">
       <span style="flex:1;min-width:140px"><b>${esc(it.nome)}</b><br><span class="mini" style="margin:0">${fmt(it.val)}</span></span>
       <select id="pat-sel-${i}" onchange="patPrazoVis(${i})">${ops(i)}</select>
-      <select id="pat-prazo-${i}" title="prazo de resgate"><option value="1">D+1</option><option value="5">D+5</option><option value="30" selected>D+30</option><option value="360">D+360</option></select>
+      <select id="pat-prazo-${i}" title="prazo de resgate${it.prazo!=null?' — avaliado pela IA, confira':''}"><option value="0">no dia (D+0)</option><option value="1">D+1</option><option value="5">D+5</option><option value="30">D+30</option><option value="360">D+360</option></select>${it.prazo!=null?'<span class="mini" style="margin:0">✨</span>':''}
     </div>`).join('') +
     `<div style="margin-top:12px;display:flex;gap:8px"><button class="btn" onclick="patAplicar()">Aplicar no patrimônio</button><button class="btn sm" onclick="patDescartar()">descartar</button></div>`;
-  PAT.forEach((it,i) => { document.getElementById('pat-sel-'+i).value = casa(it); patPrazoVis(i); });
+  PAT.forEach((it,i) => {
+    document.getElementById('pat-sel-'+i).value = casa(it);
+    document.getElementById('pat-prazo-'+i).value = String(it.prazo != null ? it.prazo : 30);
+    patPrazoVis(i);
+  });
 }
 function patPrazoVis(i){
   const sel = document.getElementById('pat-sel-'+i), pz = document.getElementById('pat-prazo-'+i);
