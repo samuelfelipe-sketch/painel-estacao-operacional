@@ -197,17 +197,50 @@ function navPer(d){
   if (per.t==='m'){ const v=per.v+d; if(v>=1&&v<=12){per.v=v; render();} }
   else if (per.t==='t'){ const v=per.v+d; if(v>=1&&v<=4){per.v=v; render();} }
 }
+// Coluna Real do Plano vs Real: mediana mensal VIVA dos meses fechados para as
+// linhas que mapeiam 1:1 numa categoria do fluxo. Linhas de contrato (batem no
+// centavo) e recortes sem categoria própria seguem com o valor declarado.
+const PLANO_CAT = {
+  'Condomínio (inclui água e gás)': 'condominio',
+  'Luz (RGE)': 'energia',
+  'Internet (Defferrari)': 'internet',
+  'Seguro de vida Prudential': 'seguros',
+  'Mercado + conveniência do posto': 'mercado',
+  'Restaurantes + iFood + cotidiana': 'restaurantes',
+  'Combustível (abastecidas >R$ 180)': 'combustivel',
+  'Estacionamento + pedágio': 'pedagio',
+  'Assinaturas': 'assinaturas',
+  'Mercado Livre / compras': 'casa_mov',
+  'Roupas': 'vestuario',
+  'Esportes + personal': 'esportes',
+  'Saúde além da nutri': 'saude',
+  'Doações': 'doacoes',
+};
 function renderPlano(){
   const st={ok:['✓','#0E5C46'],alto:['▲','#B73D24'],novo:['●','#EC6C22'],dec:['◆','#004438'],zero:['?','#8A9089']};
   let h='<table><thead><tr><th class="lab"></th><th>Plano</th><th>Real</th><th></th></tr></thead><tbody>';
   for (const r of D.plano.linhas){
     if (r[2]===null){ h+=`<tr class="caixa"><td class="lab">${r[0]}</td><td></td><td></td><td></td></tr>`; continue; }
-    const [ic,cor]=st[r[3]];
-    h+=`<tr><td class="lab">${r[0]}${r[4]?`<div style="font-size:.68rem;color:var(--muted)">${r[4]}</div>`:''}</td><td class="prevcol">${r[1]?fmt(r[1]):'·'}</td><td><b>${fmt(r[2])}</b></td><td style="color:${cor};font-weight:900">${ic}</td></tr>`;
+    const cat = PLANO_CAT[r[0]];
+    const real = cat && FECHADOS > 0 ? -(MED[cat] || 0) : r[2];
+    let stt = r[3];
+    if (cat && (stt === 'ok' || stt === 'alto')) stt = r[1] && real > r[1]*1.15 ? 'alto' : 'ok';
+    const [ic,cor]=st[stt];
+    h+=`<tr><td class="lab">${r[0]}${r[4]?`<div style="font-size:.68rem;color:var(--muted)">${r[4]}</div>`:''}</td><td class="prevcol">${r[1]?fmt(r[1]):'·'}</td><td><b>${fmt(real)}</b></td><td style="color:${cor};font-weight:900">${ic}</td></tr>`;
   }
   h+='</tbody></table>';
   document.getElementById('planotab').innerHTML=h;
-  document.getElementById('planorem').innerHTML = D.plano.remuneracao.map(x=>
+  // retiradas ao vivo: pró-labore + lucros do ano até o corte
+  let ret = 0;
+  for (const l of D.lanc) if ((l.c==='prolabore'||l.c==='lucros') && l.v>0 && l.d.slice(0,4)===String(ANO) && l.d<=D.corte) ret += l.v;
+  const diasAno = (Date.parse(D.corte)-Date.parse(ANO+'-01-01'))/86400000 + 1;
+  const ritmoRet = ret/(diasAno/30.44), anual = ret/(diasAno/365);
+  const rem = D.plano.remuneracao.map(x => {
+    if (/^Retirado até/.test(x[0])) return [`Retirado até ${dbr(D.corte)}`, ret, `R$ ${(ritmoRet/1000).toFixed(1).replace('.',',')} mil/mês de ritmo — ao vivo, pró-labore + lucros`];
+    if (/^Anualizado/.test(x[0])) return ['Anualizado no ritmo atual', anual, 'retirado ÷ dias corridos × 365 — ao vivo'];
+    return x;
+  });
+  document.getElementById('planorem').innerHTML = rem.map(x=>
     `<div class="kv"><span class="k">${x[0]}<small>${x[2]}</small></span><span class="v">${fmt(x[1])}</span></div>`).join('');
   document.getElementById('planoins').innerHTML = D.plano.insights.map((x,i)=>
     `<div class="it"><span>${x}</span></div>`).join('');
@@ -216,7 +249,23 @@ function renderEstrategia(){
   const item = i => i.big
     ? `<div class="numrow"><span class="big">${i.big}</span><span>${i.d||''}</span></div>`
     : `<div class="it">${i.h?`<b>${i.h}</b>`:''}${i.d?`<span>${i.d}</span>`:''}${i.pts?`<ul class="pts">${i.pts.map(p=>`<li>${p}</li>`).join('')}</ul>`:''}</div>`;
-  document.getElementById('estrategia').innerHTML = (D.estrategia||[]).map(b=> b.fold
+  // bloco vivo: os números de agora, calculados dos dados — o texto do playbook
+  // abaixo é a referência da estratégia e pode citar valores da época
+  const cfg = metasCfg();
+  const NAO = ['aplic','casamento','viagens','esportes','casa_mov'];
+  let despRef = 0;
+  if (FECHADOS > 0) for (const c of D.contas) if (c.tipo === 'P' && !NAO.includes(c.id)) despRef += -(MED[c.id] || 0);
+  const prazoR = x => x.length > 3 ? x[3] : 0;
+  const liq30 = D.reservas_liq.filter(x => prazoR(x) <= 30).reduce((s,x)=>s+x[1],0);
+  const liq = D.reservas_liq.reduce((s,x)=>s+x[1],0);
+  const lp = D.reservas_lp.reduce((s,x)=>s+x[1],0);
+  const caixa = saldoFim[CORTE_M] || 0;
+  const vivo = `<div class="bl"><b>📍 Números de agora — ao vivo, dos dados</b>
+    <div class="numrow"><span class="big">${fmt(liq30)}</span><span>reserva de emergência hoje (resgatável em até D+30) · meta intermediária ${fmt(cfg.emerg_meta1*despRef)} · alvo ${fmt(cfg.emerg_meses*despRef)}</span></div>
+    <div class="numrow"><span class="big">${fmt(-despRef)}</span><span>custo essencial por mês (mediana viva, sem aplicações e eventos)</span></div>
+    <div class="numrow"><span class="big">${fmt(caixa + liq + lp)}</span><span>patrimônio financeiro (caixa em conta + reservas + reserva de futuro)</span></div>
+  </div>`;
+  document.getElementById('estrategia').innerHTML = vivo + (D.estrategia||[]).map(b=> b.fold
     ? `<details><summary>${b.t}</summary>${b.itens.map(item).join('')}</details>`
     : `<div class="bl"><b>${b.t}</b>${b.itens.map(item).join('')}</div>`).join('');
 }
@@ -989,7 +1038,7 @@ async function patAplicar(){
   });
   patDescartar();
   await Vault.save();
-  renderReservas(); renderMetas(); renderPatrimonio();
+  renderReservas(); renderMetas(); renderPatrimonio(); renderEstrategia();
   const msg = document.getElementById('pat-msg');
   if (msg) msg.textContent = `✓ ${n} posição(ões) aplicada(s) — o resultado está na aba Patrimônio e já foi publicado para os outros aparelhos.`;
 }
@@ -1904,7 +1953,7 @@ function impConfirmar(){
 
   Vault.save().then(()=>{
     recalcBase();
-    renderCabecalho(); renderContas(); renderMetas(); renderPatrimonio(); renderReservas(); renderDocs(); renderTx(); renderAgenda(); render();
+    renderCabecalho(); renderContas(); renderMetas(); renderPatrimonio(); renderReservas(); renderPlano(); renderEstrategia(); renderDocs(); renderTx(); renderAgenda(); render();
   });
 }
 
