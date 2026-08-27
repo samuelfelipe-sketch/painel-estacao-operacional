@@ -833,10 +833,9 @@ function renderCabecalho(){
       if (m && (!ult || m[1].split('/').reverse().join('') > ult.split('/').reverse().join(''))) ult = m[1];
     }
     elNR.textContent = `Os valores entram pelas importações e pelo Patrimônio por print — cada linha mostra a data da própria atualização${ult?` (última: ${ult})`:''}. Bitcoin a valor de mercado (oscila); política: reserva de futuro, sem resgate, com DCA mensal.`;
-    elNR.style.display = '';
   }
   const elNE = document.getElementById('nota-estrategia');
-  if (elNE && N.estrategia){ elNE.textContent = N.estrategia; elNE.style.display = ''; }
+  if (elNE && N.estrategia) elNE.textContent = N.estrategia;
   const nCM = Object.keys(SB.sicredi.fim).length + Object.keys(SB.nubank.fim).length;
   document.getElementById('fontes').innerHTML =
     `<b>Fontes:</b> extratos OFX Sicredi CC e Nubank (jan–${D.corte.slice(8,10)}/${MN[CORTE_M].toLowerCase()}/${ANO}) · faturas Visa Infinite e do cartão Nubank conferidas contra o total declarado · IRPF ${ANO} (ano-base ${ANO-1}). Regra de ouro: saldo inicial + recebimentos − pagamentos = saldo final real de cada conta, conciliado no centavo em ${nCM} de ${nCM} conta-mês. Transferências entre contas próprias são giro e ficam fora dos totais. Nenhum valor é digitado aqui; tudo deriva dos lançamentos e das importações conciliadas.`;

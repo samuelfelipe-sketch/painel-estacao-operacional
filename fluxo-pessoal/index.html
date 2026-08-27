@@ -137,6 +137,7 @@ ol.pend li{margin-bottom:9px;font-size:.86rem}
 .qhelp:hover{color:#6A503B;border-color:#F0DCC8;background:#FBF4EC}
 .qpop{display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;max-width:560px;background:#FBF4EC;border:1px solid #F0DCC8;border-radius:8px;padding:12px 14px;font-size:.8rem;color:#6A503B;line-height:1.55;z-index:40;box-shadow:0 6px 18px rgba(28,42,36,.12)}
 .qhelp:hover ~ .qpop,.qpop.on{display:block}
+.qpop-up{top:auto;bottom:calc(100% + 8px)}
 body.is-admin .qwrap.admin-only{display:flex}
 #modal{position:fixed;inset:0;background:rgba(16,49,43,.55);display:none;align-items:flex-end;justify-content:center;z-index:50}
 #modal.on{display:flex}
@@ -248,9 +249,9 @@ details.cfg[open] > summary{margin-bottom:12px}
   </div>
 
   <div class="card" id="card-contas">
-    <h2>Contas bancárias · saldo no fim de cada mês</h2>
+    <div class="qwrap" style="margin-bottom:12px"><h2 style="margin-bottom:0">Contas bancárias · saldo no fim de cada mês</h2><button type="button" class="qhelp" aria-label="Sobre este card">?</button>
+      <div class="qpop" id="nota-contas">Giro entre contas próprias fica fora do fluxo.</div></div>
     <div class="tbl-wrap" id="contas"></div>
-    <div class="mini" id="nota-contas">Giro entre contas próprias fica fora do fluxo.</div>
   </div>
   </section>
 
@@ -277,9 +278,9 @@ details.cfg[open] > summary{margin-bottom:12px}
   </div>
   <div class="grid2">
     <div class="card">
-      <h2>Reservas e investimentos</h2>
+      <div class="qwrap" style="margin-bottom:12px"><h2 style="margin-bottom:0">Reservas e investimentos</h2><button type="button" class="qhelp" aria-label="Sobre este card">?</button>
+      <div class="qpop" id="nota-reservas"></div></div>
       <div id="reservas"></div>
-      <div class="note" id="nota-reservas" style="display:none"></div>
     </div>
     <div class="card">
       <h2>Patrimônio · foto do IR + eventos 2026</h2>
@@ -291,9 +292,9 @@ details.cfg[open] > summary{margin-bottom:12px}
 
   <section id="page-estr" style="display:none">
   <div class="card estr">
-    <h2>Estratégia — decisões de capital</h2>
+    <div class="qwrap" style="margin-bottom:12px"><h2 style="margin-bottom:0">Estratégia — decisões de capital</h2><button type="button" class="qhelp" aria-label="Sobre este card">?</button>
+      <div class="qpop" id="nota-estrategia"></div></div>
     <div id="estrategia"></div>
-    <div class="note" id="nota-estrategia" style="display:none"></div>
   </div>
 
   </section>
@@ -458,7 +459,10 @@ details.cfg[open] > summary{margin-bottom:12px}
   </details>
   </section>
 
-  <footer id="fontes"></footer>
+  <footer>
+  <div class="qwrap"><button type="button" class="qhelp" aria-label="Fontes e método">?</button><span style="color:var(--muted)">Fontes e método</span>
+    <div class="qpop qpop-up" id="fontes"></div></div>
+</footer>
 </div>
 
 <div id="modal" onclick="if(event.target===this)this.classList.remove('on')">
