@@ -897,18 +897,26 @@ async function patLer(){
   const inp = document.getElementById('pat-file'), msg = document.getElementById('pat-msg');
   if (!inp || !inp.files.length){ msg.textContent = 'Anexe um print primeiro.'; return; }
   if (!iaCfg()){ msg.textContent = 'Ative a classificação com IA (card abaixo) para ler prints.'; return; }
-  msg.textContent = '✨ Lendo o print…';
+  const arquivos = [...inp.files];
+  msg.textContent = `✨ Lendo ${arquivos.length} print(s)…`;
   try {
-    const b64 = await patImagem(inp.files[0]);
+    const blocos = [];
+    for (const f of arquivos)
+      blocos.push({ type:'image', source:{ type:'base64', media_type:'image/jpeg', data: await patImagem(f) } });
     const schema = { type:'object', additionalProperties:false, required:['itens'], properties:{
       itens:{ type:'array', items:{ type:'object', additionalProperties:false, required:['nome','val'],
         properties:{ nome:{type:'string'}, val:{type:'number'} } } } } };
     const out = await iaChamar(
-      'Você extrai as posições de patrimônio de um print de aplicativo bancário/corretora brasileiro. Liste cada posição (fundo, poupança, CDB, cripto, conta, previdência) com o nome exato exibido e o valor atual total em reais (número). Ignore variações do dia, percentuais, rendimentos e linhas de total geral.',
-      [ { type:'image', source:{ type:'base64', media_type:'image/jpeg', data: b64 } },
-        { type:'text', text:'Extraia as posições deste print.' } ],
+      'Você extrai as posições de patrimônio de prints de aplicativos bancários/corretoras brasileiros. Liste cada posição (fundo, poupança, CDB, cripto, conta, previdência) com o nome exato exibido e o valor atual total em reais (número). Se a mesma posição aparecer em mais de um print, liste uma vez só, com o valor mais completo. Ignore variações do dia, percentuais, rendimentos e linhas de total geral.',
+      [ ...blocos, { type:'text', text:`Extraia as posições ${arquivos.length>1?'destes '+arquivos.length+' prints':'deste print'}.` } ],
       schema, 8000);
-    PAT = (out.itens || []).filter(x => x.nome && x.val > 0);
+    const vistos = new Set();
+    PAT = (out.itens || []).filter(x => {
+      if (!x.nome || !(x.val > 0)) return false;
+      const n = patNorm(x.nome);
+      if (vistos.has(n)) return false;
+      vistos.add(n); return true;
+    });
     if (!PAT.length){ msg.textContent = 'Não achei posições no print — tente uma captura mais aproximada.'; return; }
     msg.textContent = '';
     patReview();
