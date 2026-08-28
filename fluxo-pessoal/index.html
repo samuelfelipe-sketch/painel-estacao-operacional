@@ -168,6 +168,13 @@ footer{font-size:.72rem;color:var(--muted);line-height:1.6;margin-top:24px}
 .formgrid label.full{grid-column:1/-1}
 .formgrid input,.formgrid select,.formgrid textarea{display:block;width:100%;margin-top:4px;padding:8px 10px;border:1px solid var(--borda);border-radius:8px;font:inherit;font-size:.88rem;background:#fff}
 .formgrid textarea{resize:vertical}
+#p27tab input{width:92px;padding:6px 8px;border:1px solid var(--borda);border-radius:8px;font:inherit;font-size:.85rem;background:#fff;text-align:right}
+#p27tab tr.p27-man input{border-color:var(--laranja);font-weight:700}
+#p27tab tr.p27-man td.lab::after{content:' ✎';color:var(--laranja)}
+@media(max-width:560px){#p27tab .col26{display:none}
+#p27tab td.lab,#p27tab th.lab{max-width:138px}
+#p27tab input{width:82px;padding:6px 6px}
+#p27tab th,#p27tab td{padding:6px 6px}}
 @media(max-width:560px){.formgrid{grid-template-columns:1fr}}
 .admin-only{display:none}
 body.is-admin .admin-only{display:block}
@@ -351,15 +358,17 @@ details.cfg[open] > summary{margin-bottom:12px}
     <div id="imp-review" style="margin-top:12px"></div>
   </details>
   <details class="card cfg">
-    <summary>Projeção 2027 — premissas</summary>
+    <summary>Plano 2027 — premissas e valores</summary>
     <div class="formgrid">
       <label>Crescimento da renda (% ao ano) <input id="p27-renda" type="text" inputmode="decimal"></label>
       <label>Reajuste das despesas (% ao ano) <input id="p27-desp" type="text" inputmode="decimal"></label>
     </div>
+    <div class="tbl-wrap" id="p27tab" style="margin-bottom:10px"></div>
+    <div class="mini" id="p27tot" style="margin-bottom:10px"></div>
     <div class="qwrap">
-      <button class="btn" id="p27-aplicar">Aplicar premissas</button>
-      <button type="button" class="qhelp" aria-label="Explicação das premissas">?</button>
-      <div class="qpop">Valem para a visão "2027 — projeção" no Fluxo. Ficam guardadas criptografadas no cofre e sincronizadas entre os aparelhos.</div>
+      <button class="btn" id="p27-aplicar">Aplicar plano</button>
+      <button type="button" class="qhelp" aria-label="Explicação do plano 2027">?</button>
+      <div class="qpop">Monta a visão "2027 — projeção" do Fluxo. Cada categoria parte da mediana mensal de 2026 e recebe o percentual de reajuste (coluna "2027 auto"); se você preencher um valor em "seu plano", ele vale no lugar do automático — apague o valor para voltar ao automático. Tudo fica guardado criptografado no cofre e sincronizado entre os aparelhos.</div>
     </div>
     <div class="mini" id="p27-msg" style="margin-top:8px"></div>
   </details>
