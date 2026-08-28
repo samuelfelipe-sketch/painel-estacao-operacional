@@ -1532,7 +1532,7 @@ function parseOFX(text){
 // centavos), descarta linhas de cabeçalho/estruturais (cooperativa, conta,
 // número do cartão, vencimento, totais) e aproveita o "Valor Total" declarado
 // no arquivo como conferência da soma. A trava real segue no pagamento.
-const FAT_META = /^(TOTAL|VALOR TOTAL|VALOR M|SALDO|LIMITE|VENCIMENTO|DATA DE|PAGAMENTO|PAG\b|PGTO|CREDITO DE PAGAMENTO|DEB\.?\s?CTA|FATURA|COOPERATIVA|CONTA CORRENTE|AG[ÊE]NCIA|AGENCIA\b|TITULAR|PORTADOR|ASSOCIADO|CPF|CART[ÃA]O|MELHOR DIA|PARCELAMENTO)/i;
+const FAT_META = /^(TOTAL|VALOR TOTAL|VALOR M|SALDO|LIMITE|VENCIMENTO|DATA DE|PAGAMENTO|PAG\b|PGTO|CREDITO DE PAGAMENTO|DEB\.?\s?CTA|ENCARGOS?\b|DESPESAS?\s*\/|RESUMO DE|SITUA[ÇC][ÃA]O|FATURA|COOPERATIVA|CONTA CORRENTE|AG[ÊE]NCIA|AGENCIA\b|TITULAR|PORTADOR|ASSOCIADO|CPF|CART[ÃA]O|MELHOR DIA|PARCELAMENTO)/i;
 const FAT_VAL = /-?\s?(?:R\$\s*)?\d[\d.]*,\d{2}/g;
 function parseFaturaItens(text){
   const items = []; const ignoradas = []; let declTotal = null;
@@ -1557,8 +1557,13 @@ function parseFaturaItens(text){
       .replace(/^\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*[-–]?\s*/,'').replace(/^\d{4}-\d{2}-\d{2}\s*/,'')
       .replace(/^[;,\t]+\s*/,'').replace(/[;,\t]+/g,' · ').trim();
     if (!desc) desc = depois.replace(/^[DC](\b|$)\s*/i,'').replace(/^[;,\t]+\s*/,'').trim();
-    if (FAT_META.test(desc)){
-      if (/^(VALOR\s+)?TOTAL/i.test(desc)) declTotal = Math.abs(val);
+    // as linhas do "Resumo de Despesas" começam com (-)/(+)/(=) — tira o
+    // marcador antes de comparar com os cabeçalhos conhecidos
+    const metaDesc = desc.replace(/^[()+\-=·\s]+/, '');
+    if (FAT_META.test(metaDesc)){
+      // total declarado: só o total DESTA fatura ("Valor Total" / "(=) Total
+      // desta fatura") — nunca o da fatura anterior nem o pagamento mínimo
+      if (/^(VALOR\s+)?TOTAL/i.test(metaDesc) && !/ANTERIOR|M[ÍI]NIMO/i.test(metaDesc)) declTotal = Math.abs(val);
       ignoradas.push(line); continue;
     }
     if (!/[A-Za-zÀ-ÿ]/.test(desc)){ ignoradas.push(line); continue; }   // linha sem descrição de verdade
