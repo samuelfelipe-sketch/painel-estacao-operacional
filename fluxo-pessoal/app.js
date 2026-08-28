@@ -351,7 +351,9 @@ function renderMeses(meses){
 // premissas guardadas no cofre: crescimento da renda (grupo Renda) e
 // reajuste das demais receitas/despesas. Extras pontuais de 2026 não repetem.
 function proj27Cfg(){ return D.proj27 || { renda: 10, desp: 5 }; }
-function prev27(cid){
+function proj27Cat(){ return (D.proj27 && D.proj27.cat) || {}; }
+// valor automático de 2027: mediana 2026 + políticas dos agendados + premissas %
+function prev27Auto(cid){
   let v = MED[cid];
   const ag = D.agendados;
   if (ag){
@@ -363,12 +365,74 @@ function prev27(cid){
   if (c.tipo === 'P') return v * (1 + (cfg.desp||0)/100);
   return v;
 }
+// valor final: o plano por categoria (Configurações) vale no lugar do automático
+function prev27(cid){
+  const man = proj27Cat();
+  if (cid in man) return CM[cid].tipo === 'P' ? -Math.abs(man[cid]) : Math.abs(man[cid]);
+  return prev27Auto(cid);
+}
+// número em formato brasileiro: "1.600", "1600,50", "1600.50" — tudo vale
+function numBR(t){
+  t = String(t == null ? '' : t).replace(/[R$\s]/g, '');
+  if (!t) return NaN;
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/\.\d{3}(?:\.\d{3})*$/.test(t)) t = t.replace(/\./g, '');
+  return parseFloat(t);
+}
+// tabela do plano 2027 por categoria (aba Configurações)
+function renderPlano27Cfg(){
+  const el = document.getElementById('p27tab'); if (!el) return;
+  const man = proj27Cat();
+  let h = '<table><thead><tr><th class="lab"></th><th class="col26">2026/mês</th><th>2027 auto</th><th>seu plano</th></tr></thead><tbody>';
+  const linha = c => {
+    const base = Math.abs(MED[c.id] || 0), auto = Math.abs(prev27Auto(c.id));
+    const temMan = c.id in man;
+    const v = temMan ? String(man[c.id]).replace('.', ',') : '';
+    h += `<tr class="${temMan ? 'p27-man' : ''}" data-cid="${c.id}"><td class="lab">${c.nome}</td>` +
+      `<td class="prevcol col26">${Math.round(base) ? fmt(base) : '·'}</td>` +
+      `<td class="prevcol">${Math.round(auto) ? fmt(auto) : '·'}</td>` +
+      `<td><input id="p27c-${c.id}" type="text" inputmode="decimal" value="${v}" placeholder="auto"></td></tr>`;
+  };
+  const bloco = (titulo, tipo, grupos) => {
+    h += `<tr class="caixa"><td class="lab">${titulo}</td><td class="col26"></td><td></td><td></td></tr>`;
+    for (const g of grupos) for (const c of D.contas) if (c.tipo === tipo && c.grupo === g) linha(c);
+  };
+  bloco('Recebimentos', 'R', GRUPOS_R);
+  bloco('Pagamentos', 'P', GRUPOS_P);
+  h += '</tbody></table>';
+  el.innerHTML = h;
+  el.oninput = p27Totais;
+  p27Totais();
+}
+// sobra mensal/anual projetada com o que está na tela (antes mesmo de aplicar)
+function p27Totais(){
+  const tot = document.getElementById('p27tot'); if (!tot) return;
+  let rec = 0, pag = 0;
+  for (const c of D.contas){
+    const el = document.getElementById('p27c-' + c.id);
+    let v;
+    if (el && el.value.trim()){ const n = numBR(el.value); v = isNaN(n) ? prev27Auto(c.id) : (c.tipo === 'P' ? -Math.abs(n) : Math.abs(n)); }
+    else v = prev27Auto(c.id);
+    if (c.tipo === 'R') rec += v; else pag += v;
+  }
+  const sobra = rec + pag;
+  tot.innerHTML = `Com este plano: recebimentos <b>${fmt(rec)}</b> − pagamentos <b>${fmt(-pag)}</b> = sobra de <b>${fmt(sobra)}</b>/mês (<b>${fmt(sobra*12)}</b> no ano)`;
+}
 async function p27Salvar(){
-  const num = id => { const v = parseFloat(document.getElementById(id).value.replace(',','.')); return isNaN(v) ? 0 : v; };
-  D.proj27 = { renda: num('p27-renda'), desp: num('p27-desp') };
+  const num = id => { const v = numBR(document.getElementById(id).value); return isNaN(v) ? 0 : v; };
+  const cat = {};
+  for (const c of D.contas){
+    const el = document.getElementById('p27c-' + c.id); if (!el) continue;
+    if (!el.value.trim()) continue;
+    const v = numBR(el.value);
+    if (!isNaN(v)) cat[c.id] = Math.abs(v);
+  }
+  D.proj27 = { renda: num('p27-renda'), desp: num('p27-desp'), cat };
   await Vault.save();
+  const n = Object.keys(cat).length;
   const msg = document.getElementById('p27-msg');
-  if (msg) msg.textContent = '✓ Premissas aplicadas — a visão "2027 — projeção" já reflete os novos percentuais.';
+  if (msg) msg.textContent = `✓ Plano aplicado — a visão "2027 — projeção" já reflete os percentuais${n ? ` e ${n} categoria(s) com valor definido à mão` : ''}.`;
+  renderPlano27Cfg();
   render();
 }
 // preenche os formulários de Configurações com o que está guardado no cofre
@@ -377,14 +441,16 @@ function renderConfigForms(){
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
   set('p27-renda', p.renda); set('p27-desp', p.desp);
   set('mt-meses', m.emerg_meses); set('mt-meta1', m.emerg_meta1); set('mt-alvo', m.alvo); set('mt-rend', m.rend_aa);
+  renderPlano27Cfg();
 }
 function renderAno27(){
   const meses = [1,2,3,4,5,6,7,8,9,10,11,12];
   const cs = contasAtivas();
   const cfg = proj27Cfg();
   // premissas em modo leitura — o ajuste vive na aba Configurações
+  const nMan = D.contas.filter(c => c.id in proj27Cat()).length;
   document.getElementById('fcontrols').innerHTML =
-    `<div class="mini" style="margin-bottom:10px">Premissas: renda <b>${cfg.renda>=0?'+':''}${cfg.renda}%</b> · despesas <b>${cfg.desp>=0?'+':''}${cfg.desp}%</b> ao ano — ajuste na aba <b>Configurações</b>.</div>`;
+    `<div class="mini" style="margin-bottom:10px">Premissas: renda <b>${cfg.renda>=0?'+':''}${cfg.renda}%</b> · despesas <b>${cfg.desp>=0?'+':''}${cfg.desp}%</b> ao ano${nMan?` · <b>${nMan}</b> categoria(s) com valor definido à mão`:''} — ajuste na aba <b>Configurações</b>.</div>`;
   let h = `<table><thead><tr><th class="lab"></th>${meses.map(m=>`<th>${MN[m]}*</th>`).join('')}<th>Ano</th></tr></thead><tbody>`;
   const linha27 = (nome, ids, cls, extra, labExtra) => {
     const vm = ids.reduce((s,c)=>s+prev27(c.id),0);
@@ -782,7 +848,7 @@ function render(){
   const temReal = per.t==='m' && per.v<=CORTE_M;
   document.getElementById('flegend').innerHTML =
     per.t==='y27'
-    ? `<span><b>2027 inteiro é projeção</b>: mediana dos meses fechados de 2026 + premissas de crescimento (ajustáveis acima da tabela). O caixa parte do fim projetado de 2026.</span>`
+    ? `<span><b>2027 inteiro é projeção</b>: mediana dos meses fechados de 2026 + premissas de crescimento, com os valores que você definiu à mão no plano (Configurações → Plano 2027) valendo no lugar do automático. O caixa parte do fim projetado de 2026.</span>`
     : per.t==='m'
     ? `<span><b>Previsto</b>: mediana dos meses fechados (jan–${MN[FECHADOS].toLowerCase()})${per.v>CORTE_M?' + agendado':''}${per.v<=CORTE_M?' — referência retroativa':''}</span><span><b>Realizado</b>: ${(()=>{
         const cob = D.cobertura || {};
