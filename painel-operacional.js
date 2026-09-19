@@ -453,6 +453,36 @@ document.getElementById('reads').innerHTML=reads.map(function(r){
    (r.a?'<div class="ask"><b>Pergunta para a reunião</b>'+esc(r.a)+'</div>':'')+'</div>';
 }).join('');
 
+/* ---------- decomposição · gaveta ---------- */
+(function(){
+  var alvo=document.getElementById('decTabs'), caixa=document.getElementById('decBox');
+  /* dados publicados antes desta visão não têm decomp — a gaveta some */
+  if(!alvo||!caixa||!D.decomp||!D.decomp.ano||!D.decomp.ant) return;
+  caixa.hidden=false;
+  function bloco(base, rot){
+    var d=D.decomp[base], t=d.dTot, tPos=t>=0;
+    var rows=[
+      ['Volume de combustível', d.vol],
+      ['Preço do litro',        d.pre],
+      ['Mix entre combustíveis',d.mix],
+      ['Mercadorias e serviços',d.merc]
+    ];
+    return '<div class="dect">'+
+      '<div class="dech"><span class="lb">vs '+rot+'</span>'+
+        '<span class="tt" style="color:'+(tPos?'var(--good)':'var(--bad)')+'">'+(tPos?'+':'−')+brl(Math.abs(t))+'</span></div>'+
+      '<table class="dt"><tbody>'+ rows.map(function(r){
+        var v=r[1], pos=v>=0, cor=pos?'var(--good)':'var(--bad)';
+        return '<tr><td>'+r[0]+'</td>'+
+          '<td class="v" style="color:'+cor+'">'+(pos?'+':'−')+brl(Math.abs(v))+'</td>'+
+          '<td class="p" style="color:'+cor+'">'+nf1.format(v/t*100)+'%</td></tr>';
+      }).join('') +'</tbody></table></div>';
+  }
+  alvo.innerHTML = bloco('ano', (D.meta.ano_rotulo||'ano anterior')) + bloco('ant', (D.meta.ant_rotulo||'mês anterior')) +
+    '<p class="decnota"><b>Volume</b>: litros a mais avaliados ao preço do período anterior · '+
+    '<b>Preço</b>: variação do R$/litro aplicada ao volume atual · '+
+    '<b>Mix</b>: deslocamento entre combustíveis de preços diferentes. Os efeitos somam exatamente o acréscimo.</p>';
+})();
+
 /* ---------- cabeçalho ---------- */
 (function(){
   var b=document.getElementById('hdPeriodo'); if(b) b.textContent=D.meta.mes_rotulo||'';
