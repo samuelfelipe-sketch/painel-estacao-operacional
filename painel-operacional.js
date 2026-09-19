@@ -91,7 +91,8 @@ var FTREE = {cod:'FTOT', filhos:[
   ]},
   {cod:'FMERC', filhos:[{cod:'LOJA'},{cod:'AUTO'},{cod:'LAV'},{cod:'ARLAV'}]}
 ]};
-var fatAberto={FTOT:true,FCOMB:true,FOTTO:true,FDIESEL:true,FMERC:true};
+/* padrão: só os totais — o total aberto mostrando as duas famílias fechadas */
+var fatAberto={FTOT:true,FCOMB:false,FOTTO:false,FDIESEL:false,FMERC:false};
 var fatBase='ano';   /* 'ano' | 'ant' */
 var CODES={FOTTO:'OTTO',FDIESEL:'DIESEL'};
 
@@ -187,7 +188,7 @@ function drawFat(){
 function sincFat(){
   var ks=Object.keys(fatAberto);
   document.getElementById('fAll').setAttribute('aria-pressed', ks.every(function(k){return fatAberto[k];})?'true':'false');
-  document.getElementById('fTop').setAttribute('aria-pressed', ks.every(function(k){return !fatAberto[k];})?'true':'false');
+  document.getElementById('fTop').setAttribute('aria-pressed', ks.every(function(k){return k==='FTOT'?fatAberto[k]:!fatAberto[k];})?'true':'false');
 }
 function setFatBase(b){
   fatBase=b;
@@ -201,8 +202,9 @@ document.getElementById('fMes').addEventListener('click',function(){ setFatBase(
 document.getElementById('fAll').addEventListener('click',function(){
   Object.keys(fatAberto).forEach(function(k){ fatAberto[k]=true; }); drawFat(); sincFat(); });
 document.getElementById('fTop').addEventListener('click',function(){
-  Object.keys(fatAberto).forEach(function(k){ fatAberto[k]=false; }); drawFat(); sincFat(); });
+  Object.keys(fatAberto).forEach(function(k){ fatAberto[k]=(k==='FTOT'); }); drawFat(); sincFat(); });
 drawFat();
+sincFat(); /* alinha as pílulas ao estado inicial (Só totais) */
 
 /* ---------- grouped bar charts ---------- */
 var modoDia=false;
