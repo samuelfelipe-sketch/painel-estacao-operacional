@@ -1826,7 +1826,17 @@ async function impLer(text, nome, accForcada){
 
   const cob = cobertura()[acc];
   const fitsExist = new Set(D.lanc.map(l => l.f).filter(Boolean));
-  const novos = p.txs.filter(t => t.d > cob && !(t.f && fitsExist.has(t.f))).sort((a,b)=>a.d.localeCompare(b.d));
+  // gêmeo por data+valor+descrição: protege contra FITIDs que mudam entre arquivos
+  const chaveGemeo = t => `${t.d}|${(+t.v).toFixed(2)}|${String(t.m||'').slice(0,60).trim().toUpperCase()}`;
+  const jaTem = new Set(D.lanc.filter(l => l.o === acc).map(chaveGemeo));
+  // Dentro da cobertura, uma linha só entra (como RETROATIVA) se tem FITID próprio
+  // desconhecido e nenhum gêmeo na base — cobre débitos que caíram depois de o
+  // extrato anterior ser gerado (ponto cego que travava a conciliação seguinte).
+  const novos = p.txs.filter(t => {
+    if (t.f && fitsExist.has(t.f)) return false;
+    if (t.d > cob) return true;
+    return !!t.f && !jaTem.has(chaveGemeo(t));
+  }).sort((a,b)=>a.d.localeCompare(b.d));
   const ignorados = p.txs.length - novos.length;
   if (!novos.length){ msg.textContent = `Nada novo: os ${ignorados} lançamentos do arquivo já estão conciliados (cobertura da conta ${ACC_NOME[acc]} vai até ${dbr(cob)}).`; return; }
 
@@ -1834,7 +1844,7 @@ async function impLer(text, nome, accForcada){
   const fimData = [p.dtend, p.dtasof, maxTx].filter(Boolean).sort().pop();
   const rows = novos.map(t => {
     const cl = catBank(t.m, t.v);
-    return { ...t, kind: cl.kind, c: cl.kind==='giro' ? 'GIRO' : cl.c, cartao: cl.cartao || null, incerto: !!cl.incerto, fat: null };
+    return { ...t, kind: cl.kind, c: cl.kind==='giro' ? 'GIRO' : cl.c, cartao: cl.cartao || null, incerto: !!cl.incerto, fat: null, retro: t.d <= cob };
   });
   IMP = { acc, rows, ledger: p.ledger, fimData, ignorados, arquivo: nome, texto: text };
   impRender();
@@ -1864,8 +1874,10 @@ function impConciliacao(){
 function impRender(){
   const el = document.getElementById('imp-review');
   const faturasPendentes = IMP.rows.filter(r=>r.kind==='fatura' && !(r.fat && r.fat.ok)).length;
+  const nRetro = IMP.rows.filter(r => r.retro).length;
   let h = `<div class="note" style="margin-bottom:10px"><b>${ACC_NOME[IMP.acc]}</b> · ${esc(IMP.arquivo)} · ${IMP.rows.length} lançamento(s) novo(s)` +
     (IMP.ignorados ? ` · ${IMP.ignorados} já conciliado(s), ignorado(s)` : '') +
+    (nRetro ? ` · <b style="color:var(--laranja)">${nRetro} retroativo(s)</b> — data(s) dentro da cobertura que faltavam na base` : '') +
     ` · cobertura passa a ${dbr(IMP.fimData)}</div>`;
   h += '<div class="tbl-wrap"><table><thead><tr><th class="lab">Data · Descrição</th><th>Valor</th><th style="text-align:left">Categoria</th></tr></thead><tbody>';
   IMP.rows.forEach((r,i)=>{
@@ -1893,7 +1905,7 @@ function impRender(){
       }
       h += `</td></tr>`;
     } else {
-      h += `<tr${r.kind==='giro'||r.c==='GIRO'?' style="opacity:.65"':''}><td class="lab" style="white-space:normal">${r.d.slice(8,10)}/${r.d.slice(5,7)} · ${esc(r.m.slice(0,60))}${r.ia?' <span style="color:#7C5CBF">✨ IA — confira</span>':(r.incerto?' <span style="color:var(--laranja)">● conferir</span>':'')}</td>${cellM(r.v)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="IMP.rows[${i}].c=this.value">${optsConta(r.c)}</select></td></tr>`;
+      h += `<tr${r.kind==='giro'||r.c==='GIRO'?' style="opacity:.65"':''}><td class="lab" style="white-space:normal">${r.d.slice(8,10)}/${r.d.slice(5,7)} · ${esc(r.m.slice(0,60))}${r.retro?' <span style="color:var(--laranja)">↩ retroativo</span>':''}${r.ia?' <span style="color:#7C5CBF">✨ IA — confira</span>':(r.incerto?' <span style="color:var(--laranja)">● conferir</span>':'')}</td>${cellM(r.v)}<td style="text-align:left"><select style="font-size:.78rem;max-width:230px" onchange="IMP.rows[${i}].c=this.value">${optsConta(r.c)}</select></td></tr>`;
     }
   });
   h += '</tbody></table></div>';
@@ -1991,9 +2003,12 @@ function impConfirmar(){
   }
   D.lanc.sort((a,b)=>a.d.localeCompare(b.d));
 
-  // saldos de fim de mês da conta, rolando do último ponto conciliado até a nova cobertura
+  // saldos de fim de mês da conta, rolando do último ponto conciliado até a nova cobertura;
+  // retroativos (datados até a cobertura anterior) entram já no ponto de partida,
+  // porque o saldo conciliado anterior não os continha
   const mapAcc = l => l.o===acc || (acc==='sicredi' && (l.o==='visa'||l.o==='master')) || (acc==='nubank' && l.o==='nucard');
-  let bal = SB[acc].fim[mkey(+antes.slice(5,7))];
+  const somaRetro = IMP.rows.filter(r => r.d <= antes).reduce((s,r)=>s+r.v, 0);
+  let bal = round2(SB[acc].fim[mkey(+antes.slice(5,7))] + somaRetro);
   for (let m = +antes.slice(5,7); m <= +IMP.fimData.slice(5,7); m++){
     const soma = D.lanc.filter(l => mapAcc(l) && +l.d.slice(5,7)===m && l.d > antes && l.d <= IMP.fimData)
       .reduce((s,l)=>s+l.v, 0);
