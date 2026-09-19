@@ -121,11 +121,11 @@ footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
       <div class="d">Conta, senha e notificações — num lugar só, para todos os painéis.</div>
       <span class="go">Entrar →</span>
     </a>
-    <div class="card-off">
-      <div class="t">Painel Operacional</div>
-      <div class="d">Faturamento do mês por canal, aceleradores e ações sugeridas.</div>
-      <span class="selo">Desativado momentaneamente</span>
-    </div>
+    <a class="card" href="painel-operacional.html">
+      <div class="t">Painel Operacional &#128274;</div>
+      <div class="d">Metas e margens de venda da rede, mês a mês.</div>
+      <span class="go">Entrar &rarr;</span>
+    </a>
   </div>
 </div>
 <button type="button" class="sino-central" id="sino-central" hidden aria-label="Notificações" title="Notificações"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="sino-dot" hidden>0</span></button>
@@ -151,7 +151,7 @@ function pinta(){
    logado, só esmaece o painel sem permissão (Método Reborn é sempre aberto) */
 function aplicaAcessoCards(){
   const logado=!!(A&&A.user);
-  [['roadmap/guia.html','roadmap'],['estrategia/','pe'],['fluxo/','fluxo'],['configuracoes/','config']].forEach(function(par){
+  [['roadmap/guia.html','roadmap'],['estrategia/','pe'],['fluxo/','fluxo'],['painel-operacional.html','operacional'],['configuracoes/','config']].forEach(function(par){
     const card=document.querySelector('a.card[href="'+par[0]+'"]');
     if(!card)return;
     const sem=!logado||(par[1]!=='config'&&!A.temAcesso(par[1]));

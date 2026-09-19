@@ -1,304 +1,459 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Painel ES">
-<meta name="theme-color" content="#004438">
-<title>Painel Operacional — Estação Sapatão</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Painel Operacional · Metas e Margens — Estação Sapatão</title>
 <link rel="manifest" href="manifest.json">
+<script>window.SAPATAO_APP='operacional';</script>
+<script src="roadmap/auth.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='white' width='100' height='100' rx='20'/><text x='50' y='72' font-size='80' font-weight='900' fill='%23EC6C22' text-anchor='middle' font-family='system-ui,-apple-system,sans-serif'>S</text></svg>" type="image/svg+xml">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='white' width='100' height='100' rx='20'/><text x='50' y='72' font-size='80' font-weight='900' fill='%23EC6C22' text-anchor='middle' font-family='system-ui,-apple-system,sans-serif'>S</text></svg>" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #EBEBEA; color: #1F2A24; min-height: 100vh; padding: 24px;
-  }
 
-  /* HEADER */
-  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #D8D8D3; }
-  .header-left { display: flex; align-items: center; gap: 14px; }
-  .logo-circle { width: 44px; height: 44px; border-radius: 50%; background: #004438; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: #fff; }
-  .header-title { font-family: 'Fraunces', Georgia, serif; font-size: 22px; font-weight: 600; }
-  .header-sub { font-size: 13px; color: #666; margin-top: 2px; }
-  .period-badge { background: #004438; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-  .day-indicator { font-size: 12px; color: #888; margin-top: 4px; text-align: right; }
+:root{
+  /* --- tokens da marca (espelham tema.css) --- */
+  --verde:#004438; --verde-escuro:#00352C; --verde-suave:#3D6B60;
+  --laranja:#EC6C22; --laranja-escuro:#C2531A;
+  --fundo:#F4F6F9; --linha:#E4E9F0; --tinta:#16211C; --tinta-suave:#5F6C7B;
+  --sombra:0 1px 2px rgba(16,24,40,.06),0 2px 6px rgba(16,24,40,.05);
 
-  /* SECTION */
-  .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: #C2531A; margin: 24px 0 12px; }
+  /* --- aliases internos deste painel --- */
+  --bg:var(--fundo); --surf:#FFFFFF; --surf2:#F1F4F8; --surf3:#E4E9F0;
+  --ink:var(--tinta); --ink2:var(--tinta-suave); --ink3:#8A95A2;
+  --line:var(--linha); --line2:#CBD3DD;
+  --accent:var(--verde); --accent-soft:#E8F0ED;
 
-  /* KPI CARDS */
-  .cards-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-  .kpi-card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #DFDFDA; position: relative; overflow: hidden; }
-  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-  .kpi-card.verde::before { background: #22c55e; }
-  .kpi-card.amarelo::before { background: #f59e0b; }
-  .kpi-card.vermelho::before { background: #ef4444; }
-  .kpi-canal { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #3D6B60; margin-bottom: 6px; }
-  .kpi-value { font-size: 22px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
-  .kpi-unit { font-size: 11px; color: #666; margin-bottom: 10px; }
-  .kpi-pct-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
-  .badge-verde { background: #dcfce7; color: #16a34a; }
-  .badge-amarelo { background: #fef9c3; color: #b45309; }
-  .badge-vermelho { background: #fee2e2; color: #dc2626; }
-  .kpi-row { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: 4px; }
-  .kpi-row span:last-child { font-weight: 600; color: #333; }
-  .progress-bar-bg { background: #f0f0ea; border-radius: 4px; height: 5px; margin-top: 10px; overflow: hidden; }
-  .progress-bar-fill { height: 100%; border-radius: 4px; }
-  .fill-verde { background: #22c55e; }
-  .fill-amarelo { background: #f59e0b; }
-  .fill-vermelho { background: #ef4444; }
+  /* rampa ordinal de um tom (set/25 -> ago/26 -> set/26) — validada */
+  --p1:#8FC0B2; --p2:#3D6B60; --p3:#004438;
 
-  /* ACELERADORES TABLE */
-  .acel-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .table-card { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #DFDFDA; }
-  .table-title { font-family: 'Fraunces', Georgia, serif; font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-  .table-sub { font-size: 12px; color: #888; margin-bottom: 14px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #888; padding: 6px 8px; border-bottom: 2px solid #f0f0ea; }
-  td { padding: 7px 8px; border-bottom: 1px solid #f5f5f0; color: #333; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #fafaf8; }
-  .td-canal { font-weight: 600; color: #1a1a1a; }
-  .pct-badge { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; min-width: 44px; text-align: center; }
-  .num-right { text-align: right; }
+  /* semanticas: sempre acompanhadas de sinal e numero, nunca cor sozinha */
+  --good:#0F7A52; --good-bg:#E4F2EC; --bad:#C0392B; --bad-bg:#FAEAE7;
+  --warn:#8A5A00; --warn-bg:#FBF1DC;
 
-  /* AÇÕES SUGERIDAS */
-  .acoes-bloco { margin-bottom: 16px; }
-  .acoes-bloco-titulo {
-    font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
-    padding: 5px 10px; border-radius: 6px; display: inline-block; margin-bottom: 10px;
-  }
-  .bloco-critico .acoes-bloco-titulo  { background: #fee2e2; color: #b91c1c; }
-  .bloco-atencao .acoes-bloco-titulo  { background: #fef9c3; color: #92400e; }
-  .acoes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .acoes-grid-atencao { grid-template-columns: repeat(5, 1fr); }
-  .acao-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #DFDFDA; border-top: 3px solid #ef4444; display: flex; flex-direction: column; gap: 0; }
-  .acao-card.amarelo-borda { border-top-color: #f59e0b; }
-  .acao-card.vermelho-borda { border-top-color: #ef4444; }
-  .acao-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .acao-canal { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #1a1a1a; }
-  .acao-pct { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
-  .acao-gap { font-size: 10px; color: #999; margin-bottom: 8px; }
-  .acao-text { font-size: 12px; color: #333; line-height: 1.5; border-left: 2px solid #D8D8D3; padding-left: 8px; margin-bottom: 0; }
-  /* Camadas novas — só aparecem quando o campo existe no data.json */
-  .acao-meta { margin-top: 8px; font-size: 11px; font-weight: 600; color: #1e40af; background: #eff6ff; border-radius: 5px; padding: 5px 8px; line-height: 1.4; }
-  .acao-alternativo { margin-top: 7px; font-size: 11px; color: #555; background: #f8f8f4; border-radius: 5px; padding: 5px 8px; line-height: 1.4; }
-  .acao-alternativo::before { content: "↩ "; font-weight: 700; color: #888; }
-  .acao-objecao { margin-top: 7px; font-size: 11px; color: #78350f; background: #fffbeb; border-left: 2px solid #f59e0b; padding: 5px 8px; border-radius: 0 5px 5px 0; line-height: 1.4; }
-  .acao-gerencial { margin-top: 7px; font-size: 11px; color: #004438; background: #f0fdf4; border-left: 2px solid #16a34a; padding: 5px 8px; border-radius: 0 5px 5px 0; line-height: 1.4; font-weight: 600; }
-  .acao-gerencial::before { content: "👔 "; }
-  .acao-validacao { margin-top: 7px; font-size: 10px; color: #aaa; padding-top: 6px; border-top: 1px solid #f0f0ea; line-height: 1.4; }
-  .acao-validacao::before { content: "✓ amanhã: "; font-weight: 600; color: #ccc; }
+  --shadow:var(--sombra);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:18px;padding-block:0 56px}
+h1,h2,h3{font-family:Archivo,system-ui,-apple-system,sans-serif;margin:0;text-wrap:balance}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);font-weight:600;font-family:Archivo,sans-serif}
 
-  /* FOOTER */
-  .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #D8D8D3; display: flex; justify-content: space-between; font-size: 11px; color: #aaa; }
-  .footer strong { color: #555; }
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--surf);border-bottom:1px solid var(--line)}
+.hd{max-width:1180px;margin:0 auto;padding:14px 18px;display:flex;flex-wrap:wrap;gap:12px 18px;align-items:baseline;justify-content:space-between}
+.hd h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.hd h1 span{color:var(--ink3);font-weight:500}
+.scope{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11.5px;padding:3px 9px;border-radius:5px;background:var(--surf2);color:var(--ink2);border:1px solid var(--line);white-space:nowrap}
+.chip b{color:var(--ink);font-weight:600}
 
-  @media (max-width: 1100px) { .acoes-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 900px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } .acel-section, .acoes-grid { grid-template-columns: 1fr; } }
+/* progress rail */
+.rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:22px}
+.railcell{background:var(--surf);padding:14px 16px 15px}
+.railtop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:3px}
+.railname{font-size:12.5px;font-weight:600;color:var(--ink2)}
+.railpct{font-size:13px;font-weight:600}
+.railval{font-size:11.5px;color:var(--ink3);margin-bottom:9px}
+.track{height:7px;background:var(--surf3);border-radius:4px;position:relative;overflow:hidden}
+.fill{position:absolute;inset-block:0;left:0;border-radius:4px}
+.tick{position:absolute;inset-block:-3px;width:3px;background:var(--surf);border:1px solid var(--ink2);border-radius:2px;transform:translateX(-1.5px)}
 
-  /* PRINT */
-  @media print {
-    body { background: #fff; padding: 0; }
-    .header { margin-bottom: 16px; padding-bottom: 16px; }
-  }
+/* kpi */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin-top:12px}
+.kpi{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:15px 16px 16px;box-shadow:var(--shadow)}
+.kpi .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:600;font-family:Archivo,sans-serif}
+.kpi .big{font-size:29px;font-weight:600;letter-spacing:-.02em;margin-top:6px;line-height:1.05}
+.kpi .big small{font-size:14px;color:var(--ink3);font-weight:500;margin-left:2px}
+.kpi .sub{font-size:12px;color:var(--ink3);margin-top:3px}
+.deltas{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.dl{font-size:11.5px;padding:2px 7px;border-radius:5px;font-weight:600;white-space:nowrap}
+.dl em{font-style:normal;opacity:.72;font-weight:500;margin-right:3px}
+.up{background:var(--good-bg);color:var(--good)} .dn{background:var(--bad-bg);color:var(--bad)} .fl{background:var(--surf2);color:var(--ink2)}
+
+/* sections */
+section{margin-top:34px}
+.sechd{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+.sechd h2{font-size:16.5px;font-weight:600;letter-spacing:-.005em}
+.sechd p{margin:3px 0 0;font-size:12.5px;color:var(--ink3);max-width:62ch}
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:var(--shadow)}
+.seg{display:inline-flex;background:var(--surf2);border:1px solid var(--line);border-radius:7px;padding:2px;gap:2px}
+.seg button{font:inherit;font-size:12px;font-weight:600;padding:5px 11px;border:0;border-radius:5px;background:transparent;color:var(--ink3);cursor:pointer;font-family:Archivo,sans-serif}
+.seg button[aria-pressed="true"]{background:var(--surf);color:var(--ink);box-shadow:var(--shadow)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin-bottom:12px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:5px}
+
+/* charts */
+.chartbox{overflow-x:auto}
+svg{display:block;max-width:100%}
+svg text{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+svg .cat{font-family:Archivo,sans-serif;font-variant-numeric:normal}
+.grid{stroke:var(--line);stroke-width:1}
+.axis{fill:var(--ink3);font-size:10px}
+.catlbl{fill:var(--ink);font-size:12px;font-weight:600}
+.vallbl{fill:var(--ink2);font-size:10.5px}
+
+/* table */
+.tblbox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surf);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;min-width:940px;font-size:12px}
+th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:Archivo,sans-serif;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:600;background:var(--surf2);position:sticky;top:0}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surf);z-index:2}
+th:first-child{background:var(--surf2);z-index:3}
+tbody tr:hover td{background:var(--surf2)}
+tbody tr:hover td:first-child{background:var(--surf2)}
+tr.grp td{background:var(--surf2);font-weight:600}
+tr.grp td:first-child{background:var(--surf2)}
+tr.grp{border-top:2px solid var(--line2)}
+td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.pos{color:var(--good);font-weight:600}.neg{color:var(--bad);font-weight:600}
+.code{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;color:var(--ink3);background:var(--surf2);padding:1px 5px;border-radius:4px;margin-right:7px;border:1px solid var(--line)}
+tr.grp .code{background:var(--surf3)}
+
+/* readings */
+.reads{display:grid;grid-template-columns:repeat(auto-fit,minmax(275px,1fr));gap:12px}
+.read{background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:8px;padding:14px 15px;box-shadow:var(--shadow)}
+.read.crit{border-left-color:var(--bad)} .read.ok{border-left-color:var(--good)} .read.wn{border-left-color:var(--warn)}
+.read h3{font-size:13.5px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:7px}
+.tag{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:4px;font-weight:700;font-family:Archivo,sans-serif}
+.tag.crit{background:var(--bad-bg);color:var(--bad)}.tag.ok{background:var(--good-bg);color:var(--good)}.tag.wn{background:var(--warn-bg);color:var(--warn)}
+.read p{margin:0;font-size:13px;color:var(--ink2);line-height:1.52}
+.read p b{color:var(--ink);font-weight:600}
+.read .ask{margin-top:8px;font-size:12.5px;color:var(--ink);border-top:1px dashed var(--line2);padding-top:8px}
+.read .ask b{font-family:Archivo,sans-serif;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);display:block;margin-bottom:2px}
+
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.6}
+
+/* tooltip */
+#tip{position:fixed;z-index:80;pointer-events:none;background:var(--surf);border:1px solid var(--line2);border-radius:7px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.16);max-width:240px}
+#tip .tt{font-weight:600;font-size:12.5px;margin-bottom:4px;font-family:Archivo,sans-serif}
+#tip .tr{display:flex;justify-content:space-between;gap:14px;color:var(--ink2)}
+#tip .tr b{color:var(--ink);font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-weight:500}
+@media (prefers-reduced-motion:no-preference){.fill,rect.bar{transition:width .35s ease,height .35s ease,x .35s ease,y .35s ease}}
+@media (max-width:640px){.kpi .big{font-size:25px}.hd h1{font-size:17px}}
+
+
+/* ---- árvore de crescimento ---- */
+.treewrap{display:grid;grid-template-columns:1fr;gap:12px}
+.tpanel{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:14px 16px 16px;box-shadow:var(--shadow)}
+.tphd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:6px}
+.tphd .eyebrow{font-size:11px}
+.tphd .un{font-size:11px;color:var(--ink3);font-family:"IBM Plex Mono",monospace}
+.thead,.trow{display:grid;
+  grid-template-columns:minmax(150px,1.5fr) 92px 14px 92px minmax(120px,1.3fr) 72px 118px;
+  align-items:center;gap:8px}
+.thead{font-family:Archivo,sans-serif;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding:4px 0 7px;border-bottom:1px dashed var(--line)}
+.thead span{text-align:right}.thead span:first-child{text-align:left}
+.trow{padding:5px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.trow:last-child{border-bottom:0}
+.trow:hover{background:var(--surf2)}
+.trow.root{font-weight:600;background:var(--surf2);border-radius:6px;padding-inline:6px;margin-top:4px}
+.trow.pai{font-weight:600}
+.trow.n3 .tname{padding-left:26px}
+.trow.n2 .tname{padding-left:2px}
+.tname{display:flex;align-items:center;gap:6px;min-width:0}
+.tname .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tw{width:17px;height:17px;flex:0 0 17px;border:1px solid var(--line2);background:var(--surf);color:var(--ink2);border-radius:4px;cursor:pointer;font:600 10px/1 Archivo,sans-serif;display:grid;place-items:center;padding:0}
+.tw:hover{border-color:var(--accent);color:var(--accent)}
+.tw:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tw.leaf{visibility:hidden}
+.tbase,.tcur,.tpct,.tnom{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;text-align:right}
+.tbase{color:var(--ink3);font-size:12px}
+.tcur{color:var(--ink);font-size:12px}
+.tarrow{color:var(--ink3);font-size:11px;text-align:center}
+.tbar{position:relative;height:16px;background:linear-gradient(var(--surf3),var(--surf3)) no-repeat center/100% 1px}
+.tbar .tz{position:absolute;top:0;bottom:0;width:1px;background:var(--line2)}
+.tbar .tf{position:absolute;top:3px;height:10px;border-radius:3px}
+.tpct{font-weight:600;font-size:12px}
+.tnom{font-size:12px;line-height:1.25}
+.tnom b{font-weight:600;display:block}
+.tnom small{font-size:9.5px;color:var(--ink3);font-family:Archivo,sans-serif;display:block}
+@media (max-width:620px){
+  .thead,.trow{grid-template-columns:minmax(92px,1.1fr) minmax(48px,.8fr) 56px 92px}
+  .tbase,.tcur,.tarrow,.thead .h2,.thead .h3,.thead .h4{display:none}
+}
+
+
+/* ---- faturamento ---- */
+.fatpanel{background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-top:22px;overflow:hidden}
+.fathero{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:flex-end;justify-content:space-between;
+  padding:17px 18px 16px;background:linear-gradient(180deg,var(--accent-soft),transparent);border-bottom:1px solid var(--line)}
+.fathero .l{min-width:0}
+.fathero .big{font-family:Archivo,sans-serif;font-size:37px;font-weight:700;letter-spacing:-.025em;line-height:1;margin-top:5px}
+.fathero .big small{font-size:16px;font-weight:500;color:var(--ink3);letter-spacing:0}
+.fathero .sub{font-size:12px;color:var(--ink3);margin-top:6px}
+.fathero .r{display:flex;gap:9px;flex-wrap:wrap}
+.fbox{background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:112px}
+.fbox .k{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);font-weight:600;font-family:Archivo,sans-serif}
+.fbox .v{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:17px;font-weight:600;margin-top:2px}
+.fbox .b{font-size:10.5px;color:var(--ink3);font-family:"IBM Plex Mono",monospace}
+.fatbody{padding:4px 16px 14px;overflow-x:auto}
+.fatctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:11px 16px 0}
+.fatnote{font-size:12px;color:var(--ink3);max-width:52ch}
+.fhead,.frow{display:grid;
+  grid-template-columns:minmax(168px,1.35fr) 94px 94px 112px 62px 58px 62px 132px 124px;
+  gap:8px;align-items:center;min-width:1010px}
+.fhead{font-family:Archivo,sans-serif;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding:10px 0 7px;border-bottom:1px dashed var(--line)}
+.fhead span{text-align:right}.fhead span:first-child{text-align:left}
+.frow{padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.frow:last-child{border-bottom:0}
+.frow:hover{background:var(--surf2)}
+.frow.f1{font-weight:700;background:var(--surf2);border-radius:6px;padding-inline:7px;margin-top:3px}
+.frow.f2{font-weight:600}
+.frow.f3.pai{font-weight:600}
+.frow.f3 .tname{padding-left:24px}
+.frow.f4 .tname{padding-left:46px}
+.frow .n{display:block;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;text-align:right}
+.frow .old{color:var(--ink3);font-size:11.5px}
+.frow .cur{font-weight:600}
+.frow .qt{text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:12px;line-height:1.3}
+.frow .qt small{font-family:Archivo,sans-serif;font-size:10px;color:var(--ink3);margin-left:4px}
+.frow .qt .qd{display:block;font-size:11.5px;font-weight:600;margin-top:1px}
+.frow .qt .qd em{font-style:normal;font-family:Archivo,sans-serif;font-size:9.5px;font-weight:400;color:var(--ink3);margin-left:4px}
+.partbar{display:block;position:relative;height:5px;background:var(--surf3);border-radius:3px;margin-top:4px}
+.partbar i{position:absolute;left:0;top:0;bottom:0;background:var(--p2);border-radius:3px;display:block}
+.frow .dn2{text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:11.5px}
+.frow .dn2 .c{display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-top:4px}
+.frow .dn2 .c span{font-size:9.5px;color:var(--ink3);font-family:Archivo,sans-serif;white-space:nowrap}
+.growbar{position:relative;display:block;height:5px;width:52px;background:var(--surf3);border-radius:3px;flex:0 0 52px}
+.growbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;display:block}
+@media (max-width:620px){ .fathero .big{font-size:29px} }
+
+/* ---- cabecalho no padrao do site ---- */
+.header{background:var(--verde);color:#fff;padding:16px 20px;display:flex;flex-wrap:wrap;gap:12px 18px;
+  align-items:center;justify-content:space-between;border-radius:0 0 16px 16px;margin-bottom:6px}
+.header-left{display:flex;align-items:center;gap:12px;min-width:0}
+.logo-circle{width:40px;height:40px;flex:0 0 40px;border-radius:50%;background:var(--laranja);color:#fff;
+  display:grid;place-items:center;font-family:Archivo,sans-serif;font-weight:700;font-size:15px;letter-spacing:.02em}
+.header-title{font-family:Archivo,sans-serif;font-weight:700;font-size:19px;letter-spacing:-.01em}
+.header-sub{font-size:12px;color:#BFD4CE;margin-top:1px}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right}
+.period-badge{background:var(--laranja);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px}
+.header-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#BFD4CE;letter-spacing:.02em}
+.btn-voltar{color:#fff;font-size:12px;text-decoration:none;opacity:.9}
+.btn-voltar:hover{opacity:1;text-decoration:underline}
+@media (max-width:620px){.header{border-radius:0}.header-right{align-items:flex-start;text-align:left}}
+/* barra superior padrão do site */
+.topbar{display:flex;position:sticky;top:0;z-index:70;background:#fff;color:var(--tinta);padding:12px 16px;align-items:center;gap:12px;min-height:58px}
+.topbar .t{font-family:Archivo,sans-serif;font-weight:700;font-size:16px;flex:1}
+/* estado de carregamento / erro */
+#carregando{max-width:1180px;margin:40px auto;padding:0 18px;color:var(--tinta-suave);font-size:14px}
+#carregando b{color:var(--tinta);font-family:Archivo,sans-serif;display:block;margin-bottom:4px}
+
 </style>
+<!-- tema.css SEMPRE depois do <style> local: e ele que manda na identidade -->
+<link rel="stylesheet" href="tema.css">
 </head>
 <body>
-
+<div class="topbar">
+  <button type="button" onclick="location.href='index.html'" aria-label="Voltar à central de acessos" title="Central de acessos">&#8592;</button>
+  <div class="t">Painel Operacional</div>
+</div>
+<div id="carregando"><b>Carregando o painel…</b>Destravando os dados do mês.</div>
+<div id="app" hidden>
 <div class="header">
   <div class="header-left">
     <div class="logo-circle">ES</div>
     <div>
       <div class="header-title">Painel Operacional</div>
-      <div class="header-sub">Estação Sapatão · Faturamento & Aceleradores</div>
+      <div class="header-sub">Metas e margens de venda · Rede Sapatão</div>
     </div>
   </div>
-  <div style="text-align:right">
-    <div class="period-badge">Maio 2026</div>
-    <div class="day-indicator">Dia 16 de 31 · 51,6% do mês</div>
-    <div style="margin-top:8px"><a href="index.html" style="font-size:12px;color:#004438;font-weight:600;text-decoration:none;border-bottom:1px solid #004438">📘 Guia de Execução — Roadmap Comercial</a></div>
+  <div class="header-right">
+    <span class="period-badge" id="hdPeriodo">Setembro 2026</span>
+    <div class="header-meta" id="hdMeta"></div>
+    <a class="btn-voltar" href="index.html">← Central de acessos</a>
   </div>
 </div>
 
-<div class="section-label">Performance por Canal</div>
-<div class="cards-grid" id="kpi-cards"></div>
+
+<div class="wrap">
+  <div class="fatpanel">
+    <div class="fathero">
+      <div class="l">
+        <div class="eyebrow">Faturamento total · projeção setembro/2026</div>
+        <div class="big" id="fatBig"></div>
+        <div class="sub" id="fatSub"></div>
+      </div>
+      <div class="r" id="fatBoxes"></div>
+    </div>
+    <div class="fatctl">
+      <span class="fatnote">Abre por combustíveis e mercadorias, e daí por ciclo e por linha. Os filhos somam exatamente o pai.</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="seg" role="group" aria-label="Base do crescimento">
+          <button id="fAno" aria-pressed="true">Δ vs set/25</button>
+          <button id="fMes" aria-pressed="false">Δ vs ago/26</button>
+        </div>
+        <div class="seg" role="group" aria-label="Detalhe">
+          <button id="fAll" aria-pressed="true">Tudo aberto</button>
+          <button id="fTop" aria-pressed="false">Só totais</button>
+        </div>
+      </div>
+    </div>
+    <div class="fatbody">
+      <div class="fhead"><span>Linha</span><span>set/25</span><span>ago/26</span><span>set/26 proj.</span><span>part.</span><span>vs ago</span><span>vs set/25</span><span id="fhDelta">crescimento ano</span><span>quantidade set/26</span></div>
+      <div id="fatTree"></div>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="rail" id="rail"></div>
+  <p style="font-size:11.5px;color:var(--ink3);margin:8px 2px 0">A barra mostra o acumulado do mês; o traço vertical marca onde a meta deveria estar no 18º dia (60% do mês). O percentual compara os dois.</p>
 
 
-<div class="section-label">Aceleradores</div>
-<div class="acel-section">
-  <div class="table-card">
-    <div class="table-title">Loja</div>
-    <div class="table-sub">Realizados, meta e projeção</div>
-    <table id="table-loja"></table>
-  </div>
-  <div class="table-card">
-    <div class="table-title">Postos</div>
-    <div class="table-sub">Realizados, meta e projeção</div>
-    <table id="table-postos"></table>
-  </div>
+  <section>
+    <div class="sechd">
+      <div>
+        <h2>Volume por linha</h2>
+        <p>Projeção linear do mês (acumulado ÷ 18 × 30) contra agosto/26 e setembro/25 fechados.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Base de comparação">
+        <button id="bMes" aria-pressed="true">Total do mês</button>
+        <button id="bDia" aria-pressed="false">Ritmo diário</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="legend">
+        <span><i style="background:var(--p1)"></i>Set/2025</span>
+        <span><i style="background:var(--p2)"></i>Ago/2026</span>
+        <span><i style="background:var(--p3)"></i>Set/2026 projetado</span>
+        <span style="color:var(--ink3)">— agosto tem 31 dias; setembro, 30. O ritmo diário neutraliza isso.</span>
+      </div>
+      <div class="eyebrow" style="margin-bottom:6px">Combustíveis · litros</div>
+      <div class="chartbox"><svg id="cVolComb" role="img" aria-label="Volume de combustíveis por linha"></svg></div>
+      <div class="eyebrow" style="margin:22px 0 6px">Mercadorias e serviços · R$</div>
+      <div class="chartbox"><svg id="cVolMerc" role="img" aria-label="Faturamento de mercadorias por linha"></svg></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechd">
+      <div>
+        <h2>Margem unitária dos combustíveis</h2>
+        <p>Quanto cada litro deixa de margem bruta, em R$. O ponto cheio é o mês corrente.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="legend">
+        <span><i style="background:var(--p1);border-radius:50%"></i>Set/2025</span>
+        <span><i style="background:var(--p2);border-radius:50%"></i>Ago/2026</span>
+        <span><i style="background:var(--p3);border-radius:50%"></i>Set/2026</span>
+      </div>
+      <div class="chartbox"><svg id="cMarg" role="img" aria-label="Margem unitária por combustível"></svg></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechd">
+      <div>
+        <h2>Onde a margem em reais realmente mudou</h2>
+        <p>Diferença entre a margem bruta projetada para setembro e a margem realizada em agosto, linha a linha. É o efeito líquido de volume e preço juntos.</p>
+      </div>
+    </div>
+    <div class="panel"><div class="chartbox"><svg id="cDelta" role="img" aria-label="Variação da margem bruta em reais por linha"></svg></div></div>
+  </section>
+
+  <section>
+    <div class="sechd">
+      <div>
+        <h2>O crescimento está pagando?</h2>
+        <p>Eixo horizontal: variação do volume no ritmo diário contra agosto. Eixo vertical: variação da margem unitária. O que cai no quadrante inferior direito cresce vendendo mais barato.</p>
+      </div>
+    </div>
+    <div class="panel"><div class="chartbox"><svg id="cQuad" role="img" aria-label="Volume versus margem por linha"></svg></div></div>
+  </section>
+
+  <section>
+    <div class="sechd">
+      <div>
+        <h2>Tabela comparativa</h2>
+        <p>Todas as linhas, com acumulado, projeção, comparativos e margem.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Ordenação">
+        <button id="oVol" aria-pressed="true">Por volume</button>
+        <button id="oMar" aria-pressed="false">Por Δ margem R$</button>
+      </div>
+    </div>
+    <div class="tblbox"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+  </section>
+
+  <section>
+    <div class="sechd"><div><h2>Leituras</h2><p>O que os números acima pedem de decisão.</p></div></div>
+    <div class="reads" id="reads"></div>
+  </section>
+
+  <footer id="foot"></footer>
 </div>
-
-<div class="section-label">⚡ Ações Sugeridas — Metas Abaixo da Projeção</div>
-<div id="acoes-critico" class="acoes-bloco bloco-critico"></div>
-<div id="acoes-atencao" class="acoes-bloco bloco-atencao"></div>
-
-<div class="footer">
-  <span>Estação Sapatão · dashboard.estacaosapatao.com.br · <a href="roadmap/" style="color:#EC6C22;font-weight:700;text-decoration:none">Roadmap Comercial →</a></span>
-  <span>Snapshot <strong>Maio 2026 · Dia 16/31</strong> — atualizado em 17/05/2026</span>
+<div id="tip" hidden></div>
 </div>
 
 <script>
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-const fmtBRL = v => v == null ? '—' : 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
-const fmtNum = (v, d=0) => v == null ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
-const fmtPct = v => v == null ? '—' : Math.round(v * 100) + '%';
-// Crítico (vermelho): pct_proj < 90%  — abaixo de 89% da meta
-// Atenção (amarelo) : 90% ≤ pct_proj < 100% — entre 90% e 99% da meta
-const badgeClass = p => p == null ? '' : p >= 1.0 ? 'badge-verde' : p >= 0.90 ? 'badge-amarelo' : 'badge-vermelho';
-const cardClass  = p => p >= 1.0 ? 'verde' : p >= 0.90 ? 'amarelo' : 'vermelho';
-const fillClass  = p => p >= 1.0 ? 'fill-verde' : p >= 0.90 ? 'fill-amarelo' : 'fill-vermelho';
-const fmtMetrica  = c => c.is_qtd ? fmtNum(c.metrica/1000,1)+' mil L' : fmtBRL(c.metrica);
-const fmtProjecao = c => c.is_qtd ? fmtNum(c.projecao/1000,1)+' mil L' : fmtBRL(c.projecao);
-const fmtMeta     = c => c.is_qtd ? fmtNum(c.meta/1000,1)+' mil L' : fmtBRL(c.meta);
-
-// ─── INIT FROM DATA.JSON ─────────────────────────────────────────────────────
-fetch('data.json?v=' + Date.now())
-  .then(r => {
-    if (!r.ok) throw new Error(`Erro ao carregar data.json: ${r.status}`);
-    return r.json();
-  })
-  .then(data => {
-    const { meta, cards, aceleradores, top_produtos: topProdutos } = data;
-
-    // Update header
-    if (meta) {
-      document.querySelector('.period-badge').textContent = meta.periodo;
-      const pct = (meta.dia_atual / meta.dias_no_mes * 100).toFixed(1);
-      document.querySelector('.day-indicator').textContent = `Dia ${meta.dia_atual} de ${meta.dias_no_mes} · ${pct}% do mês`;
-      document.querySelector('.footer span:last-child').textContent = `Snapshot ${meta.periodo} · Dia ${meta.dia_atual}/${meta.dias_no_mes} — atualizado em ${meta.atualizado_em}`;
+(function(){
+"use strict";
+/* Dados do mês publicados CIFRADOS em operacional-conteudo.json (raiz) —
+   mesmo cofre dos demais painéis. Cache local AINDA CIFRADO para abrir
+   na hora; a publicação é pelo cartão "Painel Operacional" das
+   Configurações (admin). */
+var CACHE='sapatao-conteudo-operacional-v1';
+var ARQUIVO='operacional-conteudo.json';
+var RAW='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/'+ARQUIVO;
+var API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/'+ARQUIVO;
+var abriu=false;
+function mostra(dados){
+  if(abriu)return;abriu=true;
+  window.DADOS_PAINEL=dados;
+  document.getElementById('carregando').hidden=true;
+  document.getElementById('app').hidden=false;
+  var s=document.createElement('script');s.src='painel-operacional.js';document.body.appendChild(s);
+}
+function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
+async function decifraDoc(doc){
+  if(!doc||doc.enc!==1)return null;
+  if(!window.sapataoCofre.dek()){try{await window.sapataoCofre.baixaDekPeloToken();}catch(e){}}
+  return await window.sapataoCofre.decifra(doc);
+}
+async function pega(){
+  try{const r=await fetch(RAW+'?t='+Date.now(),{cache:'no-store'});if(r.ok)return await r.json();if(r.status===404)return null;}catch(e){}
+  try{const r=await fetch(API+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+    if(r.status===404)return null;
+    if(r.ok){const j=await r.json();return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,'')))));}
+  }catch(e){}
+  try{const r=await fetch(ARQUIVO+'?t='+Date.now(),{cache:'no-store'});if(r.ok)return await r.json();}catch(e){}
+  return null;
+}
+async function carrega(){
+  var A=window.sapataoAuth;
+  if(!A||!A.user||!A.temAcesso('operacional'))return; /* o auth.js cuida da tela de acesso */
+  try{
+    var c=JSON.parse(localStorage.getItem(CACHE)||'null');
+    if(c){var d=await decifraDoc(c);if(d)mostra(d);}
+  }catch(e){}
+  try{
+    var doc=await pega();
+    if(!doc){falha('Os dados do mês ainda não foram publicados. Sendo admin, use o cartão "Painel Operacional" nas Configurações.');return;}
+    if(doc.enc===1){try{localStorage.setItem(CACHE,JSON.stringify(doc));}catch(e){}}
+    if(!abriu){
+      var d2=await decifraDoc(doc);
+      if(d2)mostra(d2);
+      else falha('Este aparelho ainda não tem a chave dos dados. Saia e entre com o seu usuário e senha na central.');
     }
-
-    // ─── KPI CARDS
-    document.getElementById('kpi-cards').innerHTML = cards.map(c => {
-      const cls = cardClass(c.pct_proj), bCls = badgeClass(c.pct_proj), fCls = fillClass(c.pct_proj);
-      const w = Math.min(c.pct_proj*100, 100).toFixed(1);
-      const extra = c.mix_vpower ? `<div class="kpi-row"><span>V-Power Mix</span><span>${c.mix_vpower.toFixed(1)}%</span></div>` : '';
-      return `<div class="kpi-card ${cls}">
-        <div class="kpi-canal">${c.canal}</div>
-        <div class="kpi-value">${fmtMetrica(c)}</div>
-        <div class="kpi-unit">realizado · dia ${c.dia_atual||meta.dia_atual}/${c.dias_no_mes||meta.dias_no_mes}</div>
-        <span class="kpi-pct-badge ${bCls}">${fmtPct(c.pct_proj)} da meta</span>
-        <div class="progress-bar-bg"><div class="progress-bar-fill ${fCls}" style="width:${w}%"></div></div>
-        <div class="kpi-row" style="margin-top:8px"><span>Projeção</span><span>${fmtProjecao(c)}</span></div>
-        <div class="kpi-row"><span>Meta</span><span>${fmtMeta(c)}</span></div>
-        ${extra}
-      </div>`;
-    }).join('');
-
-    // ─── ACELERADORES TABLES
-    function buildTable(id, grupo) {
-      const rows = aceleradores.filter(a => a.grupo === grupo);
-      document.getElementById(id).innerHTML = `
-        <thead><tr>
-          <th>Canal</th><th class="num-right">Realizado</th><th class="num-right">Meta</th><th class="num-right">Méd/Dia</th><th style="text-align:center">Proj %</th>
-        </tr></thead>
-        <tbody>${rows.map(r => {
-          const bCls = r.pct_proj != null ? badgeClass(r.pct_proj) : '';
-          const real = r.is_pct ? r.realizado.toFixed(2)+'%' : r.is_currency ? fmtBRL(r.realizado) : fmtNum(r.realizado);
-          const meta = r.meta ? (r.is_currency ? fmtBRL(r.meta) : fmtNum(r.meta)) : '—';
-          const med  = r.media_dia ? (r.is_currency ? fmtBRL(r.media_dia) : fmtNum(r.media_dia,1)) : '—';
-          return `<tr>
-            <td class="td-canal">${r.acelerador}</td>
-            <td class="num-right">${real}</td><td class="num-right">${meta}</td><td class="num-right">${med}</td>
-            <td style="text-align:center"><span class="pct-badge ${bCls}">${r.pct_proj != null ? fmtPct(r.pct_proj) : '—'}</span></td>
-          </tr>`;
-        }).join('')}</tbody>`;
-    }
-    buildTable('table-loja', 'loja');
-    buildTable('table-postos', 'postos');
-
-    // ─── AÇÕES SUGERIDAS (geradas pelo Claude via data.json)
-    const acoesIA = data.acoes || [];
-
-    // Monta mapa acelerador → objeto completo da ação (backward compatible)
-    const acoesMap = {};
-    acoesIA.forEach(a => { acoesMap[a.acelerador] = a; });
-
-    // Aceleradores abaixo da meta que têm ação gerada
-    const comAcoes = aceleradores
-      .filter(a => a.pct_proj != null && a.pct_proj < 1.0 && acoesMap[a.acelerador])
-      .sort((a, b) => a.pct_proj - b.pct_proj);
-
-    // Usa severidade do objeto (calculada no update-data.js); senão deriva do pct_proj
-    // Crítico (VERMELHO): < 90%  |  Atenção (AMARELO): 90–99%
-    const getSev = (acelerador, pct) => {
-      const obj = acoesMap[acelerador];
-      if (obj && obj.severidade) return obj.severidade;
-      return pct < 0.90 ? 'VERMELHO' : 'AMARELO';
-    };
-
-    const criticos = comAcoes.filter(a => getSev(a.acelerador, a.pct_proj) === 'VERMELHO');
-    const atencao  = comAcoes.filter(a => getSev(a.acelerador, a.pct_proj) !== 'VERMELHO');
-
-    function renderAcaoCard(a) {
-      const obj = acoesMap[a.acelerador];
-      const sev = getSev(a.acelerador, a.pct_proj);
-      const bCls = sev === 'VERMELHO' ? 'badge-vermelho' : 'badge-amarelo';
-      const borderCls = sev === 'VERMELHO' ? 'vermelho-borda' : 'amarelo-borda';
-      const projFmt = a.is_pct ? fmtNum(a.projecao,1)+'%' : a.is_currency ? fmtBRL(a.projecao) : fmtNum(a.projecao);
-      const metaFmt = a.is_pct ? fmtNum(a.meta,1)+'%'     : a.is_currency ? fmtBRL(a.meta)     : fmtNum(a.meta);
-      const gap = a.projecao && a.meta ? `proj. ${projFmt} vs meta ${metaFmt}` : '';
-
-      // Camadas novas (só renderiza se o campo existir no objeto)
-      const metaOp   = obj.meta_operacional   ? `<div class="acao-meta">📊 ${obj.meta_operacional}</div>` : '';
-      const altScript = obj.script_alternativo ? `<div class="acao-alternativo">${obj.script_alternativo}</div>` : '';
-      const objecao  = obj.objecao            ? `<div class="acao-objecao">💬 ${obj.objecao}</div>` : '';
-      const gerencial = obj.acao_gerencial     ? `<div class="acao-gerencial">${obj.acao_gerencial}</div>` : '';
-      const validacao = obj.validacao          ? `<div class="acao-validacao">${obj.validacao}</div>` : '';
-
-      return `<div class="acao-card ${borderCls}">
-        <div class="acao-header">
-          <span class="acao-canal">${a.acelerador}</span>
-          <span class="acao-pct ${bCls}">${fmtPct(a.pct_proj)}</span>
-        </div>
-        ${gap ? `<div class="acao-gap">${gap}</div>` : ''}
-        <div class="acao-text">${obj.acao}</div>
-        ${metaOp}${altScript}${objecao}${gerencial}${validacao}
-      </div>`;
-    }
-
-    if (criticos.length) {
-      document.getElementById('acoes-critico').innerHTML =
-        `<div class="acoes-bloco-titulo">🔴 Crítico</div>
-         <div class="acoes-grid">${criticos.map(renderAcaoCard).join('')}</div>`;
-    }
-    if (atencao.length) {
-      document.getElementById('acoes-atencao').innerHTML =
-        `<div class="acoes-bloco-titulo">🟡 Atenção</div>
-         <div class="acoes-grid acoes-grid-atencao">${atencao.map(renderAcaoCard).join('')}</div>`;
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    document.getElementById('kpi-cards').innerHTML = '<div style="grid-column:1/-1;padding:20px;color:#dc2626;text-align:center">Erro ao carregar dados. Verifique se data.json existe.</div>';
-  });
+  }catch(e){falha('Sem conexão para buscar os dados ('+e.message+').');}
+}
+document.addEventListener('sapatao-login',carrega);
+carrega();
+})();
 </script>
 
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .catch(err => console.warn('SW não registrado:', err));
-    });
-  }
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(function(){});
+}
 </script>
 </body>
 </html>

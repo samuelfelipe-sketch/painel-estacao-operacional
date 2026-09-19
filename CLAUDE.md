@@ -9,7 +9,7 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 | Caminho | O que é | Acesso |
 |---|---|---|
 | `index.html` | **Central de acessos**: login unificado (campo na página, `SAPATAO_APP='central'`) + cartões de todos os apps | aberto |
-| `configuracoes/index.html` | **Configurações centrais** (login): minha senha (todos); chave de sincronização, publicação da ferramenta do Fluxo (cartão "Fluxo de Caixa", mesmo fluxo do `fluxo/?publicar`) e administração de usuários (admin). Apps apontam para cá | senha |
+| `configuracoes/index.html` | **Configurações centrais** (login): minha senha (todos); chave de sincronização, publicação da ferramenta do Fluxo (cartão "Fluxo de Caixa", mesmo fluxo do `fluxo/?publicar`), publicação dos dados do Painel Operacional (cartão "Painel Operacional") e administração de usuários (admin). Apps apontam para cá | senha |
 | `roadmap/guia.html` | **Guia de Execução** — app principal do Roadmap Comercial (método PACE, 17 ações) | senha |
 | `roadmap/plano-de-acao.html` | Plano de Ação formatado para impressão (A4 paisagem) | senha |
 | `roadmap/resumo.html` | **Método Reborn** — resumo da imersão Club Reborn. Identidade própria (navy/dourado). **Não alterar o layout.** | aberto de propósito (compartilhável) |
@@ -24,7 +24,7 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 | `estrategia/pe-execucoes.json` | **base de dados** do PE (status/novo prazo/follow-ups) — CIFRADA — commits automáticos `chore: sincroniza follow-ups do Planejamento Estratégico (automático)` | — |
 | `estrategia/pe-conteudo.json` | conteúdo sensível do PE (25 ações, diagnóstico, SWOT etc.) — CIFRADO | — |
 | `fluxo/index.html` | **Fluxo de Caixa** (shell): usa o auth.js (`SAPATAO_APP='fluxo'`, permissão `fluxo` — admin sempre entra) e abre a ferramenta publicada CIFRADA em `fluxo/dados.enc.json` (`cofre.cifra({v,em,gz})` — HTML gzip+base64; formato `{html}` também vale) num iframe, com cache local `sapatao-fluxo-v1`; menu lateral (☰) com a tela **Dia a dia por empresa** (tabela dia × empresa com fluxo e fim de caixa, calculada no site a partir dos dados da ferramenta via ponte `__fxDados` na pele — const do iframe não vão a window sozinhos); sem publicação, mostra "em preparação" + o cartão **Publicar a ferramenta** (admin: escolhe o HTML, o navegador comprime, cifra e faz PUT; `fluxo/?publicar` reabre o cartão para republicar). Pipeline OneDrive→publicação automática ainda por construir (BRIEF do Samuel; aguardando app registration da TI) | senha (admin) |
-| `painel-operacional.html` | Painel Operacional (faturamento por canal). **Desativado por ora** — `data.json` vazio desde maio (token da API do dashboard expirou) | aberto |
+| `painel-operacional.html` | **Painel Operacional — Metas e Margens** (relatório mensal do Argo): faturamento por linha, metas no ritmo proporcional, margens e leituras. Usa auth.js (`SAPATAO_APP='operacional'`, perm `operacional` = le\|nao; admin sempre entra); dados do mês CIFRADOS em `operacional-conteudo.json` (raiz), cache local `sapatao-conteudo-operacional-v1`, publicados pelo cartão "Painel Operacional" das Configurações (admin cifra o `dados-metas-margens.json` no navegador — o JSON em claro está no `.gitignore` e NUNCA é commitado). Lógica em `painel-operacional.js`; esquema e rotina mensal em `painel-operacional-regras.md`. Legado da API antiga (`data.json`, `update-data.yml`) parado aguardando decisão | senha |
 | `fluxo-pessoal/` | app de finanças pessoais — LOGIN E USUÁRIOS PRÓPRIOS, dados cifrados dentro dele (não usa o auth.js; não mexer sem pedido) | login próprio |
 | `reborn-imersao.html`, `context.md`, `scripts/`, `.github/workflows/` | legado do painel operacional | — |
 
@@ -61,5 +61,5 @@ Dono: Samuel Felipe (samuel@estacaosapatao.com.br). Responda sempre em portuguê
 - **Sino na central** (`index.html`): agrega as notificações dos DOIS painéis (busca execuções+conteúdo pela API, decifra no navegador, títulos incluídos), respeita permissões, compartilha o estado de lido com os painéis (mesmas chaves de localStorage) e clica-se para abrir o painel. Eventos ordenados por data+hora (`ord` = campo `em`/`quando`/`h`/`concluidaEm` gravado na criação, formato local `YYYY-MM-DDTHH:MM`). Segredos do repositório: `VAPID_PRIVATE_KEY` e `PUSH_SUBS_PRIVATE_KEY` (chaves privadas; as públicas estão no código). No iPhone só funciona com o site adicionado à Tela de Início. Conteúdo do follow-up NUNCA sai do cofre — o aviso é só autor + nº da ação.
 
 ## Pendências conhecidas
-- Painel Operacional: reativar exige nova chave da API `dashboard.estacaosapatao.com.br` (segredo do workflow `update-data.yml`).
+- `data.json` e `update-data.yml.disabled` são legado da API antiga do Painel Operacional (a fonte agora é o relatório Argo): decidir com o Samuel entre remover ou manter.
 - Possível evolução: criptografar `execucoes.json` (repo público), esconder/mostrar concluídas no Painel.
