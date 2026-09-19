@@ -22,7 +22,7 @@ const ddmm = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
 const listaIds = (ids) => (ids.length > 1 ? 'ações ' : 'ação ') + ids.join(', ');
 
 const PAINEIS = [
-  ['rc', 'Roadmap Comercial', './roadmap/guia.html#notificacoes'],
+  ['rc', 'Planejamento Comercial', './roadmap/guia.html#notificacoes'],
   ['pe', 'Planejamento Estratégico', './estrategia/#notificacoes'],
 ];
 const paineis = [];

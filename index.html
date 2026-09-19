@@ -96,8 +96,18 @@ footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
   </div>
   <div class="faixa"></div>
   <div class="cards">
+    <a class="card" href="painel-operacional.html">
+      <div class="t">Vendas &#128274;</div>
+      <div class="d">Metas e margens de venda da rede, mês a mês.</div>
+      <span class="go">Entrar &rarr;</span>
+    </a>
+    <a class="card" href="fluxo/">
+      <div class="t">Fluxo de Caixa &#128274;</div>
+      <div class="d">Previsto &times; realizado do grupo, mês a mês e semana a semana.</div>
+      <span class="go">Entrar →</span>
+    </a>
     <a class="card" href="roadmap/guia.html">
-      <div class="t">Roadmap Comercial &#128274;</div>
+      <div class="t">Planejamento Comercial &#128274;</div>
       <div class="d">Guia de execução comercial da rede.</div>
       <span class="go">Entrar →</span>
     </a>
@@ -106,25 +116,10 @@ footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
       <div class="d">Acompanhamento das ações estratégicas e dos follow-ups das reuniões.</div>
       <span class="go">Entrar →</span>
     </a>
-    <a class="card" href="fluxo/">
-      <div class="t">Fluxo de Caixa &#128274;</div>
-      <div class="d">Previsto &times; realizado do grupo, mês a mês e semana a semana.</div>
-      <span class="go">Entrar →</span>
-    </a>
-    <a class="card" href="roadmap/resumo.html">
-      <div class="t">Método Reborn</div>
-      <div class="d">Resumo da imersão do Club Reborn — material aberto, bom para compartilhar.</div>
-      <span class="go">Abrir →</span>
-    </a>
     <a class="card" href="configuracoes/">
       <div class="t">Configurações &#128274;</div>
       <div class="d">Conta, senha e notificações — num lugar só, para todos os painéis.</div>
       <span class="go">Entrar →</span>
-    </a>
-    <a class="card" href="painel-operacional.html">
-      <div class="t">Painel Operacional &#128274;</div>
-      <div class="d">Metas e margens de venda da rede, mês a mês.</div>
-      <span class="go">Entrar &rarr;</span>
     </a>
   </div>
 </div>
@@ -282,7 +277,7 @@ function renderNotifsCentral(ev){
   if(!ev.lista.length){notifLista.innerHTML='<div class="notif-vazio">Nenhuma novidade ainda. Follow-ups, conclusões e ações novas aparecem aqui.</div>';return;}
   notifLista.innerHTML=ev.lista.map(x=>'<div class="notif-item'+((vPE&&(x.painel==='pe'?vPE:vRC).has(chaveDe(x))||minhaN(x))?'':' nova')+'" data-painel="'+x.painel+'" role="button" tabindex="0">'
     +'<div class="notif-meta">'+fmtN(x.data)+horaN(x.ord)+(x.por?' — '+escN(x.por):'')+'</div>'
-    +'<div class="notif-acao">'+(x.painel==='pe'?'Planejamento Estratégico':'Roadmap Comercial')+' · Ação '+x.id+(x.tit?' · '+escN(x.tit):'')+'</div>'
+    +'<div class="notif-acao">'+(x.painel==='pe'?'Planejamento Estratégico':'Planejamento Comercial')+' · Ação '+x.id+(x.tit?' · '+escN(x.tit):'')+'</div>'
     +'<div class="notif-txt">'+escN(x.txt)+'</div></div>').join('');
 }
 async function abreNotifsCentral(){
