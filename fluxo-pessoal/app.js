@@ -1826,8 +1826,11 @@ async function impLer(text, nome, accForcada){
 
   const cob = cobertura()[acc];
   const fitsExist = new Set(D.lanc.map(l => l.f).filter(Boolean));
-  // gêmeo por data+valor+descrição: protege contra FITIDs que mudam entre arquivos
-  const chaveGemeo = t => `${t.d}|${(+t.v).toFixed(2)}|${String(t.m||'').slice(0,60).trim().toUpperCase()}`;
+  // gêmeo por data+valor na mesma conta: a base foi conciliada no centavo até a
+  // cobertura, então uma linha do arquivo com a mesma data e valor de uma linha
+  // da base é a mesma transação — descrições variam entre exportações (formato,
+  // acentos corrompidos em importações antigas) e FITIDs podem mudar
+  const chaveGemeo = t => `${t.d}|${(+t.v).toFixed(2)}`;
   const jaTem = new Set(D.lanc.filter(l => l.o === acc).map(chaveGemeo));
   // Dentro da cobertura, uma linha só entra (como RETROATIVA) se tem FITID próprio
   // desconhecido e nenhum gêmeo na base — cobre débitos que caíram depois de o
