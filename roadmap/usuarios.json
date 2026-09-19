@@ -45,6 +45,18 @@
     "pe": "le",
     "fluxo": "le"
    }
+  },
+  {
+   "id": "sonia",
+   "nome": "Sonia",
+   "hash": "490114eee52db1b647846d38e08ee96d29dc03aaa850626b8a6805d4a61800b7",
+   "admin": false,
+   "ativo": true,
+   "perm": {
+    "roadmap": "le",
+    "pe": "followup",
+    "fluxo": "le"
+   }
   }
  ]
 }
