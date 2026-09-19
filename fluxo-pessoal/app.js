@@ -1835,7 +1835,13 @@ async function impLer(text, nome, accForcada){
   const novos = p.txs.filter(t => {
     if (t.f && fitsExist.has(t.f)) return false;
     if (t.d > cob) return true;
-    return !!t.f && !jaTem.has(chaveGemeo(t));
+    if (!t.f || jaTem.has(chaveGemeo(t))) return false;
+    // pagamento de fatura já incorporado: os itens vivem no cartão, abertos por
+    // categoria e (nas importações antigas) sem o FITID do pagamento —
+    // reconhece pelo cartão + dia do pagamento
+    const cl = catBank(t.m, t.v);
+    if (cl.kind === 'fatura' && cl.cartao && D.lanc.some(l => l.o === cl.cartao && l.d === t.d)) return false;
+    return true;
   }).sort((a,b)=>a.d.localeCompare(b.d));
   const ignorados = p.txs.length - novos.length;
   if (!novos.length){ msg.textContent = `Nada novo: os ${ignorados} lançamentos do arquivo já estão conciliados (cobertura da conta ${ACC_NOME[acc]} vai até ${dbr(cob)}).`; return; }
@@ -1990,8 +1996,10 @@ function impConfirmar(){
 
   for (const r of IMP.rows){
     if (r.kind === 'fatura' && r.fat && r.fat.ok){
-      for (const it of r.fat.items)
-        D.lanc.push({ d:r.d, v:round2(-it.val), c:it.c, o:r.cartao, m:it.desc.slice(0,60) });
+      // o FITID do pagamento fica no primeiro item: reimportações do extrato
+      // reconhecem a fatura já incorporada direto pelo identificador
+      r.fat.items.forEach((it, ix) =>
+        D.lanc.push({ d:r.d, v:round2(-it.val), c:it.c, o:r.cartao, m:it.desc.slice(0,60), ...(ix===0 && r.f ? {f:r.f} : {}) }));
       if (r.fat.ajuste) D.lanc.push({ d:r.d, v:round2(-r.fat.ajuste), c:'fin', o:r.cartao, m:'Ajuste centavos fatura' });
     } else {
       D.lanc.push({ d:r.d, v:r.v, c:r.c, o:acc, m:r.m.slice(0,60), ...(r.f?{f:r.f}:{}) });
