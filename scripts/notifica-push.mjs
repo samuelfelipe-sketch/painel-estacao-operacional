@@ -1,5 +1,5 @@
 /* Envia a notificação push nativa quando chega um follow-up novo ou uma
-   ação muda de estado (concluída/reaberta) no Roadmap Comercial ou no
+   ação muda de estado (concluída/reaberta) no Planejamento Comercial ou no
    Planejamento Estratégico. Roda no GitHub Actions:
    - a mensagem do commit traz autor e nº da ação (dados não sensíveis);
    - as inscrições dos aparelhos ficam cifradas em roadmap/push-subs.json
@@ -21,18 +21,18 @@ if (m) {
   titulo = `Novo follow-up de ${m[1]}`;
   corpo = `Ação ${m[2]} do Planejamento Estratégico.`;
   urlAlvo = './estrategia/#notificacoes';
-} else if ((m = msg.match(/(?:chore:\s*)?(.+?) (concluiu|reabriu) a ação (\d+) do (Roadmap Comercial|Planejamento Estratégico)/i))) {
+} else if ((m = msg.match(/(?:chore:\s*)?(.+?) (concluiu|reabriu) a ação (\d+) do (Roadmap Comercial|Planejamento Comercial|Planejamento Estratégico)/i))) {
   autor = m[1];
   tipo = 'est';
   titulo = `${m[1]} ${m[2]} uma ação`;
   corpo = `Ação ${m[3]} do ${m[4]}.`;
-  urlAlvo = /roadmap/i.test(m[4]) ? './roadmap/guia.html#notificacoes' : './estrategia/#notificacoes';
-} else if ((m = msg.match(/(?:chore:\s*)?(.+?) renegociou a ação (\d+) do (Roadmap Comercial|Planejamento Estratégico)/i))) {
+  urlAlvo = /comercial/i.test(m[4]) ? './roadmap/guia.html#notificacoes' : './estrategia/#notificacoes';
+} else if ((m = msg.match(/(?:chore:\s*)?(.+?) renegociou a ação (\d+) do (Roadmap Comercial|Planejamento Comercial|Planejamento Estratégico)/i))) {
   autor = m[1];
   tipo = 'rng';
   titulo = `${m[1]} renegociou um prazo`;
   corpo = `Ação ${m[2]} do ${m[3]}.`;
-  urlAlvo = /roadmap/i.test(m[3]) ? './roadmap/guia.html#notificacoes' : './estrategia/#notificacoes';
+  urlAlvo = /comercial/i.test(m[3]) ? './roadmap/guia.html#notificacoes' : './estrategia/#notificacoes';
 }
 if (!corpo) { console.log('commit sem novidade para avisar — nada a enviar'); process.exit(0); }
 
