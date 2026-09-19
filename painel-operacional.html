@@ -3,13 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Painel Operacional · Metas e Margens — Estação Sapatão</title>
+<title>Vendas · Metas e Margens — Estação Sapatão</title>
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E %3Cdefs%3E %3ClinearGradient id=%22bg%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E %3Cstop offset=%220%22 stop-color=%22%230B5748%22/%3E %3Cstop offset=%221%22 stop-color=%22%2300332A%22/%3E %3C/linearGradient%3E %3C/defs%3E %3Crect width=%22512%22 height=%22512%22 fill=%22url(%23bg)%22/%3E %3C%21-- bussola: agulha laranja apontando o norte --%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%22164%22 fill=%22none%22 stroke=%22%23F5F3EC%22 stroke-width=%2230%22 opacity=%220.85%22/%3E %3Cpolygon points=%22256,110 312,256 200,256%22 fill=%22%23EC6C22%22/%3E %3Cpolygon points=%22256,402 200,256 312,256%22 fill=%22%23F5F3EC%22 opacity=%220.8%22/%3E %3Ccircle cx=%22256%22 cy=%22256%22 r=%2224%22 fill=%22%2300332A%22/%3E %3C/svg%3E">
 <script>window.SAPATAO_APP='operacional';</script>
 <script src="roadmap/auth.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 
 :root{
@@ -52,7 +53,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:va
 .chip b{color:var(--ink);font-weight:600}
 
 /* progress rail */
-.rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:22px}
+.rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--line);border:1px solid #EBEEF3;border-radius:16px;overflow:hidden;margin-top:22px;box-shadow:var(--shadow)}
 .railcell{background:var(--surf);padding:14px 16px 15px}
 .railtop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:3px}
 .railname{font-size:12.5px;font-weight:600;color:var(--ink2)}
@@ -64,9 +65,9 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:va
 
 /* kpi */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin-top:12px}
-.kpi{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:15px 16px 16px;box-shadow:var(--shadow)}
-.kpi .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:600;font-family:Archivo,sans-serif}
-.kpi .big{font-size:29px;font-weight:600;letter-spacing:-.02em;margin-top:6px;line-height:1.05}
+.kpi{background:var(--surf);border:1px solid #EBEEF3;border-left:5px solid var(--laranja);border-radius:14px;padding:14px 16px 15px;box-shadow:var(--shadow)}
+.kpi .lbl{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);font-weight:600}
+.kpi .big{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:23px;font-weight:600;letter-spacing:-.01em;margin-top:6px;line-height:1.1}
 .kpi .big small{font-size:14px;color:var(--ink3);font-weight:500;margin-left:2px}
 .kpi .sub{font-size:12px;color:var(--ink3);margin-top:3px}
 .deltas{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
@@ -77,12 +78,12 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:va
 /* sections */
 section{margin-top:34px}
 .sechd{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
-.sechd h2{font-size:16.5px;font-weight:600;letter-spacing:-.005em}
+.sechd h2{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2)}
 .sechd p{margin:3px 0 0;font-size:12.5px;color:var(--ink3);max-width:62ch}
-.panel{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:var(--shadow)}
-.seg{display:inline-flex;background:var(--surf2);border:1px solid var(--line);border-radius:7px;padding:2px;gap:2px}
-.seg button{font:inherit;font-size:12px;font-weight:600;padding:5px 11px;border:0;border-radius:5px;background:transparent;color:var(--ink3);cursor:pointer;font-family:Archivo,sans-serif}
-.seg button[aria-pressed="true"]{background:var(--surf);color:var(--ink);box-shadow:var(--shadow)}
+.panel{background:var(--surf);border:1px solid #EBEEF3;border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.seg{display:inline-flex;gap:6px;flex-wrap:wrap}
+.seg button{font:inherit;font-size:12.5px;font-weight:700;padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink2);cursor:pointer;font-family:Archivo,sans-serif;box-shadow:var(--shadow)}
+.seg button[aria-pressed="true"]{background:var(--laranja);border-color:var(--laranja);color:#fff}
 .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin-bottom:12px}
 .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:5px}
@@ -98,7 +99,7 @@ svg .cat{font-family:Archivo,sans-serif;font-variant-numeric:normal}
 .vallbl{fill:var(--ink2);font-size:10.5px}
 
 /* table */
-.tblbox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surf);box-shadow:var(--shadow)}
+.tblbox{overflow-x:auto;border:1px solid #EBEEF3;border-radius:16px;background:var(--surf);box-shadow:var(--shadow)}
 table{border-collapse:collapse;width:100%;min-width:940px;font-size:12px}
 th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th{font-family:Archivo,sans-serif;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:600;background:var(--surf2);position:sticky;top:0}
@@ -116,7 +117,7 @@ tr.grp .code{background:var(--surf3)}
 
 /* readings */
 .reads{display:grid;grid-template-columns:repeat(auto-fit,minmax(275px,1fr));gap:12px}
-.read{background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:8px;padding:14px 15px;box-shadow:var(--shadow)}
+.read{background:var(--surf);border:1px solid #EBEEF3;border-left:4px solid var(--line2);border-radius:14px;padding:14px 15px;box-shadow:var(--shadow)}
 .read.crit{border-left-color:var(--bad)} .read.ok{border-left-color:var(--good)} .read.wn{border-left-color:var(--warn)}
 .read h3{font-size:13.5px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:7px}
 .tag{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:4px;font-weight:700;font-family:Archivo,sans-serif}
@@ -139,7 +140,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-si
 
 /* ---- árvore de crescimento ---- */
 .treewrap{display:grid;grid-template-columns:1fr;gap:12px}
-.tpanel{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:14px 16px 16px;box-shadow:var(--shadow)}
+.tpanel{background:var(--surf);border:1px solid #EBEEF3;border-radius:16px;padding:14px 16px 16px;box-shadow:var(--shadow)}
 .tphd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:6px}
 .tphd .eyebrow{font-size:11px}
 .tphd .un{font-size:11px;color:var(--ink3);font-family:"IBM Plex Mono",monospace}
@@ -179,11 +180,11 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-si
 
 
 /* ---- faturamento ---- */
-.fatpanel{background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-top:22px;overflow:hidden}
+.fatpanel{background:var(--surf);border:1px solid #EBEEF3;border-radius:16px;box-shadow:var(--shadow);margin-top:22px;overflow:hidden}
 .fathero{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:flex-end;justify-content:space-between;
-  padding:17px 18px 16px;background:linear-gradient(180deg,var(--accent-soft),transparent);border-bottom:1px solid var(--line)}
+  padding:17px 18px 16px;border-bottom:1px solid var(--line)}
 .fathero .l{min-width:0}
-.fathero .big{font-family:Archivo,sans-serif;font-size:37px;font-weight:700;letter-spacing:-.025em;line-height:1;margin-top:5px}
+.fathero .big{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:31px;font-weight:600;letter-spacing:-.01em;line-height:1;margin-top:5px}
 .fathero .big small{font-size:16px;font-weight:500;color:var(--ink3);letter-spacing:0}
 .fathero .sub{font-size:12px;color:var(--ink3);margin-top:6px}
 .fathero .r{display:flex;gap:9px;flex-wrap:wrap}
@@ -223,24 +224,46 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-si
 .growbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;display:block}
 @media (max-width:620px){ .fathero .big{font-size:29px} }
 
-/* ---- cabecalho no padrao do site ---- */
-.header{background:var(--verde);color:#fff;padding:16px 20px;display:flex;flex-wrap:wrap;gap:12px 18px;
-  align-items:center;justify-content:space-between;border-radius:0 0 16px 16px;margin-bottom:6px}
-.header-left{display:flex;align-items:center;gap:12px;min-width:0}
-.logo-circle{width:40px;height:40px;flex:0 0 40px;border-radius:50%;background:var(--laranja);color:#fff;
-  display:grid;place-items:center;font-family:Archivo,sans-serif;font-weight:700;font-size:15px;letter-spacing:.02em}
-.header-title{font-family:Archivo,sans-serif;font-weight:700;font-size:19px;letter-spacing:-.01em}
-.header-sub{font-size:12px;color:#BFD4CE;margin-top:1px}
-.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right}
-.period-badge{background:var(--laranja);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;
-  font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px}
-.header-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#BFD4CE;letter-spacing:.02em}
-.btn-voltar{color:#fff;font-size:12px;text-decoration:none;opacity:.9}
-.btn-voltar:hover{opacity:1;text-decoration:underline}
-@media (max-width:620px){.header{border-radius:0}.header-right{align-items:flex-start;text-align:left}}
+/* ---- cabeçalho no padrão dos painéis (título grande + linha de apoio) ---- */
+h1.pagetit{font-family:Archivo,sans-serif;font-weight:800;letter-spacing:-.01em;color:var(--tinta);font-size:clamp(22px,5.5vw,38px);line-height:1.1;white-space:normal}
+h1.pagetit span{color:var(--laranja);font-style:normal}
+.pagesub{font-family:Archivo,sans-serif;font-size:13.5px;line-height:1.5;color:var(--tinta-suave);margin-top:6px}
+.pagesub b{color:var(--tinta)}
+
+/* ---- decomposição · gaveta ---- */
+.dec{border-top:1px solid var(--line);background:var(--surf2)}
+.dec summary{list-style:none;cursor:pointer;padding:13px 16px;display:flex;align-items:center;gap:9px;
+  font-family:Archivo,sans-serif;font-size:13px;font-weight:600;color:var(--ink2);user-select:none}
+.dec summary::-webkit-details-marker{display:none}
+.dec summary:hover{color:var(--accent)}
+.dec summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.dec summary em{font-style:normal;font-weight:400;font-size:12px;color:var(--ink3)}
+.dec .ch{width:0;height:0;flex:0 0 9px;border-left:6px solid currentColor;
+  border-top:4.5px solid transparent;border-bottom:4.5px solid transparent;margin-left:2px;
+  transition:transform .18s ease}
+.dec[open] .ch{transform:rotate(90deg)}
+.decin{padding:2px 16px 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.dect{background:var(--surf);border:1px solid var(--line);border-radius:9px;padding:14px 16px 8px}
+.dech{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  border-bottom:2px solid var(--accent);padding-bottom:9px}
+.dech .lb{font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--accent)}
+.dech .tt{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:16px;font-weight:600}
+table.dt{width:100%;min-width:0;border-collapse:collapse;font-size:13px}
+table.dt td{padding:9px 0;border-bottom:1px solid var(--line);text-align:left;white-space:normal}
+table.dt tr:last-child td{border-bottom:none}
+table.dt td.v{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  text-align:right;font-weight:600;white-space:nowrap;width:132px}
+table.dt td.p{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  text-align:right;font-weight:600;width:62px;padding-left:12px}
+.decnota{grid-column:1/-1;font-size:11.5px;color:var(--ink3);line-height:1.55;margin:2px 0 0}
+@media (max-width:720px){ .decin{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:560px){ table.dt td.v{width:auto} .decin{padding-inline:12px} }
+
 /* barra superior padrão do site */
 .topbar{display:flex;position:sticky;top:0;z-index:70;background:#fff;color:var(--tinta);padding:12px 16px;align-items:center;gap:12px;min-height:58px}
 .topbar .t{font-family:Archivo,sans-serif;font-weight:700;font-size:16px;flex:1}
+.topbar button{font-size:18px;line-height:1;padding:6px 10px;cursor:pointer}
 /* estado de carregamento / erro */
 #carregando{max-width:1180px;margin:40px auto;padding:0 18px;color:var(--tinta-suave);font-size:14px}
 #carregando b{color:var(--tinta);font-family:Archivo,sans-serif;display:block;margin-bottom:4px}
@@ -252,23 +275,13 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-si
 <body>
 <div class="topbar">
   <button type="button" onclick="location.href='index.html'" aria-label="Voltar à central de acessos" title="Central de acessos">&#8592;</button>
-  <div class="t">Painel Operacional</div>
+  <div class="t">Vendas</div>
 </div>
 <div id="carregando"><b>Carregando o painel…</b>Destravando os dados do mês.</div>
 <div id="app" hidden>
-<div class="header">
-  <div class="header-left">
-    <div class="logo-circle">ES</div>
-    <div>
-      <div class="header-title">Painel Operacional</div>
-      <div class="header-sub">Metas e margens de venda · Rede Sapatão</div>
-    </div>
-  </div>
-  <div class="header-right">
-    <span class="period-badge" id="hdPeriodo">Setembro 2026</span>
-    <div class="header-meta" id="hdMeta"></div>
-    <a class="btn-voltar" href="index.html">← Central de acessos</a>
-  </div>
+<div class="wrap" style="padding-top:28px">
+  <h1 class="pagetit">Vendas</h1>
+  <div class="pagesub">Metas e margens de venda &middot; <b id="hdPeriodo"></b> &middot; <span id="hdMeta"></span></div>
 </div>
 
 
@@ -299,6 +312,10 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-si
       <div class="fhead"><span>Linha</span><span>set/25</span><span>ago/26</span><span>set/26 proj.</span><span>part.</span><span>vs ago</span><span>vs set/25</span><span id="fhDelta">crescimento ano</span><span>quantidade set/26</span></div>
       <div id="fatTree"></div>
     </div>
+    <details class="dec" id="decBox" hidden>
+      <summary><span class="ch" aria-hidden="true"></span>De onde vem o crescimento do faturamento<em>volume, preço e mix</em></summary>
+      <div class="decin" id="decTabs"></div>
+    </details>
   </div>
 
   <div class="kpis" id="kpis"></div>
@@ -398,7 +415,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-si
 "use strict";
 /* Dados do mês publicados CIFRADOS em operacional-conteudo.json (raiz) —
    mesmo cofre dos demais painéis. Cache local AINDA CIFRADO para abrir
-   na hora; a publicação é pelo cartão "Painel Operacional" das
+   na hora; a publicação é pelo cartão "Vendas" das
    Configurações (admin). */
 var CACHE='sapatao-conteudo-operacional-v1';
 var ARQUIVO='operacional-conteudo.json';
@@ -436,7 +453,7 @@ async function carrega(){
   }catch(e){}
   try{
     var doc=await pega();
-    if(!doc){falha('Os dados do mês ainda não foram publicados. Sendo admin, use o cartão "Painel Operacional" nas Configurações.');return;}
+    if(!doc){falha('Os dados do mês ainda não foram publicados. Sendo admin, use o cartão "Vendas" nas Configurações.');return;}
     if(doc.enc===1){try{localStorage.setItem(CACHE,JSON.stringify(doc));}catch(e){}}
     if(!abriu){
       var d2=await decifraDoc(doc);

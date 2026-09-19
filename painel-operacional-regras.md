@@ -49,6 +49,23 @@ O arquivo tem quatro blocos: `esquema`, `meta`, `linhas` / `grupos` (visão volu
 | `meta` / `pctMeta` | Meta do mês e atingimento no ritmo proporcional |
 | `metaOk` | Calculado no cliente: `meta > 1000`. Ver §4.1 |
 
+### 1.4 `decomp`
+
+Decomposição do acréscimo de faturamento, com duas chaves: `ano` (contra o mesmo mês do ano anterior) e `ant` (contra o mês anterior).
+
+| Campo | O que é |
+|---|---|
+| `totBase` / `totProj` / `dTot` | Faturamento do período base, projetado e a diferença |
+| `vol` | Efeito volume: `(Q1 − Q0) × P̄0`, onde `P̄0` é o preço médio do período base |
+| `mix` | Efeito mix: `Q1 × (Σ sᵢ¹·pᵢ⁰ − P̄0)` — deslocamento entre combustíveis de preços diferentes |
+| `pre` | Efeito preço: `Σ qᵢ¹ × (pᵢ¹ − pᵢ⁰)` |
+| `merc` | Variação de mercadorias e serviços |
+| `linhas[]` | Por combustível: `vol`, `pre`, `p0`, `p1`, `q0`, `q1`, `drec` |
+
+`vol + mix + pre + merc = dTot`, exatamente. Se não fechar, a alteração está errada.
+
+A decomposição aparece no painel como gaveta fechada no rodapé do totalizador de faturamento (`<details id="decBox">`); sem o bloco `decomp` no JSON, a gaveta fica oculta.
+
 ### 1.3 `fat`
 
 Objeto indexado por código, com as sete siglas de combustível, as quatro de mercadorias e cinco totalizadores: `FTOT`, `FCOMB`, `FOTTO`, `FDIESEL`, `FMERC`.
@@ -100,6 +117,14 @@ contribuição para o crescimento = Δ_da_linha ÷ Δ_do_total × 100
 ```
 
 Pode ser negativa — uma linha que encolheu contribui negativamente para o crescimento total.
+
+```
+decomposição do acréscimo de faturamento (combustíveis):
+  volume = (Q1 − Q0) × P̄0                 P̄0 = faturamento_base ÷ litros_base
+  mix    = Σ q1ᵢ·p0ᵢ − Q1 × P̄0
+  preço  = Σ q1ᵢ × (p1ᵢ − p0ᵢ)
+  volume + mix + preço + Δ_mercadorias = Δ_faturamento_total
+```
 
 ---
 
