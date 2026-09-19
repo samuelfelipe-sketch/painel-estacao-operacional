@@ -1605,9 +1605,18 @@ function parseFaturaItens(text){
   for (const raw of text.split(/\n/)){
     const line = raw.trim().replace(/"/g,'').replace(/[;,\t]+$/,'');
     if (!line) continue;
-    // último valor em formato monetário da linha (ignorando colunas em US$)
+    // último valor em formato monetário da linha (ignorando colunas em US$).
+    // O valor normalmente FECHA a linha (com sufixo D/C opcional) — ancorar no
+    // fim resolve ambiguidades como "Parcela 1/12,94,59" (CSV do Nubank), em
+    // que a vírgula da coluna cola num número da descrição e criaria um token
+    // falso ("12,94") engolindo o valor verdadeiro.
     let tok = null;
-    for (const m of line.matchAll(FAT_VAL)){
+    const fim = line.match(/(-?\s?(?:R\$\s*)?\d[\d.]*,\d{2})\s*[DC]?\s*$/i);
+    if (fim){
+      const antesF = line.slice(Math.max(0, fim.index-4), fim.index).toUpperCase();
+      if (!antesF.includes('US$') && !antesF.includes('U$')) tok = { 0: fim[1], index: fim.index };
+    }
+    if (!tok) for (const m of line.matchAll(FAT_VAL)){
       const antes = line.slice(Math.max(0, m.index-4), m.index).toUpperCase();
       if (antes.includes('US$') || antes.includes('U$')) continue;
       tok = m;
