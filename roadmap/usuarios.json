@@ -57,6 +57,19 @@
     "pe": "followup",
     "fluxo": "le"
    }
+  },
+  {
+   "id": "douglas",
+   "nome": "Douglas",
+   "hash": "08fa299aecc0c034e037033e3b0bbfaef26b78c742f16cf88ac3194502d6c394",
+   "admin": false,
+   "ativo": true,
+   "perm": {
+    "roadmap": "le",
+    "pe": "le",
+    "fluxo": "le",
+    "operacional": "le"
+   }
   }
  ]
 }
