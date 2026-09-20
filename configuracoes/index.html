@@ -133,7 +133,7 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <h3>Usuários e permissões</h3>
-    <p class="lead">Cada pessoa entra com o próprio usuário e senha. Permissão por painel: <b>Edita</b>, <b>Só follow-ups</b> (só no Planejamento), <b>Só lê</b> ou <b>Sem acesso</b>; no Fluxo de Caixa e em Vendas é <b>Acessa</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo.</p>
+    <p class="lead">Cada pessoa entra com o próprio usuário e senha. Permissão por painel: em Vendas e no Fluxo de Caixa é <b>Acessa</b> ou <b>Sem acesso</b>; nos Planejamentos é <b>Edita</b>, <b>Só follow-ups</b> (só no Estratégico), <b>Só lê</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo.</p>
     <div class="card">
       <div class="tbl"><table class="us-tbl" id="us-tbl"></table></div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
@@ -249,14 +249,14 @@ const PERMS_OPER=[['le','Acessa'],['nao','Sem acesso']];
 function sel(v,cls,i,ops){return '<select class="'+cls+'" data-i="'+i+'">'+(ops||PERMS).map(p=>'<option value="'+p[0]+'"'+(v===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select>';}
 function usRender(){
   if(!usDoc)return;
-  usTbl.innerHTML='<tr><th>Usuário</th><th>Plan. Comercial</th><th>Plan. Estratégico</th><th>Fluxo de Caixa</th><th>Vendas</th><th>Admin</th><th>Ativo</th><th>Senha</th></tr>'
+  usTbl.innerHTML='<tr><th>Usuário</th><th>Vendas</th><th>Fluxo de Caixa</th><th>Plan. Comercial</th><th>Plan. Estratégico</th><th>Admin</th><th>Ativo</th><th>Senha</th></tr>'
     +usDoc.usuarios.map((u,i)=>{
       const p=u.perm||{};
       return '<tr><td><input type="text" class="us-nome" data-i="'+i+'" value="'+esc(u.nome)+'"></td>'
+        +'<td>'+(u.admin?'<span class="pill">acessa</span>':sel(p.operacional||'nao','us-oper',i,PERMS_OPER))+'</td>'
+        +'<td>'+(u.admin?'<span class="pill">acessa</span>':sel(p.fluxo||'nao','us-fluxo',i,PERMS_FLUXO))+'</td>'
         +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.roadmap||'nao','us-roadmap',i))+'</td>'
         +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.pe||'nao','us-pe',i,PERMS_PE))+'</td>'
-        +'<td>'+(u.admin?'<span class="pill">acessa</span>':sel(p.fluxo||'nao','us-fluxo',i,PERMS_FLUXO))+'</td>'
-        +'<td>'+(u.admin?'<span class="pill">acessa</span>':sel(p.operacional||'nao','us-oper',i,PERMS_OPER))+'</td>'
         +'<td><input type="checkbox" class="us-admin" data-i="'+i+'"'+(u.admin?' checked':'')+'></td>'
         +'<td><input type="checkbox" class="us-ativo" data-i="'+i+'"'+(u.ativo!==false?' checked':'')+'></td>'
         +'<td><button type="button" class="us-mini us-senha" data-i="'+i+'">redefinir</button></td></tr>';
