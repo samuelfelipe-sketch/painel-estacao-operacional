@@ -121,8 +121,13 @@ tr:last-child td{border-bottom:none}
 
     <h3>Vendas</h3>
     <div class="card" style="max-width:520px">
-      <p class="lead" style="margin-bottom:8px">Publique os dados do mês — escolha o arquivo <b>dados-metas-margens.json</b> gerado a partir do relatório do Argo. Ele é cifrado aqui no navegador antes de subir; só quem tem a chave dos dados consegue abrir. As regras de preparação estão em <b>painel-operacional-regras.md</b>.</p>
-      <input type="file" id="op-arq" accept=".json,application/json" style="margin:6px 0 10px;max-width:100%">
+      <p class="lead" style="margin-bottom:8px">Publique os dados do mês — cole aqui o conteúdo do <b>dados-metas-margens.json</b> gerado a partir do relatório do Argo (ou escolha o arquivo). Ele é cifrado aqui no navegador antes de subir; só quem tem a chave dos dados consegue abrir. As regras de preparação estão em <b>painel-operacional-regras.md</b>.</p>
+      <textarea id="op-txt" rows="6" spellcheck="false" placeholder='Cole o JSON aqui — começa com {"meta": …' style="width:100%;box-sizing:border-box;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.4;padding:10px 12px;border:1px solid #E4E9F0;border-radius:12px;background:#fff;color:#16211C;resize:vertical;margin:6px 0 8px"></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <button type="button" class="btn" id="op-colar" style="margin-top:0;background:#fff;color:#16211C;border:1px solid #E4E9F0">Colar da área de transferência</button>
+        <span class="lead" style="margin:0">ou</span>
+        <input type="file" id="op-arq" accept=".json,application/json" style="max-width:100%">
+      </div>
       <button type="button" class="btn" id="op-publicar" style="margin-top:0">Cifrar e publicar</button>
       <p class="lead" id="op-msg" style="margin-top:8px;margin-bottom:0"></p>
     </div>
@@ -321,17 +326,38 @@ document.getElementById('us-salvar').addEventListener('click',async ()=>{
 });
 
 /* --- Vendas (ex-Painel Operacional): publicar os dados do mês (JSON do Argo, cifrado) --- */
+/* aceita o JSON colado na caixa ou, se ela estiver vazia, o arquivo escolhido */
+function opResumo(d){return (d.meta&&d.meta.mes_rotulo?d.meta.mes_rotulo:'mês sem rótulo')+' · corte '+(d.meta&&d.meta.data||'?')+' · '+(Array.isArray(d.linhas)?d.linhas.length:0)+' linhas'+(d.decomp?' · com decomposição':'');}
+function opConfere(){
+  const msgEl=document.getElementById('op-msg'), t=document.getElementById('op-txt').value.trim();
+  if(!t){msgEl.textContent='';return;}
+  try{const d=JSON.parse(t);
+    if(!d||!d.meta||!d.fat||!d.linhas){msgEl.textContent='Esse JSON não parece ser o do painel (faltam meta/linhas/fat).';return;}
+    msgEl.textContent='JSON ok: '+opResumo(d)+'. Pode publicar.';
+  }catch(e){msgEl.textContent='O texto colado não é um JSON válido — confira se copiou o arquivo inteiro.';}
+}
+document.getElementById('op-txt').addEventListener('input',opConfere);
+document.getElementById('op-colar').addEventListener('click',async()=>{
+  const msgEl=document.getElementById('op-msg');
+  try{
+    if(!navigator.clipboard||!navigator.clipboard.readText)throw new Error('sem acesso');
+    const t=await navigator.clipboard.readText();
+    if(!t.trim()){msgEl.textContent='A área de transferência está vazia.';return;}
+    document.getElementById('op-txt').value=t;opConfere();
+  }catch(e){msgEl.textContent='O navegador não liberou a área de transferência — toque na caixa acima e cole (Ctrl+V / segurar e Colar).';}
+});
 document.getElementById('op-publicar').addEventListener('click',async()=>{
   const msgEl=document.getElementById('op-msg');
+  const colado=document.getElementById('op-txt').value.trim();
   const f=document.getElementById('op-arq').files[0];
-  if(!f){msgEl.textContent='Escolha o arquivo primeiro.';return;}
+  if(!colado&&!f){msgEl.textContent='Cole o JSON ou escolha o arquivo primeiro.';return;}
   const tok=token();
   if(!tok){msgEl.textContent='Este aparelho não tem a chave de publicação — saia e entre com a senha na central.';return;}
   if(!window.sapataoCofre.dek()){msgEl.textContent='Este aparelho não tem a chave dos dados — saia e entre com a senha na central.';return;}
   msgEl.textContent='Cifrando e publicando…';
   try{
     let dados;
-    try{dados=JSON.parse(await f.text());}catch(e){msgEl.textContent='Esse arquivo não é um JSON válido.';return;}
+    try{dados=JSON.parse(colado||await f.text());}catch(e){msgEl.textContent=colado?'O texto colado não é um JSON válido.':'Esse arquivo não é um JSON válido.';return;}
     if(!dados||!dados.meta||!dados.fat||!dados.linhas){msgEl.textContent='Esse JSON não parece ser o do painel (faltam meta/linhas/fat).';return;}
     const cifrado=await window.sapataoCofre.cifra(dados);
     const url='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/operacional-conteudo.json';
@@ -343,7 +369,8 @@ document.getElementById('op-publicar').addEventListener('click',async()=>{
     const r=await fetch(url,{method:'PUT',headers:h,body:JSON.stringify(body)});
     if(!r.ok)throw new Error('HTTP '+r.status);
     try{localStorage.setItem('sapatao-conteudo-operacional-v1',JSON.stringify(cifrado));}catch(e){}
-    msgEl.textContent='Publicado! O painel Vendas abre o mês novo em ~1–2 minutos.';
+    document.getElementById('op-txt').value='';
+    msgEl.textContent='Publicado ('+opResumo(dados)+')! O painel Vendas abre o mês novo em ~1–2 minutos.';
   }catch(e){msgEl.textContent='Não consegui publicar ('+e.message+').';}
 });
 
