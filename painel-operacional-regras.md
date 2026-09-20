@@ -1,4 +1,4 @@
-# Esquema de dados e regras de cálculo — Painel Operacional
+# Esquema de dados e regras de cálculo — painel Vendas
 
 > Repositório público: os exemplos numéricos do documento original foram
 > substituídos por descrições. Os valores reais vivem só no JSON cifrado.
@@ -24,7 +24,9 @@ O arquivo tem quatro blocos: `esquema`, `meta`, `linhas` / `grupos` (visão volu
 | `gerado` | `"19/09/2026 10:16"` | Geração do relatório no Argo |
 | `unidades` | `"3, 4, 5"` | Unidades incluídas |
 | `mes_rotulo` | `"Setembro 2026"` | Rótulo do cabeçalho |
-| `ant_rotulo` / `ano_rotulo` | `"ago/26"` / `"set/25"` | Rótulos curtos usados nas colunas |
+| `mes_ref` / `ant_ref` / `ano_ref` | `"2026-09"` / `"2026-08"` / `"2025-09"` | **Obrigatórios**: todos os rótulos de período da tela (colunas, legendas, botões, notas, leituras) são derivados deles — nada de mês fica escrito no HTML |
+| `ant_rotulo` / `ano_rotulo` | `"ago/26"` / `"set/25"` | Rótulos curtos; usados só como reserva se faltar o `*_ref` |
+| `argo_versao` | `"11.09.02"` | Opcional; aparece no rodapé |
 
 ### 1.2 `linhas` e `grupos`
 
@@ -65,6 +67,10 @@ Decomposição do acréscimo de faturamento, com duas chaves: `ano` (contra o me
 `vol + mix + pre + merc = dTot`, exatamente. Se não fechar, a alteração está errada.
 
 A decomposição aparece no painel como gaveta fechada no rodapé do totalizador de faturamento (`<details id="decBox">`); sem o bloco `decomp` no JSON, a gaveta fica oculta.
+
+### 1.5 `leituras` (opcional)
+
+Sem este bloco, o painel **gera as leituras a partir dos dados** (linha que cresce e perde margem, linhas abaixo da meta, margem recomposta com volume parado, agregado, mix V-Power, metas inválidas) — o texto muda de sinal e de protagonista conforme o mês. Se o JSON trouxer `leituras: [{k, t, p, a}]` (`k` = `crit` | `ok` | `wn`; `t` título, `p` parágrafo, `a` pergunta para a reunião), elas substituem as automáticas. Texto puro: HTML é escapado.
 
 ### 1.3 `fat`
 
@@ -174,7 +180,8 @@ A tabela de margens e a de projeção acumulam volumes de combustíveis ligeiram
 3. Atualizar `meta`: `dias_dec`, `dias_mes`, `dias_ant`, `dias_ano`, `data`, `gerado` e os rótulos. **Conferir os dias do mês anterior** — é o que sustenta a coluna de ritmo diário.
 4. Recalcular os campos derivados pelas fórmulas da §2.
 5. Conferir a hierarquia da §3 antes de cifrar.
-6. Publicar pelo cartão **Painel Operacional** nas Configurações do site (admin): o navegador cifra o JSON e commita apenas o envelope `operacional-conteudo.json`. O JSON em claro nunca entra no repositório.
+6. Publicar pelo cartão **Vendas** nas Configurações do site (admin): o navegador cifra o JSON e commita apenas o envelope `operacional-conteudo.json`. O JSON em claro nunca entra no repositório.
+7. Nos outros aparelhos o painel abre do cache e, ao ver que o arquivo publicado mudou, **redesenha tudo sozinho** na mesma visita (sem precisar de Sair). O Sair também limpa esse cache.
 
 **Conferência mínima antes de publicar:** a projeção de cada linha bate com a coluna PROJEÇÃO do PDF; os filhos somam o pai nos dois lados; nenhum `% meta` absurdo passou sem a marca de meta inválida.
 
