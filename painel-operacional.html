@@ -289,7 +289,7 @@ table.dt td.p{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular
   <div class="fatpanel">
     <div class="fathero">
       <div class="l">
-        <div class="eyebrow">Faturamento total · projeção setembro/2026</div>
+        <div class="eyebrow" id="fatEyebrow">Faturamento total · projeção</div>
         <div class="big" id="fatBig"></div>
         <div class="sub" id="fatSub"></div>
       </div>
@@ -299,8 +299,8 @@ table.dt td.p{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular
       <span class="fatnote">Abre por combustíveis e mercadorias, e daí por ciclo e por linha. Os filhos somam exatamente o pai.</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <div class="seg" role="group" aria-label="Base do crescimento">
-          <button id="fAno" aria-pressed="true">Δ vs set/25</button>
-          <button id="fMes" aria-pressed="false">Δ vs ago/26</button>
+          <button id="fAno" aria-pressed="true">Δ vs ano</button>
+          <button id="fMes" aria-pressed="false">Δ vs mês</button>
         </div>
         <div class="seg" role="group" aria-label="Detalhe">
           <button id="fAll" aria-pressed="true">Tudo aberto</button>
@@ -309,7 +309,7 @@ table.dt td.p{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular
       </div>
     </div>
     <div class="fatbody">
-      <div class="fhead"><span>Linha</span><span>set/25</span><span>ago/26</span><span>set/26 proj.</span><span>part.</span><span>vs ago</span><span>vs set/25</span><span id="fhDelta">crescimento ano</span><span>quantidade set/26</span></div>
+      <div class="fhead"><span>Linha</span><span data-r="ano"></span><span data-r="ant"></span><span><span data-r="cur"></span> proj.</span><span>part.</span><span>vs <span data-r="antMes"></span></span><span>vs <span data-r="ano"></span></span><span id="fhDelta">crescimento ano</span><span>quantidade <span data-r="cur"></span></span></div>
       <div id="fatTree"></div>
     </div>
     <details class="dec" id="decBox" hidden>
@@ -321,14 +321,14 @@ table.dt td.p{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular
   <div class="kpis" id="kpis"></div>
 
   <div class="rail" id="rail"></div>
-  <p style="font-size:11.5px;color:var(--ink3);margin:8px 2px 0">A barra mostra o acumulado do mês; o traço vertical marca onde a meta deveria estar no 18º dia (60% do mês). O percentual compara os dois.</p>
+  <p id="railNota" style="font-size:11.5px;color:var(--ink3);margin:8px 2px 0"></p>
 
 
   <section>
     <div class="sechd">
       <div>
         <h2>Volume por linha</h2>
-        <p>Projeção linear do mês (acumulado ÷ 18 × 30) contra agosto/26 e setembro/25 fechados.</p>
+        <p id="volNota"></p>
       </div>
       <div class="seg" role="group" aria-label="Base de comparação">
         <button id="bMes" aria-pressed="true">Total do mês</button>
@@ -337,10 +337,10 @@ table.dt td.p{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular
     </div>
     <div class="panel">
       <div class="legend">
-        <span><i style="background:var(--p1)"></i>Set/2025</span>
-        <span><i style="background:var(--p2)"></i>Ago/2026</span>
-        <span><i style="background:var(--p3)"></i>Set/2026 projetado</span>
-        <span style="color:var(--ink3)">— agosto tem 31 dias; setembro, 30. O ritmo diário neutraliza isso.</span>
+        <span><i style="background:var(--p1)"></i><span data-r="anoL"></span></span>
+        <span><i style="background:var(--p2)"></i><span data-r="antL"></span></span>
+        <span><i style="background:var(--p3)"></i><span data-r="curL"></span> projetado</span>
+        <span id="lgNota" style="color:var(--ink3)"></span>
       </div>
       <div class="eyebrow" style="margin-bottom:6px">Combustíveis · litros</div>
       <div class="chartbox"><svg id="cVolComb" role="img" aria-label="Volume de combustíveis por linha"></svg></div>
@@ -358,9 +358,9 @@ table.dt td.p{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular
     </div>
     <div class="panel">
       <div class="legend">
-        <span><i style="background:var(--p1);border-radius:50%"></i>Set/2025</span>
-        <span><i style="background:var(--p2);border-radius:50%"></i>Ago/2026</span>
-        <span><i style="background:var(--p3);border-radius:50%"></i>Set/2026</span>
+        <span><i style="background:var(--p1);border-radius:50%"></i><span data-r="anoL"></span></span>
+        <span><i style="background:var(--p2);border-radius:50%"></i><span data-r="antL"></span></span>
+        <span><i style="background:var(--p3);border-radius:50%"></i><span data-r="curL"></span></span>
       </div>
       <div class="chartbox"><svg id="cMarg" role="img" aria-label="Margem unitária por combustível"></svg></div>
     </div>
@@ -370,7 +370,7 @@ table.dt td.p{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular
     <div class="sechd">
       <div>
         <h2>Onde a margem em reais realmente mudou</h2>
-        <p>Diferença entre a margem bruta projetada para setembro e a margem realizada em agosto, linha a linha. É o efeito líquido de volume e preço juntos.</p>
+        <p id="deltaNota"></p>
       </div>
     </div>
     <div class="panel"><div class="chartbox"><svg id="cDelta" role="img" aria-label="Variação da margem bruta em reais por linha"></svg></div></div>
@@ -380,7 +380,7 @@ table.dt td.p{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular
     <div class="sechd">
       <div>
         <h2>O crescimento está pagando?</h2>
-        <p>Eixo horizontal: variação do volume no ritmo diário contra agosto. Eixo vertical: variação da margem unitária. O que cai no quadrante inferior direito cresce vendendo mais barato.</p>
+        <p id="quadNota"></p>
       </div>
     </div>
     <div class="panel"><div class="chartbox"><svg id="cQuad" role="img" aria-label="Volume versus margem por linha"></svg></div></div>
@@ -423,8 +423,9 @@ var RAW='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-op
 var API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/'+ARQUIVO;
 var abriu=false;
 function mostra(dados){
-  if(abriu)return;abriu=true;
   window.DADOS_PAINEL=dados;
+  if(abriu){ if(window.renderPainel)window.renderPainel(dados); return; } /* arquivo mais novo que o cache: redesenha no lugar */
+  abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
   var s=document.createElement('script');s.src='painel-operacional.js';document.body.appendChild(s);
@@ -447,18 +448,21 @@ async function pega(){
 async function carrega(){
   var A=window.sapataoAuth;
   if(!A||!A.user||!A.temAcesso('operacional'))return; /* o auth.js cuida da tela de acesso */
+  var c=null;
   try{
-    var c=JSON.parse(localStorage.getItem(CACHE)||'null');
+    c=JSON.parse(localStorage.getItem(CACHE)||'null');
     if(c){var d=await decifraDoc(c);if(d)mostra(d);}
-  }catch(e){}
+  }catch(e){c=null;}
   try{
     var doc=await pega();
     if(!doc){falha('Os dados do mês ainda não foram publicados. Sendo admin, use o cartão "Vendas" nas Configurações.');return;}
-    if(doc.enc===1){try{localStorage.setItem(CACHE,JSON.stringify(doc));}catch(e){}}
-    if(!abriu){
+    /* o cache só serviu para abrir na hora: se o arquivo publicado é outro, ele manda */
+    var mudou=!c||c.ct!==doc.ct||c.iv!==doc.iv;
+    if(doc.enc===1&&mudou){try{localStorage.setItem(CACHE,JSON.stringify(doc));}catch(e){}}
+    if(!abriu||mudou){
       var d2=await decifraDoc(doc);
       if(d2)mostra(d2);
-      else falha('Este aparelho ainda não tem a chave dos dados. Saia e entre com o seu usuário e senha na central.');
+      else if(!abriu)falha('Este aparelho ainda não tem a chave dos dados. Saia e entre com o seu usuário e senha na central.');
     }
   }catch(e){falha('Sem conexão para buscar os dados ('+e.message+').');}
 }
