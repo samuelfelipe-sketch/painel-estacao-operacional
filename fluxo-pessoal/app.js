@@ -277,11 +277,17 @@ function prevPer(cid, meses){ return meses.reduce((s,m)=>s+prev(cid,m),0); }
 function linha(nome, pv, rv, cls, extra){
   return `<tr class="${cls}" ${extra||''}><td class="lab">${nome}</td>${cell(pv,'prevcol')}${cell(rv)}</tr>`;
 }
+// Aportes e resgates não são despesa nem renda: mudam o dinheiro de bolso
+// (conta corrente ↔ patrimônio). Nas visões de fluxo eles saem de
+// Recebimentos/Pagamentos e formam o bloco próprio "Investimentos", entre a
+// sobra operacional e o fluxo de caixa — o caixa final não muda.
+// Rendimentos creditados em conta seguem como renda.
+const ehInv = c => (c.tipo === 'P' && c.grupo === 'Investimentos') || c.id === 'resgates';
 function blocoGrupos(tipo, meses, out){
   const grupos = tipo==='R' ? GRUPOS_R : GRUPOS_P;
   let tp=0, tr=0, rows='';
   for (const g of grupos){
-    const cs = contasAtivas().filter(c=>c.grupo===g && c.tipo===tipo);
+    const cs = contasAtivas().filter(c=>c.grupo===g && c.tipo===tipo && !ehInv(c));
     if (!cs.length) continue;
     const pv = cs.reduce((s,c)=>s+prevPer(c.id,meses),0);
     const rv = cs.reduce((s,c)=>s+realPer(c.id,meses),0);
@@ -302,15 +308,25 @@ function renderResumo(meses){
   const temReal = meses.some(m=>m<=CORTE_M);
   const rec={}, pag={};
   blocoGrupos('R', meses, rec); blocoGrupos('P', meses, pag);
+  const invCs = contasAtivas().filter(ehInv);
+  const invP = invCs.reduce((s,c)=>s+prevPer(c.id,meses),0);
+  const invR = invCs.reduce((s,c)=>s+realPer(c.id,meses),0);
   const ini = saldoNoInicio(meses[0]), fim = saldoNoFim(meses[meses.length-1]);
-  const fimPrev = ini + rec.tp + pag.tp;
+  const fimPrev = ini + rec.tp + pag.tp + invP;
   let h = `<table><thead><tr><th class="lab"></th><th>Previsto</th><th>Realizado</th></tr></thead><tbody>`;
   h += `<tr class="caixa"><td class="lab">Caixa no início</td>${cell(ini,'prevcol')}${cell(ini)}</tr>`;
   h += linha('Recebimentos', rec.tp, temReal?rec.tr:null, 'tot sec'+(secs.has('R')?' open':''), `onclick="tgSec('R')"`);
   if (secs.has('R')) h += rec.rows;
   h += linha('Pagamentos', pag.tp, temReal?pag.tr:null, 'tot sec'+(secs.has('P')?' open':''), `onclick="tgSec('P')"`);
   if (secs.has('P')) h += pag.rows;
-  h += linha('FLUXO DE CAIXA', rec.tp+pag.tp, temReal?(rec.tr+pag.tr):null, 'fluxo');
+  h += linha('Sobra operacional', rec.tp+pag.tp, temReal?(rec.tr+pag.tr):null, 'sobra');
+  h += linha('Investimentos', invP, temReal?invR:null, 'tot sec'+(secs.has('I')?' open':''), `onclick="tgSec('I')"`);
+  if (secs.has('I')) for (const c of invCs){
+    const cp=prevPer(c.id,meses), cr=realPer(c.id,meses);
+    if (Math.round(cp)===0 && Math.round(cr)===0) continue;
+    h += `<tr class="sub"><td class="lab" onclick="verLanc('${c.id}')">${c.nome}</td>${cell(cp,'prevcol')}${cell(cr)}</tr>`;
+  }
+  h += linha('FLUXO DE CAIXA', rec.tp+pag.tp+invP, temReal?(rec.tr+pag.tr+invR):null, 'fluxo');
   h += `<tr class="caixa"><td class="lab">Caixa no fim</td>${cell(fimPrev,'prevcol')}${temReal?cell(fim):'<td>·</td>'}</tr>`;
   h += '</tbody></table>';
   document.getElementById('ftabela').innerHTML = h;
@@ -327,7 +343,7 @@ function renderMeses(meses){
     return `<tr class="${cls}" ${extra||''}><td class="lab" ${labExtra||''}>${nome}</td>${vs.map((v,i)=>cell(v, meses[i]>CORTE_M?'prevcol':'')).join('')}${cell(tot)}</tr>`;
   };
   h += `<tr class="caixa"><td class="lab">Caixa no início</td>${meses.map(m=>cell(saldoNoInicio(m), m>CORTE_M?'prevcol':'')).join('')}<td>·</td></tr>`;
-  const recIds = cs.filter(c=>c.tipo==='R'), pagIds = cs.filter(c=>c.tipo==='P');
+  const recIds = cs.filter(c=>c.tipo==='R' && !ehInv(c)), pagIds = cs.filter(c=>c.tipo==='P' && !ehInv(c)), invIds = cs.filter(ehInv);
   const bloco = (grupos, pool) => {
     for (const g of grupos){
       const ids = pool.filter(c=>c.grupo===g); if (!ids.length) continue;
@@ -339,6 +355,9 @@ function renderMeses(meses){
   if (secs.has('R')) bloco(GRUPOS_R, recIds);
   h += linhaM('Pagamentos', pagIds, 'tot sec'+(secs.has('P')?' open':''), `onclick="tgSec('P')"`);
   if (secs.has('P')) bloco(GRUPOS_P, pagIds);
+  h += linhaM('Sobra operacional', [...recIds, ...pagIds], 'sobra');
+  h += linhaM('Investimentos', invIds, 'tot sec'+(secs.has('I')?' open':''), `onclick="tgSec('I')"`);
+  if (secs.has('I')) for (const c of invIds) h += linhaM(c.nome, [c], 'sub', '', `onclick="event.stopPropagation();verLanc('${c.id}')"`);
   h += linhaM('FLUXO DE CAIXA', cs, 'fluxo');
   h += `<tr class="caixa"><td class="lab">Caixa no fim</td>${meses.map(m=>cell(saldoNoFim(m), m>CORTE_M?'prevcol':'')).join('')}<td>·</td></tr>`;
   h += '</tbody></table>';
@@ -460,7 +479,7 @@ function renderAno27(){
   const iniAno = saldoProj[12];
   const fluxoTot = D.contas.reduce((s,c)=>s+prev27(c.id),0);
   h += `<tr class="caixa"><td class="lab">Caixa no início</td>${meses.map((m,i)=>cell(iniAno + fluxoTot*i, 'prevcol')).join('')}<td>·</td></tr>`;
-  const recIds = cs.filter(c=>c.tipo==='R'), pagIds = cs.filter(c=>c.tipo==='P');
+  const recIds = cs.filter(c=>c.tipo==='R' && !ehInv(c)), pagIds = cs.filter(c=>c.tipo==='P' && !ehInv(c)), invIds = cs.filter(ehInv);
   const bloco = (grupos, pool) => {
     for (const g of grupos){
       const ids = pool.filter(c=>c.grupo===g); if (!ids.length) continue;
@@ -472,6 +491,9 @@ function renderAno27(){
   if (secs.has('R')) bloco(GRUPOS_R, recIds);
   h += linha27('Pagamentos', pagIds, 'tot sec'+(secs.has('P')?' open':''), `onclick="tgSec('P')"`);
   if (secs.has('P')) bloco(GRUPOS_P, pagIds);
+  h += linha27('Sobra operacional', [...recIds, ...pagIds], 'sobra');
+  h += linha27('Investimentos', invIds, 'tot sec'+(secs.has('I')?' open':''), `onclick="tgSec('I')"`);
+  if (secs.has('I')) for (const c of invIds) h += linha27(c.nome, [c], 'sub', '', '');
   h += linha27('FLUXO DE CAIXA', cs, 'fluxo');
   h += `<tr class="caixa"><td class="lab">Caixa no fim</td>${meses.map(m=>cell(iniAno + fluxoTot*m, 'prevcol')).join('')}<td>·</td></tr>`;
   h += '</tbody></table>';
@@ -567,7 +589,7 @@ function renderSemanas(m){
   const lr = (nome, ids, cls, skipVazio, extra, labExtra) => { const vs=sem.map(s=>somaSem(ids,s)); const t=vs.reduce((a,b)=>a+b,0);
     if (skipVazio && Math.round(Math.abs(t))===0) return '';
     return `<tr class="${cls}" ${extra||''}><td class="lab" ${labExtra||''}>${nome}</td>${vs.map((v,i)=>cell(v, colPrev(sem[i])?'prevcol':'')).join('')}${cell(t)}</tr>`; };
-  const recIds=cs.filter(c=>c.tipo==='R'), pagIds=cs.filter(c=>c.tipo==='P');
+  const recIds=cs.filter(c=>c.tipo==='R' && !ehInv(c)), pagIds=cs.filter(c=>c.tipo==='P' && !ehInv(c)), invIds=cs.filter(ehInv);
   const bloco = (grupos, pool) => {
     for (const g of grupos){
       const ids = pool.filter(c=>c.grupo===g); if (!ids.length) continue;
@@ -581,6 +603,9 @@ function renderSemanas(m){
   if (secs.has('R')) bloco(GRUPOS_R, recIds);
   h += lr('Pagamentos', pagIds, 'tot sec'+(secs.has('P')?' open':''), false, `onclick="tgSec('P')"`);
   if (secs.has('P')) bloco(GRUPOS_P, pagIds);
+  h += lr('Sobra operacional', [...recIds, ...pagIds], 'sobra', false);
+  h += lr('Investimentos', invIds, 'tot sec'+(secs.has('I')?' open':''), false, `onclick="tgSec('I')"`);
+  if (secs.has('I')) for (const c of invIds) h += lr(c.nome, [c], 'sub', true, '', `onclick="event.stopPropagation();verLanc('${c.id}')"`);
   h += lr('FLUXO DE CAIXA', cs, 'fluxo');
   // caixa ao fim de cada semana — sempre consolidado, como na visão mensal
   let saldo = saldoNoInicio(m);
@@ -684,7 +709,8 @@ function verLanc(cid){
 function renderBarras(meses){
   const ano27 = per.t==='y27';
   const temReal = !ano27 && meses.some(m=>m<=CORTE_M);
-  const gs = GRUPOS_P.map(g=>{
+  // aportes não são gasto — ficam fora do "para onde vai o dinheiro"
+  const gs = GRUPOS_P.filter(g => g !== 'Investimentos').map(g=>{
     const ids = contasAtivas().filter(c=>c.grupo===g&&c.tipo==='P');
     const v = ano27 ? ids.reduce((s,c)=>s+12*prev27(c.id),0)
       : temReal ? ids.reduce((s,c)=>s+realPer(c.id,meses),0) : ids.reduce((s,c)=>s+prevPer(c.id,meses),0);
