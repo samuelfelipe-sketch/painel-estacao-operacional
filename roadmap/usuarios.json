@@ -19,9 +19,10 @@
    "admin": false,
    "ativo": true,
    "perm": {
-    "roadmap": "nao",
+    "roadmap": "le",
     "pe": "followup",
-    "operacional": "le"
+    "operacional": "le",
+    "fluxo": "nao"
    }
   },
   {
@@ -31,7 +32,7 @@
    "admin": false,
    "ativo": true,
    "perm": {
-    "roadmap": "nao",
+    "roadmap": "le",
     "pe": "followup"
    }
   },
