@@ -27,7 +27,7 @@
   {
    "id": "gabi",
    "nome": "Gabrielle",
-   "hash": "08fa299aecc0c034e037033e3b0bbfaef26b78c742f16cf88ac3194502d6c394",
+   "hash": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
    "admin": false,
    "ativo": true,
    "perm": {
@@ -50,7 +50,7 @@
   {
    "id": "sonia",
    "nome": "Sonia",
-   "hash": "490114eee52db1b647846d38e08ee96d29dc03aaa850626b8a6805d4a61800b7",
+   "hash": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
    "admin": false,
    "ativo": true,
    "perm": {
@@ -70,6 +70,19 @@
     "roadmap": "le",
     "pe": "le",
     "fluxo": "le",
+    "operacional": "le"
+   }
+  },
+  {
+   "id": "rafael",
+   "nome": "Rafael",
+   "hash": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
+   "admin": false,
+   "ativo": true,
+   "perm": {
+    "roadmap": "nao",
+    "pe": "followup",
+    "fluxo": "nao",
     "operacional": "le"
    }
   }
