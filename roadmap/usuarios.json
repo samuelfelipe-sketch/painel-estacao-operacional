@@ -20,7 +20,8 @@
    "ativo": true,
    "perm": {
     "roadmap": "nao",
-    "pe": "followup"
+    "pe": "followup",
+    "operacional": "le"
    }
   },
   {
@@ -55,7 +56,8 @@
    "perm": {
     "roadmap": "le",
     "pe": "followup",
-    "fluxo": "le"
+    "fluxo": "le",
+    "operacional": "le"
    }
   },
   {
