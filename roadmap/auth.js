@@ -23,6 +23,22 @@
     if (ehApp && ehIpad) document.documentElement.classList.add('app-janela');
   } catch (e) {}
 
+  /* Tamanho na tela escolhido para ESTE aparelho (Configurações → "Tamanho
+     na tela"): vira --zoom-usuario, que o tema.css multiplica pelo zoom
+     automático por largura de tela. Fica só neste navegador; o Sair não apaga. */
+  var ZOOM_CHAVE = 'sapatao-zoom-v1';
+  function aplicaZoom(v) { try { document.documentElement.style.setProperty('--zoom-usuario', String(v)); } catch (e) {} }
+  function zoomValido(v) { v = parseFloat(v); return (v >= 0.5 && v <= 1.5) ? v : 1; }
+  window.sapataoZoom = {
+    valor: function () { try { return zoomValido(localStorage.getItem(ZOOM_CHAVE)); } catch (e) { return 1; } },
+    define: function (v) {
+      v = zoomValido(v);
+      try { if (v === 1) localStorage.removeItem(ZOOM_CHAVE); else localStorage.setItem(ZOOM_CHAVE, String(v)); } catch (e) {}
+      aplicaZoom(v); return v;
+    }
+  };
+  aplicaZoom(window.sapataoZoom.valor());
+
   /* Fallback embutido (mantém o Samuel entrando mesmo sem rede).
      A lista viva fica em roadmap/usuarios.json. */
   var USUARIOS_FALLBACK = [
