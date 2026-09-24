@@ -42,8 +42,8 @@ body{font-family:'Archivo',sans-serif;background:var(--fundo);color:var(--verde)
 .topbar .t i{color:var(--laranja);font-style:italic}
 
 /* ---------- Layout ---------- */
-.layout{display:flex;min-height:100vh}
-aside{width:var(--sidebar-w);flex-shrink:0;background:var(--verde);color:#EBEBEA;display:flex;flex-direction:column;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
+.layout{display:flex;min-height:calc(100vh / var(--zoom,1))}
+aside{width:var(--sidebar-w);flex-shrink:0;background:var(--verde);color:#EBEBEA;display:flex;flex-direction:column;position:sticky;top:58px;height:calc(100vh / var(--zoom,1) - 58px);overflow-y:auto}
 @media (min-width:901px){#menu-btn{display:none}}
 .brand{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,.12)}
 .brand .placa{background:#EBEBEA;border-radius:10px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
