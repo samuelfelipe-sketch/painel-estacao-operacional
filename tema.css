@@ -114,12 +114,15 @@ html.app-janela .btn-voltar{left:92px}
 /* ---------- telas largas: densidade ----------
    O site foi desenhado para ~1280–1440px; em monitores maiores tudo cresce
    demais. O zoom escala a página inteira (fontes, cartões, gráficos e o
-   iframe do Fluxo) sem reescrever cada regra em px. O fator fica em --zoom
-   porque, sob zoom, 100vh passa a valer viewport×zoom: as alturas de tela
-   (menu lateral, iframe) dividem por ele. */
-:root{--zoom:1}
-@media (min-width:1600px){:root{--zoom:.92}}
-@media (min-width:1800px){:root{--zoom:.86}}
-@media (min-width:2200px){:root{--zoom:.8}}
-@media print{:root{--zoom:1}}
+   iframe do Fluxo) sem reescrever cada regra em px. --zoom-tela vem da
+   largura; --zoom-usuario é a escolha por aparelho (Configurações →
+   "Tamanho na tela", gravada pelo auth.js), porque a largura em px não
+   diz o tamanho físico do monitor. O produto fica em --zoom porque, sob
+   zoom, 100vh passa a valer viewport×zoom: as alturas de tela (menu
+   lateral, iframe) dividem por ele. */
+:root{--zoom-tela:1;--zoom:calc(var(--zoom-tela) * var(--zoom-usuario,1))}
+@media (min-width:1500px){:root{--zoom-tela:.92}}
+@media (min-width:1800px){:root{--zoom-tela:.86}}
+@media (min-width:2200px){:root{--zoom-tela:.8}}
+@media print{:root{--zoom-tela:1;--zoom-usuario:1}}
 body{zoom:var(--zoom)}

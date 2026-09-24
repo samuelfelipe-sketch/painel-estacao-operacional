@@ -48,6 +48,9 @@ tr:last-child td{border-bottom:none}
 .topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:#16211C;font-size:18px;line-height:1;padding:6px 10px;cursor:pointer}
 .topbar .t{font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;flex:1;color:#16211C}
 .campo:focus,.us-tbl select:focus{outline:2px solid var(--laranja);outline-offset:1px}
+.zm-seg{display:flex;gap:6px;flex-wrap:wrap}
+.zm-seg button{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;padding:8px 14px;border-radius:999px;border:1px solid #E4E9F0;background:#fff;color:#16211C;cursor:pointer;box-shadow:0 1px 2px rgba(16,24,40,.06)}
+.zm-seg button[aria-pressed="true"]{background:var(--laranja);border-color:var(--laranja);color:#fff}
 </style>
 <link rel="stylesheet" href="../tema.css">
 </head>
@@ -73,6 +76,18 @@ tr:last-child td{border-bottom:none}
     <input type="password" class="campo" id="sn-conf" placeholder="Repetir a senha nova" autocomplete="off">
     <button type="button" class="btn" id="sn-trocar">Alterar minha senha</button>
     <p class="lead" id="sn-msg" style="margin-top:8px;margin-bottom:0"></p>
+  </div>
+
+  <h3>Tamanho na tela</h3>
+  <div class="card" style="max-width:520px">
+    <p class="lead" style="margin-bottom:10px">Escolha o tamanho dos painéis <b>neste aparelho</b> — fica salvo só neste navegador e vale para todos os painéis. Em telas largas o site já reduz um pouco sozinho; aqui você ajusta por cima.</p>
+    <div class="zm-seg" id="zm-seg" role="group" aria-label="Tamanho na tela">
+      <button type="button" data-z="0.8">Menor</button>
+      <button type="button" data-z="0.9">Compacto</button>
+      <button type="button" data-z="1">Padrão</button>
+      <button type="button" data-z="1.1">Maior</button>
+    </div>
+    <p class="lead" id="zm-msg" style="margin-top:8px;margin-bottom:0"></p>
   </div>
 
   <h3 id="notificacoes">Notificações no celular</h3>
@@ -324,6 +339,19 @@ document.getElementById('us-salvar').addEventListener('click',async ()=>{
     usCarrega();
   }catch(e){usDiz('Não consegui gravar ('+e.message+').',true);}
 });
+
+/* --- Tamanho na tela (preferência deste aparelho; o auth.js aplica em todo painel) --- */
+(function(){
+  const seg=document.getElementById('zm-seg'),msg=document.getElementById('zm-msg');
+  if(!seg||!window.sapataoZoom)return;
+  function pinta(){const v=window.sapataoZoom.valor();seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(parseFloat(b.dataset.z)===v)));}
+  seg.addEventListener('click',ev=>{
+    const b=ev.target.closest('button[data-z]');if(!b)return;
+    const v=window.sapataoZoom.define(b.dataset.z);pinta();
+    msg.textContent=v===1?'Tamanho padrão neste aparelho.':'Aplicado neste aparelho: '+Math.round(v*100)+'%. Vale para todos os painéis.';
+  });
+  pinta();
+})();
 
 /* --- Vendas (ex-Painel Operacional): publicar os dados do mês (JSON do Argo, cifrado) --- */
 /* aceita o JSON colado na caixa ou, se ela estiver vazia, o arquivo escolhido */
