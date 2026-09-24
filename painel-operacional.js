@@ -68,10 +68,13 @@ var S={}; /* funções da renderização corrente */
 var tip=byId('tip');
 function showTip(e,html){ tip.innerHTML=html; tip.hidden=false; moveTip(e); }
 function moveTip(e){
+  /* sob zoom CSS (telas largas) o mouse vem em px da tela e left/top do
+     tooltip ficam em px da página: k converte um no outro */
+  tip.style.left='100px'; var k=tip.getBoundingClientRect().left/100||1;
   var r=tip.getBoundingClientRect(), x=e.clientX+14, y=e.clientY+14;
   if(x+r.width>innerWidth-8) x=e.clientX-r.width-14;
   if(y+r.height>innerHeight-8) y=e.clientY-r.height-14;
-  tip.style.left=Math.max(8,x)+'px'; tip.style.top=Math.max(8,y)+'px';
+  tip.style.left=Math.max(8,x)/k+'px'; tip.style.top=Math.max(8,y)/k+'px';
 }
 function hideTip(){ tip.hidden=true; }
 function bind(el,html){
@@ -260,7 +263,7 @@ function drawVol(svgId, cods, unidade){
   var items=cods.map(function(c){ return byCod[c]; }).sort(function(a,b){
     return (modoDia?b.rdAtual-a.rdAtual : b.proj-a.proj); });
   var LBL=138, PAD_R=64, BH=11, GAP=3, ROW=BH*3+GAP*2+20, TOP=26;
-  var W=Math.max(560, Math.min(1100, (svg.parentNode.clientWidth||880)));
+  var W=Math.max(560, Math.min(1240, (svg.parentNode.clientWidth||880)));
   var PW=W-LBL-PAD_R, H=TOP+items.length*ROW+8;
   svg.setAttribute('viewBox','0 0 '+W+' '+H);
   svg.setAttribute('width',W); svg.setAttribute('height',H);
@@ -311,7 +314,7 @@ function drawMarg(){
   var svg=byId('cMarg'); svg.textContent='';
   var items=COMB.map(function(c){return byCod[c];}).sort(function(a,b){return b.muA-a.muA;});
   var LBL=138, PAD_R=76, ROW=34, TOP=30;
-  var W=Math.max(560,Math.min(1100,(svg.parentNode.clientWidth||880)));
+  var W=Math.max(560,Math.min(1240,(svg.parentNode.clientWidth||880)));
   var PW=W-LBL-PAD_R, H=TOP+items.length*ROW+10;
   svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('width',W); svg.setAttribute('height',H);
   var max=niceMax(Math.max.apply(null,items.map(function(l){return Math.max(l.muA,l.muB,l.muC);})));
@@ -350,7 +353,7 @@ function drawDelta(){
   var svg=byId('cDelta'); svg.textContent='';
   var items=COMB.concat(MERC).map(function(c){return byCod[c];}).sort(function(a,b){return b.dMrs-a.dMrs;});
   var LBL=138, PAD_R=20, BH=15, ROW=25, TOP=28;
-  var W=Math.max(560,Math.min(1100,(svg.parentNode.clientWidth||880)));
+  var W=Math.max(560,Math.min(1240,(svg.parentNode.clientWidth||880)));
   var PW=W-LBL-PAD_R, H=TOP+items.length*ROW+12;
   svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('width',W); svg.setAttribute('height',H);
   var m=Math.max.apply(null,items.map(function(l){return Math.abs(l.dMrs);}));
@@ -383,7 +386,7 @@ function drawDelta(){
 function drawQuad(){
   var svg=byId('cQuad'); svg.textContent='';
   var items=COMB.concat(['LOJA','AUTO','LAV']).map(function(c){return byCod[c];});
-  var W=Math.max(560,Math.min(1100,(svg.parentNode.clientWidth||880))), H=400;
+  var W=Math.max(560,Math.min(1240,(svg.parentNode.clientWidth||880))), H=400;
   var M={t:26,r:22,b:44,l:62};
   svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('width',W); svg.setAttribute('height',H);
   var xs=items.map(function(l){return l.vrdAnt;}), ys=items.map(function(l){return l.dMargPct;});

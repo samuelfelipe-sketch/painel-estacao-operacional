@@ -110,3 +110,16 @@ html.app-janela .btn-voltar{left:92px}
 #hero-bombas .bomba{cursor:pointer;transition:border-color .15s,transform .12s}
 #hero-bombas .bomba:hover{border-color:var(--laranja,#EC6C22);transform:translateY(-1px)}
 .sync-chip[hidden]{display:none}
+
+/* ---------- telas largas: densidade ----------
+   O site foi desenhado para ~1280–1440px; em monitores maiores tudo cresce
+   demais. O zoom escala a página inteira (fontes, cartões, gráficos e o
+   iframe do Fluxo) sem reescrever cada regra em px. O fator fica em --zoom
+   porque, sob zoom, 100vh passa a valer viewport×zoom: as alturas de tela
+   (menu lateral, iframe) dividem por ele. */
+:root{--zoom:1}
+@media (min-width:1600px){:root{--zoom:.92}}
+@media (min-width:1800px){:root{--zoom:.86}}
+@media (min-width:2200px){:root{--zoom:.8}}
+@media print{:root{--zoom:1}}
+body{zoom:var(--zoom)}
