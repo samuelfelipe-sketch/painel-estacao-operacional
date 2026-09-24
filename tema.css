@@ -121,8 +121,8 @@ html.app-janela .btn-voltar{left:92px}
    zoom, 100vh passa a valer viewport×zoom: as alturas de tela (menu
    lateral, iframe) dividem por ele. */
 :root{--zoom-tela:1;--zoom:calc(var(--zoom-tela) * var(--zoom-usuario,1))}
-@media (min-width:1500px){:root{--zoom-tela:.92}}
-@media (min-width:1800px){:root{--zoom-tela:.86}}
-@media (min-width:2200px){:root{--zoom-tela:.8}}
+@media (min-width:1500px){:root{--zoom-tela:.85}}
+@media (min-width:1800px){:root{--zoom-tela:.78}}
+@media (min-width:2200px){:root{--zoom-tela:.72}}
 @media print{:root{--zoom-tela:1;--zoom-usuario:1}}
 body{zoom:var(--zoom)}
