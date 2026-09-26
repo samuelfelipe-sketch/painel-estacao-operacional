@@ -68,6 +68,26 @@ Decomposição do acréscimo de faturamento, com duas chaves: `ano` (contra o me
 
 A decomposição aparece no painel como gaveta fechada no rodapé do totalizador de faturamento (`<details id="decBox">`); sem o bloco `decomp` no JSON, a gaveta fica oculta.
 
+### 1.6 `unidades` (opcional)
+
+Faturamento total de cada unidade nos três períodos, para a gaveta da decomposição mostrar **quanto do acréscimo veio de cada unidade** (e, em especial, da unidade nova):
+
+```json
+"unidades": [
+  {"cod": "3", "nome": "SF",     "recA": 0, "recB": 0, "recC": 0},
+  {"cod": "4", "nome": "Sapatão","recA": 0, "recB": 0, "recC": 0},
+  {"cod": "5", "nome": "Safyr",  "nova": true, "desde": "2026-03", "recA": 0, "recB": 0, "recC": 0}
+]
+```
+
+| Campo | O que é |
+|---|---|
+| `cod` / `nome` | Número da unidade no Argo e nome curto |
+| `recA` / `recB` / `recC` | Faturamento da unidade: projetado, mês anterior, ano anterior — calculado como o consolidado (combustíveis = volume × PMV do próprio período; mercadorias = R$ do relatório), a partir da seção da unidade no relatório |
+| `nova` / `desde` | `true` quando a unidade não existia no período base (`recC = 0`); `desde` é o mês de abertura |
+
+Conferência: `Σ recA = fat.FTOT.recA`, `Σ recB = fat.FTOT.recB`, `Σ recC = fat.FTOT.recC` (o painel mostra uma linha "Diferença" se não fechar). Sem o bloco, a gaveta mostra só volume/preço/mix/mercadorias.
+
 ### 1.5 `leituras` (opcional)
 
 Sem este bloco, o painel **gera as leituras a partir dos dados** (linha que cresce e perde margem, linhas abaixo da meta, margem recomposta com volume parado, agregado, mix V-Power, metas inválidas) — o texto muda de sinal e de protagonista conforme o mês. Se o JSON trouxer `leituras: [{k, t, p, a}]` (`k` = `crit` | `ok` | `wn`; `t` título, `p` parágrafo, `a` pergunta para a reunião), elas substituem as automáticas. Texto puro: HTML é escapado.
