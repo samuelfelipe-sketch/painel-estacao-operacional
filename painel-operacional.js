@@ -558,28 +558,47 @@ byId('reads').innerHTML=reads.map(function(r){
   /* dados publicados antes desta visão não têm decomp — a gaveta some */
   if(!D.decomp||!D.decomp.ano||!D.decomp.ant){ caixa.hidden=true; alvo.innerHTML=''; return; }
   caixa.hidden=false;
+  /* faturamento por unidade nos três períodos (opcional no JSON): o mesmo
+     acréscimo repartido entre as unidades — a nova entra inteira contra o
+     período em que ainda não existia */
+  var UNIS=Array.isArray(D.unidades)?D.unidades.filter(function(u){return u&&isFinite(u.recA);}):[];
+  function linhaDt(rot,v,t,cls){
+    var pos=v>=0, cor=pos?'var(--good)':'var(--bad)';
+    return '<tr'+(cls?' class="'+cls+'"':'')+'><td>'+rot+'</td>'+
+      '<td class="v" style="color:'+cor+'">'+mais(v)+brl(Math.abs(v))+'</td>'+
+      '<td class="p" style="color:'+cor+'">'+(t?nf1.format(v/t*100):'—')+'%</td></tr>';
+  }
   function bloco(base, rot){
-    var d=D.decomp[base], t=d.dTot, tPos=t>=0;
+    var d=D.decomp[base], t=d.dTot, tPos=t>=0, kr=base==='ano'?'recC':'recB';
     var rows=[
       ['Volume de combustível', d.vol],
       ['Preço do litro',        d.pre],
       ['Mix entre combustíveis',d.mix],
       ['Mercadorias e serviços',d.merc]
     ];
+    var porUnidade='';
+    var unis=UNIS.filter(function(u){return isFinite(u[kr]);});
+    if(unis.length){
+      var soma=0;
+      porUnidade='<tr class="grp"><td colspan="3">Por unidade</td></tr>'+unis.map(function(u){
+        var v=u.recA-u[kr]; soma+=v;
+        var nome=esc(u.nome||('Unidade '+u.cod))+(u.nova?'<span class="tagnova">nova</span>':'');
+        return linhaDt(nome,v,t);
+      }).join('');
+      if(Math.abs(soma-t)>Math.max(1,Math.abs(t)*0.005)) porUnidade+=linhaDt('Diferença (ajuste)',t-soma,t);
+    }
     return '<div class="dect">'+
       '<div class="dech"><span class="lb">vs '+esc(rot)+'</span>'+
         '<span class="tt" style="color:'+(tPos?'var(--good)':'var(--bad)')+'">'+mais(t)+brl(Math.abs(t))+'</span></div>'+
-      '<table class="dt"><tbody>'+ rows.map(function(r){
-        var v=r[1], pos=v>=0, cor=pos?'var(--good)':'var(--bad)';
-        return '<tr><td>'+r[0]+'</td>'+
-          '<td class="v" style="color:'+cor+'">'+mais(v)+brl(Math.abs(v))+'</td>'+
-          '<td class="p" style="color:'+cor+'">'+(t?nf1.format(v/t*100):'—')+'%</td></tr>';
-      }).join('') +'</tbody></table></div>';
+      '<table class="dt"><tbody>'+ rows.map(function(r){ return linhaDt(r[0],r[1],t); }).join('') + porUnidade +'</tbody></table></div>';
   }
+  var novas=UNIS.filter(function(u){return u.nova;});
   alvo.innerHTML = bloco('ano', R.ano) + bloco('ant', R.ant) +
     '<p class="decnota"><b>Volume</b>: litros a mais avaliados ao preço do período anterior · '+
     '<b>Preço</b>: variação do R$/litro aplicada ao volume atual · '+
-    '<b>Mix</b>: deslocamento entre combustíveis de preços diferentes. Os efeitos somam exatamente o acréscimo.</p>';
+    '<b>Mix</b>: deslocamento entre combustíveis de preços diferentes. Os efeitos somam exatamente o acréscimo.'+
+    (UNIS.length?' <b>Por unidade</b>: o mesmo acréscimo repartido entre as unidades da rede'+(novas.length?' — '+novas.map(function(u){return esc(u.nome||('Unidade '+u.cod));}).join(', ')+' entra inteira contra o período em que ainda não existia':'')+'.':'')+
+    '</p>';
 })();
 
 /* ---------- cabeçalho e rodapé ---------- */
