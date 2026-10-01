@@ -445,13 +445,13 @@ function drawTbl(){
     return ra-rb || b.proj-a.proj;
   });
   var rows=[];
-  function tr(l,isGrp){
+  function tr(l,isGrp,extra){
     var un=l.tipo==='comb'?'':'R$ ';
     var marg = l.tipo==='comb'? nf3.format(l.muA) : nf1.format(l.mpA)+'%';
     var margB= l.tipo==='comb'? nf3.format(l.muB) : nf1.format(l.mpB)+'%';
     var margC= l.tipo==='comb'? nf3.format(l.muC) : nf1.format(l.mpC)+'%';
     function c(v){ return '<span class="'+(v>0.05?'pos':(v<-0.05?'neg':''))+'">'+pct(v)+'</span>'; }
-    return '<tr'+(isGrp?' class="grp"':'')+'><td><span class="code">'+l.cod+'</span>'+esc(l.nome)+'</td>'+
+    return '<tr'+(isGrp?' class="grp'+(extra?' '+extra:'')+'"':'')+'><td><span class="code">'+l.cod+'</span>'+esc(l.nome)+'</td>'+
       '<td class="n">'+un+nf0.format(l.acum)+'</td>'+
       '<td class="n"><b>'+un+nf0.format(l.proj)+'</b></td>'+
       '<td class="n">'+(l.metaOk?c(l.pctMeta):(l.meta>0?'<span style="color:var(--warn);font-weight:600" title="meta cadastrada como '+esc(l.meta)+' (percentual de mix) no lugar dos litros">meta inválida</span>':'<span style="color:var(--ink3)">—</span>'))+'</td>'+
@@ -466,7 +466,25 @@ function drawTbl(){
   }
   linhas.forEach(function(l){ rows.push(tr(l,false)); });
   ['OTTO','DIESEL','TOTCOMB','TOTMERC'].forEach(function(c){ if(byCod[c]) rows.push(tr(byCod[c],true)); });
+  /* totalizador geral: combustíveis (litros) + mercadorias (R$) só se somam em
+     faturamento — a linha fica em R$, com a margem total e a margem % sobre a receita */
+  var ft=F&&F.FTOT, tg=totalGeral(ft);
+  if(tg) rows.push(tr(tg,true,'tot'));
   t.tBodies[0].innerHTML=rows.join('');
+}
+function totalGeral(ft){
+  if(!ft||!isFinite(ft.recA)||!(ft.recB>0)||!(ft.recC>0)) return null;
+  var m=D.meta, frac=m.dias_dec/m.dias_mes;
+  var mp=function(marg,rec){ return rec>0?marg/rec*100:NaN; };
+  return {
+    cod:'TOTAL', nome:'Total geral (faturamento)', tipo:'merc', meta:0, metaOk:false,
+    acum:ft.recA*frac, proj:ft.recA, pctMeta:NaN,
+    difAnt:(ft.recA/ft.recB-1)*100,
+    vrdAnt:((ft.recA/m.dias_mes)/(ft.recB/m.dias_ant)-1)*100,
+    difAno:(ft.recA/ft.recC-1)*100,
+    mpA:mp(margTotProj,ft.recA), mpB:mp(margTotAnt,ft.recB), mpC:mp(margTotAno,ft.recC),
+    mrsProj:margTotProj, dMrs:margTotProj-margTotAnt
+  };
 }
 S.drawTbl=drawTbl;
 

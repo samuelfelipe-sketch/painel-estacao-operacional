@@ -30,7 +30,7 @@ O arquivo tem quatro blocos: `esquema`, `meta`, `linhas` / `grupos` (visão volu
 
 ### 1.2 `linhas` e `grupos`
 
-`linhas` traz as 11 linhas analíticas; `grupos` traz os quatro totalizadores (`TOTCOMB`, `OTTO`, `DIESEL`, `TOTMERC`). Mesmo formato nos dois.
+`linhas` traz as 11 linhas analíticas; `grupos` traz os quatro totalizadores (`TOTCOMB`, `OTTO`, `DIESEL`, `TOTMERC`). Mesmo formato nos dois. A linha **Total geral (faturamento)** no rodapé da tabela comparativa **não vem do JSON**: o site a calcula de `fat.FTOT` (receita projetada, mês anterior e ano anterior; acumulado = projeção × dias_dec/dias_mes) e da soma das margens em R$ de `TOTCOMB` + `TOTMERC` (margem % = margem ÷ receita). Litros e R$ não se somam, por isso ela fica em faturamento.
 
 | Campo | O que é |
 |---|---|
