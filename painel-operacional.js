@@ -477,7 +477,7 @@ function totalGeral(ft){
   var m=D.meta, frac=m.dias_dec/m.dias_mes;
   var mp=function(marg,rec){ return rec>0?marg/rec*100:NaN; };
   return {
-    cod:'TOTAL', nome:'Total geral (faturamento)', tipo:'merc', meta:0, metaOk:false,
+    cod:'TOTAL', nome:'Total geral', tipo:'merc', meta:0, metaOk:false,
     acum:ft.recA*frac, proj:ft.recA, pctMeta:NaN,
     difAnt:(ft.recA/ft.recB-1)*100,
     vrdAnt:((ft.recA/m.dias_mes)/(ft.recB/m.dias_ant)-1)*100,
