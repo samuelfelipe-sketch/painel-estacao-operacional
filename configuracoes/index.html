@@ -134,6 +134,14 @@ tr:last-child td{border-bottom:none}
       <p class="lead" id="fx-msg" style="margin-top:8px;margin-bottom:0"></p>
     </div>
 
+    <h3>Negociação de Preços</h3>
+    <div class="card" style="max-width:520px">
+      <p class="lead" style="margin-bottom:8px">Publique a versão mais nova da ferramenta de negociação — escolha o arquivo <b>HTML</b> exportado do Claude (Cowork). Ele é comprimido e cifrado aqui no navegador antes de subir; só quem tem a chave dos dados consegue abrir.</p>
+      <input type="file" id="ng-arq" accept=".html,text/html" style="margin:6px 0 10px;max-width:100%">
+      <button type="button" class="btn" id="ng-publicar" style="margin-top:0">Cifrar e publicar</button>
+      <p class="lead" id="ng-msg" style="margin-top:8px;margin-bottom:0"></p>
+    </div>
+
     <h3>Vendas</h3>
     <div class="card" style="max-width:520px">
       <p class="lead" style="margin-bottom:8px">Publique os dados do mês — cole aqui o conteúdo do <b>dados-metas-margens.json</b> gerado a partir do relatório do Argo (ou escolha o arquivo). Ele é cifrado aqui no navegador antes de subir; só quem tem a chave dos dados consegue abrir. As regras de preparação estão em <b>painel-operacional-regras.md</b>.</p>
@@ -148,7 +156,7 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <h3>Usuários e permissões</h3>
-    <p class="lead">Cada pessoa entra com o próprio usuário e senha. Permissão por painel: em Vendas e no Fluxo de Caixa é <b>Acessa</b> ou <b>Sem acesso</b>; nos Planejamentos é <b>Edita</b>, <b>Só follow-ups</b> (só no Estratégico), <b>Só lê</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo.</p>
+    <p class="lead">Cada pessoa entra com o próprio usuário e senha. Permissão por painel: em Vendas, no Fluxo de Caixa e na Negociação de Preços é <b>Acessa</b> ou <b>Sem acesso</b>; nos Planejamentos é <b>Edita</b>, <b>Só follow-ups</b> (só no Estratégico), <b>Só lê</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo.</p>
     <div class="card">
       <div class="tbl"><table class="us-tbl" id="us-tbl"></table></div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
@@ -264,12 +272,13 @@ const PERMS_OPER=[['le','Acessa'],['nao','Sem acesso']];
 function sel(v,cls,i,ops){return '<select class="'+cls+'" data-i="'+i+'">'+(ops||PERMS).map(p=>'<option value="'+p[0]+'"'+(v===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select>';}
 function usRender(){
   if(!usDoc)return;
-  usTbl.innerHTML='<tr><th>Usuário</th><th>Vendas</th><th>Fluxo de Caixa</th><th>Plan. Comercial</th><th>Plan. Estratégico</th><th>Admin</th><th>Ativo</th><th>Senha</th></tr>'
+  usTbl.innerHTML='<tr><th>Usuário</th><th>Vendas</th><th>Fluxo de Caixa</th><th>Negociação</th><th>Plan. Comercial</th><th>Plan. Estratégico</th><th>Admin</th><th>Ativo</th><th>Senha</th></tr>'
     +usDoc.usuarios.map((u,i)=>{
       const p=u.perm||{};
       return '<tr><td><input type="text" class="us-nome" data-i="'+i+'" value="'+esc(u.nome)+'"></td>'
         +'<td>'+(u.admin?'<span class="pill">acessa</span>':sel(p.operacional||'nao','us-oper',i,PERMS_OPER))+'</td>'
         +'<td>'+(u.admin?'<span class="pill">acessa</span>':sel(p.fluxo||'nao','us-fluxo',i,PERMS_FLUXO))+'</td>'
+        +'<td>'+(u.admin?'<span class="pill">acessa</span>':sel(p.negociacao||'nao','us-neg',i,PERMS_FLUXO))+'</td>'
         +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.roadmap||'nao','us-roadmap',i))+'</td>'
         +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.pe||'nao','us-pe',i,PERMS_PE))+'</td>'
         +'<td><input type="checkbox" class="us-admin" data-i="'+i+'"'+(u.admin?' checked':'')+'></td>'
@@ -294,6 +303,7 @@ usTbl.addEventListener('change',ev=>{
   if(ev.target.classList.contains('us-roadmap'))u.perm.roadmap=ev.target.value;
   if(ev.target.classList.contains('us-pe'))u.perm.pe=ev.target.value;
   if(ev.target.classList.contains('us-fluxo'))u.perm.fluxo=ev.target.value;
+  if(ev.target.classList.contains('us-neg'))u.perm.negociacao=ev.target.value;
   if(ev.target.classList.contains('us-oper'))u.perm.operacional=ev.target.value;
   if(ev.target.classList.contains('us-admin')){u.admin=ev.target.checked;usRender();}
   if(ev.target.classList.contains('us-ativo'))u.ativo=ev.target.checked;
@@ -316,7 +326,7 @@ document.getElementById('us-add').addEventListener('click',()=>{
   if(s===null)return;
   if(s.length<6){usDiz('Senha muito curta — usuário não criado.',true);return;}
   const novoId=usId(nome.trim());
-  usDoc.usuarios.push({id:novoId,nome:nome.trim(),hash:window.sapataoAuth.sha256(s),admin:false,ativo:true,perm:{roadmap:'le',pe:'le',fluxo:'nao',operacional:'nao'}});
+  usDoc.usuarios.push({id:novoId,nome:nome.trim(),hash:window.sapataoAuth.sha256(s),admin:false,ativo:true,perm:{roadmap:'le',pe:'le',fluxo:'nao',operacional:'nao',negociacao:'nao'}});
   usEnvelopes.push({id:novoId,senha:s});
   usRender();
   usDiz('Usuário criado com permissão "Só lê" nos dois painéis — ajuste e clique em "Salvar alterações".');
@@ -408,9 +418,17 @@ async function fxGzipB64(str){
   const ab=await new Response(new Blob([str]).stream().pipeThrough(cs)).arrayBuffer();
   let s='';new Uint8Array(ab).forEach(b=>s+=String.fromCharCode(b));return btoa(s);
 }
-document.getElementById('fx-publicar').addEventListener('click',async()=>{
-  const msgEl=document.getElementById('fx-msg');
-  const f=document.getElementById('fx-arq').files[0];
+/* as duas ferramentas publicadas como HTML cifrado (Fluxo de Caixa e
+   Negociação de Preços) usam o mesmo caminho: gzip + cofre + PUT no repo */
+const FERRAMENTAS={
+  fx:{path:'fluxo/dados.enc.json',cache:'sapatao-fluxo-v1',commit:'chore: publica a ferramenta do Fluxo de Caixa (manual)',ok:'Publicado! O painel do Fluxo abre a versão nova em ~1–2 minutos.'},
+  ng:{path:'negociacao/dados.enc.json',cache:'sapatao-negociacao-v1',commit:'chore: publica a ferramenta de Negociação de Preços (manual)',ok:'Publicado! O painel de Negociação abre a versão nova em ~1–2 minutos.'}
+};
+Object.keys(FERRAMENTAS).forEach(function(k){
+ const F=FERRAMENTAS[k];
+ document.getElementById(k+'-publicar').addEventListener('click',async()=>{
+  const msgEl=document.getElementById(k+'-msg');
+  const f=document.getElementById(k+'-arq').files[0];
   if(!f){msgEl.textContent='Escolha o arquivo primeiro.';return;}
   const tok=token();
   if(!tok){msgEl.textContent='Este aparelho não tem a chave de publicação — saia e entre com a senha na central.';return;}
@@ -422,17 +440,18 @@ document.getElementById('fx-publicar').addEventListener('click',async()=>{
     const carga={v:1,em:new Date().toISOString().slice(0,16)};
     if(window.CompressionStream)carga.gz=await fxGzipB64(html);else carga.html=html;
     const cifrado=await window.sapataoCofre.cifra(carga);
-    const url='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/fluxo/dados.enc.json';
+    const url='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/'+F.path;
     const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+tok,'Content-Type':'application/json'};
     let sha=null;
     try{const g=await fetch(url+'?ref=main&t='+Date.now(),{headers:h,cache:'no-store'});if(g.ok)sha=(await g.json()).sha;}catch(e){}
-    const body={message:'chore: publica a ferramenta do Fluxo de Caixa (manual)',branch:'main',content:b64enc(JSON.stringify(cifrado))};
+    const body={message:F.commit,branch:'main',content:b64enc(JSON.stringify(cifrado))};
     if(sha)body.sha=sha;
     const r=await fetch(url,{method:'PUT',headers:h,body:JSON.stringify(body)});
     if(!r.ok)throw new Error('HTTP '+r.status);
-    try{localStorage.setItem('sapatao-fluxo-v1',JSON.stringify(cifrado));}catch(e){}
-    msgEl.textContent='Publicado! O painel do Fluxo abre a versão nova em ~1–2 minutos.';
+    try{localStorage.setItem(F.cache,JSON.stringify(cifrado));}catch(e){}
+    msgEl.textContent=F.ok;
   }catch(e){msgEl.textContent='Não consegui publicar ('+e.message+').';}
+ });
 });
 
 pinta();
