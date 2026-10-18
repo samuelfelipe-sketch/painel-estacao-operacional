@@ -15,7 +15,7 @@ Sem `SAPATAO_DEK`, a rotina para na primeira etapa e avisa; não tenta nada.
 
 ## Fontes
 
-Pasta de referência no OneDrive: `Financeiro/Negociação de Preços/` (o Samuel confirma o caminho).
+Pasta de referência no OneDrive: `FINANCEIRO/compras/painel de negociação` (caminho definido pelo Samuel em 18/10/2026; substitui `Financeiro/Negociação de Preços/`).
 
 | Fonte | Onde | Atualiza |
 |---|---|---|
