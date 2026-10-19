@@ -193,7 +193,11 @@ A tabela de margens e a de projeção acumulam volumes de combustíveis ligeiram
 
 ---
 
-## 5. Atualizar no mês seguinte
+## 5. Atualizar (rotina diária automática)
+
+Desde 19/10/2026 a atualização é diária e automática: o Argo deixa o PDF do relatório no OneDrive (`Operações/Vendas/Claude/`), a Rotina do Claude Code lê o texto pelo conector, `scripts/vendas-monta.mjs` transcreve e calcula tudo o que está neste documento (e recusa gravar se as conferências da §3 não fecharem), `scripts/vendas-publica.mjs` cifra e o commit sobe para o site. Procedimento completo em `painel-operacional-RUNBOOK.md`. O passo a passo manual abaixo continua valendo como reserva.
+
+### 5.1 Manual (reserva)
 
 1. Gerar no Argo o mesmo relatório: *Acompanhamento de Metas e Margens de Vendas*, unidades 3/4/5, 1º nível, análise mensal.
 2. Transcrever para o JSON: a **Análise Mensal** alimenta quantidade, PMC, PMV e margem dos três períodos; a **Projeção de Vendas** alimenta `acum`, `proj`, `meta`, `pctMeta`, `difAnt` e `difAno`.
