@@ -43,3 +43,24 @@ Fonte indisponível no dia → a seção correspondente fica com a leitura anter
 - Não muda os pontos de encaixe do shell (`.topbar .ref`, `#menuNav`, `#menuBackdrop`, ids das seções) nem traz bibliotecas externas.
 - Não publica sem a validação aprovada. Não apaga a versão anterior: ela continua no histórico do git, cifrada.
 - Não toca em nenhum outro arquivo do site.
+
+## Revisão semanal (terça, ~06:25 Brasília)
+
+Mesma esteira da rotina diária (abrir a versão no ar → editar em `/tmp/neg` → validar → cifrar → commit na main), com escopo maior. Roda DEPOIS da rotina diária de terça: a base da edição é a versão que a diária acabou de publicar.
+
+O que a semanal faz a mais:
+
+1. **Reconciliação das compras (seção 05, "compras do ano")** — é a razão de ser da semanal. Listar a pasta `Financeiro/Compras/Painel de Negociação` e ler pelo conector os CSVs necessários para cobrir o mês em curso **e o mês anterior desde o dia 1º** (cada CSV cobre uma janela de ~30 dias; se o dia de hoje for ≤ 10, ler também os CSVs dos dias 01 a 07 do mês e o último do mês anterior). Gravar cada CSV, sem alterar, em `/tmp/neg/compras-DD-MM-AAAA.csv` e rodar:
+
+   ```
+   node scripts/negociacao-compras.mjs --csv /tmp/neg/compras-A.csv --csv /tmp/neg/compras-B.csv --saida /tmp/neg/compras.json
+   ```
+
+   O script deduplica linhas repetidas entre arquivos, exclui ARLA e GNV, agrupa por mês × bandeira (3 e 4 = Raízen, 5 = Ipiranga) × produto (VP e GA = aditivada) × unidade, calcula preço médio = gasto ÷ volume e confere que meses somam o ano e produtos somam o total; reprovado, não grava. A seção 05 recebe os números do `compras.json`: soma dos meses = total do ano, soma dos produtos = total do ano, em volume e em gasto. Mês cuja cobertura (`cobertura` no JSON) não chega ao dia 1º fica marcado "parcial (desde DD/MM)"; meses anteriores à janela disponível mantêm o número guardado, marcados "leitura de DD/MM". Divergência entre o que a diária publicou e o CSV: prevalece o CSV, e a diferença vai na nota da seção.
+2. **VPricing dos últimos 7 dias** (e-mail, qualquer remetente `@valenciopricing.com.br`): Resumo Diário (Brent, dólar), Boletim mensal e "Análise de Compras" (margem por produto e por fornecedor) → seções 06 e contexto. O relatório de Paridade de Importação só entra se bater com o Resumo Diário do mesmo dia.
+3. **Diário de negociação** (pasta `Financeiro/Compras/Painel de Negociação`, `diario.md` ou `.docx`): concessões obtidas, pedidos em aberto, prazos, saldos. Concessão que não está no diário não existe. A rotina só lê o diário (o conector não grava); o que seria a entrada da semana vai no resumo ao Samuel.
+4. **Checagem externa** (busca na web em fontes primárias: Planalto/DOU, gov.br, ANP): subvenções PIS/COFINS, mistura, MP do diesel, prazos regulatórios — só o que mudou, com a data da checagem.
+5. **Recalcular as alavancas** com a decisão de 07/10/2026: impacto de cada alavanca = SÓ o saldo ainda não concedido = (alvo − já concedido) × volume de referência do último mês fechado (do `compras.json`); ×3 trimestre; ×12 ano. Conservador = (mínimo − já concedido, piso zero); timing entra com 20% do teto medido. "Já concedido" aparece na caixa, fora da soma. Não propor troca de produto aditivado por comum (veto permanente). Painel prospectivo: nada de cobrança retroativa como destaque.
+6. **Conferência completa** com `scripts/negociacao-valida.mjs` (inclui as somas da seção 05) e, além dela: "se executar até o fim do mês" = alvo mensal × dias restantes ÷ dias do mês; toda data ≤ hoje, exceto prazos futuros.
+7. **Commit** com a mensagem `chore: publica a ferramenta de Negociação de Preços (revisão semanal, automático)`.
+8. **Resumo ao Samuel**, em lista, uma linha por item, sem valores sigilosos: (1) o que mudou de força nas alavancas; (2) prioridade nº 1 e prazo; (3) se o cenário-alvo e o conservador subiram ou caíram em relação à semana anterior; (4) pendências com as bandeiras; (5) o que não conseguiu ler e o que ficou marcado como leitura anterior.
