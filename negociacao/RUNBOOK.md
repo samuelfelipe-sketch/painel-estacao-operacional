@@ -15,7 +15,7 @@ Sem `SAPATAO_DEK`, a rotina para na primeira etapa e avisa; não tenta nada.
 
 ## Fontes
 
-Pasta de referência no OneDrive: `FINANCEIRO/compras/painel de negociação` (caminho definido pelo Samuel em 18/10/2026; substitui `Financeiro/Negociação de Preços/`).
+Pasta de referência no OneDrive: `Financeiro/Compras/Painel de Negociação` no OneDrive do Samuel (caminho definido em 18/10/2026; substitui `Financeiro/Negociação de Preços/`). Lá chega todo dia o `DD-MM-AAAA_RelatorioDeCompraDeCombustiveis.csv` (compras por unidade/produto, acumulado dos últimos ~80 dias): ler o do dia (ou o mais recente) pelo conector (`file:///me/...` listando a pasta). O relatório do BI VPricing vem por e-mail (remetente `bruno@valenciopricing.com.br`, assunto "VPricing DIRETORIA | Petróleo & Combs - Resumo DD/Mês/AAAA").
 
 | Fonte | Onde | Atualiza |
 |---|---|---|
