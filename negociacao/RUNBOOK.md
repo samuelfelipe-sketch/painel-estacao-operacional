@@ -26,7 +26,7 @@ Pasta de referência no OneDrive: `Financeiro/Compras/Painel de Negociação` no
 
 Fonte indisponível no dia → a seção correspondente fica com a leitura anterior **marcada como tal** ("leitura de DD/MM, fonte indisponível em DD/MM"). Nunca inventar número.
 
-## Passos (todo dia, 07:30 Brasília)
+## Passos (todo dia, ~06:00 Brasília)
 
 1. **Estado de ontem.** `node scripts/negociacao-publica.mjs abre --para /tmp/neg` → `/tmp/neg/negociacao-anterior.html` (a versão no ar, decifrada). É a base da edição; fora do repositório.
 2. **Fontes novas.** Ler pelo conector só o que mudou desde a referência da versão anterior (a data em `.topbar .ref`).

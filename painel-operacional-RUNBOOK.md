@@ -28,7 +28,7 @@ com `startPage: 1` e `endPage: 20` (o relatório tem ~10 páginas; se vier o avi
 
 Na mesma pasta chegam três CSVs por dia (`RelatorioDeVendasPorDataDeEmissao{As,Ps,Sf}.csv`): não fazem parte desta rotina.
 
-## Passos (todo dia, 06:45 Brasília)
+## Passos (todo dia, ~06:00 Brasília)
 
 1. **Estado de ontem.** `node scripts/vendas-publica.mjs abre --para /tmp/vendas` → `/tmp/vendas/vendas-anterior.json` (a versão no ar, decifrada). Fora do repositório.
 2. **Texto do relatório.** Ler o PDF do dia pelo conector e gravar o texto devolvido, **sem alterar nada** (uma página por linha, exatamente como veio), em `/tmp/vendas/relatorio.txt`. Não "corrigir" número, não arredondar, não reordenar.
