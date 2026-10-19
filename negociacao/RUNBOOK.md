@@ -15,7 +15,7 @@ Sem `SAPATAO_DEK`, a rotina para na primeira etapa e avisa; não tenta nada.
 
 ## Fontes
 
-Pasta de referência no OneDrive: `Financeiro/Compras/Painel de Negociação` no OneDrive do Samuel (caminho definido em 18/10/2026; substitui `Financeiro/Negociação de Preços/`). Lá chega todo dia o `DD-MM-AAAA_RelatorioDeCompraDeCombustiveis.csv` (compras por unidade/produto, acumulado dos últimos ~80 dias): ler o do dia (ou o mais recente) pelo conector (`file:///me/...` listando a pasta). O relatório do BI VPricing vem por e-mail (remetente `bruno@valenciopricing.com.br`, assunto "VPricing DIRETORIA | Petróleo & Combs - Resumo DD/Mês/AAAA").
+Pasta de referência no OneDrive: `Financeiro/Compras/Painel de Negociação` no OneDrive do Samuel (caminho definido em 18/10/2026; substitui `Financeiro/Negociação de Preços/`). Lá chega todo dia o `DD-MM-AAAA_RelatorioDeCompraDeCombustiveis.csv` (compras por unidade/produto, acumulado dos últimos ~80 dias): ler o do dia (ou o mais recente) pelo conector (`file:///me/...` listando a pasta). Tudo que trata de preços e chega por e-mail de qualquer remetente `@valenciopricing.com.br` (ex.: `bruno@`, `infosys@`, e quem mais surgir) é fonte válida: resumo diário ("VPricing DIRETORIA | Petróleo & Combs - Resumo DD/Mês/AAAA"), alertas, relatórios e anexos. Buscar por remetente/domínio `valenciopricing.com.br` desde a data de referência da versão anterior.
 
 | Fonte | Onde | Atualiza |
 |---|---|---|
