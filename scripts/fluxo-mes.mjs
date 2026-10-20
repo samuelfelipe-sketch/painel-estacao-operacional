@@ -67,10 +67,36 @@ if (!empresas.length) falha('nenhuma pasta de empresa com extratos em ' + pastaE
 const resultados = {}; const rel = []; let ultimoDia = 0; const avisos = [];
 for (const e of empresas) {
   const extratos = [];
+  const porBanco = {};
   for (const f of readdirSync(join(pastaExt, e)).filter(f => f.endsWith('.txt')).sort()) {
-    const banco = f.slice(0, -4); if (!PARSERS[banco]) { avisos.push(`${e}/${f}: banco desconhecido, ignorado`); continue; }
-    let o; try { o = PARSERS[banco](readFileSync(join(pastaExt, e, f), 'utf8')); } catch (err) { falha(`${e}/${banco}: ${err.message}`); }
-    if (!o.ok) falha(`${e}/${banco}: o extrato não reconcilia (dif ${o.dif}) — leitura incompleta? Nada gravado.`);
+    const m = f.match(/^([a-z]+)(?:\.(\d+))?\.txt$/); const banco = m && m[1];
+    if (!banco || !PARSERS[banco]) { avisos.push(`${e}/${f}: banco desconhecido, ignorado`); continue; }
+    let o; try { o = PARSERS[banco](readFileSync(join(pastaExt, e, f), 'utf8')); } catch (err) { falha(`${e}/${f}: ${err.message}`); }
+    if (!o.ok) falha(`${e}/${f}: o extrato não reconcilia (dif ${o.dif}) — leitura incompleta? Nada gravado.`);
+    (porBanco[banco] = porBanco[banco] || []).push(o);
+  }
+  for (const banco of Object.keys(porBanco)) {
+    let o = porBanco[banco][0];
+    if (porBanco[banco].length > 1) {
+      /* emenda: fica o extrato que vai mais longe; os outros só contribuem com os
+         dias ANTERIORES ao início dele (semanais em pedaços ou mês-até-hoje repetido).
+         A cadeia tem de fechar: saldo anterior do 1º + Σ = saldo final do último. */
+      const ps = porBanco[banco].slice().sort((a, b) => (a.periodo.ate || '').localeCompare(b.periodo.ate || '') || (a.periodo.de || '').localeCompare(b.periodo.de || ''));
+      const base = ps[ps.length - 1]; let mov = base.mov.slice(); let saldoAnterior = base.saldoAnterior; let de = base.periodo.de;
+      for (const p of ps.slice(0, -1).reverse()) {
+        const antes = p.mov.filter(x => x.data < de);
+        if (!antes.length) continue;
+        mov = antes.concat(mov); de = p.periodo.de; saldoAnterior = p.saldoAnterior;
+      }
+      const dif = r2(saldoAnterior + mov.reduce((a, x) => a + x.valor, 0) - base.saldoFinal);
+      if (Math.abs(dif) > 0.015) falha(`${e}/${banco}: as ${ps.length} partes não formam uma cadeia contínua (dif ${dif}) — falta uma semana ou há sobreposição com valores diferentes. Nada gravado.`);
+      o = { ...base, saldoAnterior, mov, periodo: { de, ate: base.periodo.ate } };
+      avisos.push(`${e}/${banco}: ${ps.length} partes emendadas (${de}→${base.periodo.ate})`);
+    }
+    /* o extrato tem de cobrir a conta desde o 1º dia do mês (extrato semanal avulso
+       sem as semanas anteriores deixaria os primeiros dias zerados em silêncio) */
+    const deCob = (o.periodo && o.periodo.de) || (o.mov[0] || {}).data || '';
+    if (deCob > mes + '-01' && deCob.slice(0, 7) === mes && (o.mov.length || deCob > mes + '-01')) falha(`${e}/${banco}: o extrato cobre a conta só a partir de ${deCob.slice(8, 10)}/${deCob.slice(5, 7)} — faltam os dias anteriores do mês (extratos semanais anteriores ou o extrato do mês inteiro). Nada gravado.`);
     const foraDoMes = o.mov.filter(m => m.data.slice(0, 7) !== mes);
     if (foraDoMes.length) {
       /* extrato com outro mês junto: mantém só o mês pedido e recalcula o saldo inicial */

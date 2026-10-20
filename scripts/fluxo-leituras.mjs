@@ -93,12 +93,20 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const mesPrinc = Object.keys(meses).sort((a, b) => meses[b] - meses[a])[0];
     if (mes && mesPrinc !== mes) { ignorados++; continue; }
     const k = empresa + '/' + banco;
-    if (!cand[k] || o.mov.length > cand[k].n) cand[k] = { n: o.mov.length, texto: l.texto, uri: l.uri, ok: o.ok, mes: mesPrinc };
+    cand[k] = cand[k] || [];
+    if (cand[k].some(c => c.texto === l.texto || (c.de === o.periodo.de && c.ate === o.periodo.ate && c.n === o.mov.length))) continue; /* mesmo extrato lido duas vezes */
+    cand[k].push({ n: o.mov.length, texto: l.texto, uri: l.uri, ok: o.ok, mes: mesPrinc, de: o.periodo.de, ate: o.periodo.ate });
   }
   mkdirSync(resolve(para), { recursive: true });
   const manifesto = [];
-  for (const k of Object.keys(cand).sort()) { const [e, b] = k.split('/'); mkdirSync(join(para, e), { recursive: true }); writeFileSync(join(para, e, b + '.txt'), cand[k].texto); manifesto.push({ empresa: e, banco: b, mes: cand[k].mes, lancamentos: cand[k].n, reconcilia: cand[k].ok, item: cand[k].uri.split('/').pop() }); }
+  /* vários extratos do mesmo banco no mês (semanais, ou mês-até-hoje repetido): grava
+     todos (banco.txt, banco.2.txt…) — o fluxo-mes emenda e confere a cadeia de saldos */
+  for (const k of Object.keys(cand).sort()) {
+    const [e, b] = k.split('/'); mkdirSync(join(para, e), { recursive: true });
+    const lista = cand[k].sort((x, y) => (x.de + x.ate).localeCompare(y.de + y.ate));
+    lista.forEach((c, i) => { writeFileSync(join(para, e, b + (i ? '.' + (i + 1) : '') + '.txt'), c.texto); manifesto.push({ empresa: e, banco: b, parte: i + 1, de: lista.length, mes: c.mes, periodo: `${c.de}→${c.ate}`, lancamentos: c.n, reconcilia: c.ok, item: c.uri.split('/').pop() }); });
+  }
   writeFileSync(join(para, 'leituras.json'), JSON.stringify(manifesto, null, 1));
   console.log(`leituras: ${leituras.length} resultado(s) do conector no transcript · ${manifesto.length} extrato(s) gravado(s) em ${para}/ · ${ignorados} ignorado(s) (não é extrato de conta-corrente${mes ? ', ou de outro mês' : ''})`);
-  for (const m of manifesto) console.log(`  ${m.empresa}/${m.banco}: ${m.mes} · ${m.lancamentos} lançamentos · reconcilia ${m.reconcilia ? 'OK' : 'NÃO'}`);
+  for (const m of manifesto) console.log(`  ${m.empresa}/${m.banco}${m.de > 1 ? ` (parte ${m.parte}/${m.de})` : ''}: ${m.mes} · ${m.periodo} · ${m.lancamentos} lançamentos · reconcilia ${m.reconcilia ? 'OK' : 'NÃO'}`);
 }

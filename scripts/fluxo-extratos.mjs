@@ -38,11 +38,30 @@ export function num(s) {
   return neg ? -v : v;
 }
 const iso = (d, m, a) => `${a.length === 2 ? '20' + a : a}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+/* período declarado no cabeçalho ("Período de 01/10/2026 a 20/10/2026", "01/10/2026 até
+   31/10/2026", Banrisul "MOVIMENTOS OUT/2026"): diz desde quando o extrato cobre a
+   conta, mesmo sem lançamento nos primeiros dias */
+const MES3 = { JAN: '01', FEV: '02', MAR: '03', ABR: '04', MAI: '05', JUN: '06', JUL: '07', AGO: '08', SET: '09', OUT: '10', NOV: '11', DEZ: '12' };
+export function periodoCabecalho(txt) {
+  const cab = txt.slice(0, 1500).replace(/\s+/g, ' ');
+  let m = cab.match(/Per[ií]odo:?\s*(?:de\s*)?(\d{2})\/(\d{2})\/(\d{2,4})\s*(?:a|até|-)\s*(\d{2})\/(\d{2})\/(\d{2,4})/i) || cab.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(?:até|a)\s+(\d{2})\/(\d{2})\/(\d{4})/) || cab.match(/Extrato de:.*?(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return { de: iso(m[1], m[2], m[3]), ate: iso(m[4], m[5], m[6]) };
+  m = cab.match(/MOVIMENTOS\s+([A-Z]{3})\/(\d{4})/i) || txt.match(/MOVIMENTOS\s+([A-Z]{3})\/(\d{4})/i);
+  if (m && MES3[m[1].toUpperCase()]) return { de: `${m[2]}-${MES3[m[1].toUpperCase()]}-01`, ate: null };
+  return null;
+}
 function fecha(o) {
   const soma = o.mov.reduce((a, x) => a + x.valor, 0);
   o.dif = round2(o.saldoAnterior + soma - o.saldoFinal);
   o.ok = Math.abs(o.dif) <= CENTAVO;
-  if (o.mov.length) { o.periodo = o.periodo || {}; o.periodo.de = o.periodo.de || o.mov[0].data; o.periodo.ate = o.periodo.ate || o.mov[o.mov.length - 1].data; }
+  o.periodo = o.periodo || {};
+  if (o.mov.length) { o.periodo.de = o.periodo.de || o.mov[0].data; o.periodo.ate = o.periodo.ate || o.mov[o.mov.length - 1].data; }
+  return o;
+}
+/* aplica o período do cabeçalho por cima do inferido dos lançamentos */
+function comCabecalho(o, txt) {
+  const pc = periodoCabecalho(txt);
+  if (pc) { o.periodo = o.periodo || {}; if (pc.de && (!o.periodo.de || pc.de < o.periodo.de)) o.periodo.de = pc.de; if (pc.ate && (!o.periodo.ate || pc.ate > o.periodo.ate)) o.periodo.ate = pc.ate; o.periodoDeclarado = pc; }
   return o;
 }
 
@@ -254,7 +273,8 @@ export function pagbank(txt) {
   return fecha({ banco: 'pagbank', saldoAnterior, saldoFinal, mov, periodo: {} });
 }
 
-export const PARSERS = { bradesco, unicred, sicredi, stone, banrisul, itau, pagbank };
+const _P = { bradesco, unicred, sicredi, stone, banrisul, itau, pagbank };
+export const PARSERS = Object.fromEntries(Object.entries(_P).map(([k, f]) => [k, txt => comCabecalho(f(txt), txt)]));
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const banco = process.argv[2], arq = process.argv[3];
