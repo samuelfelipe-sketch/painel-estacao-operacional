@@ -96,3 +96,27 @@ export function foraDoRepo(p, rotulo) {
 }
 export function opt(args, nome, padrao) { const i = args.indexOf('--' + nome); return i >= 0 && args[i + 1] ? args[i + 1] : padrao; }
 export function temFlag(args, nome) { return args.includes('--' + nome); }
+
+/* ---- mapa de fornecedores (fluxo-fornecedores.mjs) ---- */
+export const chave14 = s => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 14);
+/* devolve { conta, chave, fonte } para o memo, ou null. Varre o memo por janelas
+   que começam em fronteira de palavra: a primeira cuja CHAVE14 está no mapa
+   decide (aprendidos antes do idx do Argo). */
+export function fornecedorDoMemo(desc, mapa) {
+  if (!mapa || !desc) return null;
+  const palavras = desc.split(/[\s|/()]+/).filter(Boolean);
+  for (let i = 0; i < palavras.length; i++) {
+    const resto = palavras.slice(i).join(' ');
+    const n = chave14(resto); if (n.length < 4) continue;
+    const a = mapa.aprendidos && mapa.aprendidos[n]; if (a && a.conta) return { conta: a.conta, chave: n, fonte: 'aprendido' };
+    if (mapa.idx && mapa.idx[n] && (n.length === 14 || chave14((mapa.nomes || {})[n] || '') === n)) return { conta: mapa.idx[n], chave: n, fonte: 'argo' };
+  }
+  /* memo truncado (ex.: "STV SEG" nos boletos Sicredi): prefixo com ≥6 caracteres que
+     casa com UM só fornecedor do mapa */
+  for (let i = 0; i < palavras.length; i++) {
+    const n = chave14(palavras.slice(i).join(' ')); if (n.length < 6 || n.length >= 14) continue;
+    const cand = Object.keys(mapa.idx || {}).filter(k => k.startsWith(n));
+    if (cand.length === 1) return { conta: mapa.idx[cand[0]], chave: cand[0], fonte: 'argo~prefixo' };
+  }
+  return null;
+}

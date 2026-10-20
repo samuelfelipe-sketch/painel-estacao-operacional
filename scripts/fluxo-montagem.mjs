@@ -36,8 +36,8 @@ export function montaEmpresa({ empresa, mes, extratos, fornMap }) {
     contas.push({ banco: ex.banco, ini: round2(ex.saldoAnterior), fim: round2(ex.saldoFinal) });
     for (const m of ex.mov) classificados.push({ ...classifica(m, { empresa, fornMap }), banco: ex.banco });
   }
-  /* casamento de sweeps: saída e entrada próprias, mesmo dia e |valor| */
-  const giro = classificados.filter(c => c.giro);
+  /* casamento de sweeps: saída e entrada próprias, mesmo dia e |valor|, contas diferentes */
+  const giro = classificados.filter(c => c.giro && c.proprio);
   const casados = new Set();
   for (let i = 0; i < giro.length; i++) {
     if (casados.has(i)) continue;
@@ -46,25 +46,43 @@ export function montaEmpresa({ empresa, mes, extratos, fornMap }) {
       if (giro[i].data === giro[j].data && giro[i].banco !== giro[j].banco && round2(giro[i].valor + giro[j].valor) === 0) { casados.add(i); casados.add(j); giro[i].sweepCasado = giro[j].sweepCasado = true; break; }
     }
   }
+  /* sem par (todas as contas lidas): entrada PIX em nome próprio = liquidação
+     de maquininha/QR (Sipag) = Cartões (regra 7); SISPAG sem par = fornecedor
+     (mercadorias); o resto fica como "Outras entradas/saídas" marcado para
+     revisão — a linha "Entre empresas" fica só para empréstimos entre empresas */
+  let giroSemPar = 0;
+  for (const c of giro) {
+    if (c.sweepCasado) continue;
+    if (c.valor > 0 && c.pix) { c.giro = false; c.proprio = false; c.conta = '1 · Receita — Cartões e adquirência'; c.confia = true; }
+    else if (c.sispag) { c.giro = false; c.proprio = false; /* mantém conta=mercadorias, confia=false */ }
+    else { c.giro = false; c.proprio = false; c.conta = c.valor > 0 ? 'Outras entradas' : 'Outras saídas'; c.confia = false; c.semPar = true; giroSemPar++; }
+  }
   let revisao = 0;
   for (const c of classificados) {
     const dd = +c.data.split('-')[2], w = wkOf(ano, mm, dd), di = dd - 1;
-    if (c.giro || c.intercompany) { icwW[w] += c.valor; icwD[di] += c.valor; continue; }
+    if (c.giro) { icwW[w] += c.valor; icwD[di] += c.valor; if (!c.confia) revisao++; continue; } /* intercompany operacional (aluguel, frete, boleto) fica em cin/cout */
     if (!c.confia) revisao++;
+    if (c.abate) { /* estorno/devolução abate a conta de receita correspondente */
+      (cinW[c.conta] = cinW[c.conta] || new Array(nw).fill(0))[w] += c.valor; (cinD[c.conta] = cinD[c.conta] || new Array(nd).fill(0))[di] += c.valor; continue;
+    }
     if (c.valor >= 0) { (cinW[c.conta] = cinW[c.conta] || new Array(nw).fill(0))[w] += c.valor; (cinD[c.conta] = cinD[c.conta] || new Array(nd).fill(0))[di] += c.valor; }
     else { (coutW[c.conta] = coutW[c.conta] || new Array(nw).fill(0))[w] += -c.valor; (coutD[c.conta] = coutD[c.conta] || new Array(nd).fill(0))[di] += -c.valor; }
   }
+  /* giro rotativo do mês: [captado, amortizado] (contratos C59830287 PS / C69830413 SF) */
+  const captado = classificados.filter(c => c.captacao && /C59830287|C69830413/.test(c.conta)).reduce((a, c) => a + c.valor, 0);
+  const amortizado = classificados.filter(c => c.divida && /giro rotativo/.test(c.conta)).reduce((a, c) => a - c.valor, 0);
   const sum = o => Object.values(o).reduce((a, v) => a + v.reduce((x, y) => x + y, 0), 0);
   const ini = contas.reduce((a, c) => a + c.ini, 0), fim = contas.reduce((a, c) => a + c.fim, 0);
   const sIn = sum(cinW), sOut = sum(coutW), sIcw = icwW.reduce((a, b) => a + b, 0);
   const dif = round2(ini + sIn - sOut + sIcw - fim);
   return {
     empresa, mes, nd, nw,
-    DATA: { cin: arredObj(cinW), cout: arredObj(coutW), icw: icwW.map(round2), contas },
+    DATA: { cin: arredObj(cinW), cout: arredObj(coutW), icw: icwW.map(round2), contas, giro: [round2(captado), round2(amortizado)], icin: {}, icout: {} },
     DIA: { cin: arredObj(cinD), cout: arredObj(coutD), icw: icwD.map(round2) },
     reconcilia: Math.abs(dif) <= 0.015, dif,
     ini: round2(ini), fim: round2(fim), totalIn: round2(sIn), totalOut: round2(sOut), icwTotal: round2(sIcw),
-    lancamentos: classificados.length, revisao, sweepsCasados: casados.size / 2,
+    lancamentos: classificados.length, revisao, sweepsCasados: casados.size / 2, giroSemPar,
+    classificados,
   };
 }
 
@@ -78,6 +96,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const r = montaEmpresa({ empresa, mes, extratos });
   console.log(`${empresa} ${mes}: ini ${r.ini} → fim ${r.fim}`);
   console.log(`  entradas ${r.totalIn} · saídas ${r.totalOut} · entre empresas/giro ${r.icwTotal}`);
-  console.log(`  ${r.lancamentos} lançamentos · ${r.sweepsCasados} sweeps casados · ${r.revisao} p/ revisão`);
+  console.log(`  ${r.lancamentos} lançamentos · ${r.sweepsCasados} sweeps casados · ${r.giroSemPar} giro(s) sem par · ${r.revisao} p/ revisão · rotativo captado/amortizado ${r.DATA.giro.join(' / ')}`);
   console.log(`  concilia: ${r.reconcilia ? 'OK (centavo)' : 'NÃO (dif ' + r.dif + ')'}`);
 }

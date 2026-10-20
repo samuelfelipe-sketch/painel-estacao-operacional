@@ -49,7 +49,7 @@ function fecha(o) {
    corta na seção de investimento ("Últimos Lançamentos" / "Os dados acima"). */
 export function bradesco(txt) {
   const flat = txt.replace(/\s+/g, ' ');
-  const sa = flat.match(/SALDO ANTERIOR\s+([\d.]+,\d{2})/i);
+  const sa = flat.match(/SALDO ANTERIOR\s+(-?[\d.]+,\d{2})/i);
   if (!sa) throw new Error('Bradesco: não achei SALDO ANTERIOR');
   const saldoAnterior = num(sa[1]);
   const ini = sa.index + sa[0].length;
@@ -58,7 +58,7 @@ export function bradesco(txt) {
   /* por lançamento: [data?] [descrição] [doc inteiro?] <valor> <saldo>; a data,
      quando ausente, é herdada da anterior. valor conferido pelo Δ saldo. */
   const datas = [...body.matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)].map(x => ({ i: x.index, d: iso(x[1], x[2], x[3]) }));
-  const pares = /(-?[\d.]+,\d{2})\s+(-?[\d.]+,\d{2})/g;
+  const pares = /(-?[\d.]+,\d{2})(?!\s*%)\s+(-?[\d.]+,\d{2})(?!\s*%)/g;
   let m; const mov = []; let prev = saldoAnterior, lastEnd = 0;
   while ((m = pares.exec(body))) {
     const saldo = num(m[2]);
@@ -78,16 +78,25 @@ export function unicred(txt) {
   /* corta o cabeçalho (resumo de saldos/limites) até o 1º lançamento datado */
   const ini = linhas.search(/\d{2}\/\d{2}\/\d{4}\s+(CR[EÉ]DITO|D[EÉ]BITO)/i);
   if (ini > 0) linhas = linhas.slice(ini);
-  /* linha: DATA DESC (...) R$ <saldo> [-] R$ <valor>; valor conferido pelo Δ saldo */
-  const re2 = /(\d{2})\/(\d{2})\/(\d{4})\s+(.+?)\s+R\$\s*([\d.,]+)\s+(-?)\s*R\$\s*([\d.,]+)(?=\s+\d{2}\/\d{2}\/\d{4}|\s*$)/g;
+  /* linha: DATA DESC ( Doc.: X / CONTRAPARTE ) R$ <saldo> [-] R$ <valor>; valor
+     conferido pelo Δ saldo. Cabeçalhos de página ficam entre linhas — por isso
+     sem lookahead. A contraparte fica na descrição (sweeps para a própria
+     empresa precisam ser reconhecidos). */
+  const re2 = /(\d{2})\/(\d{2})\/(\d{4})\s+(.+?)\s+R\$\s*([\d.,]+)\s+(-?)\s*R\$\s*([\d.,]+)/g;
   let m;
   while ((m = re2.exec(linhas))) {
     const data = iso(m[1], m[2], m[3]);
+    if (/^Saldo em/i.test(m[4])) continue;
     const saldo = num(m[5]);
     const valor = round2(saldo - prev); prev = saldo;
-    mov.push({ data, desc: m[4].replace(/\(.*?\)/g, '').trim(), valor });
+    const desc = m[4].replace(/\(\s*Doc\.?:\s*/i, '').replace(/\)\s*$/, '').replace(/\s{2,}/g, ' ').trim();
+    mov.push({ data, desc, valor });
   }
-  return fecha({ banco: 'unicred', saldoAnterior, saldoFinal: prev, mov, periodo: {} });
+  const fim = txt.replace(/\s+/g, ' ').match(/Saldo no final do per[ií]odo\s+(-?)\s*R\$\s*([\d.,]+)/i);
+  const saldoFinal = fim ? num((fim[1] || '') + fim[2]) : prev;
+  const o = fecha({ banco: 'unicred', saldoAnterior, saldoFinal, mov, periodo: {} });
+  o.finalDeclarado = !!fim;
+  return o;
 }
 /* Sicredi: "SALDO ANTERIOR x", linhas "DD/MM/AAAA DESC [doc] <valor> <saldo>";
    corta em "Lançamentos Futuros" */
@@ -111,7 +120,7 @@ export function sicredi(txt) {
 /* Stone: newest-first; "DD/MM/AA Entrada|Saída DESC ... VALOR SALDO CONTRAPARTE".
    Reordena por data; saldo corrido confirma. */
 export function stone(txt) {
-  const re = /(\d{2})\/(\d{2})\/(\d{2})\s+(Entrada|Saída)\s+(.+?)\s+(-?R\$\s*[\d.,]+)\s+(R\$\s*[\d.,]+)/g;
+  const re = /(\d{2})\/(\d{2})\/(\d{2})\s+(Entrada|Saída)\s+(.+?)\s+(-?\s*R\$\s*[\d.,]+)\s+(R\$\s*[\d.,]+)/g;
   let m; const bruto = [];
   const linhas = txt.replace(/\s+/g, ' ');
   while ((m = re.exec(linhas))) {
@@ -127,67 +136,117 @@ export function stone(txt) {
   return fecha({ banco: 'stone', saldoAnterior, saldoFinal, mov, periodo: {} });
 }
 /* ---- bancos com saldo por dia ---- */
-/* Banrisul: largura fixa; "SALDO ANT EM DD/MM/AAAA x"; dias "NN HISTORICO ...";
-   débito = valor com "-" ao final; "SALDO NA DATA x" fecha o dia. */
+/* Banrisul: o PDF vem ACHATADO (sem quebras; o cabeçalho até com letras
+   espaçadas). Blocos: "SALDO ANT EM DD/MM/AAAA x", "MOVIMENTOS MMM/AAAA",
+   depois dias: "NN HISTORICO DOC VALOR[-] ... SALDO NA DATA x". Débito = "-"
+   ao final. "NOME: …" após um PIX é a contraparte (vai para a descrição). */
 export function banrisul(txt) {
-  const sa = txt.match(/SALDO ANT EM \d{2}\/\d{2}\/\d{4}\s+([\d.,]+)/i);
+  const flat = txt.replace(/\s+/g, ' ');
+  const sa = flat.match(/SALDO ANT EM (\d{2})\/(\d{2})\/(\d{4})\s+([\d.]+,\d{2})(-?)/i);
   if (!sa) throw new Error('Banrisul: não achei SALDO ANT');
-  const saldoAnterior = num(sa[1]);
-  const mesM = txt.match(/MOVIMENTOS\s+([A-Z]{3})\/(\d{4})/i);
+  const saldoAnterior = num(sa[4] + sa[5]);
   const MES = { JAN: '01', FEV: '02', MAR: '03', ABR: '04', MAI: '05', JUN: '06', JUL: '07', AGO: '08', SET: '09', OUT: '10', NOV: '11', DEZ: '12' };
-  const mm = mesM ? MES[mesM[1].toUpperCase()] : null, aa = mesM ? mesM[2] : null;
-  const mov = []; let dia = null, saldoFinal = saldoAnterior; const saldosDia = [];
-  for (const raw of txt.split('\n')) {
-    const ln = raw.replace(/\s+$/, '');
-    const dd = ln.match(/^(\d{2})\s+\S/); if (dd) dia = dd[1];
-    const sd = ln.match(/SALDO NA DATA\s+([\d.,]+)/i); if (sd) { saldoFinal = num(sd[1]); if (dia && mm) saldosDia.push({ dia, saldo: saldoFinal }); continue; }
-    if (/SALDO ANT EM|MOVIMENTOS|SALDO DISPONIVEL|SALDO INICIAL|SALDO NA DATA|LIMITE|TARIFA|TAXA DE JUROS|CUSTO EFETIVO|BANRICOMPRAS|EXTRATO|NOME:|IOF/i.test(ln)) {
-      const valI = ln.match(/(-?[\d.]+,\d{2})-?\s*$/);
-      if (/IOF|TARIFA/i.test(ln) && valI && dia && mm) { let v = num(valI[1] + (/-\s*$/.test(ln) ? '-' : '')); mov.push({ data: iso(dia, mm, aa), desc: ln.replace(/\s{2,}/g, ' ').replace(/[-\d.,\s]+$/, '').trim(), valor: v }); }
-      continue;
+  const mesM = flat.match(/MOVIMENTOS\s+([A-Z]{3})\/(\d{4})/i);
+  if (!mesM) throw new Error('Banrisul: não achei "MOVIMENTOS MMM/AAAA"');
+  const mm = MES[mesM[1].toUpperCase()], aa = mesM[2];
+  let body = flat.slice(mesM.index + mesM[0].length);
+  const fimM = body.search(/EXTRATO EMITIDO|IDENTIFICACAO:|SAC 0800/i); if (fimM > 0) body = body.slice(0, fimM);
+  /* separa por dia: cada "SALDO NA DATA x" fecha um dia; o bloco começa com "NN " */
+  const mov = []; const saldosDia = []; let saldoFinal = saldoAnterior;
+  const blocos = body.split(/SALDO NA DATA\s+([\d.]+,\d{2})(-?)/i);
+  /* históricos conhecidos do Banrisul (do mais longo ao mais curto): separam o
+     "NOME: contraparte" do lançamento anterior do início do lançamento seguinte */
+  const HIST = ['VERO BANRICARD ALIMENTACAO', 'VERO BANRICARD REFEICAO', 'VERO BANRICARD OUTROS', 'VERO BANRICARD AUTO', 'CREDITO REGULARIZACAO RETR', 'DEPOSITO DINHEIRO ETV', 'COFRE INTELIGENTE', 'BANRI A VISTA', 'CREDITO VERO', 'VERO DEBITO', 'VERO PRAZO', 'PIX RECEBIDO', 'IOF ADICIONAL', 'PACOTE SERVICOS', 'RENOV.CADASTRO', 'TARIFA', 'JUROS', 'IOF', 'PIX', 'TED', 'DOC', 'SAQUE', 'DEPOSITO', 'CHEQUE', 'BOLETO', 'PAGAMENTO', 'TRANSFERENCIA', 'DEBITO', 'CREDITO', 'ESTORNO', 'TARIFA'];
+  const reHist = new RegExp('\\b(' + HIST.map(h => h.replace(/[.]/g, '\\.')).join('|') + ')\\b', 'g');
+  /* split com grupos → [bloco0, saldo0, sinal0, bloco1, saldo1, sinal1, …] */
+  for (let i = 0; i + 2 < blocos.length; i += 3) {
+    const bloco = blocos[i].trim(); const sd = num(blocos[i + 1] + blocos[i + 2]);
+    const dd = bloco.match(/^(\d{2})\s/); if (!dd) continue;
+    const dia = dd[1]; const data = iso(dia, mm, aa);
+    const resto = bloco.slice(2).trim();
+    /* corta por valores: cada lançamento termina em "<valor>[-]"; o trecho antes
+       é "[NOME: contraparte-do-anterior] HISTORICO DOC" */
+    const reVal = /\s([\d.]+,\d{2})(-?)(?=\s|$)/g;
+    let m, ini = 0;
+    while ((m = reVal.exec(resto))) {
+      let seg = resto.slice(ini, m.index).trim(); ini = m.index + m[0].length;
+      let v = num(m[1]); if (m[2] === '-') v = -Math.abs(v);
+      /* NOME: do lançamento anterior */
+      let nome = null;
+      if (/^NOME:/i.test(seg)) {
+        let ultimo = -1, mh; reHist.lastIndex = 0;
+        while ((mh = reHist.exec(seg))) ultimo = mh.index;
+        if (ultimo > 0) { nome = seg.slice(5, ultimo).trim(); seg = seg.slice(ultimo); }
+        else { const ws = seg.split(' '); nome = ws.slice(1, -3).join(' '); seg = ws.slice(-3).join(' '); }
+        if (nome && mov.length) mov[mov.length - 1].desc += ' NOME: ' + nome;
+      }
+      const toks = seg.split(' ').filter(Boolean);
+      let doc = null;
+      if (toks.length > 1 && /^[A-Z0-9]{4,}$/i.test(toks[toks.length - 1])) doc = toks.pop();
+      const desc = toks.join(' ').trim();
+      if (!desc) continue;
+      mov.push({ data, desc: desc + (doc ? ' ' + doc : ''), valor: v });
     }
-    const valM = ln.match(/(-?[\d.]+,\d{2})(-?)\s*$/);
-    if (valM && dia && mm) {
-      let v = num(valM[1]); if (valM[2] === '-') v = -Math.abs(v);
-      const desc = ln.replace(/^\d{2}\s+/, '').replace(/\s{2,}/g, ' ').replace(/[-\d.,\s]+$/, '').trim();
-      if (desc) mov.push({ data: iso(dia, mm, aa), desc, valor: v });
-    }
+    /* NOME: pendente no fim do bloco (último lançamento do dia) */
+    const cauda = resto.slice(ini).trim();
+    if (/^NOME:/i.test(cauda) && mov.length) mov[mov.length - 1].desc += ' NOME: ' + cauda.slice(5).trim();
+    saldosDia.push({ data, saldo: sd }); saldoFinal = sd;
   }
   const o = fecha({ banco: 'banrisul', saldoAnterior, saldoFinal, mov, periodo: {} });
-  /* conferência extra: cada "SALDO NA DATA" bate com o acumulado */
-  let run = saldoAnterior, i = 0; o.diasOk = true;
-  const porDia = {}; for (const x of mov) porDia[x.data] = (porDia[x.data] || 0) + x.valor;
+  /* conferência por dia: acumulado = "SALDO NA DATA" */
+  let run = saldoAnterior; const diasNaoBatem = [];
+  for (const sdia of saldosDia) { run = round2(run + mov.filter(x => x.data === sdia.data).reduce((a, x) => a + x.valor, 0)); if (Math.abs(run - sdia.saldo) > CENTAVO) diasNaoBatem.push(sdia.data); run = sdia.saldo; }
+  o.diasNaoBatem = diasNaoBatem;
   return o;
 }
-/* Itaú: newest-first; "DD/MM/AAAA SALDO TOTAL DISPONÍVEL DIA x" fecha o dia;
+/* Itaú (export "Entradas e Saídas" do app ou extrato): newest-first; "DD/MM/AAAA
+   SALDO TOTAL DISPONÍVEL DIA x" fecha o dia; "DD/MM/AAAA SALDO ANTERIOR x" no fim;
    demais linhas com data = lançamentos (último número = valor, "-" = débito). */
 export function itau(txt) {
   const linhas = txt.replace(/\s+/g, ' ');
-  const re = /(\d{2})\/(\d{2})\/(\d{4})\s+(.+?)(?=\s+\d{2}\/\d{2}\/\d{4}|\s*$)/g;
+  const re = /(\d{2})\/(\d{2})\/(\d{4})\s+(.+?)(?=\s+\d{2}\/\d{2}\/\d{4}\s|\s*$)/g;
   let m; const bruto = [];
   while ((m = re.exec(linhas))) bruto.push({ data: iso(m[1], m[2], m[3]), resto: m[4].trim() });
-  const mov = []; const saldosDia = [];
+  const mov = []; const saldosDia = []; let saldoAnterior = null;
   for (const b of bruto) {
+    if (/^SALDO ANTERIOR/i.test(b.resto)) { const v = b.resto.match(/(-?[\d.]+,\d{2})/); if (v) saldoAnterior = num(v[1]); continue; }
     if (/SALDO TOTAL DISPON[IÍ]VEL DIA/i.test(b.resto)) { const v = b.resto.match(/(-?[\d.]+,\d{2})\s*$/); if (v) saldosDia.push({ data: b.data, saldo: num(v[1]) }); continue; }
+    if (/^(Lançamentos do per|Os saldos acima|Em caso de d)/i.test(b.resto)) continue;
     const v = b.resto.match(/(-?[\d.]+,\d{2})\s*$/); if (!v) continue;
     mov.push({ data: b.data, desc: b.resto.replace(/(-?[\d.]+,\d{2})\s*$/, '').replace(/\s{2,}/g, ' ').trim(), valor: num(v[1]) });
   }
-  const ordem = mov.reverse();
-  saldosDia.reverse();
+  const ordem = mov.reverse(); saldosDia.reverse();
   const saldoFinal = saldosDia.length ? saldosDia[saldosDia.length - 1].saldo : null;
-  /* saldo anterior: saldo do dia mais antigo menos os lançamentos daquele dia */
-  let saldoAnterior = null;
-  if (saldosDia.length) { const d0 = saldosDia[0].data; const somaD0 = ordem.filter(x => x.data === d0).reduce((a, x) => a + x.valor, 0); saldoAnterior = round2(saldosDia[0].saldo - somaD0); }
+  if (saldoAnterior === null && saldosDia.length) { const d0 = saldosDia[0].data; const somaD0 = ordem.filter(x => x.data === d0).reduce((a, x) => a + x.valor, 0); saldoAnterior = round2(saldosDia[0].saldo - somaD0); }
   const o = fecha({ banco: 'itau', saldoAnterior: saldoAnterior ?? 0, saldoFinal: saldoFinal ?? 0, mov: ordem, periodo: {} });
-  o.semSaldoAnterior = saldoAnterior === null;
+  o.saldoAnteriorDeclarado = bruto.some(b => /^SALDO ANTERIOR/i.test(b.resto));
   return o;
 }
+/* PagBank: "DD/MM/AAAA Descrição [-]R$ valor" em ordem cronológica, com
+   "Saldo do dia DD/MM/AAAA R$ x" fechando cada dia. Saldo anterior = saldo do
+   1º dia menos os lançamentos do dia. */
+export function pagbank(txt) {
+  let flat = txt.replace(/\s+/g, ' ');
+  /* corta o cabeçalho (emissão, período, CNPJ) até a 1ª tabela */
+  const cab = flat.search(/Descri[çc][ãa]o\s+Data\s+Valor/i); if (cab > 0) flat = flat.slice(cab);
+  const reDia = /Saldo do dia (\d{2})\/(\d{2})\/(\d{4})\s+(-?)\s*R\$\s*([\d.]+,\d{2})/g;
+  const saldosDia = []; let m; while ((m = reDia.exec(flat))) saldosDia.push({ data: iso(m[1], m[2], m[3]), saldo: num(m[4] + m[5]) });
+  /* tira os fechos de dia e os cabeçalhos repetidos de página antes de ler os lançamentos */
+  const corpo = flat.replace(reDia, ' ').replace(/Descri[çc][ãa]o\s+Data\s+Valor/gi, ' ');
+  const re = /(\d{2})\/(\d{2})\/(\d{4})\s+(.+?)\s+(-?)\s*R\$\s*([\d.]+,\d{2})/g;
+  const mov = [];
+  while ((m = re.exec(corpo))) mov.push({ data: iso(m[1], m[2], m[3]), desc: m[4].replace(/\s{2,}/g, ' ').trim(), valor: num(m[5] + m[6]) });
+  const saldoFinal = saldosDia.length ? saldosDia[saldosDia.length - 1].saldo : 0;
+  let saldoAnterior = 0;
+  if (saldosDia.length) { const d0 = saldosDia[0].data; saldoAnterior = round2(saldosDia[0].saldo - mov.filter(x => x.data === d0).reduce((a, x) => a + x.valor, 0)); }
+  return fecha({ banco: 'pagbank', saldoAnterior, saldoFinal, mov, periodo: {} });
+}
 
-export const PARSERS = { bradesco, unicred, sicredi, stone, banrisul, itau };
+export const PARSERS = { bradesco, unicred, sicredi, stone, banrisul, itau, pagbank };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const banco = process.argv[2], arq = process.argv[3];
-  if (!banco || !arq || !PARSERS[banco]) { console.error('uso: node fluxo-extratos.mjs <bradesco|unicred|sicredi|stone|banrisul|itau> <arquivo.txt>'); process.exit(1); }
+  if (!banco || !arq || !PARSERS[banco]) { console.error('uso: node fluxo-extratos.mjs <' + Object.keys(PARSERS).join('|') + '> <arquivo.txt>'); process.exit(1); }
   const o = PARSERS[banco](readFileSync(arq, 'utf8'));
-  console.log(`${banco}: ${o.mov.length} lançamentos · período ${o.periodo.de || '?'}–${o.periodo.ate || '?'} · reconcilia: ${o.ok ? 'OK (centavo)' : 'NÃO (dif ' + o.dif + ')'}`);
+  console.log(`${banco}: ${o.mov.length} lançamentos · período ${o.periodo.de || '?'}–${o.periodo.ate || '?'} · anterior ${o.saldoAnterior} → final ${o.saldoFinal} · reconcilia: ${o.ok ? 'OK (centavo)' : 'NÃO (dif ' + o.dif + ')'}` + (o.diasNaoBatem && o.diasNaoBatem.length ? ` · dias que não batem: ${o.diasNaoBatem.join(', ')}` : ''));
 }
