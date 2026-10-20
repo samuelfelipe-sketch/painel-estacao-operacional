@@ -1,15 +1,18 @@
 /* ============================================================
    Acesso restrito — Estação Sapatão (Roadmap + Planejamento)
    ------------------------------------------------------------
-   v2 — com USUÁRIOS: cada pessoa tem a própria senha (o que fica
-   aqui e em roadmap/usuarios.json é só o hash SHA-256) e permissões
-   por painel: roadmap (Guia) e pe (Planejamento Estratégico),
-   cada uma 'edita' | 'le' | 'nao'. Admin gerencia tudo.
-   A página define window.SAPATAO_APP = 'roadmap' | 'pe' antes
-   deste script; sem definir, vale 'roadmap'.
-   O login é só pela senha: o hash identifica quem entrou.
-   Obs.: é uma proteção de acesso simples de site estático —
-   suficiente para uso interno, não para dados sensíveis.
+   v3 — com USUÁRIOS: cada pessoa tem a própria senha e permissões
+   por painel (roadmap, pe, fluxo, operacional, negociacao). Admin
+   gerencia tudo. A página define window.SAPATAO_APP antes deste
+   script; sem definir, vale 'roadmap'.
+   Senha: roadmap/usuarios.json guarda só um VERIFICADOR lento —
+   PBKDF2-SHA256 com sal próprio de cada pessoa e 600 mil iterações
+   (campo kdf:{alg,i,s,h}). O formato antigo (campo hash = SHA-256 puro)
+   ainda entra, até a pessoa trocar a senha: toda gravação de senha
+   (trocar a minha, redefinir, criar usuário) já grava o formato novo
+   e apaga o hash antigo.
+   Quem protege os DADOS é a chave dos dados (DEK), que só sai do
+   envelope da pessoa (chave.enc.json) com a senha certa.
    ============================================================ */
 (function () {
   /* iPad com o site instalado como app: o iPadOS desenha os controles da
@@ -39,11 +42,10 @@
   };
   aplicaZoom(window.sapataoZoom.valor());
 
-  /* Fallback embutido (mantém o Samuel entrando mesmo sem rede).
-     A lista viva fica em roadmap/usuarios.json. */
-  var USUARIOS_FALLBACK = [
-    { id: 'samuel', nome: 'Samuel', hash: 'd2a841835b53ff10c938d88d247151e4cb36bb6c9047c8f7b9affe799d97f7c1', admin: true, ativo: true, perm: { roadmap: 'edita', pe: 'edita' } }
-  ];
+  /* Sem lista embutida: o fallback antigo trazia o SHA-256 puro da senha
+     do admin no código público. A lista vive em roadmap/usuarios.json (com
+     cópia local em cache); sem cache e sem rede, o login espera a rede. */
+  var USUARIOS_FALLBACK = [];
   var RAW_BASE = 'https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/';
   var API_BASE = 'https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/';
   var CHAVE = 'sapatao-roadmap-auth-v1';
@@ -127,9 +129,44 @@
   }
   function achaPorHash(lista, h) {
     for (var i = 0; i < lista.length; i++) {
-      if (lista[i].ativo !== false && lista[i].hash === h) return lista[i];
+      if (lista[i].ativo !== false && verif(lista[i]) === h) return lista[i];
     }
     return null;
+  }
+
+  /* ---------- verificador de senha ----------
+     kdf = {alg:'pbkdf2-sha256', i: iterações, s: sal (base64, 16 bytes),
+            h: PBKDF2(senha, sal, i) em base64 (32 bytes)}.
+     A sessão guarda {u, h: verificador}: trocar a senha muda o verificador e
+     derruba as sessões antigas na revalidação. O verificador não abre nada —
+     a chave dos dados só sai do envelope com a senha. */
+  var KDF_IT = 600000;
+  function derivaVerif(pw, saltU8, it) {
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits'])
+      .then(function (base) { return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: saltU8, iterations: it }, base, 256); })
+      .then(function (bits) { return b64bytes(new Uint8Array(bits)); });
+  }
+  function verif(u) { return u ? ((u.kdf && u.kdf.h) || u.hash || '') : ''; }
+  /* a senha digitada confere com o usuário? (formato novo ou antigo) */
+  function confere(u, pw) {
+    if (!u || !pw) return Promise.resolve(false);
+    if (u.kdf && u.kdf.h && u.kdf.s) {
+      if (!window.crypto || !crypto.subtle) return Promise.resolve(false);
+      return derivaVerif(pw, bytesB64(u.kdf.s), u.kdf.i || KDF_IT)
+        .then(function (h) { return h === u.kdf.h; })
+        .catch(function () { return false; });
+    }
+    if (u.hash) return Promise.resolve(sha256(pw) === u.hash);
+    return Promise.resolve(false);
+  }
+  /* grava a senha no formato novo (sal próprio) e apaga o hash antigo */
+  function defineSenha(u, pw) {
+    var sal = crypto.getRandomValues(new Uint8Array(16));
+    return derivaVerif(pw, sal, KDF_IT).then(function (h) {
+      u.kdf = { alg: 'pbkdf2-sha256', i: KDF_IT, s: b64bytes(sal), h: h };
+      delete u.hash;
+      return u;
+    });
   }
   function permDe(user, app) {
     if (!user) return 'nao';
@@ -159,13 +196,14 @@
 
   var A = window.sapataoAuth = {
     sha256: sha256, chave: CHAVE, app: APP,
+    verif: verif, confere: confere, defineSenha: defineSenha,
     usuarios: usuariosLocais(),
     user: null, pw: null,
     permDe: permDe,
     podeEditar: function (app) { return permDe(A.user, app || APP) === 'edita'; },
     temAcesso: function (app) { return permDe(A.user, app || APP) !== 'nao'; },
     /* compat com código antigo que lia .hash */
-    get hash() { return A.user ? A.user.hash : ''; }
+    get hash() { return verif(A.user); }
   };
   window.sapataoSair = function () {
     try { sessionStorage.removeItem(CHAVE); } catch (e) {}
@@ -206,29 +244,32 @@
   }
 
   /* ---------- cofre da chave de publicação (compartilhado entre os painéis) ----------
-     roadmap/chave.enc.json v2: {v:2, envelopes:{usuarioId:{salt,iv,ct}}} — o token
-     criptografado com a senha de cada usuário (AES-GCM, PBKDF2 310k).
+     roadmap/chave.enc.json v2: {v:2, envelopes:{usuarioId:{i,salt,iv,ct}}} — o token
+     criptografado com a senha de cada usuário (AES-GCM, PBKDF2 600k; sem i = 310k).
      Compatível com o formato v1 (um único envelope na raiz). */
   function b64bytes(u8) { var s = ''; u8.forEach(function (b) { s += String.fromCharCode(b); }); return btoa(s); }
   function bytesB64(b64) { return Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); }); }
   function b64enc(str) { return btoa(unescape(encodeURIComponent(str))); }
   function b64dec(str) { return decodeURIComponent(escape(atob(str.replace(/\s/g, '')))); }
-  function kdf(pw, saltU8) {
+  /* envelopes novos gravam as iterações (i: 600 mil); os antigos, sem o
+     campo, foram fechados com 310 mil e continuam abrindo */
+  var ENV_IT = 600000, ENV_IT_ANTIGO = 310000;
+  function kdf(pw, saltU8, it) {
     return crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey'])
       .then(function (base) {
-        return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: saltU8, iterations: 310000 }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+        return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: saltU8, iterations: it }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
       });
   }
   function abreEnvelope(env, pw) {
-    return kdf(pw, bytesB64(env.salt)).then(function (key) {
+    return kdf(pw, bytesB64(env.salt), env.i || ENV_IT_ANTIGO).then(function (key) {
       return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytesB64(env.iv) }, key, bytesB64(env.ct));
     }).then(function (pt) { return new TextDecoder().decode(pt); });
   }
   function fechaEnvelope(token, pw) {
     var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
-    return kdf(pw, salt).then(function (key) {
+    return kdf(pw, salt, ENV_IT).then(function (key) {
       return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(token));
-    }).then(function (ct) { return { salt: b64bytes(salt), iv: b64bytes(iv), ct: b64bytes(new Uint8Array(ct)) }; });
+    }).then(function (ct) { return { i: ENV_IT, salt: b64bytes(salt), iv: b64bytes(iv), ct: b64bytes(new Uint8Array(ct)) }; });
   }
   var KEY_URL = API_BASE + 'roadmap/chave.enc.json';
   var C = window.sapataoChave = {
@@ -414,40 +455,44 @@
   var s = leSessao();
   /* login programático (usado pelo campo de login da central) */
   A.login = function (usuarioDig, senha, lembrar) {
-    var dig = normUser(usuarioDig), h = sha256(senha);
+    var dig = normUser(usuarioDig);
     if (!dig || !senha) return Promise.resolve(null);
+    /* acha pelo nome e confere a senha (PBKDF2 — leva uma fração de segundo) */
     function bate(lista) {
-      for (var i = 0; i < lista.length; i++) {
-        var u = lista[i];
-        if (u.ativo === false) continue;
-        if ((normUser(u.nome) === dig || normUser(u.id) === dig) && u.hash === h) return u;
+      var cands = lista.filter(function (u) { return u.ativo !== false && (normUser(u.nome) === dig || normUser(u.id) === dig); });
+      var i = 0;
+      function prox() {
+        if (i >= cands.length) return Promise.resolve(null);
+        var u = cands[i++];
+        return confere(u, senha).then(function (ok) { return ok ? u : prox(); });
       }
-      return null;
+      return prox();
     }
     function fim(u) {
       if (!u) return null;
-      gravaSessao(u, h, lembrar !== false);
+      gravaSessao(u, verif(u), lembrar !== false);
       A.user = u; A.pw = senha;
       anuncia();
       try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
       return u;
     }
-    var u = bate(A.usuarios);
-    if (u) return Promise.resolve(fim(u));
-    return usuariosFrescos().then(function (l) { A.usuarios = l; return fim(bate(l)); }).catch(function () { return null; });
+    return bate(A.usuarios).then(function (u) {
+      if (u) return fim(u);
+      return usuariosFrescos().then(function (l) { A.usuarios = l; return bate(l).then(fim); }).catch(function () { return null; });
+    });
   };
   if (APP === 'central') {
     /* a central é aberta: nunca trava; só resolve a sessão, se houver */
     if (s) {
       var uc = null;
-      if (s.u) { A.usuarios.forEach(function (x) { if (x.id === s.u && x.hash === s.h && x.ativo !== false) uc = x; }); }
+      if (s.u) { A.usuarios.forEach(function (x) { if (x.id === s.u && verif(x) === s.h && x.ativo !== false) uc = x; }); }
       if (!uc) uc = achaPorHash(A.usuarios, s.h);
       if (uc) {
         A.user = uc; anuncia();
         usuariosFrescos().then(function (lista) {
           A.usuarios = lista;
           var v2 = null;
-          lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v2 = x; });
+          lista.forEach(function (x) { if (verif(x) === s.h && x.ativo !== false) v2 = x; });
           A.user = v2; anuncia();
         }).catch(function () {});
       } else {
@@ -456,7 +501,7 @@
         usuariosFrescos().then(function (lista) {
           A.usuarios = lista;
           var v2 = null;
-          lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v2 = x; });
+          lista.forEach(function (x) { if (verif(x) === s.h && x.ativo !== false) v2 = x; });
           if (v2) { A.user = v2; anuncia(); }
         }).catch(function () {});
       }
@@ -465,7 +510,7 @@
   }
   if (s) {
     var u = null;
-    if (s.u) { A.usuarios.forEach(function (x) { if (x.id === s.u && x.hash === s.h && x.ativo !== false) u = x; }); }
+    if (s.u) { A.usuarios.forEach(function (x) { if (x.id === s.u && verif(x) === s.h && x.ativo !== false) u = x; }); }
     if (!u) u = achaPorHash(A.usuarios, s.h);
     if (u) {
       A.user = u;
@@ -474,7 +519,7 @@
       usuariosFrescos().then(function (lista) {
         A.usuarios = lista;
         var v = null;
-        lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v = x; });
+        lista.forEach(function (x) { if (verif(x) === s.h && x.ativo !== false) v = x; });
         if (!v) { window.sapataoSair(); return; }
         A.user = v;
         /* sem permissão confirmada na lista fresca: se a tela "Sem acesso" já
@@ -511,7 +556,7 @@
     usuariosFrescos().then(function (lista) {
       A.usuarios = lista;
       var v = null;
-      lista.forEach(function (x) { if (x.hash === s.h && x.ativo !== false) v = x; });
+      lista.forEach(function (x) { if (verif(x) === s.h && x.ativo !== false) v = x; });
       if (!v) { vaiParaCentral(); return; }
       A.user = v;
       if (!A.temAcesso(APP)) { document.documentElement.classList.remove('sptx-lock'); bloqueiaSemAcesso(); return; }

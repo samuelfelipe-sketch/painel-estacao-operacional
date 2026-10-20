@@ -997,7 +997,7 @@ async function buscaChaveNuvem(){
 document.addEventListener('sapatao-login',buscaChaveNuvem);
 buscaChaveNuvem();
 
-/* --- Troca de senha do site (reescreve o auth.js no repositório) --- */
+/* --- Troca de senha do usuário logado (grava roadmap/usuarios.json no formato PBKDF2) --- */
 const snMsg=document.getElementById('sn-msg'),snBtn=document.getElementById('sn-trocar');
 function snDiz(txt,erro){if(snMsg){snMsg.textContent=txt;snMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
 if(snBtn)snBtn.addEventListener('click',async function(){
@@ -1022,10 +1022,10 @@ if(snBtn)snBtn.addEventListener('click',async function(){
     const eu=(doc.usuarios||[]).find(function(u){return u.id===A.user.id;});
     if(!eu)throw new Error('seu usuário não está na lista');
     /* valida a senha atual contra a versão fresca do repositório */
-    if(A.sha256(atual)!==eu.hash){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
-    const novoHash=A.sha256(nova);
-    if(!/^[0-9a-f]{64}$/.test(novoHash))throw new Error('falha ao gerar o código da senha');
-    eu.hash=novoHash;
+    if(!(await A.confere(eu,atual))){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
+    await A.defineSenha(eu,nova);
+    const novoHash=A.verif(eu);
+    if(!novoHash)throw new Error('falha ao gerar o código da senha');
     const r=await fetch(API_US,{method:'PUT',headers:h,body:JSON.stringify({
       message:'chore: altera a senha do usuário '+eu.nome+' (via Configurações)',branch:'main',content:b64enc(JSON.stringify(doc,null,1)),sha:j.sha})});
     if(r.status===401||r.status===403)throw new Error('a chave de publicação é inválida ou expirou — gere uma nova no GitHub e cole no quadro Nuvem acima');
@@ -1036,7 +1036,7 @@ if(snBtn)snBtn.addEventListener('click',async function(){
       if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,sess);
       localStorage.setItem('sapatao-usuarios-cache-v1',JSON.stringify({v:1,usuarios:doc.usuarios}));
     }catch(e){}
-    A.user.hash=novoHash;A.pw=nova;
+    A.user.kdf=eu.kdf;delete A.user.hash;A.pw=nova;
     /* regrava o envelope da chave da nuvem cifrado com a senha nova */
     window.sapataoChave.garante();
     document.getElementById('sn-atual').value='';document.getElementById('sn-nova').value='';document.getElementById('sn-conf').value='';

@@ -17,12 +17,10 @@ Tudo é HTML puro — sem build, sem dependências, sem backend. As fontes vêm 
 
 ## Acesso (login e senha)
 
-As páginas pedem senha antes de abrir — exceto o `resumo.html` (Método Reborn), que é aberto de propósito para compartilhar com o Club Reborn. A validação é feita no navegador comparando o **hash SHA-256** — a senha não aparece em texto claro no código.
+As páginas pedem usuário e senha na central de acessos — exceto o `resumo.html` (Método Reborn), que é aberto de propósito para compartilhar com o Club Reborn. Cada pessoa tem a própria senha; `roadmap/usuarios.json` guarda só um verificador lento (PBKDF2-SHA256, sal próprio por pessoa, 600 mil iterações). Os dados de negócio ficam cifrados e só abrem com a chave que sai do envelope da pessoa, aberto pela senha.
 
-- **Senha inicial:** `pass123`
-- Marcando "Manter conectado neste dispositivo", não pede de novo naquele aparelho. O link **Sair** no rodapé da página inicial desconecta.
-- **Para trocar a senha:** gere o SHA-256 da nova senha (peça ao Claude ou rode `echo -n "novasenha" | shasum -a 256`) e substitua o valor de `HASH_SENHA` no `auth.js`.
-- É uma proteção simples de site estático (client-side): serve para restringir o acesso interno, não para guardar dados sensíveis.
+- Marcando "Manter conectado neste dispositivo", não pede de novo naquele aparelho. O botão **Sair** desconecta.
+- **Para trocar a senha:** Configurações → "Minha senha". O admin cria usuários e redefine senhas na mesma página. Nunca escreva senha nem hash à mão em arquivo do repositório.
 
 ## Publicação atual
 

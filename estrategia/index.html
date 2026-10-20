@@ -966,16 +966,15 @@ if(snBtn)snBtn.addEventListener('click',async ()=>{
     const{sha,doc}=await usuariosDoRepo(true);
     const eu=(doc.usuarios||[]).find(u=>u.id===A.user.id);
     if(!eu)throw new Error('seu usuário não está na lista');
-    if(A.sha256(atual)!==eu.hash){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
-    const novoHash=A.sha256(nova);
-    eu.hash=novoHash;
+    if(!(await A.confere(eu,atual))){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
+    await A.defineSenha(eu,nova);
     await gravaUsuarios(doc,sha,'chore: altera a senha do usuário '+eu.nome+' (via Configurações)');
-    const sess=JSON.stringify({u:eu.id,h:novoHash});
+    const sess=JSON.stringify({u:eu.id,h:A.verif(eu)});
     try{
       if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,sess);
       if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,sess);
     }catch(e){}
-    A.user.hash=novoHash;A.pw=nova;
+    A.user.kdf=eu.kdf;delete A.user.hash;A.pw=nova;
     window.sapataoChave.garante();
     ['sn-atual','sn-nova','sn-conf'].forEach(i=>document.getElementById(i).value='');
     snDiz('Senha alterada! Este aparelho continua conectado; os seus outros aparelhos vão pedir a senha nova.');
@@ -985,7 +984,7 @@ if(snBtn)snBtn.addEventListener('click',async ()=>{
 
 /* ---- administração de usuários (só admin) ---- */
 const usTbl=document.getElementById('us-tbl'),usMsg=document.getElementById('us-msg');
-let usDoc=null,usSha=null,usEnvelopes=[];
+let usDoc=null,usSha=null,usEnvelopes=[],usPend=[];
 function usDiz(t,erro){if(usMsg){usMsg.textContent=t;usMsg.style.color=erro?'#8C1D18':'#1D6B3C';}}
 function usRender(){
   if(!usDoc)return;
@@ -1029,9 +1028,11 @@ if(usTbl){
     const s=prompt('Nova senha para '+u.nome+' (mínimo 6 caracteres):');
     if(s===null)return;
     if(s.length<6){usDiz('Senha muito curta — nada foi alterado.',true);return;}
-    u.hash=window.sapataoAuth.sha256(s);
-    usEnvelopes.push({id:u.id,senha:s});
-    usDiz('Senha de '+u.nome+' pronta — clique em "Salvar alterações" para gravar.');
+    usDiz('Preparando a senha de '+u.nome+'…');
+    usPend.push(window.sapataoAuth.defineSenha(u,s).then(()=>{
+      usEnvelopes.push({id:u.id,senha:s});
+      usDiz('Senha de '+u.nome+' pronta — clique em "Salvar alterações" para gravar.');
+    }));
   });
   document.getElementById('us-add').addEventListener('click',()=>{
     if(!usDoc)return;
@@ -1041,10 +1042,14 @@ if(usTbl){
     if(s===null)return;
     if(s.length<6){usDiz('Senha muito curta — usuário não criado.',true);return;}
     const novoId=usId(nome.trim());
-    usDoc.usuarios.push({id:novoId,nome:nome.trim(),hash:window.sapataoAuth.sha256(s),admin:false,ativo:true,perm:{roadmap:'le',pe:'le'}});
-    usEnvelopes.push({id:novoId,senha:s});
-    usRender();
-    usDiz('Usuário criado com permissão "Só lê" nos dois painéis — ajuste e clique em "Salvar alterações".');
+    const novo={id:novoId,nome:nome.trim(),admin:false,ativo:true,perm:{roadmap:'le',pe:'le'}};
+    usDiz('Preparando o usuário '+novo.nome+'…');
+    usPend.push(window.sapataoAuth.defineSenha(novo,s).then(()=>{
+      usDoc.usuarios.push(novo);
+      usEnvelopes.push({id:novoId,senha:s});
+      usRender();
+      usDiz('Usuário criado com permissão "Só lê" nos dois painéis — ajuste e clique em "Salvar alterações".');
+    }));
   });
   document.getElementById('us-salvar').addEventListener('click',async ()=>{
     const A=window.sapataoAuth;
@@ -1055,6 +1060,8 @@ if(usTbl){
     if(!usDoc.usuarios.some(u=>u.admin&&u.ativo!==false)){usDiz('É preciso ter ao menos um admin ativo.',true);return;}
     usDiz('Gravando…');
     try{
+      /* senhas redefinidas/criadas ainda sendo preparadas (PBKDF2) entram antes de gravar */
+      const pend=usPend;usPend=[];await Promise.all(pend);
       await gravaUsuarios(usDoc,usSha,'chore: atualiza usuários e permissões (via Configurações)');
       A.usuarios=usDoc.usuarios;
       /* envelope da chave de publicação para cada senha criada/redefinida:
