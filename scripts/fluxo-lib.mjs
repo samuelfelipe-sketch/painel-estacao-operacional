@@ -98,25 +98,40 @@ export function opt(args, nome, padrao) { const i = args.indexOf('--' + nome); r
 export function temFlag(args, nome) { return args.includes('--' + nome); }
 
 /* ---- mapa de fornecedores (fluxo-fornecedores.mjs) ---- */
-export const chave14 = s => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 14);
-/* devolve { conta, chave, fonte } para o memo, ou null. Varre o memo por janelas
-   que começam em fronteira de palavra: a primeira cuja CHAVE14 está no mapa
-   decide (aprendidos antes do idx do Argo). */
+export const chave14 = s => (s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 14);
+const PREFIXOS_MEMO = /^(LIQUIDACAO BOLETO( SICREDI)?|PAGAMENTO PIX|PAGAMENTO|DEBITO CONVENIOS|DEBITO TED\/IB|DEBITO ARRECADACAO|DEBITO TRANSFERENCIA PIX DEB PIX \/|CREDITO RECEBIMENTO DE PIX CRED PIX \/|RECEBIMENTO PIX|TED|DOC|PIX|\(SAIDA\)|TRANSFERENCIA \| PIX|PIX \| MAQUININHA|BOLETO|NOME:)\s*/;
+const GENERICOS = new Set(['COMERCIO', 'COMERCIAL', 'COM', 'DISTRIBUIDORA', 'DISTR', 'DISTRIB', 'INDUSTRIA', 'IND', 'POSTO', 'AUTO', 'CENTRO', 'CASA', 'GRUPO', 'SUPERMERCADO', 'MERCADO', 'TRANSPORTES', 'TRANSPORTE', 'SERVICOS', 'CIA', 'BANCO', 'CAIXA', 'CONDOMINIO', 'ASSOCIACAO', 'ASSOCIA', 'SIND', 'SINDICATO', 'PREFEITURA', 'ESTADO', 'SECRETARIA', 'UNIAO', 'REDE', 'LOJA', 'LOJAS', 'PADARIA', 'RESTAURANTE', 'CLINICA', 'ESCRITORIO', 'OFICINA', 'MECANICA', 'FABRICA', 'ATACADO', 'ATACADAO', 'NOVO', 'NOVA', 'SAO', 'SANTA', 'SANTO', 'VALE', 'SUL', 'BRASIL', 'MUNICIPIO', 'LTDA', 'ME', 'EIRELI', 'SA', 'EPP']);
+/* nome do fornecedor como aparece no memo: tira prefixos do banco, CNPJ/CPF, documentos e códigos */
+export function nomeDoMemo(desc) {
+  let t = (desc || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  for (let i = 0; i < 3; i++) t = t.replace(PREFIXOS_MEMO, '');
+  t = t.replace(/\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/g, ' ').replace(/\b\d{11,14}\b/g, ' ');
+  t = t.replace(/\b[A-Z]*\d[A-Z0-9_.-]*\b/g, ' ');                      /* tokens com dígitos: documentos, PIX_DEB, CX638265, COB000002 */
+  t = t.replace(/\b(PIX_DEB|PIX_CRED|TRANSFERENCIA \| PIX|PIX \| MAQUININHA|PAGAMENTO|TRANSFERENCIA|\| PIX|\|)\b/g, ' ');
+  return t.replace(/[^A-Z0-9&. ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+const tokens = s => s.split(/[^A-Z0-9]+/).filter(Boolean);
+/* devolve { conta, chave, fonte } para o memo, ou null. Ordem: aprendidos →
+   chave exata de 14 → prefixo único (memo truncado) → dois primeiros nomes
+   iguais → primeiro nome (≥6 letras, não genérico) único no mapa. */
 export function fornecedorDoMemo(desc, mapa) {
   if (!mapa || !desc) return null;
-  const palavras = desc.split(/[\s|/()]+/).filter(Boolean);
-  for (let i = 0; i < palavras.length; i++) {
-    const resto = palavras.slice(i).join(' ');
-    const n = chave14(resto); if (n.length < 4) continue;
-    const a = mapa.aprendidos && mapa.aprendidos[n]; if (a && a.conta) return { conta: a.conta, chave: n, fonte: 'aprendido' };
-    if (mapa.idx && mapa.idx[n] && (n.length === 14 || chave14((mapa.nomes || {})[n] || '') === n)) return { conta: mapa.idx[n], chave: n, fonte: 'argo' };
+  const nome = nomeDoMemo(desc); if (!nome) return null;
+  const pal = tokens(nome); if (!pal.length) return null;
+  const idx = mapa.idx || {}, nomes = mapa.nomes || {}, apr = mapa.aprendidos || {};
+  for (let i = 0; i < Math.min(pal.length, 3); i++) {
+    const n = chave14(pal.slice(i).join(' ')); if (n.length < 4) continue;
+    if (apr[n] && apr[n].conta) return { conta: apr[n].conta, chave: n, fonte: 'aprendido' };
+    if (idx[n] && (n.length === 14 || chave14(nomes[n] || '') === n)) return { conta: idx[n], chave: n, fonte: 'argo' };
   }
-  /* memo truncado (ex.: "STV SEG" nos boletos Sicredi): prefixo com ≥6 caracteres que
-     casa com UM só fornecedor do mapa */
-  for (let i = 0; i < palavras.length; i++) {
-    const n = chave14(palavras.slice(i).join(' ')); if (n.length < 6 || n.length >= 14) continue;
-    const cand = Object.keys(mapa.idx || {}).filter(k => k.startsWith(n));
-    if (cand.length === 1) return { conta: mapa.idx[cand[0]], chave: cand[0], fonte: 'argo~prefixo' };
-  }
+  const n0 = chave14(nome);
+  if (n0.length >= 6 && n0.length < 14) { const cand = Object.keys(idx).filter(k => k.startsWith(n0)); if (cand.length === 1) return { conta: idx[cand[0]], chave: cand[0], fonte: 'argo~prefixo' }; const ca = Object.keys(apr).filter(k => k.startsWith(n0)); if (ca.length === 1) return { conta: apr[ca[0]].conta, chave: ca[0], fonte: 'aprendido~prefixo' }; }
+  /* por nomes (palavras) */
+  if (!mapa._porNome) { mapa._porNome = {}; for (const k of Object.keys(nomes)) { const tk = tokens(chaveNome(nomes[k])); if (tk.length) (mapa._porNome[tk[0]] = mapa._porNome[tk[0]] || []).push({ k, tk }); } }
+  const t0 = pal[0], t1 = pal[1];
+  const lista = mapa._porNome[t0] || [];
+  if (t1) { const dois = lista.filter(x => x.tk[1] === t1 || (x.tk[1] || '').startsWith(t1) && t1.length >= 5); if (dois.length === 1) return { conta: idx[dois[0].k], chave: dois[0].k, fonte: 'argo~nomes' }; }
+  if (t0.length >= 6 && !GENERICOS.has(t0) && lista.length === 1) return { conta: idx[lista[0].k], chave: lista[0].k, fonte: 'argo~nome' };
   return null;
 }
+const chaveNome = s => (s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');

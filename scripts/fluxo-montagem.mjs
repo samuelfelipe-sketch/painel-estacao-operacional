@@ -24,7 +24,22 @@ export function wkOf(ano, mes, dia) { const off = (new Date(ano, mes - 1, 1).get
 export function nSemanas(ano, mes, nd) { return wkOf(ano, mes, nd) + 1; }
 const arredObj = o => { const r = {}; for (const k of Object.keys(o)) r[k] = o[k].map(round2); return r; };
 
-export function montaEmpresa({ empresa, mes, extratos, fornMap }) {
+/* ajustes = [{empresa?, banco?, data?, valor?, contem?, conta, giro?}]: decisões da
+   Rotina (ou do Samuel) que prevalecem sobre a classificação automática */
+export function aplicaAjuste(c, ajustes, empresa) {
+  for (const a of ajustes || []) {
+    if (a.empresa && a.empresa !== empresa) continue;
+    if (a.banco && a.banco !== c.banco) continue;
+    if (a.data && a.data !== c.data) continue;
+    if (a.valor != null && Math.abs(Math.abs(a.valor) - Math.abs(c.valor)) > 0.005) continue;
+    if (a.contem && !c.desc.toUpperCase().includes(String(a.contem).toUpperCase())) continue;
+    c.conta = a.conta; c.confia = true; c.ajustado = true; c.intercompany = false; c.abate = !!a.abate;
+    c.giro = a.giro === true; c.proprio = a.giro === true; c.pix = false; c.sispag = false;
+    return c;
+  }
+  return c;
+}
+export function montaEmpresa({ empresa, mes, extratos, fornMap, ajustes }) {
   const [ano, mm] = mes.split('-').map(Number);
   const nd = new Date(ano, mm, 0).getDate();
   const nw = nSemanas(ano, mm, nd);
@@ -34,7 +49,7 @@ export function montaEmpresa({ empresa, mes, extratos, fornMap }) {
   const classificados = [];
   for (const ex of extratos) {
     contas.push({ banco: ex.banco, ini: round2(ex.saldoAnterior), fim: round2(ex.saldoFinal) });
-    for (const m of ex.mov) classificados.push({ ...classifica(m, { empresa, fornMap }), banco: ex.banco });
+    for (const m of ex.mov) classificados.push(aplicaAjuste({ ...classifica(m, { empresa, fornMap }), banco: ex.banco }, ajustes, empresa));
   }
   /* casamento de sweeps: saída e entrada próprias, mesmo dia e |valor|, contas diferentes */
   const giro = classificados.filter(c => c.giro && c.proprio);

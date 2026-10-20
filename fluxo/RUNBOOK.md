@@ -1,0 +1,73 @@
+# Fluxo de Caixa — RUNBOOK da rotina automática (Claude Code)
+
+Procedimento que a Rotina do Claude Code segue toda **terça-feira ~06:40 BRT** (os extratos são salvos
+no OneDrive às segundas) para carregar os extratos bancários do mês na ferramenta de Fluxo de Caixa
+publicada em `fluxo/dados.enc.json`. Tudo que é sensível fica cifrado no repositório; o trabalho
+decifrado acontece só em `/tmp/fluxo`.
+
+## O que existe
+
+| Peça | Onde | Papel |
+|---|---|---|
+| Ferramenta publicada | `fluxo/dados.enc.json` | HTML gzip+base64 cifrado ({v,em,gz}); é o que o shell `fluxo/index.html` abre |
+| Estado da esteira | `fluxo/estado.enc.json` | as 20 constantes de dados da ferramenta (DATA, DIA, PREV, PROJ, STATUS, PAINEL…) — fonte da verdade; a ferramenta é gerada a partir dele |
+| Mapa de fornecedores | `fluxo/fornecedores.enc.json` | 527 fornecedores do Argo → conta do plano, mais os `aprendidos` pela esteira |
+| Regras do projeto | `fluxo/regras.enc.json` | os 3 docs de regras (Atualização, Configuração, Identidade Visual) + nota de versionamento |
+| Fonte dos extratos | OneDrive do Samuel, `Financeiro/Financeiro/Bancos - Extratos/Extratos/AAAA/MM Mês AAAA/<Empresa>/` (PDF por banco) | arquivo mensal permanente; drive `b!VfxZ3Rv-PEGE3a_D-6KEfuBOwtNke0NCvkjtRDE2eZMLzILfb5O4SrVZVVJGP6Yx`, pasta `Extratos` = item `013KRIELSDFRVMIPZVCZDZFWCW3OGD5OR4`, ano 2026 = `013KRIELWEGW6OESMLZZGJ726N7N5JOQ2S` |
+| Chave dos dados | segredo `SAPATAO_DEK` do ambiente | base64 de 32 bytes (valor de `sapatao-dek-v1`); nunca em chat, log ou arquivo |
+| Conector | Microsoft 365 (só leitura) | lê pastas e o texto dos PDFs (`read_resource`); não lê `.ofx` |
+
+Scripts (`scripts/fluxo-*.mjs`), na ordem da esteira:
+
+| Script | Faz |
+|---|---|
+| `fluxo-estado.mjs` | `abre` (estado → `/tmp/fluxo/estado/*.json`), `pendentes` (meses a carregar), `grava` (regrava cifrado, com guardas: nenhum mês some, dias não regridem), `inicia` (1ª carga a partir do HTML) |
+| `fluxo-leituras.mjs` | recupera do transcript da sessão o texto de cada PDF lido pelo conector, reconhece empresa e banco pelo cabeçalho e grava `<pasta>/<empresa>/<banco>.txt` |
+| `fluxo-extratos.mjs` | um leitor por banco (Sicredi, Stone, Unicred, Banrisul, Bradesco, Itaú, PagBank); valor pelo Δ do saldo corrido; cada extrato tem de reconciliar no centavo |
+| `fluxo-classifica.mjs` | regras de memo + mapa de fornecedores → conta do plano; marca giro (transferência própria), intercompany, captação/amortização, abates |
+| `fluxo-montagem.mjs` | casa sweeps entre contas próprias (mesmo dia e valor), semanas seg→dom, dias, conciliação `ini + entradas − saídas + entre empresas = fim` |
+| `fluxo-mes.mjs` | carrega um mês inteiro no estado (DATA, DIA, MES_WEEKS, MES_LABEL, STATUS, PAINEL) e escreve o relatório de revisão fora do repo |
+| `fluxo-fornecedores.mjs` | `abre`/`grava`/`aprende` o mapa de fornecedores |
+| `fluxo-embute.mjs` → `fluxo-publica.mjs` → `fluxo-valida.mjs` | gera o HTML novo a partir do publicado + estado, cifra/publica, valida (contrato, conciliação, Chromium 1440/390) |
+
+Empresas: `ps` Posto Sapatão (sapatao) · `sf` SF Estância Velha (sf) · `as` Auto Posto Safyr (safyr) · `siss` Siss (siss) · `st` Transportes (transportes) · `ss` Serviços (servicos).
+
+## Passo a passo (terça)
+
+0. **Chave.** Sem `SAPATAO_DEK` no ambiente: parar e dizer isso em uma linha. Nunca procurar a chave em outro lugar.
+1. **Abrir.** `mkdir -p /tmp/fluxo && node scripts/fluxo-estado.mjs abre --para /tmp/fluxo && node scripts/fluxo-estado.mjs pendentes && node scripts/fluxo-fornecedores.mjs abre --para /tmp/fluxo && node scripts/fluxo-publica.mjs abre --para /tmp/fluxo`. O `pendentes` diz quais meses carregar: meses anteriores com diário incompleto (fechar) e o mês corrente (realizado até D-1).
+2. **Ler os extratos** de cada mês pendente pelo conector Microsoft 365: liste `file:///<drive>/Financeiro/Financeiro/Bancos - Extratos/Extratos/AAAA/MM Mês AAAA` (ex.: `2026/10 Outubro 2026`), depois cada pasta de empresa, e leia **todos os PDFs** com `read_resource` (`startPage 1`, `endPage 80`; ignore `.ofx`, `.xls(x)`, XP e "Sicredi - Rotativo/Investimento/Conta Garantida" — se ler por engano, o passo 3 descarta). Para fechar um mês, leia também a pasta do mês seguinte: os extratos exportados no início do mês caem nela (ex.: Unicred e Bradesco de agosto estavam em `09 Setembro 2026`). O texto não precisa ser copiado à mão: o passo 3 recupera do transcript (inclusive os resultados que a ferramenta salvou em arquivo por serem grandes).
+3. **Separar.** Para cada mês: `node scripts/fluxo-leituras.mjs --para /tmp/fluxo/AAAA-MM/extratos --mes AAAA-MM`. Confira na saída que cada empresa tem todos os bancos esperados (PS: Sicredi, Stone, Unicred, Banrisul, Bradesco · SF: Sicredi, Stone, Unicred, Banrisul, Bradesco · AS: Sicredi, Stone, Banrisul, Itaú · Siss: Sicredi, Banrisul, Bradesco · ST: Sicredi · SS: Sicredi, PagBank) e que todos reconciliam. Banco que falta no arquivo: a empresa **não** entra nesta rodada (apague a pasta `/tmp/fluxo/AAAA-MM/extratos/<empresa>`), fica o que já havia no mês e o resumo avisa o Samuel. Nunca carregue uma empresa com conta faltando — a conciliação ficaria errada em silêncio.
+4. **Conferir.** `node scripts/fluxo-mes.mjs --mes AAAA-MM --extratos /tmp/fluxo/AAAA-MM/extratos --estado /tmp/fluxo/estado --fornecedores /tmp/fluxo/fornecedores.json --so-conferir --relatorio /tmp/fluxo/AAAA-MM/relatorio.txt`. Leia o relatório inteiro.
+5. **Revisar** (é aqui que entra o julgamento; critérios abaixo). Decisões viram `/tmp/fluxo/AAAA-MM/ajustes.json` (lista de `{empresa, data?, valor?, contem?, conta, giro?}`) e, para fornecedores recorrentes, `node scripts/fluxo-fornecedores.mjs aprende --nome "<nome como no memo>" --conta "<rótulo do plano>" --por rotina` (isso já regrava `fluxo/fornecedores.enc.json`; depois reabra o mapa com `abre` para a carga usar).
+6. **Carregar.** O mesmo comando do passo 4 sem `--so-conferir`, com `--ajustes` e, se for o caso, `--nota "…"` (uma frase para a nota do mês: decisões tomadas, o que ficou a confirmar). Repita 4–6 para cada mês pendente, do mais antigo para o mais novo. Depois `node scripts/fluxo-estado.mjs grava --de /tmp/fluxo`.
+7. **Gerar e validar.** `node scripts/fluxo-embute.mjs --base /tmp/fluxo/fluxo-anterior.html --estado /tmp/fluxo --saida /tmp/fluxo/fluxo-novo.html`; `mkdir -p /tmp/pw && cd /tmp/pw && npm i playwright@1.54` (o Chromium já está em `/opt/pw-browsers`); de volta ao repositório, `node scripts/fluxo-valida.mjs --html /tmp/fluxo/fluxo-novo.html --pw /tmp/pw/node_modules/playwright`. Reprovado → **não publica** nem grava o estado no git; se for erro de leitura/ajuste, corrija e refaça; senão avise o Samuel com os itens reprovados e encerre com a versão anterior no ar.
+8. **Publicar.** `node scripts/fluxo-publica.mjs publica --html /tmp/fluxo/fluxo-novo.html`, depois `git pull --rebase origin main`, `git add fluxo/dados.enc.json fluxo/estado.enc.json fluxo/fornecedores.enc.json`, commit `chore: publica o Fluxo de Caixa (extratos até DD/MM, automático)` e `git push origin HEAD:main`. Push recusado: abra um PR com esse título e mescle-o (squash).
+9. **Resumo ao Samuel** (lista, uma linha por item): meses carregados e até que dia; empresas e contas conciliadas; empresas que ficaram de fora e por quê; decisões de classificação tomadas (as relevantes) e fornecedores aprendidos; viradas de saldo que não bateram; transferências próprias sem par e intercompany pendentes de confirmação; o que a rotina não consegue atualizar (ver "Limites"). Pode citar saldos e totais consolidados — o resumo é privado do Samuel; números nunca vão para arquivo em claro no repositório.
+
+Sem mês pendente e sem extrato novo: não publica e termina em uma linha.
+
+## Critérios de revisão (passo 5)
+
+O relatório lista, por empresa, os lançamentos classificados com baixa confiança (regra genérica) e um agregado "fornecedores sem mapa". Regras:
+
+- **Conciliação nunca se ajusta.** Se um extrato não reconcilia, a leitura está incompleta: releia o PDF (mais páginas) e refaça o passo 3; se persistir, a empresa fica de fora desta rodada.
+- **Transferência própria sem par** (nome da própria empresa, "Outras entradas/saídas [sem par]"): quase sempre é conta que não está no arquivo (XP, Sicredinvest, Conta Garantida). Mantenha em Outras entradas/saídas, cite no resumo e na `--nota`. Entrada PIX em nome próprio sem par já vira Cartões (Sipag/QR) sozinha.
+- **Entre empresas**: aluguel PS/SF/ST→Siss e frete PS/SF→ST são operacionais; boleto pago a empresa do grupo é operacional (a frota abastece nos postos = Combustível); PIX/TED entre empresas é empréstimo interno, neutralizado na linha "Entre empresas e financiamentos". Não mude isso sem decisão do Samuel.
+- **Fornecedores sem mapa**: decida pelo nome e pelo valor típico — distribuidora de combustível → Combustível; alimentos, bebidas, cigarros, franquia → Mercadorias; energia, água, aluguel, telefonia → Operacionais; construção/reforma/equipamento → Investimentos — parcelas contratadas; advocacia, seguros, sindicato, Brinks → Não operacionais; contabilidade, consultoria, PJ de serviço → Serviços de terceiros; gráfica, agência, mídia → Marketing; software/monitoramento → Sistemas. Valor ≥ R$ 2.000 ou fornecedor que aparece 2+ vezes: grave com `aprende`. Pessoa física com PIX pequeno e sem contexto: deixe em "PIX/TED pagamentos diversos".
+- **SISPAG Fornecedores (Itaú) sem par** no mesmo dia/valor numa conta própria: é fornecedor (Mercadorias/Combustível conforme o valor); com par, é giro (a montagem já casa).
+- **DARF** fica em Tributos; FGTS/GPS só quando o memo diz (CEF, FGTS, GPS, GRF).
+- Nunca reclassifique meses já fechados (`tipo: full` com `dias = nd`) — isso é decisão do Samuel, com `--refazer`.
+- Cheque devolvido abate Cobranças; cancelamento de venda (PagBank) abate Cartões — já automático.
+
+## Limites (o que a rotina não atualiza)
+
+- **Previsão (PREV/PROJ) e a coluna prevista de meses novos**: fixadas na abertura do mês pelo método do projeto (mediana dos meses fechados + parcelas contratadas). A esteira preserva o que existe; mês sem previsão no estado aparece só com realizado. Recalcular é tarefa do Samuel com o projeto.
+- **Contas a pagar/receber, vendas, metas, ERP** (COMPROMISSOS, RECEBER, VENDAS, METAS, ERP, PEND e os campos `vencidos`/`venc_intra` do PAINEL): vêm de exports do Argo que a rotina não lê. Ficam como estavam; o STATUS continua a dizer a data deles.
+- **Setembro/2026** estava com 18 dias no painel na entrega da esteira (20/10/2026): a primeira rodada fecha setembro a partir das pastas `09 Setembro 2026` + `10 Outubro 2026` e carrega outubro até D-1. Diferenças de classificação com o que foi feito à mão em agosto são esperadas (os saldos e totais batem; a distribuição entre contas segue o mapa do Argo).
+- PagBank da SS: o arquivo de agosto continha o extrato de julho — se o banco faltar, a SS fica de fora da rodada (aviso ao Samuel).
+- O conector não lê `.ofx`; os PDFs são a fonte. Se a TI liberar escrita/`.ofx`, só o `fluxo-leituras`/`fluxo-extratos` mudam.
+
+## Proibido
+
+Imprimir, commitar ou enviar valores fora dos arquivos cifrados; ajustar número para fechar soma; apagar mês ou regredir dias do diário; mexer em qualquer outro arquivo do site; publicar sem validação aprovada; carregar empresa com banco faltando; pedir ou procurar a chave dos dados fora do ambiente.

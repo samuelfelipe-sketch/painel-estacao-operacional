@@ -16,7 +16,8 @@
    Uso (teste): node scripts/fluxo-classifica.mjs <empresa> <arquivo-mov.json>
    onde mov.json = [{data,desc,valor}] e empresa ∈ ps|sf|as|siss|st|ss */
 import { readFileSync } from 'fs';
-import { fornecedorDoMemo } from './fluxo-lib.mjs';
+import { fornecedorDoMemo, nomeDoMemo } from './fluxo-lib.mjs';
+export { nomeDoMemo };
 
 /* empresas do grupo: id → fragmentos do nome que aparecem nos memos */
 export const EMPRESAS = {
@@ -94,6 +95,8 @@ export function classifica(mov, ctx = {}) {
      proprio=true marca o candidato: a montagem casa saída/entrada por dia e
      valor; entrada PIX em nome próprio SEM par é liquidação de maquininha/QR
      (Sipag) = Cartões (regra 7, 24/08). */
+  /* depósito em dinheiro feito pela própria empresa não é transferência: é caixa */
+  if (v > 0 && /DEP(OSITO)? DINHEIRO|DEPOSITO EM DINHEIRO|DEP\.? ?DIN/.test(t)) return r(CONTAS.DINHEIRO);
   /* o nome da própria empresa num lançamento bancário é transferência própria
      (a Stone às vezes perde o "Transferência | Pix" na quebra de página) */
   if (ehProprio || /APLICACAO AUTOMATICA|RESGATE AUTOMATICO|APLIC\.?\s*AUT/.test(t)) {
@@ -162,7 +165,7 @@ export function classifica(mov, ctx = {}) {
   if (tem(t, 'ALUGUEL', 'CORSAN', 'AGUA', 'SANEAMENTO', 'IMOBILIARIA')) return r(CONTAS.ALUGUEIS);
   if (tem(t, 'RAIZEN', 'SHELL', 'IPIRANGA', 'VIBRA', 'PETROBRAS', 'BR DISTRIBUIDORA', 'CHARRUA', 'COMBUSTIVEL')) return r(CONTAS.COMBUSTIVEL);
   if (tem(t, 'LUBRIFIC', 'OLEO', 'AUTOMOTIVO', 'PNEU', 'LUBRAX')) return r(CONTAS.LUBRIF);
-  if (tem(t, 'OPER. CREDITO PJ', 'PAGTO JUROS')) return r(CONTAS.FINANCEIRAS);
+  if (tem(t, 'OPER. CREDITO PJ', 'PAGTO JUROS', 'ENCARGOS LIMITE', 'PACOTE SERVICOS', 'RENOV.CADASTRO', 'MENSALIDADE PACOTE') || /^TAR(IFA)?\s/.test(t)) return r(CONTAS.FINANCEIRAS);
   if (tem(t, 'TARIFA', 'IOF', 'JUROS', 'CESTA', 'MANUTENCAO DE TITULOS', 'BAIXA DE TITULOS', 'COBR.TITULOS', 'ANUIDADE', 'SERV.COBR')) return r(CONTAS.FINANCEIRAS);
   if (tem(t, 'FATURA CARTAO', 'CARTAO CORPORATIVO', 'CARTAO DE CREDITO', 'DEB.CTA.FATURA', 'PAGTO FATURA')) return r(CONTAS.CARTAO_CORP);
   if (tem(t, 'SOFTWARE', 'LICENCA', 'SISTEMA', 'MONITOR', 'ARGO SISTEMAS', 'NUVEM', 'HOSPEDAGEM', 'ASSINATURA')) return r(CONTAS.SISTEMAS);

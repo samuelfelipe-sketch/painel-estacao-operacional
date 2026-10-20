@@ -19,6 +19,8 @@
      node scripts/fluxo-estado.mjs grava --de <pasta-fora-do-repo>
          lê <pasta>/estado/*.json, confere e regrava o estado
          (meses do diário não somem, dias cobertos não regridem)
+     node scripts/fluxo-estado.mjs pendentes
+         lista os meses que a esteira ainda precisa carregar (diário incompleto)
      node scripts/fluxo-estado.mjs extrai --html <ferramenta.html> --para <pasta>
          só extrai as constantes de um HTML para inspeção (não grava estado)
 
@@ -63,6 +65,18 @@ if (modo === 'inicia') {
   const k = chave(); const e = le(k);
   const dir = despeja(e.dados, para);
   console.log(`aberto: ${dir}/ · ${resumo(e)}`);
+} else if (modo === 'pendentes') {
+  const k = chave(); const e = le(k); const DIA = e.dados.DIA || {};
+  const hoje = new Date(); const mesAtual = hoje.toISOString().slice(0, 7);
+  const meses = new Set(Object.keys(DIA)); meses.add(mesAtual);
+  const pend = [];
+  for (const m of [...meses].sort()) {
+    if (m < '2026-07' || m > mesAtual) continue;
+    const [a, mm] = m.split('-').map(Number); const nd = new Date(a, mm, 0).getDate(); const d = (DIA[m] || {}).dias || 0;
+    if (m === mesAtual) pend.push(`${m}: mês corrente, ${d} de ${nd} dias no diário → carregar o realizado até D-1`);
+    else if (d < nd) pend.push(`${m}: ${d} de ${nd} dias no diário → fechar o mês`);
+  }
+  console.log(pend.length ? pend.join('\n') : 'nada pendente: diário completo até ontem.');
 } else if (modo === 'extrai') {
   const htmlPath = opt(args, 'html'); const para = opt(args, 'para');
   if (!htmlPath || !para) falha('informe --html <ferramenta.html> e --para <pasta fora do repositório>.');
@@ -94,5 +108,5 @@ if (modo === 'inicia') {
   gravaEstado(estado, k);
   console.log(`gravado: ${ARQ} · ${resumo(estado)}`);
 } else {
-  falha('modo desconhecido — use "inicia", "abre", "grava" ou "extrai".');
+  falha('modo desconhecido — use "inicia", "abre", "grava", "pendentes" ou "extrai".');
 }
