@@ -29,5 +29,18 @@ for (const f of readdirSync(dir)) {
 if (!Object.keys(dados).length) falha('nenhum JSON de dados em ' + dir + '.');
 const html = readFileSync(base, 'utf8');
 let r; try { r = embute(html, dados); } catch (e) { falha(e.message); }
+/* card "Projeção": os rótulos de meses são literais no código da ferramenta;
+   quando PROJ traz meta (fluxo-previsao proj), troca-os pelos meses atuais */
+const meta = dados.PROJ && dados.PROJ.meta; let rot = 0;
+if (meta) {
+  const sub = (re, novo) => { const antes = r.html; r.html = r.html.replace(re, novo); if (r.html !== antes) rot++; };
+  sub(/Geração projetada \([^)]*\)/, `Geração projetada (${meta.curto})`);
+  sub(/Saldo projetado em \d{2}\/\d{2}/, `Saldo projetado em ${meta.fim_em}`);
+  sub(/em \d{2}\/\d{2}<\/div><\/div>`:''}/, `em ${meta.base_em}</div></div>\`:''}`);
+  sub(/Projeção de fluxo de caixa — [^<]*<\/h2>/, `Projeção de fluxo de caixa — ${meta.titulo}</h2>`);
+  sub(/\['\w{3} \(proj\)','\w{3} \(proj\)'\]/, `['${meta.cols[0]}','${meta.cols[1]}']`);
+  const i = r.html.indexOf('<h2>Premissas do cenário base</h2>'); const j = i >= 0 ? r.html.indexOf('</div></div>`', i) : -1;
+  if (i >= 0 && j > i) { r.html = r.html.slice(0, i) + `<h2>Premissas do cenário base</h2>     <div class="desc" style="margin-bottom:0">     1. Entradas e saídas recorrentes = <b>mediana dos meses completos</b> (${meta.base_meses}) por conta e por empresa; a mediana elimina não recorrentes (imobilizado, aquisições).<br>     2. <b>Serviço da dívida e parcelas contratadas</b>: mediana dos últimos meses fechados em que aparecem, nas datas do último mês fechado.<br>     3. Captações, amortizações do giro rotativo, resgates e distribuições = zero até decisão.<br>     4. Títulos já agendados no Argo não entram nesta projeção (a rotina automática não lê o Argo). Recalculada pela rotina em ${meta.gerado_em.split('-').reverse().join('/')}.` + r.html.slice(j); rot++; }
+}
 writeFileSync(saida, r.html);
-console.log(`embutido: ${saida} · ${r.trocadas.length} constante(s): ${r.trocadas.join(', ')} · ${(html.length / 1024).toFixed(0)} KB → ${(r.html.length / 1024).toFixed(0)} KB`);
+console.log(`embutido: ${saida} · ${r.trocadas.length} constante(s): ${r.trocadas.join(', ')}${meta ? ` · rótulos da projeção: ${rot}/6` : ''} · ${(html.length / 1024).toFixed(0)} KB → ${(r.html.length / 1024).toFixed(0)} KB`);
