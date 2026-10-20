@@ -59,6 +59,7 @@ export const CONTAS = {
   PARC_698: 'Serviço da dívida — parcela C698309290 (giro 48x)',
   PARCELAS: 'Serviço da dívida — parcelas de financiamentos',
   INVEST: '6 · Aplicações e investimentos',
+  DISTRIB: 'Distribuição de lucros',
   OUTRAS_OUT: 'Outras saídas',
   GIRO: 'Entre empresas e financiamentos (líquido — fora do total)',
 };
@@ -82,13 +83,19 @@ export function classifica(mov, ctx = {}) {
   /* contrato de giro rotativo citado no memo */
   const contrato = (t.match(/C\d{8,}/) || [])[0] || null;
 
-  /* --- transferências próprias (giro) e intercompany --- */
-  if (/TRANSF ENTRE CONTAS|TRANSFERENCIA ENTRE CONTAS|APLICACAO|RESGATE AUTOMATICO|APLIC AUT|SISPAG.*PROPRI/.test(t) || (ehProprio && /PIX|TED|TRANSF/.test(t))) {
+  /* --- transferências próprias (giro), intercompany e transferência ao sócio --- */
+  /* giro = entre contas DA PRÓPRIA empresa, ou aplicação/resgate automático */
+  if ((ehProprio && /TRANSF|PIX|TED|APLICAC|RESGATE/.test(t)) || /APLICACAO AUTOMATICA|RESGATE AUTOMATICO|APLIC\.?\s*AUT/.test(t)) {
     return r(CONTAS.GIRO, true, { giro: true });
   }
   if (ehGrupo) {
     if (tem(t, 'ALUGUEL', 'FRETE', 'TRANSPORTE')) return v < 0 ? r(CONTAS.ALUGUEIS, true, { intercompany: true }) : r(CONTAS.PIX_CLI, true, { intercompany: true });
     return r(CONTAS.GIRO, true, { intercompany: true, giro: true });
+  }
+  /* "transf entre contas" para fora da empresa, sem ser grupo: CPF (11 díg.) =
+     transferência ao sócio (distribuição, revisar); senão saída a classificar */
+  if (/TRANSF ENTRE CONTAS|TRANSFERENCIA ENTRE CONTAS/.test(t)) {
+    return /\b\d{11}\b/.test(t) ? r(CONTAS.DISTRIB, false) : r(CONTAS.OUTRAS_OUT, false);
   }
 
   /* --- captação e serviço da dívida (sempre visíveis) --- */
