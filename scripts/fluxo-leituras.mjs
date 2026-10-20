@@ -33,16 +33,23 @@ export function detectaBanco(t) {
   if (/Cooperativa:/i.test(t) && /Extrato\s*\(Per[ií]odo de/i.test(t) && /SALDO ANTERIOR/i.test(t)) return 'sicredi';
   return null;
 }
+const EMP_NOME = [['ss', /SAPATAO SERVICOS|62\.?681\.?375/], ['st', /SAPATAO TRANSPORTES|36\.?667\.?966/], ['as', /SAFYR|4 COLONIAS|47\.?857\.?489/], ['siss', /SISS EMPREEND|TRES AMIGOS|0?91\.?424\.?135/], ['sf', /SF COM|SAPATAO ESTANCIA|13\.?047\.?383/], ['ps', /POSTO SAPATAO|ESTACAO SAPATAO|43\.?510\.?250/]];
+const N = s => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+/* empresa SÓ pelo titular no cabeçalho do extrato (nunca pelos memos: um PIX
+   recebido de outra empresa do grupo logo no 1º dia enganaria a detecção) */
 export function detectaEmpresa(t) {
-  const cab = t.slice(0, 1500); const d = cab.replace(/[^0-9]/g, ''); const U = cab.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  if (d.includes('62681375') || /SAPATAO SERVICOS/.test(U)) return 'ss';
-  if (d.includes('36667966') || /SAPATAO TRANSPORTES/.test(U)) return 'st';
-  if (d.includes('47857489') || /SAFYR|4 COLONIAS/.test(U)) return 'as';
-  if (d.includes('91424135') || d.includes('09142413') || /SISS EMPREEND|TRES AMIGOS/.test(U)) return 'siss';
-  if (d.includes('13047383') || /SF COM|SAPATAO ESTANCIA/.test(U)) return 'sf';
-  if (d.includes('43510250') || /POSTO SAPATAO|ESTACAO SAPATAO/.test(U)) return 'ps';
+  const U = N(t.slice(0, 2500));
+  const cab = [
+    /ASSOCIADO:\s*([^\n]{3,60}?)\s+COOPERATIVA/,                 /* Sicredi */
+    /DADOS DA CONTA\s+NOME\s+(.{3,60}?)\s+DOCUMENTO\s+([\d. \/-]+)/, /* Stone: nome + CNPJ */
+    /NOME\.*:\s*([^\n]{3,60}?)\s+(?:-{3,}|IDENTIFICACAO|DIA\s+HISTORICO)/, /* Banrisul */
+    /CNPJ\s+(.{3,70}?)\s+(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})\s+SALDO TOTAL/, /* Itaú */
+    /EXTRATO\s+\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s+(.{3,60}?)\s+-\s+\*\*/, /* Unicred */
+    /PERIODO:\s*\d{2}\/\d{2}\/\d{4}\s+A\s+\d{2}\/\d{2}\/\d{4}\s+(.{3,60}?)\s+CNPJ:\s*([\d.\/-]+)/, /* PagBank */
+  ];
+  for (const re of cab) { const m = U.match(re); if (m) { const alvo = m.slice(1).join(' '); for (const [id, r] of EMP_NOME) if (r.test(alvo)) return id; } }
   /* Bradesco: nome/CNPJ só no rodapé → "CNPJ: 43.510.250/0001-84"; senão, nº da conta */
-  const cnpj = t.match(/CNPJ:?\s*0?([\d.]{10,})\/\d{4}-?\d{2}/i); if (cnpj) return detectaEmpresa(cnpj[1] + ' ');
+  const cnpj = N(t).match(/CNPJ:?\s*(0?\d{2}\.\d{3}\.\d{3}\/\d{4}-?\d{2})/); if (cnpj) for (const [id, r] of EMP_NOME) if (r.test(cnpj[1].replace(/^0/, ''))) return id;
   const CONTA_BRADESCO = { '0048012-6': 'ps', '0027405-4': 'sf', '0004997-2': 'siss' };
   for (const [c, e] of Object.entries(CONTA_BRADESCO)) if (t.includes(c)) return e;
   return null;

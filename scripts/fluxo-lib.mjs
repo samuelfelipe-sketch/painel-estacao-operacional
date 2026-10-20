@@ -106,7 +106,7 @@ export function nomeDoMemo(desc) {
   let t = (desc || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   for (let i = 0; i < 3; i++) t = t.replace(PREFIXOS_MEMO, '');
   t = t.replace(/\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/g, ' ').replace(/\b\d{11,14}\b/g, ' ');
-  t = t.replace(/\b[A-Z]*\d[A-Z0-9_.-]*\b/g, ' ');                      /* tokens com dígitos: documentos, PIX_DEB, CX638265, COB000002 */
+  t = t.replace(/\b(?=[A-Z0-9_.-]{4,})[A-Z]*\d[A-Z0-9_.-]*\b/g, ' ');     /* tokens com dígitos e ≥4 caracteres: documentos, CX638265, COB000002 ("2F" fica) */
   t = t.replace(/\b(PIX_DEB|PIX_CRED|TRANSFERENCIA \| PIX|PIX \| MAQUININHA|PAGAMENTO|TRANSFERENCIA|\| PIX|\|)\b/g, ' ');
   return t.replace(/[^A-Z0-9&. ]/g, ' ').replace(/\s+/g, ' ').trim();
 }

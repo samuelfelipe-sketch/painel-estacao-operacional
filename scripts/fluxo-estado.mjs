@@ -73,8 +73,10 @@ if (modo === 'inicia') {
   for (const m of [...meses].sort()) {
     if (m < '2026-07' || m > mesAtual) continue;
     const [a, mm] = m.split('-').map(Number); const nd = new Date(a, mm, 0).getDate(); const d = (DIA[m] || {}).dias || 0;
-    if (m === mesAtual) pend.push(`${m}: mês corrente, ${d} de ${nd} dias no diário → carregar o realizado até D-1`);
-    else if (d < nd) pend.push(`${m}: ${d} de ${nd} dias no diário → fechar o mês`);
+    const cob = (DIA[m] || {}).cobertura || {}; const atras = Object.entries(cob).filter(([, v]) => v < d).map(([id, v]) => `${id} até ${v}`);
+    if (m === mesAtual) pend.push(`${m}: mês corrente, ${d} de ${nd} dias no diário → carregar o realizado até D-1${atras.length ? ` (atrasadas: ${atras.join(', ')})` : ''}`);
+    else if (d < nd) pend.push(`${m}: ${d} de ${nd} dias no diário → fechar o mês${atras.length ? ` (atrasadas: ${atras.join(', ')})` : ''}`);
+    else if (atras.length) pend.push(`${m}: fechado, mas com empresa(s) paradas antes do fim: ${atras.join(', ')} → completar com --refazer quando o extrato aparecer`);
   }
   console.log(pend.length ? pend.join('\n') : 'nada pendente: diário completo até ontem.');
 } else if (modo === 'extrai') {

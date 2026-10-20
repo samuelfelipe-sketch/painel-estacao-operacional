@@ -133,6 +133,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       const tipo = (est.DATA.meses[mes] || {}).tipo;
       if (tipo && tipo !== 'prev') { pulados++; continue; }                       /* mês com realizado: previsão fixada, não se mexe */
       if (est.PREV[mes] && !refazer) { pulados++; continue; }
+      /* mês que já começou no calendário tem previsão fixada na abertura: só se refaz pedindo o mês explicitamente */
+      if (est.PREV[mes] && refazer && !opt(args, 'mes') && mes <= new Date().toISOString().slice(0, 7)) { pulados++; continue; }
       let r; try { r = calculaPrevisao(est, mes); } catch (e) { falha(e.message); }
       const [ano, mm] = mes.split('-').map(Number);
       est.PREV[mes] = r.prev;

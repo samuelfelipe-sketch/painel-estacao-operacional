@@ -30,7 +30,9 @@ export function num(s) {
   let neg = false;
   if (/-\s*$/.test(t)) { neg = true; t = t.replace(/-\s*$/, ''); }
   if (/^-/.test(t)) { neg = true; t = t.replace(/^-\s*/, ''); }
-  t = t.trim().replace(/\./g, '').replace(',', '.');
+  t = t.trim();
+  if (/^\d+\.\d{1,2}$/.test(t) && !t.includes(',')) { /* "0.10": decimal com ponto (Stone, tarifas) */ }
+  else t = t.replace(/\./g, '').replace(',', '.');
   if (!/^\d+(\.\d+)?$/.test(t)) return null;
   const v = parseFloat(t);
   return neg ? -v : v;
@@ -82,14 +84,14 @@ export function unicred(txt) {
      conferido pelo Δ saldo. Cabeçalhos de página ficam entre linhas — por isso
      sem lookahead. A contraparte fica na descrição (sweeps para a própria
      empresa precisam ser reconhecidos). */
-  const re2 = /(\d{2})\/(\d{2})\/(\d{4})\s+(.+?)\s+R\$\s*([\d.,]+)\s+(-?)\s*R\$\s*([\d.,]+)/g;
+  const re2 = /(\d{2})\/(\d{2})\/(\d{4})\s+(.+?)\s+(-?)\s*R\$\s*([\d.,]+)\s+(-?)\s*R\$\s*([\d.,]+)/g;
   let m;
   while ((m = re2.exec(linhas))) {
     const data = iso(m[1], m[2], m[3]);
     if (/^Saldo em/i.test(m[4])) continue;
-    const saldo = num(m[5]);
+    const saldo = num(m[5] + m[6]);
     const valor = round2(saldo - prev); prev = saldo;
-    const desc = m[4].replace(/\(\s*Doc\.?:\s*/i, '').replace(/\)\s*$/, '').replace(/\s{2,}/g, ' ').trim();
+    const desc = m[4].replace(/\(\s*Doc\.?:\s*/i, '').replace(/\)\s*$/, '').replace(/\s{2,}/g, ' ').replace(/\s*-\s*$/, '').trim();
     mov.push({ data, desc, valor });
   }
   const fim = txt.replace(/\s+/g, ' ').match(/Saldo no final do per[ií]odo\s+(-?)\s*R\$\s*([\d.,]+)/i);
@@ -120,20 +122,30 @@ export function sicredi(txt) {
 /* Stone: newest-first; "DD/MM/AA Entrada|Saída DESC ... VALOR SALDO CONTRAPARTE".
    Reordena por data; saldo corrido confirma. */
 export function stone(txt) {
-  const re = /(\d{2})\/(\d{2})\/(\d{2})\s+(Entrada|Saída)\s+(.+?)\s+(-?\s*R\$\s*[\d.,]+)\s+(R\$\s*[\d.,]+)/g;
+  const re = /(\d{2})\/(\d{2})\/(\d{2})\s+(Entrada|Saída)\s+(.+?)\s+(-?\s*R\$\s*[\d.,]+)\s+(-?\s*R\$\s*[\d.,]+)/g;
   let m; const bruto = [];
   const linhas = txt.replace(/\s+/g, ' ');
   while ((m = re.exec(linhas))) {
-    bruto.push({ data: iso(m[1], m[2], m[3]), tipo: m[4], desc: m[5].trim(), valor: num(m[6]), saldo: num(m[7]) });
+    const vImp = num(m[6]); const sinal = (/-/.test(m[6]) || m[4] === 'Saída') ? -1 : 1;
+    bruto.push({ data: iso(m[1], m[2], m[3]), tipo: m[4], desc: m[5].trim(), vImp: sinal * Math.abs(vImp), saldo: num(m[7]) });
   }
   if (!bruto.length) throw new Error('Stone: nenhum lançamento reconhecido');
-  const sgn = x => x.tipo === 'Saída' ? -1 : 1;
   const ordem = bruto.slice().reverse(); /* o PDF vem do mais novo ao mais antigo */
   const saldoFinal = bruto[0].saldo;      /* 1ª linha do PDF = último dia */
   const a0 = ordem[0];
-  const saldoAnterior = round2(a0.saldo - sgn(a0) * Math.abs(a0.valor));
-  const mov = ordem.map(x => ({ data: x.data, desc: (x.tipo === 'Saída' ? '(saída) ' : '') + x.desc, valor: sgn(x) * Math.abs(x.valor) }));
-  return fecha({ banco: 'stone', saldoAnterior, saldoFinal, mov, periodo: {} });
+  const saldoAnterior = round2(a0.saldo - a0.vImp);
+  /* valor = Δ do saldo corrido (o impresso confirma; o Δ manda — tarifas vêm com
+     tipo "Entrada" e valor negativo, e a ordem dentro do dia pode variar) */
+  /* a Stone imprime, em pares "venda + tarifa", o MESMO saldo nas duas linhas;
+     por isso o valor impresso (com sinal) é o preferido quando a soma dos
+     impressos fecha com o saldo final; senão, Δ do saldo corrido */
+  const somaImp = round2(ordem.reduce((a, x) => a + x.vImp, 0));
+  const usaImpresso = Math.abs(round2(saldoAnterior + somaImp - saldoFinal)) <= 0.015;
+  let prev = saldoAnterior;
+  const mov = ordem.map(x => { const dv = round2(x.saldo - prev); prev = x.saldo; const v = usaImpresso ? x.vImp : dv; return { data: x.data, desc: (v < 0 ? '(saída) ' : '') + x.desc, valor: v }; });
+  const o = fecha({ banco: 'stone', saldoAnterior, saldoFinal, mov, periodo: {} });
+  o.metodo = usaImpresso ? 'impresso' : 'delta-saldo';
+  return o;
 }
 /* ---- bancos com saldo por dia ---- */
 /* Banrisul: o PDF vem ACHATADO (sem quebras; o cabeçalho até com letras

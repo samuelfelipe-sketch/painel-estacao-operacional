@@ -54,11 +54,14 @@ export function montaEmpresa({ empresa, mes, extratos, fornMap, ajustes }) {
   /* casamento de sweeps: saída e entrada próprias, mesmo dia e |valor|, contas diferentes */
   const giro = classificados.filter(c => c.giro && c.proprio);
   const casados = new Set();
-  for (let i = 0; i < giro.length; i++) {
+  const difDias = (a, b) => Math.abs((new Date(a) - new Date(b)) / 86400000);
+  /* 1ª passada: mesmo dia; 2ª: até 2 dias de diferença (o Banrisul lança o PIX
+     de feriado/fim de semana no dia útil seguinte; o destino já creditou) */
+  for (const tol of [0, 2]) for (let i = 0; i < giro.length; i++) {
     if (casados.has(i)) continue;
     for (let j = 0; j < giro.length; j++) {
       if (i === j || casados.has(j)) continue;
-      if (giro[i].data === giro[j].data && giro[i].banco !== giro[j].banco && round2(giro[i].valor + giro[j].valor) === 0) { casados.add(i); casados.add(j); giro[i].sweepCasado = giro[j].sweepCasado = true; break; }
+      if (difDias(giro[i].data, giro[j].data) <= tol && giro[i].banco !== giro[j].banco && round2(giro[i].valor + giro[j].valor) === 0) { casados.add(i); casados.add(j); giro[i].sweepCasado = giro[j].sweepCasado = true; if (tol) giro[i].sweepDefasado = giro[j].sweepDefasado = true; break; }
     }
   }
   /* sem par (todas as contas lidas): entrada PIX em nome próprio = liquidação

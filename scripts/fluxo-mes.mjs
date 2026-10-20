@@ -55,6 +55,7 @@ const fornMap = fornArq ? JSON.parse(readFileSync(fornArq, 'utf8')) : carregaMap
 if (!fornMap) console.log('aviso: sem mapa de fornecedores (fluxo/fornecedores.enc.json) — só regras de memo.');
 const ajustes = opt(args, 'ajustes') ? JSON.parse(readFileSync(opt(args, 'ajustes'), 'utf8')) : [];
 const refazer = temFlag(args, 'refazer'), soConferir = temFlag(args, 'so-conferir');
+const semEmp = (opt(args, 'sem') || '').split(',').filter(Boolean); /* empresas deliberadamente fora desta carga (só 'ss' é aceita sem pergunta — RUNBOOK) */
 
 /* mês já fechado? */
 const diaAtual = DIA[mes];
@@ -91,13 +92,25 @@ for (const e of empresas) {
 const fimDoMes = new Date(ano, mm - 1, nd); const ontem = new Date(hoje); ontem.setDate(ontem.getDate() - 1);
 let dias = opt(args, 'ate') ? +opt(args, 'ate') : (hoje > fimDoMes ? nd : Math.min(ultimoDia, ontem.getMonth() + 1 === mm && ontem.getFullYear() === ano ? ontem.getDate() : nd));
 if (dias < 1 || dias > nd) falha('--ate fora do mês.');
-if (diaAtual && dias < (diaAtual.dias || 0)) falha(`o mês já cobria ${diaAtual.dias} dias; esta carga cobre ${dias} — nada gravado.`);
 const tipo = dias >= nd ? 'full' : 'parcial';
 
 /* virada: saldo inicial de cada conta = saldo final do mês anterior (quando existe) */
 const mesAnt = mm === 1 ? `${ano - 1}-12` : `${ano}-${dd(mm - 1)}`;
 const antM = (DATA.meses[mesAnt] || {}).empresas || {};
 const viradas = [];
+/* cobertura por empresa: o mês só avança para TODAS as empresas juntas. Empresa que
+   já tinha dados no mês (ou que existia no mês anterior fechado) e não veio nesta
+   carga trava a rodada — a não ser que esteja em --sem (fica com o que tinha e a
+   nota/STATUS avisam). Evita mês "fechado" com uma empresa parada em dias antigos. */
+const idsCarregados = Object.keys(resultados).map(e => EMP_ID[e]);
+const cobAnt = { ...((DIA[mes] && DIA[mes].cobertura) || {}) };
+/* meses carregados antes do controle de cobertura: assume os dias registrados no diário */
+for (const id of Object.keys(((DATA.meses[mes] || {}).empresas) || {})) if (cobAnt[id] == null) cobAnt[id] = (DIA[mes] || {}).dias || 0;
+const esperadas = new Set([...Object.keys(((DATA.meses[mes] || {}).empresas) || {}), ...Object.keys(antM)]);
+const faltantes = [...esperadas].filter(id => !idsCarregados.includes(id) && (cobAnt[id] || 0) < dias && !semEmp.includes(Object.keys(EMP_ID).find(k => EMP_ID[k] === id)));
+if (faltantes.length) falha(`empresa(s) sem extrato nesta carga: ${faltantes.join(', ')} — o mês não avança até ${dd(dias)} sem elas (todas as contas de todas as empresas, ou --sem <ids> para deixar explicitamente de fora). Nada gravado.`);
+if (diaAtual && dias < (diaAtual.dias || 0)) falha(`o mês já cobria ${diaAtual.dias} dias; esta carga cobre ${dias} — nada gravado.`);
+
 for (const e of Object.keys(resultados)) for (const c of resultados[e].DATA.contas) {
   const nome = BANCO_NOME[c.banco]; const ca = ((antM[EMP_ID[e]] || {}).contas || []).find(x => x.banco === nome);
   if (ca && Math.abs(ca.fim - c.ini) > 0.015) viradas.push(`${EMP_ID[e]}·${nome}: fim de ${MES_LABEL[mesAnt] || mesAnt} no painel ${brl(ca.fim)} ≠ início do extrato ${brl(c.ini)}`);
@@ -139,11 +152,13 @@ for (const e of Object.keys(resultados)) {
   diaM.empresas[id] = { cin: r.DIA.cin, cout: r.DIA.cout, icw: r.DIA.icw };
 }
 mesD.tipo = tipo;
+diaM.cobertura = { ...cobAnt }; for (const id of idsCarregados) diaM.cobertura[id] = dias;
+const foraDesta = [...esperadas].filter(id => !idsCarregados.includes(id));
 const sem = semanasDoMes(ano, mm);
 const nota = [`${tipo === 'full' ? 'Mês fechado' : 'Mês parcial'} pela rotina em ${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}: realizado 01–${dd(dias)}/${dd(mm)} lido do arquivo mensal de extratos (OneDrive), conciliado no centavo em ${Object.values(resultados).reduce((a, r) => a + r.DATA.contas.length, 0)} contas de ${Object.keys(resultados).length} empresas.`,
   `Semanas seg→dom (${sem.map(s => s.replace(' · ', ' ')).join(' · ')}).`,
   `Classificação pelas regras de memo e pelo mapa de fornecedores do Argo; ${totalRev} lançamento(s) ficaram marcados para revisão${ajustes.length ? `; ${ajustes.length} ajuste(s) aplicado(s)` : ''}.`,
-  mantidas.length ? `Sem extrato nesta rodada (mantido o que já havia): ${mantidas.join(', ')}.` : '',
+  foraDesta.length ? `Fora desta carga (ficam com o realizado até o dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))}, por falta de extrato): ${foraDesta.join(', ')}.` : '',
   viradas.length ? `Virada de saldos a conferir: ${viradas.join('; ')}.` : '',
   opt(args, 'nota') || ''].filter(Boolean).join(' ');
 mesD.nota = nota;
@@ -154,7 +169,7 @@ if (!MES_LABEL[mes]) MES_LABEL[mes] = MESES_PT[mm - 1];
 const refBR = `${dd(dias)}/${dd(mm)}`;
 STATUS.dados_ate = `${dd(dias)}/${dd(mm)}/${ano}`; STATUS.atualizado = `${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}`;
 const bancos = [...new Set(Object.values(resultados).flatMap(r => r.DATA.contas.map(c => BANCO_NOME[c.banco])))];
-STATUS.extratos = `${bancos.join(', ')} até ${refBR} — PDFs do arquivo mensal do OneDrive (Financeiro/Bancos - Extratos/${ano}/${dd(mm)}), lidos pela rotina automática em ${STATUS.atualizado}; ${mes} ${tipo === 'full' ? 'FECHADO' : 'parcial'}`;
+STATUS.extratos = `${bancos.join(', ')} até ${refBR} — PDFs do arquivo mensal do OneDrive (Financeiro/Bancos - Extratos/${ano}/${dd(mm)}), lidos pela rotina automática em ${STATUS.atualizado}; ${mes} ${tipo === 'full' ? 'FECHADO' : 'parcial'}${foraDesta.length ? `; sem extrato completo neste mês: ${foraDesta.join(', ')} (realizado parado no dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))})` : ''}`;
 if (!PAINEL.empresas) PAINEL.empresas = {};
 for (const e of Object.keys(resultados)) { const id = EMP_ID[e]; PAINEL.empresas[id] = { ...(PAINEL.empresas[id] || {}), saldo: resultados[e].fim, ref: refBR }; }
 /* o painel aponta para o último mês com dados realizados */
