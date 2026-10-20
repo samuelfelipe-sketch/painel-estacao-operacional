@@ -4,12 +4,17 @@
   {
    "id": "samuel",
    "nome": "Samuel",
-   "hash": "d2a841835b53ff10c938d88d247151e4cb36bb6c9047c8f7b9affe799d97f7c1",
    "admin": true,
    "ativo": true,
    "perm": {
     "roadmap": "edita",
     "pe": "edita"
+   },
+   "kdf": {
+    "alg": "pbkdf2-sha256",
+    "i": 600000,
+    "s": "nGKQ1pSYqEahHtqXDzrhYA==",
+    "h": "kpZ4ca86ABAoxCXRdxnqU08eUWGhUdvOGyLhukntRz8="
    }
   },
   {
