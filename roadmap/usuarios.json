@@ -20,7 +20,6 @@
   {
    "id": "teste",
    "nome": "Maicon",
-   "hash": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
    "admin": false,
    "ativo": true,
    "perm": {
@@ -28,35 +27,50 @@
     "pe": "followup",
     "operacional": "le",
     "fluxo": "nao"
+   },
+   "kdf": {
+    "alg": "pbkdf2-sha256",
+    "i": 600000,
+    "s": "WeCrv3X2RC1ihfoAKg4kag==",
+    "h": "Na0ORs/Pb1mcDRRjJw45UPAHVw5riHurUpuF6IbvJCY="
    }
   },
   {
    "id": "gabi",
    "nome": "Gabrielle",
-   "hash": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
    "admin": false,
    "ativo": true,
    "perm": {
     "roadmap": "le",
     "pe": "followup"
+   },
+   "kdf": {
+    "alg": "pbkdf2-sha256",
+    "i": 600000,
+    "s": "U2qfHfZh+nK9ZIx6GMtjZA==",
+    "h": "0wP9vt8B9mVchOA8sK1HYl+DnXm6dTxaztUMhw1y7NM="
    }
   },
   {
    "id": "davi",
    "nome": "Davi",
-   "hash": "08fa299aecc0c034e037033e3b0bbfaef26b78c742f16cf88ac3194502d6c394",
    "admin": false,
    "ativo": false,
    "perm": {
     "roadmap": "le",
     "pe": "le",
     "fluxo": "le"
+   },
+   "kdf": {
+    "alg": "pbkdf2-sha256",
+    "i": 600000,
+    "s": "Q3IEpR4D+SlGgHjCbayCJg==",
+    "h": "LOToPnF2Lp+i0l5/aGysGhh/kcxvMrTcBsYXD0gFZlI="
    }
   },
   {
    "id": "sonia",
    "nome": "Sonia",
-   "hash": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
    "admin": false,
    "ativo": true,
    "perm": {
@@ -64,12 +78,17 @@
     "pe": "followup",
     "fluxo": "le",
     "operacional": "le"
+   },
+   "kdf": {
+    "alg": "pbkdf2-sha256",
+    "i": 600000,
+    "s": "1UrJmUJIz5DxXdBh9UVQIw==",
+    "h": "8PH3I1WPwP/c/081K3CosfXovywNsLTH461HbvrO5hQ="
    }
   },
   {
    "id": "douglas",
    "nome": "Douglas",
-   "hash": "08fa299aecc0c034e037033e3b0bbfaef26b78c742f16cf88ac3194502d6c394",
    "admin": false,
    "ativo": false,
    "perm": {
@@ -77,12 +96,17 @@
     "pe": "le",
     "fluxo": "le",
     "operacional": "le"
+   },
+   "kdf": {
+    "alg": "pbkdf2-sha256",
+    "i": 600000,
+    "s": "u2l7TiuzI/J4l/rABK+EZg==",
+    "h": "smGVSBrZKY+11sU7U8/QA+tPc+exb5XULzsIaPMgXNU="
    }
   },
   {
    "id": "rafael",
    "nome": "Rafael",
-   "hash": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
    "admin": false,
    "ativo": true,
    "perm": {
@@ -90,6 +114,12 @@
     "pe": "followup",
     "fluxo": "nao",
     "operacional": "le"
+   },
+   "kdf": {
+    "alg": "pbkdf2-sha256",
+    "i": 600000,
+    "s": "/M+rDnSE0ao33ypwZMKXWg==",
+    "h": "w1mQ+DAut9CngeCIdv3qkN+o58QQXqhRfcK4GBf6j1Q="
    }
   }
  ]
