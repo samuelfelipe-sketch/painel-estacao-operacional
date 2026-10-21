@@ -73,6 +73,7 @@ for (const e of empresas) {
     if (!banco || !PARSERS[banco]) { avisos.push(`${e}/${f}: banco desconhecido, ignorado`); continue; }
     let o; try { o = PARSERS[banco](readFileSync(join(pastaExt, e, f), 'utf8')); } catch (err) { falha(`${e}/${f}: ${err.message}`); }
     if (!o.ok) falha(`${e}/${f}: o extrato não reconcilia (dif ${o.dif}) — leitura incompleta? Nada gravado.`);
+    if (o.formato === 'ofx') avisos.push(`${e}/${banco}: OFX (saldo inicial derivado do saldo final; a virada de saldo é a conferência)`);
     (porBanco[banco] = porBanco[banco] || []).push(o);
   }
   for (const banco of Object.keys(porBanco)) {

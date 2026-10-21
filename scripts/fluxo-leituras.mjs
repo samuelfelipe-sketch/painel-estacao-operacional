@@ -21,9 +21,10 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSy
 import { join, resolve } from 'path';
 import { homedir } from 'os';
 import { falha, foraDoRepo, opt } from './fluxo-lib.mjs';
-import { PARSERS } from './fluxo-extratos.mjs';
+import { PARSERS, ehOFX, ofx } from './fluxo-extratos.mjs';
 
 export function detectaBanco(t) {
+  if (ehOFX(t)) { try { return ofx(t).banco; } catch (e) { return null; } }
   if (/Stone Institui[çc][ãa]o de Pagamento/i.test(t)) return 'stone';
   if (/B\s*A\s*N\s*R\s*I\s*S\s*U\s*L/.test(t) && /MOVIMENTOS DA CONTA CORRENTE/i.test(t)) return 'banrisul';
   if (/SALDO TOTAL DISPON[IÍ]VEL DIA/i.test(t) || /Ag[êe]ncia\s+0912\s+Conta/i.test(t)) return 'itau';
@@ -38,6 +39,7 @@ const N = s => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]
 /* empresa SÓ pelo titular no cabeçalho do extrato (nunca pelos memos: um PIX
    recebido de outra empresa do grupo logo no 1º dia enganaria a detecção) */
 export function detectaEmpresa(t) {
+  if (ehOFX(t)) { try { return ofx(t).empresa; } catch (e) { return null; } }
   const U = N(t.slice(0, 2500));
   const cab = [
     /ASSOCIADO:\s*([^\n]{3,60}?)\s+COOPERATIVA/,                 /* Sicredi */
@@ -88,6 +90,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const banco = detectaBanco(l.texto), empresa = detectaEmpresa(l.texto);
     if (!banco || !empresa) { ignorados++; continue; }
     let o; try { o = PARSERS[banco](l.texto); } catch (e) { ignorados++; continue; }
+    /* OFX e PDF do mesmo banco/mês: o OFX prevalece (valores exatos) — o PDF é descartado */
     if (!o.mov.length) { ignorados++; continue; }
     const meses = {}; for (const m of o.mov) meses[m.data.slice(0, 7)] = (meses[m.data.slice(0, 7)] || 0) + 1;
     const mesPrinc = Object.keys(meses).sort((a, b) => meses[b] - meses[a])[0];
@@ -95,7 +98,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const k = empresa + '/' + banco;
     cand[k] = cand[k] || [];
     if (cand[k].some(c => c.texto === l.texto || (c.de === o.periodo.de && c.ate === o.periodo.ate && c.n === o.mov.length))) continue; /* mesmo extrato lido duas vezes */
-    cand[k].push({ n: o.mov.length, texto: l.texto, uri: l.uri, ok: o.ok, mes: mesPrinc, de: o.periodo.de, ate: o.periodo.ate });
+    cand[k].push({ n: o.mov.length, texto: l.texto, uri: l.uri, ok: o.ok, mes: mesPrinc, de: o.periodo.de, ate: o.periodo.ate, ofx: o.formato === 'ofx' });
   }
   mkdirSync(resolve(para), { recursive: true });
   const manifesto = [];
@@ -103,10 +106,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
      todos (banco.txt, banco.2.txt…) — o fluxo-mes emenda e confere a cadeia de saldos */
   for (const k of Object.keys(cand).sort()) {
     const [e, b] = k.split('/'); mkdirSync(join(para, e), { recursive: true });
-    const lista = cand[k].sort((x, y) => (x.de + x.ate).localeCompare(y.de + y.ate));
-    lista.forEach((c, i) => { writeFileSync(join(para, e, b + (i ? '.' + (i + 1) : '') + '.txt'), c.texto); manifesto.push({ empresa: e, banco: b, parte: i + 1, de: lista.length, mes: c.mes, periodo: `${c.de}→${c.ate}`, lancamentos: c.n, reconcilia: c.ok, item: c.uri.split('/').pop() }); });
+    let lista = cand[k].sort((x, y) => (x.de + x.ate).localeCompare(y.de + y.ate));
+    if (lista.some(c => c.ofx)) lista = lista.filter(c => c.ofx); /* havendo OFX, só OFX */
+    lista.forEach((c, i) => { writeFileSync(join(para, e, b + (i ? '.' + (i + 1) : '') + '.txt'), c.texto); manifesto.push({ empresa: e, banco: b, parte: i + 1, de: lista.length, mes: c.mes, periodo: `${c.de}→${c.ate}`, lancamentos: c.n, reconcilia: c.ok, formato: c.ofx ? 'ofx' : 'pdf', item: c.uri.split('/').pop() }); });
   }
   writeFileSync(join(para, 'leituras.json'), JSON.stringify(manifesto, null, 1));
   console.log(`leituras: ${leituras.length} resultado(s) do conector no transcript · ${manifesto.length} extrato(s) gravado(s) em ${para}/ · ${ignorados} ignorado(s) (não é extrato de conta-corrente${mes ? ', ou de outro mês' : ''})`);
-  for (const m of manifesto) console.log(`  ${m.empresa}/${m.banco}${m.de > 1 ? ` (parte ${m.parte}/${m.de})` : ''}: ${m.mes} · ${m.periodo} · ${m.lancamentos} lançamentos · reconcilia ${m.reconcilia ? 'OK' : 'NÃO'}`);
+  for (const m of manifesto) console.log(`  ${m.empresa}/${m.banco}${m.de > 1 ? ` (parte ${m.parte}/${m.de})` : ''}: ${m.mes} · ${m.periodo} · ${m.lancamentos} lançamentos · ${m.formato} · reconcilia ${m.reconcilia ? 'OK' : 'NÃO'}`);
 }

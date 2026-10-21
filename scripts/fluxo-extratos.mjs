@@ -273,8 +273,49 @@ export function pagbank(txt) {
   return fecha({ banco: 'pagbank', saldoAnterior, saldoFinal, mov, periodo: {} });
 }
 
+/* ---- OFX (qualquer banco) ---- */
+/* OFX é texto (SGML ou XML). O conector do Microsoft 365 só o entrega quando o
+   arquivo é salvo com extensão .txt (ex.: "Sicredi-PS.ofx.txt"). Valores exatos,
+   sem layout de PDF: é a fonte preferida quando existe. Não há saldo inicial no
+   OFX: saldoAnterior = LEDGERBAL − Σ lançamentos (a virada de saldo no fluxo-mes
+   é a conferência independente). */
+export const OFX_BANCOS = { '748': 'sicredi', '041': 'banrisul', '237': 'bradesco', '341': 'itau', '136': 'unicred', '197': 'stone', '290': 'pagbank' };
+export const OFX_CONTAS = [ /* dígitos finais da conta → empresa (com o banco) */
+  ['sicredi', '394302', 'ps'], ['sicredi', '157543', 'sf'], ['sicredi', '447909', 'as'], ['sicredi', '808482', 'siss'], ['sicredi', '244251', 'st'], ['sicredi', '314850', 'ss'],
+  ['banrisul', '0604545302', 'ps'], ['banrisul', '0602546603', 'sf'], ['banrisul', '0626356003', 'as'], ['banrisul', '0601011307', 'siss'],
+  ['bradesco', '480126', 'ps'], ['bradesco', '274054', 'sf'], ['bradesco', '49972', 'siss'],
+  ['unicred', '117510', 'ps'], ['unicred', '117579', 'sf'], ['itau', '123882', 'as'],
+  ['stone', '84845510', 'ps'], ['stone', '101399749', 'sf'], ['stone', '794672931', 'as'], ['pagbank', '861328607', 'ss'],
+];
+export const ehOFX = txt => /OFXHEADER|<OFX>/i.test(txt.slice(0, 4000));
+const tag = (bloco, t) => { const m = bloco.match(new RegExp('<' + t + '>\\s*([^<\\r\\n]*)', 'i')); return m ? m[1].trim() : null; };
+const dataOFX = s => { const m = (s || '').match(/^(\d{4})(\d{2})(\d{2})/); return m ? `${m[1]}-${m[2]}-${m[3]}` : null; };
+const numOFX = s => { if (s == null) return null; const t = String(s).trim().replace(/\s/g, ''); const v = /,\d{1,2}$/.test(t) && !/\.\d{1,2}$/.test(t) ? parseFloat(t.replace(/\./g, '').replace(',', '.')) : parseFloat(t.replace(/,/g, '')); return isNaN(v) ? null : v; };
+export function ofx(txt) {
+  const bankid = (tag(txt, 'BANKID') || '').replace(/\D/g, '').padStart(3, '0').slice(-3);
+  const banco = OFX_BANCOS[bankid] || null;
+  const acct = (tag(txt, 'ACCTID') || '').replace(/\D/g, '');
+  const empresa = (OFX_CONTAS.find(([b, d]) => (!banco || b === banco) && acct.endsWith(d)) || [])[2] || null;
+  const mov = [];
+  for (const m of txt.matchAll(/<STMTTRN>([\s\S]*?)(?:<\/STMTTRN>|(?=<STMTTRN>)|(?=<\/BANKTRANLIST>))/gi)) {
+    const b = m[1]; const data = dataOFX(tag(b, 'DTPOSTED')); const valor = numOFX(tag(b, 'TRNAMT'));
+    if (!data || valor == null) continue;
+    const desc = [tag(b, 'NAME'), tag(b, 'MEMO')].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim() || (tag(b, 'TRNTYPE') || 'lançamento');
+    mov.push({ data, desc, valor: round2(valor), fitid: tag(b, 'FITID') });
+  }
+  mov.sort((a, b) => a.data.localeCompare(b.data));
+  const ledger = txt.match(/<LEDGERBAL>([\s\S]*?)(?:<\/LEDGERBAL>|<AVAILBAL>|<\/STMTRS>)/i);
+  const saldoFinal = ledger ? numOFX(tag(ledger[1], 'BALAMT')) : null;
+  if (saldoFinal == null) throw new Error('OFX sem LEDGERBAL (saldo final) — não dá para ancorar o extrato');
+  const soma = mov.reduce((a, x) => a + x.valor, 0);
+  const saldoAnterior = round2(saldoFinal - soma);
+  const o = fecha({ banco: banco || 'ofx', saldoAnterior, saldoFinal: round2(saldoFinal), mov, periodo: { de: dataOFX(tag(txt, 'DTSTART')), ate: dataOFX(tag(txt, 'DTEND')) } });
+  o.formato = 'ofx'; o.empresa = empresa; o.bankid = bankid; o.conta = acct; o.saldoAnteriorDerivado = true;
+  return o;
+}
 const _P = { bradesco, unicred, sicredi, stone, banrisul, itau, pagbank };
-export const PARSERS = Object.fromEntries(Object.entries(_P).map(([k, f]) => [k, txt => comCabecalho(f(txt), txt)]));
+export const PARSERS = Object.fromEntries(Object.entries(_P).map(([k, f]) => [k, txt => ehOFX(txt) ? ofx(txt) : comCabecalho(f(txt), txt)]));
+PARSERS.ofx = ofx;
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const banco = process.argv[2], arq = process.argv[3];
