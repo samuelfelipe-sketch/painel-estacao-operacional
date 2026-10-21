@@ -11,6 +11,11 @@
      PAINEL (hoje, mes, wk, saldo/ref por empresa)
    PREV/PROJ/ERP/VENDAS/METAS/COMPROMISSOS/RECEBER/PEND não são tocados aqui.
 
+   Formatos: o fluxo-extratos decide pelo conteúdo (PDF/TXT, OFX, XLSX da Stone, XLS do
+   Sicredi, CSV do Itaú, tabelas). Conta cujo arquivo não traz saldo (CSV do Itaú, XLS sem
+   lançamentos) é ancorada no fechamento do mês anterior do painel (aviso no relatório).
+   Conta que existia no mês anterior e não veio nesta carga BLOQUEIA a carga.
+
    Garantias: nenhuma empresa é gravada sem conciliar; mês já fechado (dias =
    nd) só se refaz com --refazer; empresa sem extrato nesta rodada mantém o que
    já tinha no mês (e a nota avisa). O relatório de revisão vai para um arquivo
@@ -20,6 +25,7 @@
      node scripts/fluxo-mes.mjs --mes AAAA-MM --extratos <pasta> --estado <pasta>/estado
           [--fornecedores <fornecedores.json aberto>] [--ajustes <ajustes.json>]
           [--ate DD] [--refazer] [--nota "texto extra"] [--relatorio <arquivo.txt>] [--so-conferir]
+          [--sem <ids>] [--sem-conta <empresa:banco,…>]   (exceções SÓ com decisão do Samuel — ver RUNBOOK)
    Logs sem números do caixa (o relatório, fora do repo, tem tudo). */
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
@@ -64,7 +70,11 @@ if (diaAtual && diaAtual.dias >= nd && !refazer) falha(`${mes} já está fechado
 /* lê os extratos */
 const empresas = readdirSync(pastaExt).filter(e => EMP_ID[e] && existsSync(join(pastaExt, e)) && readdirSync(join(pastaExt, e)).some(f => f.endsWith('.txt'))).sort();
 if (!empresas.length) falha('nenhuma pasta de empresa com extratos em ' + pastaExt);
-const resultados = {}; const rel = []; let ultimoDia = 0; const avisos = [];
+/* mês anterior no painel: âncora dos formatos sem saldo e lista das contas esperadas */
+const mesAnt = mm === 1 ? `${ano - 1}-12` : `${ano}-${dd(mm - 1)}`;
+const antM = (DATA.meses[mesAnt] || {}).empresas || {};
+const semConta = (opt(args, 'sem-conta') || '').split(',').filter(Boolean); /* "ps:unicred,…" — conta deliberadamente fora (só com decisão do Samuel) */
+const resultados = {}; const rel = []; let ultimoDia = 0; const avisos = []; const formatosUsados = new Set(); const faltamContas = [];
 for (const e of empresas) {
   const extratos = [];
   const porBanco = {};
@@ -74,7 +84,17 @@ for (const e of empresas) {
     let o; try { o = PARSERS[banco](readFileSync(join(pastaExt, e, f), 'utf8')); } catch (err) { falha(`${e}/${f}: ${err.message}`); }
     if (!o.ok) falha(`${e}/${f}: o extrato não reconcilia (dif ${o.dif}) — leitura incompleta? Nada gravado.`);
     if (o.formato === 'ofx') avisos.push(`${e}/${banco}: OFX (saldo inicial derivado do saldo final; a virada de saldo é a conferência)`);
+    formatosUsados.add(o.formato === 'pdf' ? 'PDF/TXT' : o.formato.toUpperCase());
     (porBanco[banco] = porBanco[banco] || []).push(o);
+  }
+  /* contas esperadas = as que a empresa tinha no mês anterior (ou já neste mês): nunca
+     carregar a empresa com conta faltando — a conciliação ficaria errada em silêncio */
+  const id = EMP_ID[e];
+  const esperadasB = new Set([...((antM[id] || {}).contas || []), ...(((DATA.meses[mes] || {}).empresas || {})[id] || {}).contas || []].map(c => c.banco));
+  const presentes = new Set(Object.keys(porBanco).map(b => BANCO_NOME[b]));
+  for (const nome of esperadasB) {
+    const b = Object.keys(BANCO_NOME).find(k => BANCO_NOME[k] === nome);
+    if (!presentes.has(nome) && !semConta.includes(`${e}:${b}`)) faltamContas.push(`${e}/${b}`);
   }
   for (const banco of Object.keys(porBanco)) {
     let o = porBanco[banco][0];
@@ -89,10 +109,13 @@ for (const e of empresas) {
         if (!antes.length) continue;
         mov = antes.concat(mov); de = p.periodo.de; saldoAnterior = p.saldoAnterior;
       }
-      const dif = r2(saldoAnterior + mov.reduce((a, x) => a + x.valor, 0) - base.saldoFinal);
-      if (Math.abs(dif) > 0.015) falha(`${e}/${banco}: as ${ps.length} partes não formam uma cadeia contínua (dif ${dif}) — falta uma semana ou há sobreposição com valores diferentes. Nada gravado.`);
-      o = { ...base, saldoAnterior, mov, periodo: { de, ate: base.periodo.ate } };
-      avisos.push(`${e}/${banco}: ${ps.length} partes emendadas (${de}→${base.periodo.ate})`);
+      const semSaldo = ps.some(p => p.semSaldo);
+      if (!semSaldo) {
+        const dif = r2(saldoAnterior + mov.reduce((a, x) => a + x.valor, 0) - base.saldoFinal);
+        if (Math.abs(dif) > 0.015) falha(`${e}/${banco}: as ${ps.length} partes não formam uma cadeia contínua (dif ${dif}) — falta uma semana ou há sobreposição com valores diferentes. Nada gravado.`);
+      }
+      o = { ...base, saldoAnterior: semSaldo ? null : saldoAnterior, saldoFinal: semSaldo ? null : base.saldoFinal, semSaldo, mov, periodo: { de, ate: base.periodo.ate } };
+      avisos.push(`${e}/${banco}: ${ps.length} partes emendadas (${de}→${base.periodo.ate})${semSaldo ? ' — partes sem saldo: cadeia não conferível' : ''}`);
     }
     /* o extrato tem de cobrir a conta desde o 1º dia do mês (extrato semanal avulso
        sem as semanas anteriores deixaria os primeiros dias zerados em silêncio) */
@@ -103,8 +126,19 @@ for (const e of empresas) {
       /* extrato com outro mês junto: mantém só o mês pedido e recalcula o saldo inicial */
       const antes = o.mov.filter(m => m.data < mes + '-01').reduce((a, m) => a + m.valor, 0);
       const depois = o.mov.filter(m => m.data > mes + '-31').reduce((a, m) => a + m.valor, 0);
-      o.saldoAnterior = r2(o.saldoAnterior + antes); o.saldoFinal = r2(o.saldoFinal - depois); o.mov = o.mov.filter(m => m.data.slice(0, 7) === mes);
+      if (o.saldoAnterior != null) { o.saldoAnterior = r2(o.saldoAnterior + antes); o.saldoFinal = r2(o.saldoFinal - depois); }
+      o.mov = o.mov.filter(m => m.data.slice(0, 7) === mes);
       avisos.push(`${e}/${banco}: ${foraDoMes.length} lançamento(s) de outro mês descartado(s)`);
+    }
+    /* formato sem saldo (CSV do Itaú, XLS do Sicredi sem lançamentos ou ilegível):
+       saldo inicial = fechamento do mês anterior no painel; sem conferência independente */
+    if (o.saldoAnterior == null) {
+      const ca = ((antM[id] || {}).contas || []).find(x => x.banco === BANCO_NOME[banco]);
+      if (!ca) falha(`${e}/${banco}: o arquivo (${o.formato}) não traz saldo e não há fechamento de ${mesAnt} no painel para ancorar a conta — peça o extrato em PDF ou OFX. Nada gravado.`);
+      o.saldoAnterior = r2(ca.fim); o.saldoFinal = r2(ca.fim + o.mov.reduce((a, m) => a + m.valor, 0));
+      avisos.push(`${e}/${banco}: ${o.formato.toUpperCase()} sem saldo no arquivo — saldo inicial tomado do fechamento de ${MES_LABEL[mesAnt] || mesAnt} no painel${o.mov.length ? '' : ' (sem lançamentos no período)'}; nenhuma conferência independente de saldo — prefira OFX ou PDF`);
+    } else if (o.saldoFinalDerivado) {
+      avisos.push(`${e}/${banco}: ${o.formato.toUpperCase()} com saldos ilegíveis ("####") — cadeia conferida só até ${o.ancoradoAte ? o.ancoradoAte.slice(8, 10) + '/' + o.ancoradoAte.slice(5, 7) : 'o saldo anterior'}; o saldo final é derivado (${o.saldosLegiveis || 0} de ${o.mov.length} saldos legíveis${o.valoresDerivados ? `, ${o.valoresDerivados} valor(es) derivado(s) do saldo` : ''}) — prefira OFX ou PDF`);
     }
     for (const m of o.mov) { const d = +m.data.slice(8, 10); if (d > ultimoDia) ultimoDia = d; }
     extratos.push({ banco, saldoAnterior: o.saldoAnterior, saldoFinal: o.saldoFinal, mov: o.mov });
@@ -114,6 +148,10 @@ for (const e of empresas) {
   if (!r.reconcilia) falha(`${e}: a montagem não concilia (dif ${r.dif}) — nada gravado.`);
   resultados[e] = r;
 }
+if (faltamContas.length) {
+  const msg = `conta(s) sem extrato nesta carga: ${faltamContas.join(', ')} (existiam em ${MES_LABEL[mesAnt] || mesAnt}/${mesAnt.slice(0, 4)}) — não se carrega empresa com conta faltando; traga o extrato (qualquer formato) ou, só com decisão do Samuel, --sem-conta ${faltamContas.map(x => x.replace('/', ':')).join(',')}.`;
+  if (soConferir) avisos.unshift('BLOQUEIO: ' + msg + ' Nada será gravado.'); else falha(msg + ' Nada gravado.');
+}
 
 /* até que dia o mês está coberto */
 const fimDoMes = new Date(ano, mm - 1, nd); const ontem = new Date(hoje); ontem.setDate(ontem.getDate() - 1);
@@ -122,8 +160,6 @@ if (dias < 1 || dias > nd) falha('--ate fora do mês.');
 const tipo = dias >= nd ? 'full' : 'parcial';
 
 /* virada: saldo inicial de cada conta = saldo final do mês anterior (quando existe) */
-const mesAnt = mm === 1 ? `${ano - 1}-12` : `${ano}-${dd(mm - 1)}`;
-const antM = (DATA.meses[mesAnt] || {}).empresas || {};
 const viradas = [];
 /* cobertura por empresa: o mês só avança para TODAS as empresas juntas. Empresa que
    já tinha dados no mês (ou que existia no mês anterior fechado) e não veio nesta
@@ -167,7 +203,7 @@ const relArq = opt(args, 'relatorio'); if (relArq) { foraDoRepo(relArq, '--relat
 
 const totalRev = Object.values(resultados).reduce((a, r) => a + r.classificados.filter(c => !c.confia).length, 0);
 console.log(`${mes}: ${Object.keys(resultados).length} empresa(s) · ${Object.values(resultados).reduce((a, r) => a + r.DATA.contas.length, 0)} contas · dias 01–${dd(dias)} (${tipo}) · todas conciliadas no centavo · ${totalRev} lançamento(s) para revisão · ${viradas.length} virada(s) a conferir · ${avisos.length} aviso(s)` + (relArq ? ` · relatório em ${relArq}` : ''));
-if (soConferir) process.exit(0);
+if (soConferir) { if (faltamContas.length) { console.error('ERRO: ' + avisos[0]); process.exit(1); } process.exit(0); }
 
 /* grava no estado */
 const mesD = DATA.meses[mes] && DATA.meses[mes].empresas ? DATA.meses[mes] : { tipo, empresas: {} };
@@ -182,7 +218,7 @@ mesD.tipo = tipo;
 diaM.cobertura = { ...cobAnt }; for (const id of idsCarregados) diaM.cobertura[id] = dias;
 const foraDesta = [...esperadas].filter(id => !idsCarregados.includes(id));
 const sem = semanasDoMes(ano, mm);
-const nota = [`${tipo === 'full' ? 'Mês fechado' : 'Mês parcial'} pela rotina em ${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}: realizado 01–${dd(dias)}/${dd(mm)} lido do arquivo mensal de extratos (OneDrive), conciliado no centavo em ${Object.values(resultados).reduce((a, r) => a + r.DATA.contas.length, 0)} contas de ${Object.keys(resultados).length} empresas.`,
+const nota = [`${tipo === 'full' ? 'Mês fechado' : 'Mês parcial'} pela rotina em ${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}: realizado 01–${dd(dias)}/${dd(mm)} lido dos extratos da pasta semanal do OneDrive (${[...formatosUsados].sort().join('/')}), conciliado no centavo em ${Object.values(resultados).reduce((a, r) => a + r.DATA.contas.length, 0)} contas de ${Object.keys(resultados).length} empresas.`,
   `Semanas seg→dom (${sem.map(s => s.replace(' · ', ' ')).join(' · ')}).`,
   `Classificação pelas regras de memo e pelo mapa de fornecedores do Argo; ${totalRev} lançamento(s) ficaram marcados para revisão${ajustes.length ? `; ${ajustes.length} ajuste(s) aplicado(s)` : ''}.`,
   foraDesta.length ? `Fora desta carga (ficam com o realizado até o dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))}, por falta de extrato): ${foraDesta.join(', ')}.` : '',
@@ -196,7 +232,7 @@ if (!MES_LABEL[mes]) MES_LABEL[mes] = MESES_PT[mm - 1];
 const refBR = `${dd(dias)}/${dd(mm)}`;
 STATUS.dados_ate = `${dd(dias)}/${dd(mm)}/${ano}`; STATUS.atualizado = `${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}`;
 const bancos = [...new Set(Object.values(resultados).flatMap(r => r.DATA.contas.map(c => BANCO_NOME[c.banco])))];
-STATUS.extratos = `${bancos.join(', ')} até ${refBR} — PDFs do arquivo mensal do OneDrive (Financeiro/Bancos - Extratos/${ano}/${dd(mm)}), lidos pela rotina automática em ${STATUS.atualizado}; ${mes} ${tipo === 'full' ? 'FECHADO' : 'parcial'}${foraDesta.length ? `; sem extrato completo neste mês: ${foraDesta.join(', ')} (realizado parado no dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))})` : ''}`;
+STATUS.extratos = `${bancos.join(', ')} até ${refBR} — extratos da pasta semanal do OneDrive (Financeiro/Fluxo de Caixa/Extratos/Fluxo On-line; formatos ${[...formatosUsados].sort().join(', ')}), lidos pela rotina automática em ${STATUS.atualizado}; ${mes} ${tipo === 'full' ? 'FECHADO' : 'parcial'}${foraDesta.length ? `; sem extrato completo neste mês: ${foraDesta.join(', ')} (realizado parado no dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))})` : ''}`;
 if (!PAINEL.empresas) PAINEL.empresas = {};
 for (const e of Object.keys(resultados)) { const id = EMP_ID[e]; PAINEL.empresas[id] = { ...(PAINEL.empresas[id] || {}), saldo: resultados[e].fim, ref: refBR }; }
 /* o painel aponta para o último mês com dados realizados */

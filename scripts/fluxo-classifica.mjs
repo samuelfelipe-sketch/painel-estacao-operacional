@@ -126,6 +126,9 @@ export function classifica(mov, ctx = {}) {
       /* demais boletos ao grupo: regras de conteúdo abaixo, marcados como intercompany */
     } else return r(CONTAS.GIRO, true, { intercompany: true, giro: true }); /* PIX/TED entre empresas = empréstimo interno, neutralizado */
   }
+  /* Stone (XLSX): liquidação diária que a Stone traz da "conta principal" dela (CNPJ
+     16.501.555) para a conta da empresa = recebível de cartão */
+  if (/ENTRE CONTAS STONE/.test(t) && tem(t, 'STONE PRINCIPAL', '16501555', '16.501.555')) return r(CONTAS.CARTOES);
   /* "transf entre contas" para fora da empresa, sem ser grupo: CPF (11 díg.) =
      transferência ao sócio (distribuição, revisar); senão saída a classificar */
   if (/TRANSF ENTRE CONTAS|TRANSFERENCIA ENTRE CONTAS/.test(t)) {
@@ -139,14 +142,14 @@ export function classifica(mov, ctx = {}) {
   if (tem(t, 'AMORTIZACAO CONTRATO', 'LIQUIDACAO DE PARCELA') && contrato && /C59830287|C69830413/.test(contrato)) return r(CONTAS.AMORT_ROT(contrato), true, { divida: true });
   if (tem(t, 'CONSORCIO')) return r(CONTAS.CONSORCIO, true, { divida: true });
   if (t.includes('C698309290')) return r(CONTAS.PARC_698, true, { divida: true });
-  if (tem(t, 'AMORTIZACAO', 'LIQUIDACAO DE PARCELA', 'PRESTACAO', 'FINANCIAMENTO', 'PARCELA EMPREST')) return r(CONTAS.PARCELAS, true, { divida: true });
+  if (tem(t, 'AMORTIZACAO', 'LIQUIDACAO DE PARCELA', 'PRESTACAO', 'FINANCIAMENTO', 'PARCELA EMPREST', 'PARCELA QUITADA')) return r(CONTAS.PARCELAS, true, { divida: true }); /* 'PARCELA QUITADA DO EMPRESTIMO' = empréstimo Stone (XLSX) */
 
   if (v >= 0) {
     /* ENTRADAS */
     if (tem(t, 'RENTAB', 'REND PAGO', 'RENDIMENTO', 'REND APLIC')) return r(CONTAS.REND);
     if (tem(t, 'RESGATE', ' XP')) return r(CONTAS.RESGATE);
     if (tem(t, 'LIQ.COBRANCA', 'COBRANCA SIMPLES', 'COB0', 'LIQUIDACAO COBRANCA', 'LIQ COBRANCA')) return r(CONTAS.COBRANCAS);
-    if (tem(t, 'RECEBIMENTO VENDAS', 'MAQUININHA', 'VERO', 'BANRICARD', 'BANRI A VISTA', 'ABASTECE AI', 'TICKET SERVICOS', 'TICKET SOLUCOES', 'VR BENE', 'PLUXEE', 'SIPAG', 'CIELO', 'GETNET', 'REDECARD', 'RECEBIMENTO REDE', 'VISA', 'MASTERCARD', 'MAESTRO', 'ELO ', 'AMEX', 'CREDITO VERO', 'RECEBIMENTOS', 'VENDAS - DISPONIVEL', 'NAIP INSTITUICAO')) return r(CONTAS.CARTOES);
+    if (tem(t, 'RECEBIMENTO VENDAS', 'RECEBIVEL DE CARTAO', 'MAQUININHA', 'VERO', 'BANRICARD', 'BANRI A VISTA', 'ABASTECE AI', 'TICKET SERVICOS', 'TICKET SOLUCOES', 'VR BENE', 'PLUXEE', 'SIPAG', 'CIELO', 'GETNET', 'REDECARD', 'RECEBIMENTO REDE', 'VISA', 'MASTERCARD', 'MAESTRO', 'ELO ', 'AMEX', 'CREDITO VERO', 'RECEBIMENTOS', 'VENDAS - DISPONIVEL', 'NAIP INSTITUICAO')) return r(CONTAS.CARTOES);
     if (tem(t, 'COFRE', 'DEPOSITO DINHEIRO', 'COLETA', 'DINHEIRO', 'MOEDA', 'NUMERARIO')) return r(CONTAS.DINHEIRO);
     if (tem(t, 'DEP CHEQUE', 'DEPOSITO CHEQUE', 'CHEQUE')) return r(CONTAS.COBRANCAS); /* cheque depositado = recebimento de cliente faturado */
     if (tem(t, 'ALELO', 'EDENRED', 'GREEN CARD', 'TRUCKPAG', 'SENFFNET', 'SUB CR OUTRAS BAND')) return r(CONTAS.CARTOES);
