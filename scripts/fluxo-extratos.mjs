@@ -631,7 +631,8 @@ function porFormato(banco, txt) {
   else { if (!banco || !_P[banco]) throw new Error('texto de PDF sem banco reconhecido — informe o banco'); o = comCabecalho(_P[banco](txt), txt); o.formato = 'pdf'; }
   if (banco && o.banco !== banco && o.banco !== 'ofx' && o.banco !== 'tabela') throw new Error(`o arquivo é um extrato ${o.banco}, não ${banco}`);
   if (banco && (o.banco === 'ofx' || o.banco === 'tabela')) o.banco = banco;
-  o.qualidade = QUALIDADE[o.formato] || 0;
+  /* tabela genérica com saldo em todas as linhas (ex.: planilha do Sicredi salva como .xlsx) vale como OFX/XLSX; sem saldo, vale como CSV */
+  o.qualidade = o.semSaldo ? QUALIDADE.csv : o.formato === 'tabela' ? (o.saldoFinalDerivado ? QUALIDADE.xls : QUALIDADE.xlsx) : (QUALIDADE[o.formato] || 0);
   return o;
 }
 export const PARSERS = Object.fromEntries(Object.keys(_P).map(k => [k, txt => porFormato(k, txt)]));
