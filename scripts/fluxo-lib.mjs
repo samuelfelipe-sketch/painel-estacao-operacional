@@ -20,6 +20,12 @@ export const DADOS = [
 /* o que o shell fluxo/index.html e a tela "Dia a dia por empresa" consomem */
 export const CONSTS_SHELL = ['DIA', 'DATA', 'SHORT', 'EMP_FULL', 'MES_LABEL', 'STATUS'];
 
+/* contas encerradas (decisão do Samuel): 'empresa:banco' → primeiro mês (AAAA-MM) em que a conta
+   NÃO é mais esperada. Sem extrato nesse mês em diante, a conta sai do painel (saldo zero) e não
+   bloqueia a carga; se um extrato ainda vier, é lido normalmente. */
+export const CONTAS_ENCERRADAS = { 'ps:unicred': '2026-10', 'sf:unicred': '2026-10' }; /* Unicred em encerramento — 22/10/2026 */
+export const contaEncerrada = (empresa, banco, mes) => { const d = CONTAS_ENCERRADAS[`${empresa}:${banco}`]; return !!d && mes >= d; };
+
 export function falha(m) { console.error('ERRO: ' + m); process.exit(1); }
 
 /* localiza `const NOME = …;\n` seguido da próxima declaração ou código
