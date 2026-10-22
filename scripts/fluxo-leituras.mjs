@@ -177,6 +177,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const [e, b] = k.split('/'); mkdirSync(join(para, e), { recursive: true });
     let lista = cand[k].sort((x, y) => ((x.de || '') + (x.ate || '')).localeCompare((y.de || '') + (y.ate || '')));
     const melhor = Math.max(...lista.map(c => c.qualidade)); lista = lista.filter(c => c.qualidade === melhor);
+    /* exportação mais longa que CONTÉM outra (mesmo banco, mesma qualidade) substitui a contida —
+       ex.: OFX 01/09→22/10 e OFX 01/10→22/10: fica o primeiro (o fluxo-mes recorta o mês) */
+    lista = lista.filter(c => !lista.some(o => o !== c && o.de && o.ate && c.de && c.ate && o.de <= c.de && o.ate >= c.ate && o.n >= c.n && (o.de < c.de || o.ate > c.ate || o.n > c.n)));
     lista.forEach((c, i) => { writeFileSync(join(para, e, b + (i ? '.' + (i + 1) : '') + '.txt'), c.texto); manifesto.push({ empresa: e, banco: b, parte: i + 1, de: lista.length, periodo: `${c.de || '?'}→${c.ate || '?'}`, lancamentos: c.n, reconcilia: c.ok, formato: c.formato, semSaldo: c.semSaldo, saldoFinalDerivado: c.derivado, ancoradoAte: c.ancoradoAte, arquivo: c.nome, chamadas: c.partes }); });
   }
   writeFileSync(join(para, 'leituras.json'), JSON.stringify(manifesto, null, 1));
