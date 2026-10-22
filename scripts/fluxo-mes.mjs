@@ -29,7 +29,7 @@
    Logs sem números do caixa (o relatório, fora do repo, tem tudo). */
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
-import { falha, foraDoRepo, opt, temFlag } from './fluxo-lib.mjs';
+import { falha, foraDoRepo, opt, temFlag, contaEncerrada } from './fluxo-lib.mjs';
 import { PARSERS } from './fluxo-extratos.mjs';
 import { montaEmpresa, wkOf, nSemanas } from './fluxo-montagem.mjs';
 import { carregaMapa } from './fluxo-fornecedores.mjs';
@@ -74,7 +74,7 @@ if (!empresas.length) falha('nenhuma pasta de empresa com extratos em ' + pastaE
 const mesAnt = mm === 1 ? `${ano - 1}-12` : `${ano}-${dd(mm - 1)}`;
 const antM = (DATA.meses[mesAnt] || {}).empresas || {};
 const semConta = (opt(args, 'sem-conta') || '').split(',').filter(Boolean); /* "ps:unicred,…" — conta deliberadamente fora (só com decisão do Samuel) */
-const resultados = {}; const rel = []; let ultimoDia = 0; const avisos = []; const formatosUsados = new Set(); const faltamContas = [];
+const resultados = {}; const rel = []; let ultimoDia = 0; const avisos = []; const formatosUsados = new Set(); const faltamContas = []; const encerradas = [];
 for (const e of empresas) {
   const extratos = [];
   const porBanco = {};
@@ -94,7 +94,9 @@ for (const e of empresas) {
   const presentes = new Set(Object.keys(porBanco).map(b => BANCO_NOME[b]));
   for (const nome of esperadasB) {
     const b = Object.keys(BANCO_NOME).find(k => BANCO_NOME[k] === nome);
-    if (!presentes.has(nome) && !semConta.includes(`${e}:${b}`)) faltamContas.push(`${e}/${b}`);
+    if (presentes.has(nome) || semConta.includes(`${e}:${b}`)) continue;
+    if (contaEncerrada(e, b, mes)) { encerradas.push(`${EMP_ID[e]}·${nome}`); continue; } /* sai do painel: saldo zero daqui em diante */
+    faltamContas.push(`${e}/${b}`);
   }
   for (const banco of Object.keys(porBanco)) {
     let o = porBanco[banco][0];
@@ -148,6 +150,7 @@ for (const e of empresas) {
   if (!r.reconcilia) falha(`${e}: a montagem não concilia (dif ${r.dif}) — nada gravado.`);
   resultados[e] = r;
 }
+if (encerradas.length) avisos.push(`conta(s) encerrada(s) sem extrato — saem do painel a partir deste mês (saldo zero): ${encerradas.join(', ')}`);
 if (faltamContas.length) {
   const msg = `conta(s) sem extrato nesta carga: ${faltamContas.join(', ')} (existiam em ${MES_LABEL[mesAnt] || mesAnt}/${mesAnt.slice(0, 4)}) — não se carrega empresa com conta faltando; traga o extrato (qualquer formato) ou, só com decisão do Samuel, --sem-conta ${faltamContas.map(x => x.replace('/', ':')).join(',')}.`;
   if (soConferir) avisos.unshift('BLOQUEIO: ' + msg + ' Nada será gravado.'); else falha(msg + ' Nada gravado.');
@@ -221,6 +224,7 @@ const sem = semanasDoMes(ano, mm);
 const nota = [`${tipo === 'full' ? 'Mês fechado' : 'Mês parcial'} pela rotina em ${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}: realizado 01–${dd(dias)}/${dd(mm)} lido dos extratos da pasta semanal do OneDrive (${[...formatosUsados].sort().join('/')}), conciliado no centavo em ${Object.values(resultados).reduce((a, r) => a + r.DATA.contas.length, 0)} contas de ${Object.keys(resultados).length} empresas.`,
   `Semanas seg→dom (${sem.map(s => s.replace(' · ', ' ')).join(' · ')}).`,
   `Classificação pelas regras de memo e pelo mapa de fornecedores do Argo; ${totalRev} lançamento(s) ficaram marcados para revisão${ajustes.length ? `; ${ajustes.length} ajuste(s) aplicado(s)` : ''}.`,
+  encerradas.length ? `Conta(s) encerrada(s), fora do painel a partir deste mês: ${encerradas.join(', ')}.` : '',
   foraDesta.length ? `Fora desta carga (ficam com o realizado até o dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))}, por falta de extrato): ${foraDesta.join(', ')}.` : '',
   viradas.length ? `Virada de saldos a conferir: ${viradas.join('; ')}.` : '',
   opt(args, 'nota') || ''].filter(Boolean).join(' ');

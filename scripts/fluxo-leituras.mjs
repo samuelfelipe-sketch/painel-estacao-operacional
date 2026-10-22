@@ -29,7 +29,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { homedir } from 'os';
-import { falha, foraDoRepo, opt } from './fluxo-lib.mjs';
+import { falha, foraDoRepo, opt, contaEncerrada } from './fluxo-lib.mjs';
 import { PARSERS, ehOFX, ofx, detectaFormato, stoneXlsx, sicrediXls, itauCsv, tabela, OFX_CONTAS } from './fluxo-extratos.mjs';
 
 const BANCOS = ['sicredi', 'stone', 'unicred', 'banrisul', 'bradesco', 'itau', 'pagbank'];
@@ -46,7 +46,9 @@ export function detectaBanco(t, nomeArq) {
   if (f === 'csv') return 'itau';
   if (f === 'tabela') { /* banco pelo nome do arquivo ou por menção no conteúdo */
     const U = N(nomeArq); for (const [b, re] of BANCO_NOME_ARQ) if (re.test(U)) return b;
-    const C = N(t.slice(0, 4000)); for (const [b, re] of BANCO_NOME_ARQ) if (b !== 'itau' && re.test(C)) return b;
+    const C = N(t.slice(0, 4000));
+    if (/ASSOCIADO:.{0,80}COOPERATIVA:/.test(C) || /COOPERATIVA DE CREDITO.*SICREDI|\bSICREDI\b/.test(C)) return 'sicredi'; /* planilha do Sicredi salva como .xlsx */
+    for (const [b, re] of BANCO_NOME_ARQ) if (b !== 'itau' && re.test(C)) return b;
     return null;
   }
   if (/Stone Institui[çc][ãa]o de Pagamento/i.test(t)) return 'stone';
@@ -73,6 +75,8 @@ export function detectaEmpresa(t, banco, nomeArq) {
     for (const d of digs) { const c = OFX_CONTAS.find(([b, dd]) => (!banco || b === banco) && (d.endsWith(dd) || dd.endsWith(d)) && d.length >= 5); if (c) return c[2]; }
     const U = N(nomeArq); for (const [id, re] of EMP_NOME_ARQ) if (re.test(U)) return id;
     const C = N(t.slice(0, 3000)); const cnpj = C.match(/(0?\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/); if (cnpj) for (const [id, r] of EMP_NOME) if (r.test(cnpj[1])) return id;
+    /* número da conta no conteúdo ("24425-1", "0604545302"…) → OFX_CONTAS do banco */
+    for (const m of t.matchAll(/\b(\d{4,10}-?\d)\b/g)) { const d = m[1].replace(/\D/g, ''); const c = OFX_CONTAS.find(([b, dd]) => (!banco || b === banco) && d.length >= 5 && d.endsWith(dd)); if (c) return c[2]; }
     const unicas = OFX_CONTAS.filter(([b]) => b === banco); if (banco && unicas.length && unicas.every(c => c[2] === unicas[0][2])) return unicas[0][2];
     return null;
   }
@@ -182,6 +186,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   /* bancos esperados por empresa (RUNBOOK): avisa o que falta nesta leitura */
   const ESPERADOS = { ps: ['sicredi', 'stone', 'unicred', 'banrisul', 'bradesco'], sf: ['sicredi', 'stone', 'unicred', 'banrisul', 'bradesco'], as: ['sicredi', 'stone', 'banrisul', 'itau'], siss: ['sicredi', 'banrisul', 'bradesco'], st: ['sicredi'], ss: ['sicredi', 'pagbank'] };
   const faltam = [];
-  for (const [e, bs] of Object.entries(ESPERADOS)) for (const b of bs) if (!manifesto.some(m => m.empresa === e && m.banco === b)) faltam.push(`${e}/${b}`);
+  for (const [e, bs] of Object.entries(ESPERADOS)) for (const b of bs) if (!manifesto.some(m => m.empresa === e && m.banco === b) && !(mes && contaEncerrada(e, b, mes))) faltam.push(`${e}/${b}`);
   if (faltam.length) console.log(`  faltam na pasta (nenhum arquivo reconhecido): ${faltam.join(', ')} — o fluxo-mes não carrega empresa com conta faltando`);
 }
