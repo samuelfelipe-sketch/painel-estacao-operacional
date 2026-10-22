@@ -290,7 +290,8 @@ export const OFX_CONTAS = [ /* dígitos finais da conta → empresa (com o banco
 export const ehOFX = txt => /OFXHEADER|<OFX>/i.test(txt.slice(0, 4000));
 const tag = (bloco, t) => { const m = bloco.match(new RegExp('<' + t + '>\\s*([^<\\r\\n]*)', 'i')); return m ? m[1].trim() : null; };
 const dataOFX = s => { const m = (s || '').match(/^(\d{4})(\d{2})(\d{2})/); return m ? `${m[1]}-${m[2]}-${m[3]}` : null; };
-const numOFX = s => { if (s == null) return null; const t = String(s).trim().replace(/\s/g, ''); const v = /,\d{1,2}$/.test(t) && !/\.\d{1,2}$/.test(t) ? parseFloat(t.replace(/\./g, '').replace(',', '.')) : parseFloat(t.replace(/,/g, '')); return isNaN(v) ? null : v; };
+/* valores OFX: "-1234.56" (padrão), "1.234,56" (BR) e até "R$ 51.561,88" (PagBank no LEDGERBAL) */
+const numOFX = s => { if (s == null) return null; const t = String(s).trim().replace(/R\$/g, '').replace(/\s/g, ''); const v = /,\d{1,2}$/.test(t) && !/\.\d{1,2}$/.test(t) ? parseFloat(t.replace(/\./g, '').replace(',', '.')) : parseFloat(t.replace(/,/g, '')); return isNaN(v) ? null : v; };
 export function ofx(txt) {
   const bankid = (tag(txt, 'BANKID') || '').replace(/\D/g, '').padStart(3, '0').slice(-3);
   const banco = OFX_BANCOS[bankid] || null;
@@ -298,8 +299,10 @@ export function ofx(txt) {
   const empresa = (OFX_CONTAS.find(([b, d]) => (!banco || b === banco) && acct.endsWith(d)) || [])[2] || null;
   const mov = [];
   for (const m of txt.matchAll(/<STMTTRN>([\s\S]*?)(?:<\/STMTTRN>|(?=<STMTTRN>)|(?=<\/BANKTRANLIST>))/gi)) {
-    const b = m[1]; const data = dataOFX(tag(b, 'DTPOSTED')); const valor = numOFX(tag(b, 'TRNAMT'));
+    const b = m[1]; const data = dataOFX(tag(b, 'DTPOSTED')); let valor = numOFX(tag(b, 'TRNAMT'));
     if (!data || valor == null) continue;
+    const trntype = (tag(b, 'TRNTYPE') || '').toUpperCase();
+    if (valor > 0 && /^(DEBIT|OUT|PAYMENT|FEE|SRVCHG|CHECK|XFER_OUT|ATM|POS|REPEATPMT)$/.test(trntype)) valor = -valor; /* débito escrito positivo */
     const desc = [tag(b, 'NAME'), tag(b, 'MEMO')].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim() || (tag(b, 'TRNTYPE') || 'lançamento');
     mov.push({ data, desc, valor: round2(valor), fitid: tag(b, 'FITID') });
   }
