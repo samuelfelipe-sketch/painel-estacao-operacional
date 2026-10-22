@@ -132,6 +132,20 @@ for (const e of empresas) {
       o.mov = o.mov.filter(m => m.data.slice(0, 7) === mes);
       avisos.push(`${e}/${banco}: ${foraDoMes.length} lançamento(s) de outro mês descartado(s)`);
     }
+    /* --ate DD: todas as contas são cortadas no mesmo dia (extratos semanais terminam em dias
+       diferentes; uma transferência própria lançada depois do corte numa conta e ainda não
+       na outra ficaria "sem par"). Saldo final recalculado a partir do inicial. */
+    const ateOpt = opt(args, 'ate') ? +opt(args, 'ate') : null;
+    if (ateOpt) {
+      const limite = mes + '-' + dd(ateOpt);
+      const depois = o.mov.filter(m => m.data > limite);
+      if (depois.length) {
+        o.mov = o.mov.filter(m => m.data <= limite);
+        if (o.saldoAnterior != null) o.saldoFinal = r2(o.saldoAnterior + o.mov.reduce((a, m) => a + m.valor, 0));
+        if (o.periodo && o.periodo.ate && o.periodo.ate > limite) o.periodo.ate = limite;
+        avisos.push(`${e}/${banco}: ${depois.length} lançamento(s) depois de ${dd(ateOpt)}/${dd(mm)} deixados para a próxima carga (corte --ate)`);
+      }
+    }
     /* formato sem saldo (CSV do Itaú, XLS do Sicredi sem lançamentos ou ilegível):
        saldo inicial = fechamento do mês anterior no painel; sem conferência independente */
     if (o.saldoAnterior == null) {
