@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Market Share — Estação Sapatão</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<script>window.SAPATAO_APP='mercado';</script>
+<script src="../roadmap/auth.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --verde:#004438; --verde-escuro:#00352C; --verde-suave:#3D6B60;
+  --laranja:#EC6C22; --laranja-escuro:#C2531A; --laranja-fundo:#FFF1E8;
+  --fundo:#F4F6F9; --linha:#E4E9F0; --tinta:#16211C; --tinta-suave:#5F6C7B; --tinta-fraca:#8A95A3;
+  --sombra:0 1px 2px rgba(16,24,40,.06),0 2px 6px rgba(16,24,40,.05);
+  /* séries do painel (paleta conferida: separação normal e para daltonismo) */
+  --sapatao:#EC6C22; --raizen:#6F2DA8; --ipiranga:#3E6BD6; --mercado:#B8C0CA;
+  --bom:#1E7F4F; --ruim:#B42318; --aviso-fundo:#FFF7E6; --aviso-borda:#F1D49A;
+  --f-titulo:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--fundo);color:var(--tinta);font-family:var(--f-titulo);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:calc(100vh / var(--zoom,1))}
+.topbar{position:sticky;top:0;z-index:30;background:#fff;box-shadow:0 1px 0 #E9EDF2}
+.topbar .in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 18px}
+.topbar .t{font-weight:700;letter-spacing:-.005em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .t i{font-style:normal;color:var(--laranja)}
+.topbar a.voltar{font-size:13px;color:var(--tinta-suave);text-decoration:none;white-space:nowrap;padding:6px 10px;border:1px solid var(--linha);border-radius:10px;background:#fff}
+.topbar .ref{font-family:var(--f-mono);font-size:11px;color:var(--tinta-suave);letter-spacing:.04em;white-space:nowrap}
+@media (max-width:560px){.topbar .ref{display:none}}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 18px 56px;display:grid;gap:18px}
+@media (min-width:1600px){.wrap{max-width:1320px}}
+#carregando{padding:60px 18px;text-align:center;color:var(--tinta-suave)}
+#carregando b{display:block;color:var(--tinta);font-size:18px;margin-bottom:6px}
+header.hero{display:grid;gap:12px}
+.hero .l1{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+h1{margin:0;font-weight:800;letter-spacing:-.01em;font-size:clamp(24px,5vw,38px);line-height:1.1}
+h1 span{color:var(--laranja)}
+.lead{margin:4px 0 0;color:var(--tinta-suave);max-width:64ch;font-size:14.5px}
+.controles{display:flex;flex-wrap:wrap;gap:10px;align-items:center;min-width:0;max-width:100%}
+.seg{display:inline-flex;flex-wrap:wrap;max-width:100%;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:4px;gap:4px;box-shadow:var(--sombra)}
+.seg button{font-family:var(--f-titulo);font-size:13px;font-weight:600;border:0;background:transparent;color:var(--tinta-suave);padding:7px 12px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--verde);color:#fff}
+.seg button:focus-visible{outline:2px solid var(--laranja);outline-offset:2px}
+.seg button:disabled{opacity:.45;cursor:default}
+select.mes{font-family:var(--f-titulo);font-size:13px;font-weight:600;border:1px solid var(--linha);border-radius:12px;padding:9px 12px;background:#fff;color:var(--tinta);box-shadow:var(--sombra)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;border-radius:999px;padding:5px 11px;background:#fff;border:1px solid var(--linha);color:var(--tinta-suave)}
+.chip b{color:var(--tinta);font-weight:600}
+.chip.alerta{background:var(--aviso-fundo);border-color:var(--aviso-borda);color:var(--laranja-escuro)}
+.bombas{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.bomba{background:#fff;padding:14px 16px;min-width:0}
+.bomba.raizen{border-left-color:var(--raizen)}.bomba.ipiranga{border-left-color:var(--ipiranga)}.bomba.verde{border-left-color:var(--verde-suave)}
+.bomba .lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.bomba .val{font-weight:800;font-size:30px;letter-spacing:-.02em;line-height:1.1;margin-top:6px;font-variant-numeric:tabular-nums}
+.bomba .val small{font-size:14px;font-weight:600;margin-left:4px}
+.bomba .sub{font-size:12.5px;color:var(--tinta-suave);margin-top:6px}
+.bomba .deltas{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.bomba .sub.cart{margin-top:4px;color:var(--tinta)}.bomba .sub.cart small{color:var(--tinta-suave)}
+.bomba .delta{font-family:var(--f-mono);font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;background:#F1F4F8}
+.bomba .delta.up{background:#E4F2EC}.bomba .delta.dn{background:#FAEAE7}
+.up{color:var(--bom)}.dn{color:var(--ruim)}.ne{color:var(--tinta-fraca)}
+.abas{display:flex;flex-wrap:wrap;gap:4px;background:#fff;border:1px solid var(--linha);border-radius:14px;padding:5px;box-shadow:var(--sombra)}
+.abas button{flex:1 1 auto;font-family:var(--f-titulo);font-size:14px;font-weight:600;border:0;background:transparent;color:var(--tinta-suave);padding:10px 14px;border-radius:10px;cursor:pointer}
+.abas button[aria-selected="true"]{background:var(--laranja-fundo);color:var(--laranja-escuro)}
+.abas button:focus-visible{outline:2px solid var(--laranja);outline-offset:2px}
+.aba[hidden]{display:none}
+.dobra{margin-top:12px}.dobra summary{cursor:pointer;font-size:13px;color:var(--tinta-suave);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
+.card{background:#fff;padding:18px 20px;min-width:0}
+.c6{grid-column:span 6}.c12{grid-column:span 12}.c7{grid-column:span 7}.c5{grid-column:span 5}
+@media (max-width:900px){.c6,.c7,.c5{grid-column:span 12}}
+h3{margin:0}
+h2{margin:0;font-size:20px}
+@media (max-width:560px){h2{font-size:17px}.bomba .val{font-size:26px}}
+.card .nota{color:var(--tinta-suave);font-size:13px;margin:4px 0 12px;max-width:72ch}
+.card .nota:empty{display:none}
+.legenda{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12.5px;color:var(--tinta-suave);margin-bottom:10px}
+.legenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.legenda i.linha{height:3px;width:16px;border-radius:2px;vertical-align:3px}
+.chartbox{position:relative;width:100%}
+.chartbox svg{display:block;width:100%;height:auto}
+svg text{font-family:var(--f-mono);font-size:11px;fill:var(--tinta-suave)}
+.tip{position:absolute;pointer-events:none;background:#16211C;color:#fff;font-family:var(--f-mono);font-size:11.5px;line-height:1.5;padding:8px 10px;border-radius:8px;white-space:nowrap;z-index:5;transform:translate(-50%,-100%);box-shadow:0 6px 18px rgba(16,24,40,.25)}
+.tip[hidden]{display:none}
+.tip b{color:#FFD9BE;font-weight:600}
+.barras{display:grid;gap:8px}
+.barra{display:grid;grid-template-columns:118px 1fr 118px;align-items:center;gap:10px;font-size:13.5px;min-width:0}
+.barra .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barra .tr{height:18px;background:#F0F3F7;border-radius:4px;position:relative;overflow:visible}
+.barra .tr b{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;background:var(--mercado);min-width:1px}
+.barra.raizen .tr b{background:var(--raizen)}.barra.ipiranga .tr b{background:var(--ipiranga)}.barra.sapatao .tr b{background:var(--sapatao)}
+.barra .tr i{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--sapatao)}
+.barra .v{font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.barra .v small{color:var(--tinta-suave)}
+@media (max-width:480px){.barra{grid-template-columns:90px 1fr 100px}}
+.tabela{overflow-x:auto;margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+td{padding:9px 10px}
+td.num{font-family:var(--f-mono);font-size:12.5px}
+tr.dest td{background:var(--laranja-fundo);font-weight:700}
+tr.total td{font-weight:700;border-top:2px solid var(--linha)}
+#tUn tbody tr:hover td{background:#F7F9FB}
+td .parc{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var(--laranja-escuro);background:var(--aviso-fundo);border:1px solid var(--aviso-borda);border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.ponto{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:7px}
+.ponto.r{background:var(--raizen)}.ponto.i{background:var(--ipiranga)}.ponto.s{background:var(--sapatao)}.ponto.m{background:var(--mercado)}
+.falta{color:var(--tinta-fraca);font-style:italic}
+.aviso{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--aviso-fundo);border:1px solid var(--aviso-borda);font-size:13px}
+.aviso[hidden]{display:none}
+.duplo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:560px){.duplo{grid-template-columns:1fr}}
+.mini{border:1px solid var(--linha);border-radius:12px;padding:12px 14px;min-width:0}
+.mini .lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;color:var(--tinta-suave);text-transform:uppercase}
+.mini .val{font-weight:800;font-size:24px;letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+.mini .val small{font-size:13px;font-weight:600;color:var(--tinta-suave)}
+.mini .sub{font-size:12.5px;color:var(--tinta-suave);margin-top:4px}
+ul.fontes{margin:8px 0 0;padding-left:20px;display:grid;gap:8px;font-size:13.5px;color:var(--tinta)}
+ul.fontes b{font-weight:700}
+.rodape{font-family:var(--f-mono);font-size:11.5px;color:var(--tinta-suave);letter-spacing:.04em;text-align:center}
+body.so-leitura .so-edita{display:none}
+@media (prefers-reduced-motion:no-preference){.barra .tr b{transition:width .4s ease}}
+</style>
+<link rel="stylesheet" href="../tema.css">
+</head>
+<body>
+<div class="topbar"><div class="in">
+  <a class="voltar" href="../index.html">&larr; Voltar</a>
+  <div class="t">Estação <i>Sapatão</i> · Market Share</div>
+  <div class="ref" id="ref"></div>
+</div></div>
+
+<div id="carregando"><b>Abrindo o Market Share…</b>Buscando a base da ANP e os volumes do Sapatão.</div>
+
+<div class="wrap" id="app" hidden>
+  <header class="hero">
+    <div class="l1">
+      <div>
+        <h1>Market <span>Share</span></h1>
+        <p class="lead">Quanto o Sapatão representa do combustível vendido aos postos.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Produto" id="segProd">
+        <button type="button" data-v="tot" aria-pressed="true">Consolidado</button>
+        <button type="button" data-v="otto" aria-pressed="false">Otto</button>
+        <button type="button" data-v="diesel" aria-pressed="false">Diesel</button>
+      </div>
+    </div>
+    <div class="controles">
+      <div class="seg" role="group" aria-label="Mercado de referência" id="segEsc">
+        <button type="button" data-v="RS" aria-pressed="true">RS</button>
+        <button type="button" data-v="SUL" aria-pressed="false">Sul</button>
+        <button type="button" data-v="BR" aria-pressed="false">Brasil</button>
+      </div>
+      <div class="seg" role="group" aria-label="Unidades" id="segUn" hidden></div>
+      <select class="mes" id="selMes" aria-label="Mês de referência"></select>
+      <div class="seg" role="group" aria-label="Período" id="segPer">
+        <button type="button" data-v="mes" aria-pressed="true">Mês</button>
+        <button type="button" data-v="tri" aria-pressed="false">Trimestre</button>
+        <button type="button" data-v="sem" aria-pressed="false">Semestre</button>
+        <button type="button" data-v="ano" aria-pressed="false">Ano</button>
+      </div>
+      <select class="mes" id="selSeg" aria-label="Segmento">
+        <option value="rev">Postos (todos)</option>
+        <option value="band">Só bandeirados</option>
+        <option value="tot">Todos os segmentos</option>
+      </select>
+    </div>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section class="bombas" id="kpis" aria-label="Indicadores"></section>
+
+  <nav class="abas" id="abas" aria-label="Seções">
+    <button type="button" data-aba="unidades" aria-selected="true">Unidades</button>
+    <button type="button" data-aba="mensal" aria-selected="false">Mês a mês</button>
+    <button type="button" data-aba="bandeiras" aria-selected="false">Bandeiras</button>
+    <button type="button" data-aba="anual" aria-selected="false">Ano a ano</button>
+    <button type="button" data-aba="fontes" aria-selected="false">Fontes</button>
+  </nav>
+
+  <section class="card aba" data-aba="unidades" aria-labelledby="t-un">
+    <h2 id="t-un">Cada posto no mercado e na bandeira</h2>
+    <p class="nota" id="n-un">Clique numa linha para ver o painel só dela.</p>
+    <div class="tabela"><table id="tUn"><thead></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card aba" data-aba="mensal" aria-labelledby="t-serie" hidden>
+    <div class="l1" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div><h2 id="t-serie">Mês a mês</h2><p class="nota" id="n-serie"></p></div>
+      <div class="seg" role="group" aria-label="Vista" id="segSerie">
+        <button type="button" data-v="sap" aria-pressed="true">Sapatão</button>
+        <button type="button" data-v="mkt" aria-pressed="false">Mercado</button>
+      </div>
+    </div>
+    <div class="legenda" id="legSerie"></div>
+    <div class="chartbox"><svg id="cSerie" role="img" aria-label="Participação do Sapatão por mês"></svg><div class="tip" id="tipSerie" hidden></div></div>
+    <details class="dobra"><summary>Ver a tabela</summary><div class="tabela"><table id="tSerie"><thead></thead><tbody></tbody></table></div></details>
+  </section>
+
+  <section class="card aba" data-aba="bandeiras" aria-labelledby="t-band" hidden>
+    <h2 id="t-band">Quem vende para os postos</h2>
+    <p class="nota" id="n-band"></p>
+    <div class="legenda"><span><i style="background:var(--raizen)"></i>Raízen</span><span><i style="background:var(--ipiranga)"></i>Ipiranga</span><span><i style="background:var(--mercado)"></i>Demais</span><span><i style="background:var(--sapatao)"></i>Sapatão</span></div>
+    <div class="barras" id="barras"></div>
+    <div class="duplo" style="margin-top:14px" id="postos"></div>
+  </section>
+
+  <section class="card aba" data-aba="anual" aria-labelledby="t-anual" hidden>
+    <h2 id="t-anual">Este ano contra o anterior</h2>
+    <p class="nota" id="n-anual"></p>
+    <div class="tabela"><table id="tAnual"><thead></thead><tbody></tbody></table></div>
+    <div class="aviso" id="a-anual" hidden></div>
+    <h2 style="margin-top:26px">Crescimento: unidades × bandeiras</h2>
+    <p class="nota" id="n-cresc"></p>
+    <div class="tabela"><table id="tCresc"><thead></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card aba" data-aba="fontes" aria-labelledby="t-fontes" hidden>
+    <h2 id="t-fontes">De onde vem cada número</h2>
+    <ul class="fontes" id="fontes"></ul>
+    <p class="rodape" id="rodape" style="margin-top:14px"></p>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* Duas fontes: mercado/anp-vendas.json (público, em claro — base aberta da ANP
+   agregada pelo GitHub Actions) e mercado/sapatao.enc.json (volumes do Sapatão,
+   CIFRADOS com a chave dos dados; abre no navegador via window.sapataoCofre).
+   Cache local: a base da ANP em claro e o Sapatão ainda cifrado. */
+var CACHE_S='sapatao-mercado-v1', CACHE_A='sapatao-mercado-anp-v1';
+var REPO='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/mercado/';
+var API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/mercado/';
+var abriu=false, ANP=null, SAP=null, POSTOS=null;
+function mostra(){
+  if(!ANP||!SAP)return;
+  window.DADOS_MERCADO={anp:ANP,sapatao:SAP,postos:POSTOS};
+  if(abriu){ if(window.renderMercado)window.renderMercado(window.DADOS_MERCADO); return; }
+  abriu=true;
+  document.getElementById('carregando').hidden=true;
+  document.getElementById('app').hidden=false;
+  var s=document.createElement('script');s.src='mercado.js?v=1';document.body.appendChild(s);
+}
+function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
+async function decifraDoc(doc){
+  if(!doc||doc.enc!==1)return null;
+  if(!window.sapataoCofre.dek()){try{await window.sapataoCofre.baixaDekPeloToken();}catch(e){}}
+  return await window.sapataoCofre.decifra(doc);
+}
+async function pega(arquivo){
+  try{const r=await fetch(arquivo+'?t='+Date.now(),{cache:'no-store'});if(r.ok)return await r.json();if(r.status===404&&location.hostname.indexOf('github.io')>=0)return null;}catch(e){}
+  try{const r=await fetch(REPO+arquivo+'?t='+Date.now(),{cache:'no-store'});if(r.ok)return await r.json();if(r.status===404)return null;}catch(e){}
+  try{const r=await fetch(API+arquivo+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+    if(r.status===404)return null;
+    if(r.ok){const j=await r.json();return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,'')))));}
+  }catch(e){}
+  return null;
+}
+async function carrega(){
+  var A=window.sapataoAuth;
+  if(!A||!A.user||!A.temAcesso('mercado'))return;
+  /* 1) cache: abre na hora */
+  try{
+    var ca=JSON.parse(localStorage.getItem(CACHE_A)||'null'); if(ca&&ca.dados)ANP=ca;
+    var cs=JSON.parse(localStorage.getItem(CACHE_S)||'null'); if(cs){var d=await decifraDoc(cs); if(d)SAP=d;}
+    POSTOS=JSON.parse(localStorage.getItem(CACHE_A+'-postos')||'null');
+    mostra();
+  }catch(e){}
+  /* 2) rede: o que mudou manda */
+  try{
+    var [anp,sap,postos]=await Promise.all([pega('anp-vendas.json'),pega('sapatao.enc.json'),pega('postos.json')]);
+    if(!anp&&!ANP){falha(' A base da ANP ainda não foi publicada (o workflow "Market Share — base ANP" grava mercado/anp-vendas.json).');return;}
+    if(!sap&&!SAP){falha(' Os volumes do Sapatão ainda não foram publicados (scripts/mercado-sapatao.mjs).');return;}
+    var mudou=false;
+    if(anp&&JSON.stringify(anp)!==JSON.stringify(ANP)){ANP=anp;mudou=true;try{localStorage.setItem(CACHE_A,JSON.stringify(anp));}catch(e){}}
+    if(postos&&JSON.stringify(postos)!==JSON.stringify(POSTOS)){POSTOS=postos;mudou=true;try{localStorage.setItem(CACHE_A+'-postos',JSON.stringify(postos));}catch(e){}}
+    if(sap&&sap.enc===1){
+      var c=null; try{c=JSON.parse(localStorage.getItem(CACHE_S)||'null');}catch(e){}
+      if(!c||c.ct!==sap.ct||c.iv!==sap.iv){
+        var d2=await decifraDoc(sap);
+        if(d2){SAP=d2;mudou=true;try{localStorage.setItem(CACHE_S,JSON.stringify(sap));}catch(e){}}
+        else if(!SAP){falha(' Este aparelho ainda não tem a chave dos dados. Saia e entre com o seu usuário e senha na central.');return;}
+      }
+    }
+    if(!abriu||mudou)mostra();
+  }catch(e){falha(' Sem conexão para buscar os dados ('+e.message+').');}
+}
+document.addEventListener('sapatao-login',carrega);
+carrega();
+})();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(function(){});}
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+name: Market Share — base ANP
+
+# Baixa a base aberta da ANP de vendas das distribuidoras (liquidos.zip) e
+# regrava mercado/anp-vendas.json. Roda no GitHub porque o ambiente da nuvem
+# do Claude Code não alcança o gov.br. A ANP fecha o mês M na segunda
+# quinzena de M+1: por isso dois disparos por mês.
+on:
+  schedule:
+    - cron: '0 12 6,22 * *' # 09:00 em Brasília, dias 6 e 22
+  push:
+    paths:
+      - '.github/workflows/mercado-anp.yml'
+      - 'scripts/mercado-anp.mjs'
+  workflow_dispatch:
+    inputs:
+      inspecionar:
+        description: 'Só descrever os arquivos da ANP (cabeçalho, valores), sem gravar'
+        type: boolean
+        default: false
+      desde:
+        description: 'Primeiro mês da série (AAAA-MM)'
+        type: string
+        default: '2025-01'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mercado-anp-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Baixar liquidos.zip da ANP
+        run: |
+          mkdir -p /tmp/anp/csv
+          for i in 1 2 3 4; do
+            curl -L --fail --retry 3 --retry-delay 10 --max-time 1500 \
+              -A 'Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)' \
+              -o /tmp/anp/liquidos.zip \
+              'https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/mdpg/liquidos.zip' && break
+            echo "tentativa $i falhou; aguardando"; sleep $((i*30))
+          done
+          ls -la /tmp/anp/liquidos.zip
+          unzip -l /tmp/anp/liquidos.zip
+          unzip -o -q /tmp/anp/liquidos.zip -d /tmp/anp/csv
+          find /tmp/anp/csv -type f -printf '%s\t%p\n' | sort -k2
+      - name: Inspecionar (cabeçalho, valores distintos, linhas por ano)
+        run: node scripts/mercado-anp.mjs --pasta /tmp/anp/csv --inspeciona
+      - name: Agregar
+        if: ${{ !inputs.inspecionar }}
+        run: node scripts/mercado-anp.mjs --pasta /tmp/anp/csv --saida mercado/anp-vendas.json --desde '${{ inputs.desde || '2025-01' }}'
+      - name: Publicar se mudou
+        if: ${{ !inputs.inspecionar }}
+        run: |
+          git add mercado/anp-vendas.json
+          if git diff --cached --quiet; then echo "sem mudança"; exit 0; fi
+          git config user.name 'Rotina Market Share'
+          git config user.email 'noreply@estacaosapatao.com.br'
+          git commit -m 'chore: atualiza a base ANP do Market Share (automático)'
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"

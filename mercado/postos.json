@@ -1,0 +1,23 @@
+{
+  "v": 1,
+  "fonte": "Comparativo das Bandeiras de Combustíveis (Posto Seguro, API de Revendedores da ANP) — postos revendedores por bandeira; atualizado à mão a cada relatório recebido",
+  "nota": "Nos postos, a coluna Raízen do relatório não inclui a Raízen Mime (bandeira Mime, em SC). Nos volumes da ANP a Raízen Mime está somada à Raízen. No RS a diferença é zero.",
+  "escopos": {
+    "RS": {
+      "2025-12": { "Total": 3162, "Ipiranga": 693, "Raízen": 342, "Vibra": 471, "Charrua": 392, "Rodoil": 304, "Bandeira branca": 826 },
+      "2026-07": { "Total": 3165, "Ipiranga": 676, "Raízen": 344, "Vibra": 481, "Charrua": 427, "Rodoil": 314, "Bandeira branca": 786 },
+      "2026-08": { "Total": 3163, "Ipiranga": 671, "Raízen": 342, "Vibra": 484, "Charrua": 430, "Rodoil": 315, "Bandeira branca": 783 },
+      "2026-09": { "Total": 3163, "Ipiranga": 672, "Raízen": 343, "Vibra": 488, "Charrua": 439, "Rodoil": 320, "Bandeira branca": 758 }
+    },
+    "SUL": {
+      "2025-12": { "Total": 8088, "Ipiranga": 1645, "Raízen": 794, "Vibra": 1017, "Bandeira branca": 2743 },
+      "2026-07": { "Total": 8130, "Ipiranga": 1620, "Raízen": 807, "Vibra": 1042, "Bandeira branca": 2640 }
+    },
+    "BR": {
+      "2025-12": { "Total": 45097, "Ipiranga": 5656, "Raízen": 4620, "Vibra": 6529, "Bandeira branca": 22242 },
+      "2026-07": { "Total": 44855, "Ipiranga": 5607, "Raízen": 4678, "Vibra": 6684, "Bandeira branca": 21702 },
+      "2026-08": { "Total": 44934, "Ipiranga": 5602, "Raízen": 4692, "Vibra": 6707, "Bandeira branca": 21709 },
+      "2026-09": { "Total": 45044, "Ipiranga": 5605, "Raízen": 4712, "Vibra": 6766, "Bandeira branca": 21664 }
+    }
+  }
+}

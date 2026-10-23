@@ -18,7 +18,7 @@
      node scripts/negociacao-compras.mjs --csv <a.csv> [--csv <b.csv> ...] --saida <fora-do-repo>/compras.json
 
    Saída: JSON com cobertura (datas por unidade), e por mês e no ano: total,
-   por bandeira, por produto, por unidade (vol, gasto, pm). O script confere que
+   por bandeira, por produto, por unidade (vol, gasto, pm; e os produtos de cada unidade — usados pelo Market Share). O script confere que
    meses somam o ano e produtos somam o total; reprovou, não grava. Os logs
    dizem só datas e contagens. */
 import { readFileSync, writeFileSync } from 'fs';
@@ -73,12 +73,13 @@ function agrupa(ls) {
     (g.bandeiras[l.bandeira] ||= { ...novo(), produtos: {} }); soma(g.bandeiras[l.bandeira], l);
     (g.bandeiras[l.bandeira].produtos[l.prod] ||= novo()); soma(g.bandeiras[l.bandeira].produtos[l.prod], l);
     (g.produtos[l.prod] ||= novo()); soma(g.produtos[l.prod], l);
-    (g.unidades[l.uni] ||= novo()); soma(g.unidades[l.uni], l);
+    (g.unidades[l.uni] ||= { ...novo(), produtos: {} }); soma(g.unidades[l.uni], l);
+    (g.unidades[l.uni].produtos[l.prod] ||= novo()); soma(g.unidades[l.uni].produtos[l.prod], l);
   }
   fecha(g.total);
   for (const b of Object.values(g.bandeiras)) { fecha(b); for (const p of Object.values(b.produtos)) fecha(p); }
   for (const p of Object.values(g.produtos)) fecha(p);
-  for (const u of Object.values(g.unidades)) fecha(u);
+  for (const u of Object.values(g.unidades)) { fecha(u); for (const p of Object.values(u.produtos)) fecha(p); }
   return g;
 }
 

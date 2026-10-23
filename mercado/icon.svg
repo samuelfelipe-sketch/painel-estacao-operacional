@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B5C4B"/>
+      <stop offset="1" stop-color="#00352C"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- anel do mercado (creme) com a fatia do Sapatão em laranja -->
+  <circle cx="256" cy="268" r="150" fill="none" stroke="#F5F3EC" stroke-width="58" stroke-opacity=".92"/>
+  <path d="M256 118 A150 150 0 0 1 398 220" fill="none" stroke="#EC6C22" stroke-width="58" stroke-linecap="butt"/>
+  <circle cx="256" cy="268" r="62" fill="#F5F3EC" fill-opacity=".14"/>
+  <!-- marcador da posição -->
+  <circle cx="398" cy="220" r="26" fill="#EC6C22" stroke="#F5F3EC" stroke-width="10"/>
+</svg>
