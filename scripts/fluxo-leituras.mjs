@@ -96,7 +96,7 @@ export function detectaEmpresa(t, banco, nomeArq) {
   for (const [c, e] of Object.entries(CONTA_BRADESCO)) if (t.includes(c)) return e;
   return null;
 }
-function transcriptMaisNovo() {
+export function transcriptMaisNovo() {
   const base = join(homedir(), '.claude', 'projects'); if (!existsSync(base)) return null;
   let melhor = null;
   for (const p of readdirSync(base)) { const d = join(base, p); if (!statSync(d).isDirectory()) continue; for (const f of readdirSync(d)) { if (!f.endsWith('.jsonl')) continue; const a = join(d, f); const m = statSync(a).mtimeMs; if (!melhor || m > melhor.m) melhor = { a, m }; } }

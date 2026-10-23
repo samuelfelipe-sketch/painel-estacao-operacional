@@ -55,6 +55,30 @@ table.fxde{border-collapse:collapse;min-width:980px;width:100%}
 .fxde th.sep{border-left-color:rgba(255,255,255,.22)}
 .fxde td.neg{color:#C2531A}
 .fxde td.prev2{color:#8A95A1}
+/* ---- tela Conferência do Argo ---- */
+#fx-conf{display:none}
+#fx-conf .wrap{max-width:1200px}
+#fx-conf h1{font-family:'Archivo',sans-serif;font-weight:800;letter-spacing:-.01em;font-size:clamp(22px,5vw,34px);line-height:1.1}
+#fx-conf h1 span{color:var(--laranja)}
+#fx-conf h2{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;margin:4px 0 8px}
+.fxc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0}
+.fxc-kpis .bomba{background:#fff;border-radius:14px;padding:12px 14px;border-left:4px solid var(--laranja);box-shadow:0 1px 2px rgba(16,24,40,.06)}
+.fxc-kpis .k-r{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#5F6C7B}
+.fxc-kpis .k-v{font-family:'Archivo',sans-serif;font-weight:800;font-size:24px;color:#16211C;margin-top:2px}
+.fxc-kpis .k-s{font-size:12px;color:#5F6C7B}
+.fxc-ok{color:#004438}.fxc-nok{color:#C2531A}
+.fxc-tabwrap{overflow-x:auto}
+table.fxc{border-collapse:collapse;width:100%;min-width:620px}
+.fxc th{background:#0E3E36;color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10.5px;letter-spacing:.04em;padding:8px 10px;text-align:left;white-space:nowrap}
+.fxc th.n,.fxc td.n{text-align:right}
+.fxc td{font-size:13px;color:#16211C;border-bottom:1px solid #EEF1F5;padding:6px 10px;vertical-align:top}
+.fxc td.n{font-family:'IBM Plex Mono',monospace;font-size:12px;white-space:nowrap}
+.fxc tr.sel td{background:#FFF4EC}
+.fxc tbody tr.clic{cursor:pointer}
+#fx-conf details{margin-top:12px}
+#fx-conf summary{cursor:pointer;font-weight:700;font-size:15px;padding:6px 0}
+#fx-conf summary small{font-weight:600;color:#5F6C7B;font-size:12.5px}
+.fxc-acao{font-size:12.5px;color:#5F6C7B;margin:2px 0 8px}
 </style>
 <link rel="stylesheet" href="../tema.css">
 </head>
@@ -69,6 +93,7 @@ table.fxde{border-collapse:collapse;min-width:980px;width:100%}
   <div class="m-t">Fluxo de Caixa</div>
   <a id="fx-nav-fer" class="ativo">Ferramenta do caixa</a>
   <a id="fx-nav-dia">Dia a dia por empresa</a>
+  <a id="fx-nav-conf">Conferência do Argo</a>
   <div class="m-fim"><a href="../index.html">&#8592; Central de acessos</a></div>
 </nav>
 <div id="fx-diaemp">
@@ -76,6 +101,13 @@ table.fxde{border-collapse:collapse;min-width:980px;width:100%}
     <h1>Dia a dia <span>por empresa</span></h1>
     <div class="fxde-sub">Fluxo do dia e caixa ao fim do dia, empresa por empresa &middot; cinza = previsto</div>
     <div class="card"><div id="fxde-corpo"></div></div>
+  </div>
+</div>
+<div id="fx-conf">
+  <div class="wrap">
+    <h1>Conferência <span>do Argo</span></h1>
+    <div class="fxde-sub">Contas a pagar em observação: toda semana o que o Argo dizia é comparado com o que saiu do banco. Nada daqui entra na ferramenta até passar no critério.</div>
+    <div id="fxc-corpo"><div class="card"><p class="lead">Carregando&hellip;</p></div></div>
   </div>
 </div>
 <div class="wrap" id="fx-espera">
@@ -248,8 +280,8 @@ function mostra(html){
   },{once:true});
   frame.srcdoc=h;
 }
-async function pega(){
-  const path='fluxo/dados.enc.json';
+async function pega(path){
+  path=path||'fluxo/dados.enc.json';
   try{
     const rr=await fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/'+path+'?t='+Date.now(),{cache:'no-store'});
     if(rr.ok)return await rr.json();
@@ -355,17 +387,24 @@ const telaDia=document.getElementById('fx-diaemp');
 function abreMenu(a){menu.classList.toggle('aberta',a);scrim.classList.toggle('aberta',a);}
 document.getElementById('fx-menu-btn').addEventListener('click',()=>abreMenu(true));
 scrim.addEventListener('click',()=>abreMenu(false));
-function mostraTela(dia){
-  telaDia.style.display=dia?'block':'none';
-  frame.style.display=(!dia&&bootado)?'block':'none';
-  espera.hidden=dia||bootado;
-  document.getElementById('fx-nav-fer').classList.toggle('ativo',!dia);
-  document.getElementById('fx-nav-dia').classList.toggle('ativo',dia);
+const telaConf=document.getElementById('fx-conf');
+function mostraTela(t){
+  t=t===true?'dia':(t||'fer');
+  telaDia.style.display=t==='dia'?'block':'none';
+  telaConf.style.display=t==='conf'?'block':'none';
+  frame.style.display=(t==='fer'&&bootado)?'block':'none';
+  espera.hidden=t!=='fer'||bootado;
+  document.getElementById('fx-nav-fer').classList.toggle('ativo',t==='fer');
+  document.getElementById('fx-nav-dia').classList.toggle('ativo',t==='dia');
+  document.getElementById('fx-nav-conf').classList.toggle('ativo',t==='conf');
   abreMenu(false);
-  if(dia)montaDiaEmp();
+  if(t==='dia')montaDiaEmp();
+  if(t==='conf')montaConf();
 }
-document.getElementById('fx-nav-fer').addEventListener('click',()=>mostraTela(false));
-document.getElementById('fx-nav-dia').addEventListener('click',()=>mostraTela(true));
+document.getElementById('fx-nav-fer').addEventListener('click',()=>mostraTela('fer'));
+document.getElementById('fx-nav-dia').addEventListener('click',()=>mostraTela('dia'));
+document.getElementById('fx-nav-conf').addEventListener('click',()=>mostraTela('conf'));
+if(/#conferencia/.test(location.hash))setTimeout(()=>mostraTela('conf'),0);
 const fmtBR=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 let fxdeMes=null;
 function montaDiaEmp(){
@@ -414,6 +453,62 @@ function montaDiaEmp(){
     +'<select class="fxde-sel" id="fxde-mes">'+ops+'</select>'
     +'<div class="fxde-tabwrap"><table class="fxde"><thead>'+hd1+hd2+'</thead><tbody>'+linhas+'</tbody></table></div>';
   document.getElementById('fxde-mes').addEventListener('change',ev=>{fxdeMes=ev.target.value;montaDiaEmp();});
+}
+/* ---- tela Conferência do Argo: fluxo/conferencia.enc.json (cofre), gerado pela
+   rotina semanal (scripts/fluxo-conferencia.mjs) ---- */
+const escH=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const EMPN={ps:'Posto Sapatão',sf:'SF',as:'Safyr',siss:'Siss',st:'Transportes',ss:'Serviços'};
+const dBR=iso=>iso?iso.slice(8,10)+'/'+iso.slice(5,7):'';
+const pct=v=>v==null?'—':Math.round(v*100)+'%';
+let fxcDados=null,fxcSem=null;
+async function montaConf(){
+  const corpo=document.getElementById('fxc-corpo');
+  if(!fxcDados){
+    try{
+      const doc=await pega('fluxo/conferencia.enc.json');
+      if(!doc){corpo.innerHTML='<div class="card"><p class="lead">A primeira conferência ainda não foi publicada.</p></div>';return;}
+      if(!window.sapataoCofre.dek())await window.sapataoCofre.baixaDekPeloToken();
+      fxcDados=await window.sapataoCofre.decifra(doc);
+    }catch(e){fxcDados=null;}
+    if(!fxcDados){corpo.innerHTML='<div class="card"><p class="lead">Não consegui abrir a conferência neste aparelho — saia e entre de novo com a senha.</p></div>';return;}
+  }
+  const P=fxcDados.pagar||{semanas:[]},S=P.semanas||[],meta=P.meta||.9;
+  if(!S.length){corpo.innerHTML='<div class="card"><p class="lead">Sem semanas conferidas ainda.</p></div>';return;}
+  if(!fxcSem||!S.some(s=>s.semana===fxcSem))fxcSem=(S.filter(s=>s.completa).pop()||S[S.length-1]).semana;
+  const ok=v=>v!=null&&v>=meta;
+  const linhas=S.slice().reverse().map(s=>{
+    const bp=s.baixaPendente;
+    return '<tr class="clic'+(s.semana===fxcSem?' sel':'')+'" data-s="'+s.semana+'"><td>'+dBR(s.semana)+' a '+dBR(s.fim)+(s.completa?'':' <small>(parcial)</small>')+'</td>'
+      +'<td class="n '+(ok(s.previsao.acerto)?'fxc-ok':'fxc-nok')+'">'+pct(s.previsao.acerto)+'</td>'
+      +'<td class="n '+(ok(s.cobertura.pct)?'fxc-ok':'fxc-nok')+'">'+pct(s.cobertura.pct)+'</td>'
+      +'<td class="n '+(bp&&bp.pctPago!=null&&bp.pctPago<=1-meta?'fxc-ok':'fxc-nok')+'">'+(bp?pct(bp.pctPago):'—')+'</td>'
+      +'<td>'+(!s.completa?'<span class="pill">em andamento</span>':s.passou?'<span class="pill">passou</span>':'<span class="pill">não passou</span>')+'</td></tr>';
+  }).join('');
+  const s=S.find(x=>x.semana===fxcSem);
+  const bp=s.baixaPendente||{n:0,valor:0,itens:[]},c=s.cobertura,p=s.previsao;
+  const tab=(cab,rows)=>'<div class="fxc-tabwrap"><table class="fxc"><thead><tr>'+cab.map(h=>'<th'+(h[1]?' class="n"':'')+'>'+h[0]+'</th>').join('')+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+cab.length+'">Nada nesta semana.</td></tr>')+'</tbody></table></div>';
+  const bloco=(tit,sub,acao,html,aberto)=>'<details'+(aberto?' open':'')+'><summary>'+tit+' <small>'+sub+'</small></summary><p class="fxc-acao">'+acao+'</p>'+html+'</details>';
+  const soma=l=>l.reduce((a,x)=>a+(+x.valor||0),0);
+  const lPend=(bp.itens||[]).map(t=>'<tr><td>'+escH(EMPN[t.emp]||t.emp)+'</td><td>'+escH(t.forn)+'<br><small>doc '+escH(t.doc)+' &middot; venc. '+dBR(t.venc)+'</small></td><td>'+dBR(t.pagoEm)+' <small>'+escH(t.banco)+'</small></td><td class="n">'+fmtBR(t.valor)+'</td></tr>').join('');
+  const lSem=(c.semTitulo||[]).map(t=>'<tr><td>'+escH(EMPN[t.emp]||t.emp)+'</td><td>'+escH(t.desc)+'<br><small>'+escH(t.conta)+'</small></td><td>'+dBR(t.data)+' <small>'+escH(t.banco)+'</small></td><td class="n">'+fmtBR(t.valor)+'</td></tr>').join('');
+  const lNao=(p.naoPagos||[]).map(t=>'<tr><td>'+escH(EMPN[t.emp]||t.emp)+'</td><td>'+escH(t.forn)+'<br><small>doc '+escH(t.doc)+' &middot; '+escH(t.conta)+'</small></td><td>'+dBR(t.venc)+'</td><td class="n">'+fmtBR(t.valor)+'</td></tr>').join('');
+  const lVenc=((s.vencidosAbertos||{}).itens||[]).map(t=>'<tr><td>'+escH(EMPN[t.emp]||t.emp)+'</td><td>'+escH(t.forn)+'<br><small>doc '+escH(t.doc)+'</small></td><td>'+dBR(t.venc)+'</td><td class="n">'+fmtBR(t.valor)+'</td></tr>').join('');
+  corpo.innerHTML='<div class="card"><h2>Situação: '+(P.liberado?'liberado para entrar na ferramenta':'em conferência')+'</h2>'
+    +'<p class="fxc-acao">Critério: duas semanas seguidas com acerto da previsão e cobertura de pelo menos '+Math.round(meta*100)+'% e baixas em dia (no máximo '+Math.round((1-meta)*100)+'% do que foi pago ainda em aberto no Argo). Semanas seguidas no critério: '+(P.seguidas||0)+'. Atualizado em '+escH((a=>a?a.slice(8,10)+'/'+a.slice(5,7)+'/'+a.slice(0,4)+' '+a.slice(11,16):'')(fxcDados.atualizadoEm||''))+'.</p>'
+    +tab([['Semana'],['Previsão',1],['Cobertura',1],['Baixas pendentes',1],['Resultado']],linhas)+'</div>'
+    +'<div class="card" style="margin-top:16px"><h2>Semana de '+dBR(s.semana)+' a '+dBR(s.ate)+'</h2>'
+    +'<div class="fxc-kpis">'
+    +'<div class="bomba"><div class="k-r">Acerto da previsão</div><div class="k-v '+(ok(p.acerto)?'fxc-ok':'fxc-nok')+'">'+pct(p.acerto)+'</div><div class="k-s">'+p.n+' títulos a vencer na semana &middot; R$ '+fmtBR(p.valor)+'</div></div>'
+    +'<div class="bomba"><div class="k-r">Cobertura</div><div class="k-v '+(ok(c.pct)?'fxc-ok':'fxc-nok')+'">'+pct(c.pct)+'</div><div class="k-s">do que saiu do banco estava no Argo &middot; R$ '+fmtBR(c.valor)+'</div></div>'
+    +'<div class="bomba"><div class="k-r">Visível na segunda</div><div class="k-v">'+pct(c.visivelSegunda)+'</div><div class="k-s">do que saiu já estava no arquivo de segunda</div></div>'
+    +'<div class="bomba"><div class="k-r">Baixas pendentes</div><div class="k-v '+(s.baixaPendente&&s.baixaPendente.pctPago<=1-meta?'fxc-ok':'fxc-nok')+'">'+(s.baixaPendente?pct(s.baixaPendente.pctPago):'—')+'</div><div class="k-s">'+bp.n+' títulos pagos ainda em aberto &middot; R$ '+fmtBR(bp.valor||0)+'</div></div>'
+    +'</div>'
+    +bloco('Pagos no banco e ainda em aberto no Argo',(bp.itens||[]).length+' · R$ '+fmtBR(soma(bp.itens||[])),'O que fazer: dar baixa no Argo com a data do pagamento.',tab([['Empresa'],['Fornecedor'],['Pago em'],['Valor',1]],lPend),true)
+    +bloco('Saíram do banco sem título no Argo',(c.semTitulo||[]).length+' · R$ '+fmtBR(soma(c.semTitulo||[])),'O que fazer: lançar no contas a pagar (folha, tarifas e débitos automáticos também contam).',tab([['Empresa'],['Lançamento no extrato'],['Data'],['Valor',1]],lSem),false)
+    +bloco('Previstos e não pagos',(p.naoPagos||[]).length+' · R$ '+fmtBR(soma(p.naoPagos||[])),'O que fazer: conferir se o título ainda vale (renegociado, cancelado ou pago por outra conta).',tab([['Empresa'],['Fornecedor'],['Vencimento'],['Valor',1]],lNao),false)
+    +bloco('Vencidos e em aberto no arquivo de segunda',((s.vencidosAbertos||{}).n||0)+' · R$ '+fmtBR((s.vencidosAbertos||{}).valor||0),'O que fazer: dar baixa nos que já foram pagos ou atualizar o vencimento (mostra os 40 maiores).',tab([['Empresa'],['Fornecedor'],['Vencimento'],['Valor',1]],lVenc),false)
+    +'</div>';
+  corpo.querySelectorAll('tr.clic').forEach(tr=>tr.addEventListener('click',()=>{fxcSem=tr.dataset.s;montaConf();}));
 }
 document.addEventListener('sapatao-login',carrega);
 carrega();
