@@ -73,8 +73,8 @@ if (!empresas.length) falha('nenhuma pasta de empresa com extratos em ' + pastaE
 /* mês anterior no painel: âncora dos formatos sem saldo e lista das contas esperadas */
 const mesAnt = mm === 1 ? `${ano - 1}-12` : `${ano}-${dd(mm - 1)}`;
 const antM = (DATA.meses[mesAnt] || {}).empresas || {};
-const semConta = (opt(args, 'sem-conta') || '').split(',').filter(Boolean); /* "ps:unicred,…" — conta deliberadamente fora (só com decisão do Samuel) */
-const resultados = {}; const rel = []; let ultimoDia = 0; const avisos = []; const formatosUsados = new Set(); const faltamContas = []; const encerradas = [];
+const semConta = (opt(args, 'sem-conta') || '').split(',').filter(Boolean); /* aceito por compatibilidade: conta sem extrato já é mantida no último saldo */
+const resultados = {}; const rel = []; let ultimoDia = 0; const avisos = []; const formatosUsados = new Set(); const semExtrato = []; const encerradas = []; /* semExtrato = contas sem arquivo nesta carga, mantidas no último saldo conhecido (decisão do Samuel, 23/10/2026) */
 for (const e of empresas) {
   const extratos = [];
   const porBanco = {};
@@ -94,9 +94,15 @@ for (const e of empresas) {
   const presentes = new Set(Object.keys(porBanco).map(b => BANCO_NOME[b]));
   for (const nome of esperadasB) {
     const b = Object.keys(BANCO_NOME).find(k => BANCO_NOME[k] === nome);
-    if (presentes.has(nome) || semConta.includes(`${e}:${b}`)) continue;
+    if (presentes.has(nome)) continue;
     if (contaEncerrada(e, b, mes)) { encerradas.push(`${EMP_ID[e]}·${nome}`); continue; } /* sai do painel: saldo zero daqui em diante */
-    faltamContas.push(`${e}/${b}`);
+    const jaNoMes = ((((DATA.meses[mes] || {}).empresas || {})[id] || {}).contas || []).find(c => c.banco === nome);
+    if (jaNoMes && !refazer) falha(`${e}/${b}: a conta já tem lançamentos carregados em ${mes} e não veio nesta carga — recarregar a empresa sem ela apagaria esses lançamentos. Traga o extrato de novo (os arquivos antigos ficam na pasta). Nada gravado.`);
+    const ca = ((antM[id] || {}).contas || []).find(c => c.banco === nome) || jaNoMes;
+    if (!ca) continue;
+    /* sem extrato: a conta fica no último saldo conhecido, sem movimento; a nota e o STATUS avisam */
+    extratos.push({ banco: b, saldoAnterior: r2(ca.fim), saldoFinal: r2(ca.fim), mov: [], semExtrato: true });
+    semExtrato.push(`${EMP_ID[e]}·${nome}`);
   }
   for (const banco of Object.keys(porBanco)) {
     let o = porBanco[banco][0];
@@ -165,10 +171,6 @@ for (const e of empresas) {
   resultados[e] = r;
 }
 if (encerradas.length) avisos.push(`conta(s) encerrada(s) sem extrato — saem do painel a partir deste mês (saldo zero): ${encerradas.join(', ')}`);
-if (faltamContas.length) {
-  const msg = `conta(s) sem extrato nesta carga: ${faltamContas.join(', ')} (existiam em ${MES_LABEL[mesAnt] || mesAnt}/${mesAnt.slice(0, 4)}) — não se carrega empresa com conta faltando; traga o extrato (qualquer formato) ou, só com decisão do Samuel, --sem-conta ${faltamContas.map(x => x.replace('/', ':')).join(',')}.`;
-  if (soConferir) avisos.unshift('BLOQUEIO: ' + msg + ' Nada será gravado.'); else falha(msg + ' Nada gravado.');
-}
 
 /* até que dia o mês está coberto */
 const fimDoMes = new Date(ano, mm - 1, nd); const ontem = new Date(hoje); ontem.setDate(ontem.getDate() - 1);
@@ -182,13 +184,24 @@ const viradas = [];
    já tinha dados no mês (ou que existia no mês anterior fechado) e não veio nesta
    carga trava a rodada — a não ser que esteja em --sem (fica com o que tinha e a
    nota/STATUS avisam). Evita mês "fechado" com uma empresa parada em dias antigos. */
+/* empresa sem nenhum extrato nesta carga (e não em --sem): entra com todas as contas no último saldo */
+for (const id of new Set([...Object.keys(((DATA.meses[mes] || {}).empresas) || {}), ...Object.keys(antM)])) {
+  const e = Object.keys(EMP_ID).find(k => EMP_ID[k] === id); if (!e || resultados[e] || semEmp.includes(e)) continue;
+  const noMes = (((DATA.meses[mes] || {}).empresas || {})[id] || {}).contas || [];
+  if (noMes.length && !refazer) falha(`${e}: a empresa já tem lançamentos em ${mes} e não veio nesta carga — traga os extratos de novo. Nada gravado.`);
+  const bancoId = nome => Object.keys(BANCO_NOME).find(k => BANCO_NOME[k] === nome);
+  const contasAnt = ((antM[id] || {}).contas || []).filter(c => bancoId(c.banco) && !contaEncerrada(e, bancoId(c.banco), mes));
+  if (!contasAnt.length) continue;
+  const extratos = contasAnt.map(c => ({ banco: bancoId(c.banco), saldoAnterior: r2(c.fim), saldoFinal: r2(c.fim), mov: [], semExtrato: true }));
+  resultados[e] = montaEmpresa({ empresa: e, mes, extratos, fornMap, ajustes });
+  for (const c of contasAnt) semExtrato.push(`${id}·${c.banco}`);
+}
+if (semExtrato.length) avisos.push(`conta(s) sem extrato nesta carga, mantidas no último saldo conhecido (fechamento de ${MES_LABEL[mesAnt] || mesAnt}/${mesAnt.slice(0, 4)}), sem movimento: ${semExtrato.join(', ')}`);
 const idsCarregados = Object.keys(resultados).map(e => EMP_ID[e]);
 const cobAnt = { ...((DIA[mes] && DIA[mes].cobertura) || {}) };
 /* meses carregados antes do controle de cobertura: assume os dias registrados no diário */
 for (const id of Object.keys(((DATA.meses[mes] || {}).empresas) || {})) if (cobAnt[id] == null) cobAnt[id] = (DIA[mes] || {}).dias || 0;
 const esperadas = new Set([...Object.keys(((DATA.meses[mes] || {}).empresas) || {}), ...Object.keys(antM)]);
-const faltantes = [...esperadas].filter(id => !idsCarregados.includes(id) && (cobAnt[id] || 0) < dias && !semEmp.includes(Object.keys(EMP_ID).find(k => EMP_ID[k] === id)));
-if (faltantes.length) falha(`empresa(s) sem extrato nesta carga: ${faltantes.join(', ')} — o mês não avança até ${dd(dias)} sem elas (todas as contas de todas as empresas, ou --sem <ids> para deixar explicitamente de fora). Nada gravado.`);
 if (diaAtual && dias < (diaAtual.dias || 0)) falha(`o mês já cobria ${diaAtual.dias} dias; esta carga cobre ${dias} — nada gravado.`);
 
 for (const e of Object.keys(resultados)) for (const c of resultados[e].DATA.contas) {
@@ -220,7 +233,7 @@ const relArq = opt(args, 'relatorio'); if (relArq) { foraDoRepo(relArq, '--relat
 
 const totalRev = Object.values(resultados).reduce((a, r) => a + r.classificados.filter(c => !c.confia).length, 0);
 console.log(`${mes}: ${Object.keys(resultados).length} empresa(s) · ${Object.values(resultados).reduce((a, r) => a + r.DATA.contas.length, 0)} contas · dias 01–${dd(dias)} (${tipo}) · todas conciliadas no centavo · ${totalRev} lançamento(s) para revisão · ${viradas.length} virada(s) a conferir · ${avisos.length} aviso(s)` + (relArq ? ` · relatório em ${relArq}` : ''));
-if (soConferir) { if (faltamContas.length) { console.error('ERRO: ' + avisos[0]); process.exit(1); } process.exit(0); }
+if (soConferir) process.exit(0);
 
 /* grava no estado */
 const mesD = DATA.meses[mes] && DATA.meses[mes].empresas ? DATA.meses[mes] : { tipo, empresas: {} };
@@ -239,6 +252,7 @@ const nota = [`${tipo === 'full' ? 'Mês fechado' : 'Mês parcial'} pela rotina 
   `Semanas seg→dom (${sem.map(s => s.replace(' · ', ' ')).join(' · ')}).`,
   `Classificação pelas regras de memo e pelo mapa de fornecedores do Argo; ${totalRev} lançamento(s) ficaram marcados para revisão${ajustes.length ? `; ${ajustes.length} ajuste(s) aplicado(s)` : ''}.`,
   encerradas.length ? `Conta(s) encerrada(s), fora do painel a partir deste mês: ${encerradas.join(', ')}.` : '',
+  semExtrato.length ? `SEM EXTRATO nesta carga — mantidas no último saldo conhecido (${MES_LABEL[mesAnt] || mesAnt}/${mesAnt.slice(0, 4)}), sem movimento até chegar o extrato: ${semExtrato.join(', ')}.` : '',
   foraDesta.length ? `Fora desta carga (ficam com o realizado até o dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))}, por falta de extrato): ${foraDesta.join(', ')}.` : '',
   viradas.length ? `Virada de saldos a conferir: ${viradas.join('; ')}.` : '',
   opt(args, 'nota') || ''].filter(Boolean).join(' ');
@@ -250,7 +264,7 @@ if (!MES_LABEL[mes]) MES_LABEL[mes] = MESES_PT[mm - 1];
 const refBR = `${dd(dias)}/${dd(mm)}`;
 STATUS.dados_ate = `${dd(dias)}/${dd(mm)}/${ano}`; STATUS.atualizado = `${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}`;
 const bancos = [...new Set(Object.values(resultados).flatMap(r => r.DATA.contas.map(c => BANCO_NOME[c.banco])))];
-STATUS.extratos = `${bancos.join(', ')} até ${refBR} — extratos da pasta semanal do OneDrive (Financeiro/Fluxo de Caixa/Extratos/Fluxo On-line; formatos ${[...formatosUsados].sort().join(', ')}), lidos pela rotina automática em ${STATUS.atualizado}; ${mes} ${tipo === 'full' ? 'FECHADO' : 'parcial'}${foraDesta.length ? `; sem extrato completo neste mês: ${foraDesta.join(', ')} (realizado parado no dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))})` : ''}`;
+STATUS.extratos = `${bancos.join(', ')} até ${refBR} — extratos da pasta semanal do OneDrive (Financeiro/Fluxo de Caixa/Extratos/Fluxo On-line; formatos ${[...formatosUsados].sort().join(', ')}), lidos pela rotina automática em ${STATUS.atualizado}; ${mes} ${tipo === 'full' ? 'FECHADO' : 'parcial'}${semExtrato.length ? `; SEM EXTRATO (saldo mantido de ${MES_LABEL[mesAnt] || mesAnt}): ${semExtrato.join(', ')}` : ''}${foraDesta.length ? `; sem extrato completo neste mês: ${foraDesta.join(', ')} (realizado parado no dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))})` : ''}`;
 if (!PAINEL.empresas) PAINEL.empresas = {};
 for (const e of Object.keys(resultados)) { const id = EMP_ID[e]; PAINEL.empresas[id] = { ...(PAINEL.empresas[id] || {}), saldo: resultados[e].fim, ref: refBR }; }
 /* o painel aponta para o último mês com dados realizados */
