@@ -574,7 +574,7 @@ export function tabela(txt, { banco } = {}) {
   }
   if (!map) throw new Error('tabela: não achei a linha de cabeçalho (data + valor ou crédito/débito)');
   if (!map.desc.length) map.desc = T.celulas(T.ls[hi]).map((c, k) => k).filter(k => ![map.data, map.valor, map.credito, map.debito, map.saldo, map.dc].includes(k));
-  const rows = []; let saldoAnteriorDecl = null;
+  const rows = []; let saldoAnteriorDecl = null, dataAnterior = null;
   for (const l of T.ls.slice(hi + 1)) {
     const c = T.celulas(l); const data = dataQualquer(c[map.data]);
     const desc = limpa(map.desc.map(k => c[k]).filter(Boolean).join(' '));
@@ -583,7 +583,7 @@ export function tabela(txt, { banco } = {}) {
     if (map.valor >= 0) valor = numQualquer(c[map.valor]);
     if (valor == null && map.credito >= 0 && map.debito >= 0) { const cr = numQualquer(c[map.credito]), db = numQualquer(c[map.debito]); if (cr != null || db != null) valor = round2((cr || 0) - Math.abs(db || 0)); }
     if (valor != null && map.dc >= 0) { const dc = NRM(c[map.dc]); if (/^(D|DEBITO|DEB|SAIDA)$/.test(dc) && valor > 0) valor = -valor; }
-    if (valor == null) { if (/SALDO (ANTERIOR|INICIAL)/.test(NRM(desc)) && saldo != null) saldoAnteriorDecl = saldo; continue; }
+    if (valor == null) { if (/SALDO (ANTERIOR|INICIAL)/.test(NRM(desc)) && saldo != null) { saldoAnteriorDecl = saldo; dataAnterior = data; } continue; }
     if (!data) continue;
     rows.push({ data, desc: desc || 'lançamento', valor: round2(valor), saldo });
   }
@@ -591,7 +591,7 @@ export function tabela(txt, { banco } = {}) {
   const temSaldo = rows.some(r => r.saldo != null);
   if (!temSaldo) {
     const mov = rows.slice().sort((a, b) => a.data.localeCompare(b.data)).map(({ data, desc, valor }) => ({ data, desc, valor }));
-    const o = fechaSemSaldo({ banco: banco || 'tabela', mov, periodo: {} }); o.formato = 'tabela'; if (saldoAnteriorDecl != null) { o.saldoAnterior = saldoAnteriorDecl; o.saldoFinal = round2(saldoAnteriorDecl + mov.reduce((a, x) => a + x.valor, 0)); o.semSaldo = false; o.saldoFinalDerivado = true; } return o;
+    const o = fechaSemSaldo({ banco: banco || 'tabela', mov, periodo: {} }); o.formato = 'tabela'; if (saldoAnteriorDecl != null) { o.saldoAnterior = saldoAnteriorDecl; o.saldoFinal = round2(saldoAnteriorDecl + mov.reduce((a, x) => a + x.valor, 0)); o.semSaldo = false; o.saldoFinalDerivado = true; } return comCabecalho(comAnterior(o, dataAnterior), txt);
   }
   /* ordem cronológica = a que faz a cadeia de saldos fechar */
   const quebras = lista => { let q = 0, prev = null; for (const r of lista) { if (r.saldo != null && prev != null && Math.abs(round2(prev + r.valor) - r.saldo) > CENTAVO) q++; if (r.saldo != null) prev = r.saldo; } return q; };
@@ -605,6 +605,13 @@ export function tabela(txt, { banco } = {}) {
   const saldoFinal = ordem[ordem.length - 1].saldo != null ? ordem[ordem.length - 1].saldo : round2(saldoAnterior + soma);
   const o = fecha({ banco: banco || 'tabela', saldoAnterior, saldoFinal, mov, periodo: {} });
   o.formato = 'tabela'; o.saldoFinalDerivado = ordem[ordem.length - 1].saldo == null; o.ancoradoAte = ultimo ? ultimo.data : null;
+  return comCabecalho(comAnterior(o, dataAnterior), txt);
+}
+/* a linha "DD/MM/AAAA SALDO ANTERIOR x" diz desde quando a conta está coberta: o saldo
+   daquela data vale para os dias seguintes mesmo sem lançamento (ex.: transcrição de
+   print que começa dias antes do primeiro movimento) */
+function comAnterior(o, dataAnterior) {
+  if (dataAnterior) { o.periodo = o.periodo || {}; if (!o.periodo.de || dataAnterior < o.periodo.de) o.periodo.de = dataAnterior; o.saldoAnteriorEm = dataAnterior; }
   return o;
 }
 
