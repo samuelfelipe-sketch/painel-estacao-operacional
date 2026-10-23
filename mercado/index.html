@@ -27,13 +27,11 @@
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--fundo);color:var(--tinta);font-family:var(--f-titulo);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:calc(100vh / var(--zoom,1))}
-.topbar{position:sticky;top:0;z-index:30;background:#fff;box-shadow:0 1px 0 #E9EDF2}
-.topbar .in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 18px}
-.topbar .t{font-weight:700;letter-spacing:-.005em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.topbar .t i{font-style:normal;color:var(--laranja)}
-.topbar a.voltar{font-size:13px;color:var(--tinta-suave);text-decoration:none;white-space:nowrap;padding:6px 10px;border:1px solid var(--linha);border-radius:10px;background:#fff}
-.topbar .ref{font-family:var(--f-mono);font-size:11px;color:var(--tinta-suave);letter-spacing:.04em;white-space:nowrap}
-@media (max-width:560px){.topbar .ref{display:none}}
+.topbar{display:flex;position:sticky;top:0;z-index:70;background:#fff;color:#16211C;padding:12px 16px;align-items:center;gap:12px;min-height:58px;box-sizing:border-box}
+.topbar button{background:#fff;border:1px solid #E4E9F0;border-radius:12px;color:#16211C;font-size:18px;line-height:1;padding:6px 10px;cursor:pointer}
+.topbar .t{font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;flex:1;color:#16211C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .ref{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;color:#5F6C7B;white-space:nowrap;text-align:right}
+@media(max-width:640px){.topbar .ref{display:none}}
 .wrap{max-width:1180px;margin:0 auto;padding:18px 18px 56px;display:grid;gap:18px}
 @media (min-width:1600px){.wrap{max-width:1320px}}
 #carregando{padding:60px 18px;text-align:center;color:var(--tinta-suave)}
@@ -130,11 +128,11 @@ body.so-leitura .so-edita{display:none}
 <link rel="stylesheet" href="../tema.css">
 </head>
 <body>
-<div class="topbar"><div class="in">
-  <a class="voltar" href="../index.html">&larr; Voltar</a>
-  <div class="t">Estação <i>Sapatão</i> · Market Share</div>
+<div class="topbar">
+  <button type="button" onclick="location.href='../index.html'" aria-label="Voltar à central de acessos" title="Central de acessos">&#8592;</button>
+  <div class="t">Market Share</div>
   <div class="ref" id="ref"></div>
-</div></div>
+</div>
 
 <div id="carregando"><b>Abrindo o Market Share…</b>Buscando a base da ANP e os volumes do Sapatão.</div>
 
