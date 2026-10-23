@@ -56,6 +56,7 @@ const hoje = new Date(); const hojeISO = hoje.toISOString().slice(0, 10);
 const le = n => { const p = join(pastaEst, n + '.json'); if (!existsSync(p)) falha('falta ' + p); return JSON.parse(readFileSync(p, 'utf8')); };
 const grava = (n, v) => writeFileSync(join(pastaEst, n + '.json'), JSON.stringify(v));
 const DATA = le('DATA'), DIA = le('DIA'), MES_WEEKS = le('MES_WEEKS'), MES_LABEL = le('MES_LABEL'), STATUS = le('STATUS'), PAINEL = le('PAINEL');
+const REVISAO = existsSync(join(pastaEst, 'REVISAO.json')) ? le('REVISAO') : {}; /* lançamentos a revisar, por mês × empresa (card + CSV na ferramenta) */
 const fornArq = opt(args, 'fornecedores');
 const fornMap = fornArq ? JSON.parse(readFileSync(fornArq, 'utf8')) : carregaMapa();
 if (!fornMap) console.log('aviso: sem mapa de fornecedores (fluxo/fornecedores.enc.json) — só regras de memo.');
@@ -270,5 +271,11 @@ for (const e of Object.keys(resultados)) { const id = EMP_ID[e]; PAINEL.empresas
 /* o painel aponta para o último mês com dados realizados */
 const ultimoMesComDados = Object.keys(DIA).filter(m => DIA[m] && DIA[m].dias > 0).sort().pop();
 if (ultimoMesComDados === mes) { PAINEL.hoje = `${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}`; PAINEL.mes = mes; PAINEL.wk = wkOf(ano, mm, dias) + 1; }
-grava('DATA', DATA); grava('DIA', DIA); grava('MES_WEEKS', MES_WEEKS); grava('MES_LABEL', MES_LABEL); grava('STATUS', STATUS); grava('PAINEL', PAINEL);
-console.log(`estado atualizado em ${pastaEst}: DATA.meses[${mes}] (${tipo}), DIA[${mes}] (${dias} dias), MES_WEEKS, MES_LABEL, STATUS, PAINEL`);
+/* transações a revisar: o que ficou sem confiança nesta carga vai para a ferramenta (card "Transações a revisar", com CSV) */
+REVISAO[mes] = REVISAO[mes] || {};
+for (const e of Object.keys(resultados)) {
+  REVISAO[mes][EMP_ID[e]] = resultados[e].classificados.filter(c => !c.confia).sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
+    .map(c => ({ b: BANCO_NOME[c.banco] || c.banco, d: c.data, v: r2(c.valor), c: c.conta, m: String(c.desc || '').replace(/\s+/g, ' ').trim().slice(0, 140), f: c.semPar ? 'transferência própria sem par' : c.intercompany ? 'entre empresas do grupo' : c.sispag ? 'SISPAG sem par' : 'regra genérica' }));
+}
+grava('DATA', DATA); grava('DIA', DIA); grava('MES_WEEKS', MES_WEEKS); grava('MES_LABEL', MES_LABEL); grava('STATUS', STATUS); grava('PAINEL', PAINEL); grava('REVISAO', REVISAO);
+console.log(`estado atualizado em ${pastaEst}: DATA.meses[${mes}] (${tipo}), DIA[${mes}] (${dias} dias), MES_WEEKS, MES_LABEL, STATUS, PAINEL, REVISAO`);
