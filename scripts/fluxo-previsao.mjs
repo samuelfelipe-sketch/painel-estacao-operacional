@@ -21,7 +21,9 @@
    - DISTRIBUIÇÕES de lucros programadas (seção `previsao.distribuicoes` de
      fluxo/regras.enc.json — valores cifrados, nunca no código): valor fixo no
      dia combinado (dia útil anterior se cair no fim de semana), nos meses
-     indicados, mais lançamentos extras pontuais por mês;
+     indicados, mais lançamentos extras pontuais por mês; cada empresa pode ter
+     vigência (`de`/`ate`, AAAA-MM) — fora dela não há distribuição prevista
+     (decisão de 23/10/2026: o calendário vale só para 2026; 2027 fica em aberto);
    - distribuição no mês: perfil por dia do mês (share médio no diário dos
      meses-base) define as semanas; dentro da semana, perfil de dia da semana do
      projeto (recebimentos seg→dom 30/16/15/14/15/5/5 %, pagamentos 28/20/18/18/16/0/0 %);
@@ -89,6 +91,7 @@ export function mesDeArranque(DATA, id, regras = {}) {
 /* distribuições programadas da empresa no mês: [{valor, dia}] */
 export function distribuicoesDoMes(regras, id, mes) {
   const cfg = ((regras || {}).distribuicoes || {})[id]; if (!cfg) return [];
+  if ((cfg.de && mes < cfg.de) || (cfg.ate && mes > cfg.ate)) return []; /* vigência: fora dela, nada (2027 = contas novas, a definir) */
   const [ano, mm] = mes.split('-').map(Number); const out = [];
   const recorrente = cfg.meses === 'todos' || (Array.isArray(cfg.meses) && cfg.meses.includes(mm));
   if (recorrente && cfg.valor) out.push({ valor: r2(cfg.valor), dia: diaUtil(ano, mm, cfg.dia || 25) });
