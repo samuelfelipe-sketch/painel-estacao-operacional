@@ -37,6 +37,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { resolve, join } from 'path';
+import { confereKid } from './chave-id.mjs';
 
 const args = process.argv.slice(2);
 const modo = args[0];
@@ -49,6 +50,7 @@ function chave() {
   if (!b) falha('SAPATAO_DEK não está no ambiente.');
   let k; try { k = Buffer.from(b, 'base64'); } catch (e) { k = Buffer.alloc(0); }
   if (k.length !== 32) falha('SAPATAO_DEK não tem o formato esperado (base64 de 32 bytes).');
+  confereKid(k, falha);
   return k;
 }
 function cifra(obj, k) {

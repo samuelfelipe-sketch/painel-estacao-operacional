@@ -65,3 +65,7 @@ O que a semanal faz a mais:
 7. **Entrada no diário**: escrever `/tmp/neg/entrada.md` com UMA entrada `## DD/MM/AAAA (ter) — semanal: …` (o que foi reconciliado, valor antigo → novo e por quê, o que mudou nas alavancas, o que não foi lido) e rodar `node scripts/negociacao-diario.mjs anexa --entrada /tmp/neg/entrada.md`. O script só aceita acréscimo de exatamente uma entrada e recusa qualquer mudança no cabeçalho ou no histórico.
 8. **Commit** de `negociacao/dados.enc.json` e `negociacao/diario.enc.json` juntos, com a mensagem `chore: publica a ferramenta de Negociação de Preços (revisão semanal, automático)`.
 9. **Resumo ao Samuel**, em lista, uma linha por item, sem valores sigilosos: (1) o que mudou de força nas alavancas; (2) prioridade nº 1 e prazo; (3) se o cenário-alvo e o conservador subiram ou caíram em relação à semana anterior; (4) pendências com as bandeiras; (5) o que não conseguiu ler e o que ficou marcado como leitura anterior.
+
+## Chave dos dados trocada
+
+Se um script parar dizendo que a `SAPATAO_DEK` do ambiente é **ANTIGA**, o admin trocou a chave pelas Configurações. Não publique nada e não tente contornar: avise o Samuel em uma linha para colar a chave nova no segredo `SAPATAO_DEK` do ambiente da rotina.

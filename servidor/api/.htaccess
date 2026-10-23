@@ -1,0 +1,9 @@
+# Toda chamada /api/* cai no index.php (o porteiro)
+Options -Indexes
+RewriteEngine On
+# as regras da raiz não valem aqui dentro: o HTTPS obrigatório se repete
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]

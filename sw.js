@@ -20,6 +20,11 @@ self.addEventListener('push', function (e) {
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var url = (e.notification.data && e.notification.data.url) || './';
+  /* só abre páginas do próprio site: um aviso forjado não leva a outro endereço */
+  try {
+    var alvo = new URL(url, self.registration.scope);
+    url = alvo.href.indexOf(self.registration.scope) === 0 ? alvo.href : self.registration.scope;
+  } catch (err) { url = self.registration.scope; }
   var painel = url.indexOf('roadmap') >= 0 ? 'roadmap' : 'estrategia';
   e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (lista) {
     for (var i = 0; i < lista.length; i++) {

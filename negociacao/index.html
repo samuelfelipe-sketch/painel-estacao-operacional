@@ -98,10 +98,14 @@ function ligaMenu(){
     };
   }catch(e){}
 }
+const CSP_FERRAMENTA=`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'; frame-src 'none'; object-src 'none'">`;
 function mostra(html){
   if(bootado)return;bootado=true;
   espera.hidden=true;frame.style.display='block';
   let h=html.replace(/<html(?=[\s>])/i,'<html data-theme="light"');
+  /* a ferramenta roda no mesmo endereço do site: esta política impede que ela
+     carregue scripts de fora ou mande dados para qualquer servidor */
+  h=/<head(?=[\s>])[^>]*>/i.test(h)?h.replace(/<head(?=[\s>])[^>]*>/i,m=>m+CSP_FERRAMENTA):CSP_FERRAMENTA+h;
   h=/<\/body>/i.test(h)?h.replace(/<\/body>/i,SKIN+'</body>'):h+SKIN;
   frame.addEventListener('load',ligaMenu); /* a cada carga do documento */
   frame.addEventListener('load',function(){

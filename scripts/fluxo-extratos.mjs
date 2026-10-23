@@ -19,6 +19,7 @@
      node scripts/fluxo-extratos.mjs <banco> <arquivo-de-texto.txt>
    bancos: bradesco | unicred | sicredi | stone | banrisul | itau */
 import { readFileSync } from 'fs';
+import { contasBancarias } from './fluxo-lib.mjs';
 
 const CENTAVO = 0.015;
 const round2 = n => Math.round(n * 100) / 100;
@@ -280,13 +281,9 @@ export function pagbank(txt) {
    OFX: saldoAnterior = LEDGERBAL − Σ lançamentos (a virada de saldo no fluxo-mes
    é a conferência independente). */
 export const OFX_BANCOS = { '748': 'sicredi', '041': 'banrisul', '237': 'bradesco', '341': 'itau', '136': 'unicred', '197': 'stone', '290': 'pagbank' };
-export const OFX_CONTAS = [ /* dígitos finais da conta → empresa (com o banco) */
-  ['sicredi', '394302', 'ps'], ['sicredi', '157543', 'sf'], ['sicredi', '447909', 'as'], ['sicredi', '808482', 'siss'], ['sicredi', '244251', 'st'], ['sicredi', '314850', 'ss'],
-  ['banrisul', '0604545302', 'ps'], ['banrisul', '0602546603', 'sf'], ['banrisul', '0626356003', 'as'], ['banrisul', '0601011307', 'siss'],
-  ['bradesco', '480126', 'ps'], ['bradesco', '274054', 'sf'], ['bradesco', '49972', 'siss'],
-  ['unicred', '117510', 'ps'], ['unicred', '117579', 'sf'], ['itau', '123882', 'as'],
-  ['stone', '84845510', 'ps'], ['stone', '101399749', 'sf'], ['stone', '794672931', 'as'], ['pagbank', '861328607', 'ss'],
-];
+/* dígitos finais da conta → empresa (com o banco): vêm CIFRADOS de
+   fluxo/regras.enc.json (contas.ofx), lidos na primeira vez que precisa */
+export const ofxContas = () => contasBancarias().ofx;
 export const ehOFX = txt => /OFXHEADER|<OFX>/i.test(txt.slice(0, 4000));
 const tag = (bloco, t) => { const m = bloco.match(new RegExp('<' + t + '>\\s*([^<\\r\\n]*)', 'i')); return m ? m[1].trim() : null; };
 const dataOFX = s => { const m = (s || '').match(/^(\d{4})(\d{2})(\d{2})/); return m ? `${m[1]}-${m[2]}-${m[3]}` : null; };
@@ -296,7 +293,7 @@ export function ofx(txt) {
   const bankid = (tag(txt, 'BANKID') || '').replace(/\D/g, '').padStart(3, '0').slice(-3);
   const banco = OFX_BANCOS[bankid] || null;
   const acct = (tag(txt, 'ACCTID') || '').replace(/\D/g, '');
-  const empresa = (OFX_CONTAS.find(([b, d]) => (!banco || b === banco) && acct.endsWith(d)) || [])[2] || null;
+  const empresa = (ofxContas().find(([b, d]) => (!banco || b === banco) && acct.endsWith(d)) || [])[2] || null;
   const mov = [];
   for (const m of txt.matchAll(/<STMTTRN>([\s\S]*?)(?:<\/STMTTRN>|(?=<STMTTRN>)|(?=<\/BANKTRANLIST>))/gi)) {
     const b = m[1]; const data = dataOFX(tag(b, 'DTPOSTED')); let valor = numOFX(tag(b, 'TRNAMT'));
@@ -385,7 +382,7 @@ export function stoneXlsx(txt) {
   for (const r of ordem) { const [inst, cta] = r.credito ? [r.destInst, r.destCta] : [r.oriInst, r.oriCta]; if (STONE_PROPRIA.test(inst) && cta) freq[cta] = (freq[cta] || 0) + 1; }
   const contaProp = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0] || null;
   const acct = (contaProp || '').replace(/\D/g, '');
-  const empresa = (OFX_CONTAS.find(([b, d]) => b === 'stone' && acct && acct.endsWith(d)) || [])[2] || null;
+  const empresa = (ofxContas().find(([b, d]) => b === 'stone' && acct && acct.endsWith(d)) || [])[2] || null;
   const mov = [];
   for (const r of ordem) {
     const dv = round2(r.depois - r.antes);
@@ -429,8 +426,8 @@ export function sicrediXls(txt) {
   const periodo = per ? { de: iso(per[1], per[2], per[3]), ate: iso(per[4], per[5], per[6]) } : {};
   /* conta ("24425-1") → empresa */
   const contas = [...t.matchAll(/\b(\d{4,6}-\d)\b/g)].map(m => m[1].replace(/\D/g, ''));
-  const acct = contas.find(d => OFX_CONTAS.some(([b, dd]) => b === 'sicredi' && d.endsWith(dd))) || null;
-  const empresa = acct ? (OFX_CONTAS.find(([b, d]) => b === 'sicredi' && acct.endsWith(d)) || [])[2] || null : null;
+  const acct = contas.find(d => ofxContas().some(([b, dd]) => b === 'sicredi' && d.endsWith(dd))) || null;
+  const empresa = acct ? (ofxContas().find(([b, d]) => b === 'sicredi' && acct.endsWith(d)) || [])[2] || null : null;
   const base = o => { o.formato = 'xls'; o.empresa = empresa; o.conta = acct; if (per) o.periodoDeclarado = { ...periodo }; return o; };
   if (/N[ãa]o h[áa] lan[çc]amentos no per[ií]odo/i.test(t)) return base(fechaSemSaldo({ banco: 'sicredi', mov: [], periodo: { ...periodo } }));
   const iSA = t.search(/Saldo Anterior/); const cabVal = t.match(/Valor \(R\$\)\s+Saldo \(R\$\)/);

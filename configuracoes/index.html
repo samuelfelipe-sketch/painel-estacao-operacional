@@ -69,10 +69,11 @@ tr:last-child td{border-bottom:none}
     <p style="margin-bottom:10px">Conectado como <b id="ct-nome">—</b> <span class="pill" id="ct-papel" hidden>admin</span></p>
     <button type="button" class="btn sec" style="margin-top:0" onclick="window.sapataoSair()">Sair — pedir usuário e senha de novo</button>
   </div>
-  <div class="card" style="max-width:430px">
+  <div class="card" style="max-width:430px" id="minha-senha">
+    <p class="lead" id="sn-aviso-trocar" hidden style="margin-bottom:10px;color:#C2531A"><b>Crie a sua senha para liberar os painéis.</b> A atual foi definida pelo administrador.</p>
     <p class="lead" style="margin-bottom:8px"><b style="color:var(--verde)">Trocar a minha senha.</b> Vale para todos os painéis. Precisa da chave de publicação neste aparelho.</p>
     <input type="password" class="campo" id="sn-atual" placeholder="Senha atual" autocomplete="off">
-    <input type="password" class="campo" id="sn-nova" placeholder="Senha nova (mínimo 6 caracteres)" autocomplete="off">
+    <input type="password" class="campo" id="sn-nova" placeholder="Senha nova (mínimo 12 caracteres)" autocomplete="off">
     <input type="password" class="campo" id="sn-conf" placeholder="Repetir a senha nova" autocomplete="off">
     <button type="button" class="btn" id="sn-trocar">Alterar minha senha</button>
     <p class="lead" id="sn-msg" style="margin-top:8px;margin-bottom:0"></p>
@@ -165,6 +166,25 @@ tr:last-child td{border-bottom:none}
       </div>
       <p class="lead" id="us-msg" style="margin-top:10px;margin-bottom:0"></p>
     </div>
+
+    <h3>Troca da chave dos dados</h3>
+    <div class="card" style="max-width:640px" id="troca-chave">
+      <p class="lead" style="margin-bottom:8px">Gera uma <b>chave nova</b> para todos os dados cifrados do site, recifra cada arquivo num único commit e apaga do cofre a chave antiga. Use quando alguém sair da empresa ou se houver suspeita de vazamento.</p>
+      <p class="lead" style="margin-bottom:8px"><b>O que acontece:</b> só você continua com acesso. Cada pessoa volta a entrar depois que você redefinir a senha dela em "Usuários e permissões" e salvar. As rotinas automáticas param até a chave nova entrar no ambiente do Claude.</p>
+      <input type="password" class="campo campo-mono" id="tc-token" placeholder="Chave de publicação NOVA (token do GitHub recém-criado)" autocomplete="off">
+      <input type="password" class="campo" id="tc-senha" placeholder="A sua senha" autocomplete="off">
+      <label class="lead" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="tc-ok"> Combinei o horário com a equipe e sei que todos vão precisar de senha nova</label>
+      <button type="button" class="btn destaque" id="tc-trocar">Trocar a chave dos dados agora</button>
+      <p class="lead" id="tc-msg" style="margin-top:8px;margin-bottom:0"></p>
+      <div id="tc-resultado" hidden style="margin-top:12px">
+        <p class="lead" style="margin-bottom:6px"><b>Chave nova dos dados.</b> Copie e cole agora no segredo <b>SAPATAO_DEK</b> do ambiente do Claude que roda as rotinas. Ela aparece só desta vez: não mande por e-mail, WhatsApp ou chat.</p>
+        <input type="text" class="campo campo-mono" id="tc-dek" readonly>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn" id="tc-copiar" style="margin-top:0">Copiar</button>
+          <button type="button" class="btn sec" id="tc-esconder" style="margin-top:0">Já colei — esconder</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -181,6 +201,7 @@ function pinta(){
   if(A&&A.user){
     document.getElementById('ct-nome').textContent=A.user.nome;
     document.getElementById('ct-papel').hidden=!A.user.admin;
+    const av=document.getElementById('sn-aviso-trocar');if(av)av.hidden=!A.user.trocar;
     document.getElementById('sec-admin').hidden=!A.user.admin;
     if(A.user.admin){pintaChaves();usCarrega();}
   }
@@ -189,6 +210,13 @@ function pintaChaves(){
   const t=!!token(),d=!!window.sapataoCofre.dek();
   const ct=document.getElementById('cs-token');ct.textContent=t?'presente':'ausente';ct.className='pill '+(t?'ok':'off');
   const cd=document.getElementById('cs-dek');cd.textContent=d?'presente':'ausente';cd.className='pill '+(d?'ok':'off');
+  if(window.sapataoAuth&&window.sapataoAuth.modoServidor){
+    /* modo servidor: o token do GitHub vive só no servidor do painel */
+    ct.textContent='no servidor';ct.className='pill ok';
+    document.getElementById('cs-tem').hidden=true;document.getElementById('cs-sem').hidden=true;
+    const tk=document.getElementById('tc-token');if(tk)tk.hidden=true;
+    return;
+  }
   document.getElementById('cs-tem').hidden=!t;
   document.getElementById('cs-sem').hidden=t;
 }
@@ -237,8 +265,26 @@ snBtn.addEventListener('click',async ()=>{
   const nova=document.getElementById('sn-nova').value;
   const conf=document.getElementById('sn-conf').value;
   if(!A||!A.user){snDiz('Recarregue a página e tente de novo.',true);return;}
+  if(A.modoServidor){
+    /* modo servidor: o próprio servidor confere a senha atual e aplica a regra */
+    const probl0=A.senhaProblema(nova,A.user);if(probl0){snDiz(probl0,true);return;}
+    if(nova!==conf){snDiz('A confirmação não bate com a senha nova.',true);return;}
+    snBtn.disabled=true;snDiz('Gravando senha nova…');
+    try{
+      const r=await fetch(A.api+'senha',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({atual:atual,nova:nova})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(j.erro||('HTTP '+r.status));
+      Object.assign(A.user,j.user||{});delete A.user.trocar;A.pw=nova;
+      await window.sapataoChave.garante();
+      ['sn-atual','sn-nova','sn-conf'].forEach(i=>document.getElementById(i).value='');
+      const av=document.getElementById('sn-aviso-trocar');if(av)av.hidden=true;
+      snDiz('Senha alterada! Os seus outros aparelhos vão pedir a senha nova.');
+    }catch(e){snDiz('Não consegui gravar ('+e.message+').',true);}
+    snBtn.disabled=false;return;
+  }
   if(!token()){snDiz('Este aparelho precisa da chave de publicação para gravar a senha — fale com o administrador.',true);return;}
-  if(nova.length<6){snDiz('A senha nova precisa de pelo menos 6 caracteres.',true);return;}
+  const probl=A.senhaProblema(nova,A.user);if(probl){snDiz(probl,true);return;}
+  if(nova===atual){snDiz('A senha nova precisa ser diferente da atual.',true);return;}
   if(nova!==conf){snDiz('A confirmação não bate com a senha nova.',true);return;}
   snBtn.disabled=true;snDiz('Gravando senha nova…');
   try{
@@ -247,13 +293,16 @@ snBtn.addEventListener('click',async ()=>{
     if(!eu)throw new Error('seu usuário não está na lista');
     if(!(await A.confere(eu,atual))){snBtn.disabled=false;snDiz('A senha atual não confere.',true);return;}
     await A.defineSenha(eu,nova);
+    delete eu.trocar;
     await gravaUsuarios(doc,sha,'chore: altera a senha do usuário '+eu.nome+' (via Configurações)');
     const sess=JSON.stringify({u:eu.id,h:A.verif(eu)});
     try{
       if(sessionStorage.getItem(A.chave))sessionStorage.setItem(A.chave,sess);
       if(localStorage.getItem(A.chave))localStorage.setItem(A.chave,sess);
     }catch(e){}
-    A.user.kdf=eu.kdf;delete A.user.hash;A.pw=nova;
+    A.user.kdf=eu.kdf;delete A.user.hash;delete A.user.trocar;A.pw=nova;
+    try{const c=JSON.parse(localStorage.getItem('sapatao-usuarios-cache-v1')||'null');if(c&&c.usuarios){c.usuarios.forEach(x=>{if(x.id===eu.id){x.kdf=eu.kdf;delete x.trocar;delete x.hash;}});localStorage.setItem('sapatao-usuarios-cache-v1',JSON.stringify(c));}}catch(e){}
+    const av=document.getElementById('sn-aviso-trocar');if(av)av.hidden=true;
     window.sapataoChave.garante();
     ['sn-atual','sn-nova','sn-conf'].forEach(i=>document.getElementById(i).value='');
     snDiz('Senha alterada! Este aparelho continua conectado; os seus outros aparelhos vão pedir a senha nova.');
@@ -313,11 +362,12 @@ usTbl.addEventListener('change',ev=>{
 usTbl.addEventListener('click',ev=>{
   if(!ev.target.classList.contains('us-senha'))return;
   const i=+ev.target.dataset.i,u=usDoc.usuarios[i];
-  const s=prompt('Nova senha para '+u.nome+' (mínimo 6 caracteres):');
+  const s=prompt('Senha provisória para '+u.nome+' (mínimo '+window.sapataoAuth.senhaMin+' caracteres). No primeiro acesso a pessoa troca por uma só dela:');
   if(s===null)return;
-  if(s.length<6){usDiz('Senha muito curta — nada foi alterado.',true);return;}
+  const probl=window.sapataoAuth.senhaProblema(s,u);if(probl){usDiz(probl+' Nada foi alterado.',true);return;}
   usDiz('Preparando a senha de '+u.nome+'…');
   usPend.push(window.sapataoAuth.defineSenha(u,s).then(()=>{
+    if(u.id!==window.sapataoAuth.user.id)u.trocar=true;
     usEnvelopes.push({id:u.id,senha:s});
     usDiz('Senha de '+u.nome+' pronta — clique em "Salvar alterações" para gravar.');
   }));
@@ -326,11 +376,11 @@ document.getElementById('us-add').addEventListener('click',()=>{
   if(!usDoc)return;
   const nome=prompt('Nome do novo usuário:');
   if(!nome||!nome.trim())return;
-  const s=prompt('Senha inicial de '+nome.trim()+' (mínimo 6 caracteres):');
+  const s=prompt('Senha provisória de '+nome.trim()+' (mínimo '+window.sapataoAuth.senhaMin+' caracteres). No primeiro acesso a pessoa troca por uma só dela:');
   if(s===null)return;
-  if(s.length<6){usDiz('Senha muito curta — usuário não criado.',true);return;}
   const novoId=usId(nome.trim());
-  const novo={id:novoId,nome:nome.trim(),admin:false,ativo:true,perm:{roadmap:'le',pe:'le',fluxo:'nao',operacional:'nao',negociacao:'nao',mercado:'nao'}};
+  const probl=window.sapataoAuth.senhaProblema(s,{id:novoId,nome:nome.trim()});if(probl){usDiz(probl+' Usuário não criado.',true);return;}
+  const novo={id:novoId,nome:nome.trim(),admin:false,ativo:true,trocar:true,perm:{roadmap:'le',pe:'le',fluxo:'nao',operacional:'nao',negociacao:'nao',mercado:'nao'}};
   usDiz('Preparando o usuário '+novo.nome+'…');
   usPend.push(window.sapataoAuth.defineSenha(novo,s).then(()=>{
     usDoc.usuarios.push(novo);
@@ -353,12 +403,56 @@ document.getElementById('us-salvar').addEventListener('click',async ()=>{
     await gravaUsuarios(usDoc,usSha,'chore: atualiza usuários e permissões (via Configurações)');
     A.usuarios=usDoc.usuarios;
     /* envelope da chave (token + chave dos dados) para cada senha criada/redefinida */
-    for(const env of usEnvelopes)await window.sapataoChave.garantePara(env.id,env.senha);
+    for(const env of usEnvelopes){
+      const u=usDoc.usuarios.find(x=>x.id===env.id);
+      if(u&&u.ativo!==false)await window.sapataoChave.garantePara(env.id,env.senha);
+    }
     usEnvelopes=[];
+    /* quem está desativado perde o envelope: a senha antiga não abre mais a chave */
+    const inativos=usDoc.usuarios.filter(u=>u.ativo===false).map(u=>u.id);
+    if(inativos.length)await window.sapataoChave.removeEnvelopes(inativos);
     usDiz('Usuários gravados! As permissões valem no próximo acesso de cada um.');
     usCarrega();
   }catch(e){usDiz('Não consegui gravar ('+e.message+').',true);}
 });
+
+/* ---- troca da chave dos dados (admin) ---- */
+(function(){
+  const btn=document.getElementById('tc-trocar');if(!btn)return;
+  const msg=document.getElementById('tc-msg');
+  function diz(t,erro){msg.textContent=t;msg.style.color=erro?'#8C1D18':'#1D6B3C';}
+  btn.addEventListener('click',async()=>{
+    const A=window.sapataoAuth;
+    if(!A||!A.user||!A.user.admin){diz('Só o administrador troca a chave.',true);return;}
+    const tk=document.getElementById('tc-token').value.trim(),pw=document.getElementById('tc-senha').value;
+    if(!document.getElementById('tc-ok').checked){diz('Marque a caixa depois de combinar o horário com a equipe.',true);return;}
+    if(!A.modoServidor&&!tk){diz('Cole a chave de publicação nova. Crie o token no GitHub antes, conforme o guia.',true);return;}
+    if(!A.modoServidor&&tk===window.sapataoChave.token()){diz('Esse é o token que já está em uso. Crie um token novo no GitHub para a troca valer de verdade.',true);return;}
+    if(!pw){diz('Digite a sua senha.',true);return;}
+    if(!confirm('Trocar a chave dos dados agora? Todos, menos você, perdem o acesso até você redefinir a senha de cada um.'))return;
+    btn.disabled=true;
+    try{
+      const r=await window.sapataoCofre.trocaChave({senha:pw,token:tk,progresso:t=>diz(t)});
+      A.pw=pw;
+      document.getElementById('tc-token').value='';document.getElementById('tc-senha').value='';
+      document.getElementById('tc-dek').value=r.dek;
+      document.getElementById('tc-resultado').hidden=false;
+      diz('Pronto: '+r.arquivos+' arquivos recifrados com a chave nova. Agora revogue o token antigo no GitHub e redefina a senha de cada usuário abaixo.');
+      pintaChaves();
+    }catch(e){diz('A troca não foi feita: '+e.message+'. Nada mudou no site.',true);}
+    btn.disabled=false;
+  });
+  document.getElementById('tc-copiar').addEventListener('click',async()=>{
+    const c=document.getElementById('tc-dek');
+    try{await navigator.clipboard.writeText(c.value);diz('Chave copiada. Cole no segredo SAPATAO_DEK do ambiente das rotinas.');}
+    catch(e){c.select();diz('Selecionei a chave: copie com Ctrl+C ou segurando o dedo sobre ela.');}
+  });
+  document.getElementById('tc-esconder').addEventListener('click',()=>{
+    document.getElementById('tc-dek').value='';document.getElementById('tc-resultado').hidden=true;
+    try{navigator.clipboard.writeText('');}catch(e){}
+    diz('Chave escondida. Ela continua só neste aparelho e nos envelopes de senha.');
+  });
+})();
 
 /* --- Tamanho na tela (preferência deste aparelho; o auth.js aplica em todo painel) --- */
 (function(){

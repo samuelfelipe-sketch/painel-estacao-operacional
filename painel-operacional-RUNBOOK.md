@@ -47,3 +47,7 @@ No dia 1º o relatório traz o corte do último dia do mês anterior (mês fecha
 - Não "ajusta" número para fechar soma: conferência reprovada é motivo para não publicar e avisar.
 - Não publica relatório mais antigo que o já no ar.
 - Não toca em nenhum outro arquivo do site.
+
+## Chave dos dados trocada
+
+Se um script parar dizendo que a `SAPATAO_DEK` do ambiente é **ANTIGA**, o admin trocou a chave pelas Configurações. Não publique nada e não tente contornar: avise o Samuel em uma linha para colar a chave nova no segredo `SAPATAO_DEK` do ambiente da rotina.

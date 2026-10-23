@@ -29,8 +29,8 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { homedir } from 'os';
-import { falha, foraDoRepo, opt, contaEncerrada } from './fluxo-lib.mjs';
-import { PARSERS, ehOFX, ofx, detectaFormato, stoneXlsx, sicrediXls, itauCsv, tabela, OFX_CONTAS } from './fluxo-extratos.mjs';
+import { falha, foraDoRepo, opt, contaEncerrada, contasBancarias } from './fluxo-lib.mjs';
+import { PARSERS, ehOFX, ofx, detectaFormato, stoneXlsx, sicrediXls, itauCsv, tabela, ofxContas } from './fluxo-extratos.mjs';
 
 const BANCOS = ['sicredi', 'stone', 'unicred', 'banrisul', 'bradesco', 'itau', 'pagbank'];
 const N = s => (s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -72,12 +72,12 @@ export function detectaEmpresa(t, banco, nomeArq) {
     /* 1) conta no nome do arquivo (Itaú: Extrato_0912_123882_…); 2) empresa no nome;
        3) CNPJ/conta no conteúdo; 4) banco com uma única conta no grupo */
     const digs = (nomeArq || '').match(/\d{4,}/g) || [];
-    for (const d of digs) { const c = OFX_CONTAS.find(([b, dd]) => (!banco || b === banco) && (d.endsWith(dd) || dd.endsWith(d)) && d.length >= 5); if (c) return c[2]; }
+    for (const d of digs) { const c = ofxContas().find(([b, dd]) => (!banco || b === banco) && (d.endsWith(dd) || dd.endsWith(d)) && d.length >= 5); if (c) return c[2]; }
     const U = N(nomeArq); for (const [id, re] of EMP_NOME_ARQ) if (re.test(U)) return id;
     const C = N(t.slice(0, 3000)); const cnpj = C.match(/(0?\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/); if (cnpj) for (const [id, r] of EMP_NOME) if (r.test(cnpj[1])) return id;
-    /* número da conta no conteúdo ("24425-1", "0604545302"…) → OFX_CONTAS do banco */
-    for (const m of t.matchAll(/\b(\d{4,10}-?\d)\b/g)) { const d = m[1].replace(/\D/g, ''); const c = OFX_CONTAS.find(([b, dd]) => (!banco || b === banco) && d.length >= 5 && d.endsWith(dd)); if (c) return c[2]; }
-    const unicas = OFX_CONTAS.filter(([b]) => b === banco); if (banco && unicas.length && unicas.every(c => c[2] === unicas[0][2])) return unicas[0][2];
+    /* número da conta no conteúdo ("24425-1", "0604545302"…) → ofxContas() do banco */
+    for (const m of t.matchAll(/\b(\d{4,10}-?\d)\b/g)) { const d = m[1].replace(/\D/g, ''); const c = ofxContas().find(([b, dd]) => (!banco || b === banco) && d.length >= 5 && d.endsWith(dd)); if (c) return c[2]; }
+    const unicas = ofxContas().filter(([b]) => b === banco); if (banco && unicas.length && unicas.every(c => c[2] === unicas[0][2])) return unicas[0][2];
     return null;
   }
   const U = N(t.slice(0, 2500));
@@ -90,9 +90,9 @@ export function detectaEmpresa(t, banco, nomeArq) {
     /PERIODO:\s*\d{2}\/\d{2}\/\d{4}\s+A\s+\d{2}\/\d{2}\/\d{4}\s+(.{3,60}?)\s+CNPJ:\s*([\d.\/-]+)/, /* PagBank */
   ];
   for (const re of cab) { const m = U.match(re); if (m) { const alvo = m.slice(1).join(' '); for (const [id, r] of EMP_NOME) if (r.test(alvo)) return id; } }
-  /* Bradesco: nome/CNPJ só no rodapé → "CNPJ: 43.510.250/0001-84"; senão, nº da conta */
+  /* Bradesco: nome/CNPJ só no rodapé ("CNPJ: <cnpj da empresa>"); senão, nº da conta */
   const cnpj = N(t).match(/CNPJ:?\s*(0?\d{2}\.\d{3}\.\d{3}\/\d{4}-?\d{2})/); if (cnpj) for (const [id, r] of EMP_NOME) if (r.test(cnpj[1].replace(/^0/, ''))) return id;
-  const CONTA_BRADESCO = { '0048012-6': 'ps', '0027405-4': 'sf', '0004997-2': 'siss' };
+  const CONTA_BRADESCO = contasBancarias().bradesco; /* cifrado em fluxo/regras.enc.json */
   for (const [c, e] of Object.entries(CONTA_BRADESCO)) if (t.includes(c)) return e;
   return null;
 }

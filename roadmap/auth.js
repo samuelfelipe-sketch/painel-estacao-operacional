@@ -53,6 +53,44 @@
   var LS_TOKEN = 'sapatao-sync-token';
   var APP = (typeof window.SAPATAO_APP === 'string' && window.SAPATAO_APP) || 'roadmap';
 
+  /* ---------- MODO SERVIDOR (painel.estacaosapatao.com.br) ----------
+     Fora do GitHub Pages, o site fala com a API própria (/api/, na
+     HostGator): o login é conferido no servidor (cookie de sessão
+     HttpOnly), o token do GitHub fica só lá e cada arquivo é entregue
+     conforme a permissão do usuário. As páginas continuam chamando os
+     endereços do GitHub; aqui eles viram /api/... sem mexer em cada painel. */
+  var MODO_SERVIDOR = !/(^|\.)github\.io$/i.test(location.hostname);
+  var RAIZ_SITE = (function () {
+    try { var sc = document.currentScript || document.querySelector('script[src*="auth.js"]'); if (sc && sc.src) return sc.src.replace(/roadmap\/auth\.js.*$/, ''); } catch (e) {}
+    return location.origin + '/';
+  })();
+  var API_SITE = RAIZ_SITE + 'api/';
+  if (MODO_SERVIDOR && window.fetch && !window.fetch.__sapatao) {
+    var fetchOriginal = window.fetch.bind(window);
+    var PREFIXOS = [
+      ['https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/', API_SITE + 'raw/'],
+      ['https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/', API_SITE + 'contents/'],
+      ['https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/git/', API_SITE + 'git/']
+    ];
+    var fetchSapatao = function (url, opts) {
+      if (typeof url === 'string') {
+        for (var i = 0; i < PREFIXOS.length; i++) {
+          if (url.indexOf(PREFIXOS[i][0]) === 0) {
+            url = PREFIXOS[i][1] + url.slice(PREFIXOS[i][0].length);
+            opts = Object.assign({}, opts || {});
+            /* o "token" das páginas vira só um marcador: quem autentica é o cookie */
+            if (opts.headers) { var h = Object.assign({}, opts.headers); delete h.Authorization; delete h.authorization; opts.headers = h; }
+            opts.credentials = 'same-origin';
+            break;
+          }
+        }
+      }
+      return fetchOriginal(url, opts);
+    };
+    fetchSapatao.__sapatao = true;
+    window.fetch = fetchSapatao;
+  }
+
   /* SHA-256 em JS puro (domínio público — geraintluff/sha256) */
   function sha256(ascii) {
     ascii = unescape(encodeURIComponent(ascii)); // acentos viram bytes UTF-8
@@ -168,6 +206,21 @@
       return u;
     });
   }
+  /* regra de senha: 12+ caracteres e nada óbvio. Devolve '' quando a senha
+     serve, ou o motivo para mostrar na tela. */
+  var SENHA_MIN = 12;
+  function senhaProblema(pw, user) {
+    pw = pw || '';
+    if (pw.length < SENHA_MIN) return 'A senha precisa de pelo menos ' + SENHA_MIN + ' caracteres. Uma frase curta, como "café forte no posto 3", é fácil de lembrar e difícil de adivinhar.';
+    if (/^(.)\1+$/.test(pw)) return 'A senha não pode ser um caractere repetido.';
+    var baixa = normUser(pw).replace(/[^a-z0-9]/g, '');
+    var proibidas = ['sapatao', 'estacao', 'senha', '123456', 'qwerty'];
+    if (user) { proibidas.push(normUser(user.id).replace(/[^a-z0-9]/g, '')); proibidas.push(normUser(user.nome).replace(/[^a-z0-9]/g, '')); }
+    for (var i = 0; i < proibidas.length; i++) {
+      if (proibidas[i] && proibidas[i].length >= 3 && baixa.indexOf(proibidas[i]) >= 0) return 'A senha não pode conter o nome da pessoa, "Sapatão", "senha" ou sequências como 123456.';
+    }
+    return '';
+  }
   function permDe(user, app) {
     if (!user) return 'nao';
     if (app === 'config') return 'edita'; /* todo usuário gerencia a própria conta */
@@ -177,6 +230,30 @@
   /* compara nomes de usuário ignorando maiúsculas e acentos */
   function normUser(s) {
     return (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  /* ---------- onde ficam as chaves deste aparelho ----------
+     Com "manter conectado", a sessão e as chaves (publicação e dados) ficam
+     no localStorage. Sem, ficam só no sessionStorage: somem ao fechar a aba
+     ou o navegador, e nada sobra num computador compartilhado. */
+  var LS_LEMBRAR = 'sapatao-lembrar-v1';
+  function lembrado() {
+    try { return MODO_SERVIDOR ? localStorage.getItem(LS_LEMBRAR) === '1' : !!localStorage.getItem(CHAVE); } catch (e) { return false; }
+  }
+  function leGuardado(k) {
+    try { var v = sessionStorage.getItem(k); if (v) return v; } catch (e) {}
+    try { return localStorage.getItem(k) || ''; } catch (e) { return ''; }
+  }
+  function guarda(k, v) {
+    try { sessionStorage.removeItem(k); } catch (e) {}
+    try { localStorage.removeItem(k); } catch (e) {}
+    if (!v) return;
+    try { (lembrado() ? localStorage : sessionStorage).setItem(k, v); } catch (e) {}
+  }
+  /* troca de "manter conectado" no login: leva as chaves que já estavam no
+     aparelho para o lugar certo */
+  function realocaChaves() {
+    [LS_TOKEN, 'sapatao-dek-v1'].forEach(function (k) { var v = leGuardado(k); if (v) guarda(k, v); });
   }
 
   /* ---------- sessão ---------- */
@@ -191,12 +268,13 @@
   function gravaSessao(user, h, lembrar) {
     var v = JSON.stringify({ u: user.id, h: h });
     try { sessionStorage.setItem(CHAVE, v); } catch (e) {}
-    if (lembrar) { try { localStorage.setItem(CHAVE, v); } catch (e) {} }
+    try { if (lembrar) localStorage.setItem(CHAVE, v); else localStorage.removeItem(CHAVE); } catch (e) {}
+    realocaChaves();
   }
 
   var A = window.sapataoAuth = {
     sha256: sha256, chave: CHAVE, app: APP,
-    verif: verif, confere: confere, defineSenha: defineSenha,
+    verif: verif, confere: confere, defineSenha: defineSenha, senhaProblema: senhaProblema, senhaMin: SENHA_MIN,
     usuarios: usuariosLocais(),
     user: null, pw: null,
     permDe: permDe,
@@ -206,8 +284,18 @@
     get hash() { return verif(A.user); }
   };
   window.sapataoSair = function () {
+    if (MODO_SERVIDOR) {
+      try { fetch(API_SITE + 'sair', { method: 'POST', credentials: 'same-origin', keepalive: true }).catch(function () {}); } catch (e) {}
+      try { localStorage.removeItem(LS_LEMBRAR); } catch (e) {}
+    }
     try { sessionStorage.removeItem(CHAVE); } catch (e) {}
     try { localStorage.removeItem(CHAVE); } catch (e) {}
+    /* a chave de publicação e a chave dos dados saem do aparelho junto com a
+       sessão: a próxima entrada as recebe de novo pelo envelope (com a senha) */
+    [LS_TOKEN, 'sapatao-dek-v1'].forEach(function (k) {
+      try { localStorage.removeItem(k); } catch (e) {}
+      try { sessionStorage.removeItem(k); } catch (e) {}
+    });
     /* solta as cópias locais do conteúdo: a próxima entrada baixa tudo fresco */
     try { ['sapatao-conteudo-roadmap-v1', 'sapatao-conteudo-pe-v1', 'sapatao-conteudo-operacional-v1', 'sapatao-fluxo-v1', 'sapatao-negociacao-v1', 'sapatao-mercado-v1'].forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
     /* aproveita a saída para rebuscar os arquivos do app direto da rede
@@ -226,7 +314,21 @@
     setTimeout(vai, 2500); /* rede lenta não prende o Sair */
   };
 
-  function anuncia() { try { document.dispatchEvent(new CustomEvent('sapatao-auth', { detail: { user: A.user } })); } catch (e) {} }
+  function escH(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var chaveConferida = false;
+  function anuncia() {
+    try { document.dispatchEvent(new CustomEvent('sapatao-auth', { detail: { user: A.user } })); } catch (e) {}
+    /* chave dos dados trocada pelo admin: o aparelho larga a antiga; o
+       painel recarrega uma vez e mostra o aviso para entrar de novo */
+    if (A.user && !chaveConferida && window.sapataoCofre && window.sapataoCofre.dek()) {
+      chaveConferida = true;
+      window.sapataoCofre.confereChave().then(function (vale) {
+        if (vale !== false || APP === 'central' || APP === 'config') return;
+        try { if (sessionStorage.getItem('sapatao-chave-recarregou')) return; sessionStorage.setItem('sapatao-chave-recarregou', '1'); } catch (e) { return; }
+        location.reload();
+      });
+    }
+  }
 
   function bloqueiaSemAcesso() {
     if (document.querySelector('.sptx-gate')) return; /* já está na tela — não duplica nem pisca */
@@ -236,12 +338,35 @@
     d.className = 'sptx-gate';
     d.innerHTML = '<div class="sptx-card"><div class="sptx-eyebrow">Estação Sapatão</div>'
       + '<h1 class="sptx-titulo">Sem <i>acesso</i></h1>'
-      + '<p class="sptx-sub">O usuário <b>' + (A.user ? A.user.nome : '') + '</b> não tem acesso a este painel. Fale com o administrador para liberar a permissão.</p>'
+      + '<p class="sptx-sub">O usuário <b>' + escH(A.user ? A.user.nome : '') + '</b> não tem acesso a este painel. Fale com o administrador para liberar a permissão.</p>'
       + '<button type="button" class="sptx-btn" onclick="location.href=\'../index.html\'">&#8592; Voltar à página inicial</button>'
       + '<button type="button" class="sptx-btn" style="background:none;color:#5F6C7B;margin-top:8px;box-shadow:none" onclick="window.sapataoSair()">Entrar com outro usuário</button></div>';
     function poe() { document.body.appendChild(d); }
     if (document.body) poe(); else document.addEventListener('DOMContentLoaded', poe);
   }
+
+  /* senha criada ou redefinida pelo administrador: a pessoa troca por uma
+     dela antes de abrir qualquer painel (só as Configurações ficam abertas) */
+  function precisaTrocar(u) { return !!(u && u.trocar && APP !== 'config'); }
+  function bloqueiaTrocaSenha() {
+    if (document.querySelector('.sptx-gate')) return;
+    garanteEstilo();
+    document.documentElement.classList.add('sptx-lock');
+    var base = '';
+    try { var sc = document.querySelector('script[src*="auth.js"]'); if (sc) base = sc.src.replace(/roadmap\/auth\.js.*$/, ''); } catch (e) {}
+    var d = document.createElement('div');
+    d.className = 'sptx-gate';
+    d.innerHTML = '<div class="sptx-card"><div class="sptx-eyebrow">Estação Sapatão</div>'
+      + '<h1 class="sptx-titulo">Crie a sua <i>senha</i></h1>'
+      + '<p class="sptx-sub">A senha atual foi definida pelo administrador. Antes de abrir os painéis, troque por uma senha só sua, com pelo menos ' + SENHA_MIN + ' caracteres.</p>'
+      + '<button type="button" class="sptx-btn" onclick="location.href=\'' + base + 'configuracoes/#minha-senha\'">Trocar a minha senha</button>'
+      + '<button type="button" class="sptx-btn" style="background:none;color:#5F6C7B;margin-top:8px;box-shadow:none" onclick="window.sapataoSair()">Sair</button></div>';
+    function poe() { document.body.appendChild(d); }
+    if (document.body) poe(); else document.addEventListener('DOMContentLoaded', poe);
+  }
+  A.precisaTrocar = function () { return !!(A.user && A.user.trocar); };
+  A.modoServidor = MODO_SERVIDOR;
+  A.api = API_SITE;
 
   /* ---------- cofre da chave de publicação (compartilhado entre os painéis) ----------
      roadmap/chave.enc.json v2: {v:2, envelopes:{usuarioId:{i,salt,iv,ct}}} — o token
@@ -274,8 +399,8 @@
   var KEY_URL = API_BASE + 'roadmap/chave.enc.json';
   var C = window.sapataoChave = {
     ls: LS_TOKEN,
-    token: function () { try { return localStorage.getItem(LS_TOKEN) || ''; } catch (e) { return ''; } },
-    grava: function (t) { try { if (t) localStorage.setItem(LS_TOKEN, t); else localStorage.removeItem(LS_TOKEN); } catch (e) {} },
+    token: function () { return MODO_SERVIDOR ? (A.user ? 'sessao' : '') : leGuardado(LS_TOKEN); },
+    grava: function (t) { if (!MODO_SERVIDOR) guarda(LS_TOKEN, t); else guarda(LS_TOKEN, ''); },
     /* baixa e abre o envelope do usuário logado (quando falta a chave de
        publicação OU a chave dos dados — um token velho no aparelho não pode
        impedir a recuperação: o envelope traz o token atual e a DEK juntos) */
@@ -296,7 +421,7 @@
             return abreEnvelope(envs[i], A.pw).then(function (t) {
               if (!t) return tenta(i + 1);
               var p = null; try { p = JSON.parse(t); } catch (e) {}
-              if (p && p.t) { C.grava(p.t); if (p.k) window.sapataoCofre.gravaDek(p.k); }
+              if (p && (p.t || p.k)) { if (p.t) C.grava(p.t); if (p.k) window.sapataoCofre.gravaDek(p.k); }
               else C.grava(t);
               /* envelope antigo sem a DEK: tenta o canal reserva com o token
                  recém-recebido (dek.enc.json embrulhado pelo token) */
@@ -305,13 +430,36 @@
             }).catch(function () { return tenta(i + 1); });
           };
           return tenta(0);
-        }).catch(function () { return false; });
+        })
+        /* o envelope pode ainda trazer a chave antiga (senha não redefinida
+           depois da troca): nesse caso ela não fica no aparelho */
+        .then(function (r) { return window.sapataoCofre.confereChave().then(function () { return r; }); })
+        .catch(function () { return false; });
     },
     /* garante que o envelope do usuário logado existe na nuvem (v2),
        preservando os envelopes dos outros usuários */
     garante: function () {
       if (!A.user || !A.pw) return Promise.resolve(false);
       return C.garantePara(A.user.id, A.pw);
+    },
+    /* tira do cofre os envelopes de quem saiu (usuário desativado ou
+       excluído): sem envelope, a senha antiga não abre mais nada */
+    removeEnvelopes: function (ids) {
+      var token = C.token();
+      if (!token || !ids || !ids.length) return Promise.resolve(false);
+      var h = { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+      return fetch(KEY_URL + '?ref=main&t=' + Date.now(), { headers: h, cache: 'no-store' })
+        .then(function (g) { if (!g.ok) throw 0; return g.json(); })
+        .then(function (j) {
+          var doc = JSON.parse(b64dec(j.content));
+          if (!(doc.v === 2 && doc.envelopes)) return false;
+          var mudou = false;
+          ids.forEach(function (id) { if (doc.envelopes[id]) { delete doc.envelopes[id]; mudou = true; } });
+          if (!mudou) return true;
+          var body = { message: 'chore: remove do cofre a chave de usuários desativados (via Configurações)', branch: 'main', sha: j.sha,
+            content: b64enc(JSON.stringify({ v: 2, envelopes: doc.envelopes }, null, 2)) };
+          return fetch(KEY_URL, { method: 'PUT', headers: h, body: JSON.stringify(body) }).then(function (r) { return r.ok; });
+        }).catch(function () { return false; });
     },
     /* grava o envelope de QUALQUER usuário (o admin usa ao criar um usuário
        ou redefinir a senha dele — a chave chega sozinha nos aparelhos da pessoa) */
@@ -340,14 +488,15 @@
             return abreEnvelope(envelopes[userId], pw).then(function (t) {
               var p = null; try { p = JSON.parse(t); } catch (e) { p = { t: t }; }
               var dek = window.sapataoCofre.dek();
-              return (p.t === token && (!dek || p.k === dek)) ? 'ok' : 'regrava';
+              return ((MODO_SERVIDOR ? !p.t : p.t === token) && (!dek || p.k === dek)) ? 'ok' : 'regrava';
             }).catch(function () { return 'regrava'; });
           }
           return 'regrava';
         })
         .then(function (st) {
           if (st === 'ok') return true;
-          var carga = { t: token };
+          /* no modo servidor o envelope guarda só a chave dos dados: o token do GitHub não sai do servidor */
+          var carga = MODO_SERVIDOR ? {} : { t: token };
           if (window.sapataoCofre.dek()) carga.k = window.sapataoCofre.dek();
           return fechaEnvelope(JSON.stringify(carga), pw).then(function (env) {
             envelopes[userId] = env;
@@ -371,16 +520,22 @@
      válidos, os arquivos são ilegíveis. */
   var LS_DEK = 'sapatao-dek-v1';
   var DEK_URL = API_BASE + 'roadmap/dek.enc.json';
+  var KID_URL = API_BASE + 'roadmap/chave-id.json';
+  var kidRemotoP = null;
+  var CACHES_CONTEUDO = ['sapatao-conteudo-roadmap-v1', 'sapatao-conteudo-pe-v1', 'sapatao-conteudo-operacional-v1', 'sapatao-fluxo-v1', 'sapatao-negociacao-v1', 'sapatao-mercado-v1'];
   var K = window.sapataoCofre = {
     ls: LS_DEK,
-    dek: function () { try { return localStorage.getItem(LS_DEK) || ''; } catch (e) { return ''; } },
-    gravaDek: function (d) { try { if (d) localStorage.setItem(LS_DEK, d); else localStorage.removeItem(LS_DEK); } catch (e) {} },
+    dek: function () { return leGuardado(LS_DEK); },
+    gravaDek: function (d) { guarda(LS_DEK, d); },
     gera: function () { return b64bytes(crypto.getRandomValues(new Uint8Array(32))); },
     chaveAes: function () { return crypto.subtle.importKey('raw', bytesB64(K.dek()), 'AES-GCM', false, ['encrypt', 'decrypt']); },
     /* objeto → {enc:1, iv, ct} */
     cifra: function (obj) {
       var iv = crypto.getRandomValues(new Uint8Array(12));
-      return K.chaveAes().then(function (key) {
+      return K.confereChave().then(function (vale) {
+        if (!vale) throw new Error('a chave dos dados deste aparelho é antiga — saia e entre de novo');
+        return K.chaveAes();
+      }).then(function (key) {
         return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
       }).then(function (ct) { return { enc: 1, iv: b64bytes(iv), ct: b64bytes(new Uint8Array(ct)) }; });
     },
@@ -403,20 +558,162 @@
         .then(function (d) { if (d) { K.gravaDek(d); return true; } return false; })
         .catch(function () { return false; });
     },
-    publicaDekPeloToken: function () {
-      var token = C.token();
-      if (!token || !K.dek()) return Promise.resolve(false);
+    /* canal reserva desligado: quem tivesse a chave de publicação tirava
+       daqui a chave dos dados. A troca de chave apaga o arquivo; a leitura
+       acima continua só para aparelhos antigos durante a transição. */
+    publicaDekPeloToken: function () { return Promise.resolve(false); },
+
+    /* ---- identificador público da chave (roadmap/chave-id.json) ----
+       resumo SHA-256 truncado: diz qual chave vale, sem abrir nada. Com a
+       chave trocada, o aparelho que ainda tem a antiga a descarta e nenhuma
+       gravação sai cifrada com ela. Mesmo cálculo de scripts/chave-id.mjs. */
+    kidDe: function (b64) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode('sapatao-kid-v1:' + b64))
+        .then(function (d) { return b64bytes(new Uint8Array(d).slice(0, 9)); });
+    },
+    kidRemoto: function (forca) {
+      if (kidRemotoP && !forca) return kidRemotoP;
+      var hd = { 'Accept': 'application/vnd.github+json' };
+      if (C.token()) hd['Authorization'] = 'Bearer ' + C.token();
+      kidRemotoP = fetch(KID_URL + '?ref=main&t=' + Date.now(), { headers: hd, cache: 'no-store' })
+        .then(function (r) {
+          if (r.status === 404) return '';
+          if (!r.ok) throw 0;
+          return r.json().then(function (j) { var d = JSON.parse(b64dec(j.content)); return (d && d.kid) || ''; });
+        })
+        .catch(function () {
+          /* API fora (limite, rede): tenta o raw; sem resposta, não bloqueia nada */
+          return fetch(RAW_BASE + 'roadmap/chave-id.json?t=' + Date.now(), { cache: 'no-store' })
+            .then(function (r) { if (r.status === 404) return ''; if (!r.ok) throw 0; return r.json(); })
+            .then(function (d) { return typeof d === 'string' ? d : ((d && d.kid) || ''); })
+            .catch(function () { return null; });
+        });
+      return kidRemotoP;
+    },
+    /* true = chave local vale (ou não dá para saber); false = era antiga e saiu do aparelho */
+    confereChave: function () {
+      var local = K.dek();
+      if (!local || !window.crypto || !crypto.subtle) return Promise.resolve(true);
+      return K.kidRemoto().then(function (kr) {
+        if (!kr) return true;
+        return K.kidDe(local).then(function (kl) {
+          if (kl === kr) return true;
+          K.gravaDek('');
+          try { CACHES_CONTEUDO.forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
+          return false;
+        });
+      });
+    },
+
+    /* ---- TROCA DA CHAVE DOS DADOS (admin, pelas Configurações) ----
+       Gera uma chave nova, abre cada arquivo cifrado do repositório com a
+       antiga e fecha com a nova, num ÚNICO commit (nenhum aparelho vê metade
+       trocada). O cofre de envelopes recomeça só com o admin: os outros
+       recebem a chave nova quando o admin redefinir a senha de cada um.
+       o = { senha: senha do admin, token: chave de publicação a usar (a nova,
+       de preferência), progresso: function(texto) }. Devolve {dek, arquivos}. */
+    trocaChave: function (o) {
+      o = o || {};
+      var diz = o.progresso || function () {};
+      var token = MODO_SERVIDOR ? 'sessao' : (o.token || C.token() || '').trim();
+      if (!A.user || !A.user.admin) return Promise.reject(new Error('só o administrador troca a chave'));
+      if (!token) return Promise.reject(new Error('falta a chave de publicação'));
+      if (!K.dek()) return Promise.reject(new Error('este aparelho não tem a chave atual dos dados'));
       var h = { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-      var sha = null;
-      return fetch(DEK_URL + '?ref=main&t=' + Date.now(), { headers: h, cache: 'no-store' })
-        .then(function (g) { if (g.ok) return g.json(); }).then(function (j) { if (j) sha = j.sha; })
-        .catch(function () {})
-        .then(function () { return fechaEnvelope(K.dek(), token); })
-        .then(function (env) {
-          var body = { message: 'chore: guarda a chave dos dados criptografada (nuvem)', branch: 'main', content: b64enc(JSON.stringify(env, null, 2)) };
-          if (sha) body.sha = sha;
-          return fetch(DEK_URL, { method: 'PUT', headers: h, body: JSON.stringify(body) }).then(function (r) { return r.ok; });
-        }).catch(function () { return false; });
+      var GIT = 'https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/git/';
+      function api(caminho, opts) {
+        opts = opts || {};
+        return fetch(GIT + caminho, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined, cache: 'no-store' })
+          .then(function (r) {
+            if (r.status === 401 || r.status === 403) throw new Error('a chave de publicação não tem permissão (confira o token)');
+            if (!r.ok) { var e = new Error('GitHub respondeu ' + r.status + ' em ' + caminho.split('/')[0]); e.status = r.status; throw e; }
+            return r.json();
+          });
+      }
+      function textoDoBlob(b64) {
+        var bin = atob(b64.replace(/\s/g, ''));
+        var u8 = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+        return new TextDecoder().decode(u8);
+      }
+      var novaRaw = crypto.getRandomValues(new Uint8Array(32)), novaB64 = b64bytes(novaRaw);
+      var chaveVelha, chaveNova;
+      function rodada(tentativa) {
+        var base, arvore, entradas = [], n = 0;
+        diz('Lendo o estado atual do repositório…');
+        return api('ref/heads/main').then(function (ref) { base = ref.object.sha; return api('commits/' + base); })
+          .then(function (cm) { arvore = cm.tree.sha; return api('trees/' + arvore + '?recursive=1'); })
+          .then(function (tr) {
+            if (tr.truncated) throw new Error('a lista de arquivos veio incompleta');
+            var cands = tr.tree.filter(function (t) {
+              return t.type === 'blob' && /\.json$/.test(t.path) && !/^fluxo-pessoal\//.test(t.path) && !/^\.github\//.test(t.path);
+            });
+            var temReserva = tr.tree.some(function (t) { return t.path === 'roadmap/dek.enc.json'; });
+            var seq = Promise.resolve();
+            cands.forEach(function (t) {
+              seq = seq.then(function () {
+                return api('blobs/' + t.sha).then(function (b) {
+                  var txt = textoDoBlob(b.content), doc = null;
+                  try { doc = JSON.parse(txt); } catch (e) { return; }
+                  if (!doc || doc.enc !== 1 || !doc.iv || !doc.ct) return;
+                  diz('Recifrando ' + t.path + '…');
+                  return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytesB64(doc.iv) }, chaveVelha, bytesB64(doc.ct))
+                    .catch(function () { throw new Error('a chave atual não abre ' + t.path + ' — nada foi trocado'); })
+                    .then(function (pt) {
+                      var iv = crypto.getRandomValues(new Uint8Array(12));
+                      return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, chaveNova, pt).then(function (ct) {
+                        var saida = JSON.stringify({ enc: 1, iv: b64bytes(iv), ct: b64bytes(new Uint8Array(ct)) });
+                        entradas.push({ path: t.path, mode: '100644', type: 'blob', content: saida + (/\n$/.test(txt) ? '\n' : '') });
+                        n++;
+                      });
+                    });
+                });
+              });
+            });
+            return seq.then(function () {
+              if (!n) throw new Error('nenhum arquivo cifrado encontrado');
+              return K.kidDe(novaB64);
+            }).then(function (kid) {
+              entradas.push({ path: 'roadmap/chave-id.json', mode: '100644', type: 'blob', content: JSON.stringify({ v: 1, kid: kid, em: new Date().toISOString().slice(0, 10) }) + '\n' });
+              return fechaEnvelope(JSON.stringify(MODO_SERVIDOR ? { k: novaB64 } : { t: token, k: novaB64 }), o.senha);
+            }).then(function (env) {
+              var envs = {}; envs[A.user.id] = env;
+              entradas.push({ path: 'roadmap/chave.enc.json', mode: '100644', type: 'blob', content: JSON.stringify({ v: 2, envelopes: envs }, null, 2) });
+              if (temReserva) entradas.push({ path: 'roadmap/dek.enc.json', mode: '100644', type: 'blob', sha: null });
+              diz('Gravando ' + n + ' arquivos num único commit…');
+              return api('trees', { method: 'POST', body: { base_tree: arvore, tree: entradas } });
+            }).then(function (nt) {
+              return api('commits', { method: 'POST', body: { message: 'chore: troca a chave dos dados (' + n + ' arquivos recifrados, via Configurações)', tree: nt.sha, parents: [base] } });
+            }).then(function (nc) {
+              return api('refs/heads/main', { method: 'PATCH', body: { sha: nc.sha, force: false } });
+            });
+          })
+          .catch(function (e) {
+            /* alguém gravou no meio do caminho (o site ou uma rotina): refaz do zero */
+            if (e && (e.status === 422 || e.status === 409) && tentativa < 3) { diz('O repositório mudou durante a troca — refazendo…'); entradas = []; return rodada(tentativa + 1); }
+            throw e;
+          })
+          .then(function () { return n; });
+      }
+      /* no modo servidor o aparelho não tem o verificador da senha: a prova é
+         abrir o próprio envelope do cofre com ela */
+      var confereSenha = MODO_SERVIDOR
+        ? fetch(KEY_URL + '?ref=main&t=' + Date.now(), { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' })
+            .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+            .then(function (j) { var d = JSON.parse(b64dec(j.content)); return abreEnvelope(d.envelopes[A.user.id], o.senha); })
+            .then(function () { return true; }, function () { return false; })
+        : confere(A.user, o.senha);
+      return confereSenha.then(function (ok) {
+        if (!ok) throw new Error('a sua senha não confere');
+        return Promise.all([K.chaveAes(), crypto.subtle.importKey('raw', novaRaw, 'AES-GCM', false, ['encrypt', 'decrypt'])]);
+      }).then(function (ks) { chaveVelha = ks[0]; chaveNova = ks[1]; return rodada(1); })
+        .then(function (n) {
+          K.gravaDek(novaB64);
+          C.grava(token);
+          kidRemotoP = null;
+          try { CACHES_CONTEUDO.forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
+          return { dek: novaB64, arquivos: n };
+        });
     }
   };
 
@@ -452,6 +749,7 @@
     '.sptx-card.shake{animation:sptxShake .35s}';
 
   /* ---------- fluxo de entrada ---------- */
+  if (MODO_SERVIDOR) { fluxoServidor(); return; }
   var s = leSessao();
   /* login programático (usado pelo campo de login da central) */
   A.login = function (usuarioDig, senha, lembrar) {
@@ -470,7 +768,7 @@
     }
     function fim(u) {
       if (!u) return null;
-      gravaSessao(u, verif(u), lembrar !== false);
+      gravaSessao(u, verif(u), lembrar === true);
       A.user = u; A.pw = senha;
       anuncia();
       try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
@@ -527,7 +825,7 @@
            loop); se a página estava aberta (acesso revogado agora), recarrega
            uma única vez para limpar o conteúdo — na volta o cache já vem
            atualizado e a tela trava antes de qualquer conteúdo entrar */
-        if (!A.temAcesso(APP)) {
+        if (!A.temAcesso(APP) || precisaTrocar(v)) {
           if (document.querySelector('.sptx-gate')) return;
           location.reload(); return;
         }
@@ -537,6 +835,7 @@
         anuncia();
       }).catch(function () {});
       if (!A.temAcesso(APP)) { bloqueiaSemAcesso(); return; }
+      if (precisaTrocar(u)) { bloqueiaTrocaSenha(); return; }
       anuncia();
       return; /* sessão válida — libera a página */
     }
@@ -547,7 +846,7 @@
 
   /* O login agora acontece só na CENTRAL DE ACESSOS.
      Sem sessão válida aqui, a página manda para lá. */
-  function vaiParaCentral() { location.replace('../index.html'); }
+  function vaiParaCentral() { location.replace(MODO_SERVIDOR ? RAIZ_SITE + 'index.html' : '../index.html'); }
   if (s) {
     /* a sessão não bateu com o cache local: confere a lista fresca
        (senha trocada há pouco / usuário novo) antes de redirecionar */
@@ -561,10 +860,69 @@
       A.user = v;
       if (!A.temAcesso(APP)) { document.documentElement.classList.remove('sptx-lock'); bloqueiaSemAcesso(); return; }
       document.documentElement.classList.remove('sptx-lock');
+      if (precisaTrocar(v)) { bloqueiaTrocaSenha(); return; }
       anuncia();
       try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
     }).catch(function () { vaiParaCentral(); });
   } else {
     vaiParaCentral();
+  }
+  /* ---------- entrada no modo servidor ----------
+     A sessão é o cookie HttpOnly; o navegador só pergunta ao servidor quem
+     está logado (/api/eu). Nada de verificador de senha no aparelho. */
+  function fluxoServidor() {
+    A.login = function (usuarioDig, senha, lembrar) {
+      A.ultimoErro = '';
+      if (!usuarioDig || !senha) return Promise.resolve(null);
+      return fetch(API_SITE + 'login', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario: usuarioDig, senha: senha, lembrar: lembrar === true })
+      }).then(function (r) {
+        if (r.status === 429) { A.ultimoErro = 'Muitas tentativas erradas. Espere 15 minutos e tente de novo.'; return null; }
+        if (!r.ok) return null;
+        return r.json();
+      }).then(function (j) {
+        if (!j || !j.user) return null;
+        try { if (lembrar === true) localStorage.setItem(LS_LEMBRAR, '1'); else localStorage.removeItem(LS_LEMBRAR); } catch (e) {}
+        realocaChaves();
+        try { sessionStorage.setItem(CHAVE, JSON.stringify({ u: j.user.id, servidor: 1 })); } catch (e) {}
+        A.user = j.user; A.usuarios = [j.user]; A.pw = senha;
+        anuncia();
+        try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
+        return j.user;
+      }).catch(function () { A.ultimoErro = 'Sem conexão com o servidor do painel.'; return null; });
+    };
+    if (APP !== 'central') { garanteEstilo(); document.documentElement.classList.add('sptx-lock'); }
+    fetch(API_SITE + 'eu', { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) { if (r.status === 401) return null; if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) {
+        if (!j || !j.user) {
+          /* sem sessão no servidor: nenhuma chave fica no aparelho */
+          [LS_TOKEN, 'sapatao-dek-v1'].forEach(function (k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} });
+          try { CACHES_CONTEUDO.forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
+          if (APP !== 'central') vaiParaCentral();
+          return;
+        }
+        A.user = j.user; A.usuarios = [j.user];
+        if (APP === 'central') { anuncia(); return; }
+        document.documentElement.classList.remove('sptx-lock');
+        if (!A.temAcesso(APP)) { bloqueiaSemAcesso(); return; }
+        if (precisaTrocar(A.user)) { bloqueiaTrocaSenha(); return; }
+        anuncia();
+        try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
+      })
+      .catch(function () {
+        if (APP === 'central') return;
+        document.documentElement.classList.remove('sptx-lock');
+        garanteEstilo();
+        document.documentElement.classList.add('sptx-lock');
+        var d = document.createElement('div');
+        d.className = 'sptx-gate';
+        d.innerHTML = '<div class="sptx-card"><div class="sptx-eyebrow">Estação Sapatão</div><h1 class="sptx-titulo">Sem <i>conexão</i></h1>'
+          + '<p class="sptx-sub">Não consegui falar com o servidor do painel. Confira a internet e recarregue a página.</p>'
+          + '<button type="button" class="sptx-btn" onclick="location.reload()">Tentar de novo</button></div>';
+        function poe() { document.body.appendChild(d); }
+        if (document.body) poe(); else document.addEventListener('DOMContentLoaded', poe);
+      });
   }
 })();

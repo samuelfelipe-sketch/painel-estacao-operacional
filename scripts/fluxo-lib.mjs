@@ -9,6 +9,9 @@
    Nada aqui imprime valores de negócio. */
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { resolve } from 'path';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { confereKid } from './chave-id.mjs';
 
 /* constantes de DADOS (literais puros, na ordem em que aparecem no HTML).
    MESES e PERIODOS ficam de fora: são derivadas por código a partir de DATA. */
@@ -79,7 +82,22 @@ export function chave() {
   if (!b) falha('SAPATAO_DEK não está no ambiente — guarde a chave dos dados (valor de sapatao-dek-v1 de um aparelho autorizado) como segredo do ambiente.');
   let k; try { k = Buffer.from(b, 'base64'); } catch (e) { k = Buffer.alloc(0); }
   if (k.length !== 32) falha('SAPATAO_DEK não tem o formato esperado (base64 de 32 bytes).');
+  confereKid(k, falha);
   return k;
+}
+/* mapa de contas bancárias (dígitos finais da conta → empresa, por banco)
+   fica CIFRADO em fluxo/regras.enc.json → contas: {ofx:[[banco, dígitos,
+   empresa]…], bradesco:{conta: empresa}} — nunca no código público. */
+let _contas = null;
+export function contasBancarias() {
+  if (_contas) return _contas;
+  const arq = fileURLToPath(new URL('../fluxo/regras.enc.json', import.meta.url));
+  let doc;
+  try { doc = JSON.parse(readFileSync(arq, 'utf8')); } catch (e) { falha('não consegui ler fluxo/regras.enc.json (mapa de contas bancárias).'); }
+  const r = decifra(doc, chave(), 'fluxo/regras.enc.json');
+  if (!r || !r.contas || !Array.isArray(r.contas.ofx)) falha('o mapa de contas bancárias não está em fluxo/regras.enc.json (campo contas).');
+  _contas = { ofx: r.contas.ofx, bradesco: r.contas.bradesco || {} };
+  return _contas;
 }
 export function cifra(obj, k) {
   const iv = randomBytes(12);

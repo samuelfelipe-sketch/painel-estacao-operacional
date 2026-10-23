@@ -1,0 +1,79 @@
+name: Publica o painel na HostGator
+
+# Envia SÓ o código do site (HTML, JS, CSS, ícones e a API em PHP) para
+# painel.estacaosapatao.com.br. Os dados nunca vão para lá: ficam no
+# repositório e são entregues pela API, com login e permissão.
+# Precisa dos segredos HOSTGATOR_FTP_HOST, HOSTGATOR_FTP_USUARIO e
+# HOSTGATOR_FTP_SENHA (Settings > Secrets and variables > Actions).
+# Sem eles, o job só avisa e termina.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.html'
+      - '**.js'
+      - '**.css'
+      - '**.png'
+      - '**.svg'
+      - '**.webmanifest'
+      - 'manifest.json'
+      - 'servidor/**'
+      - '.github/workflows/deploy-hostgator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-hostgator
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Monta a pasta do site (só código)
+        run: |
+          set -euo pipefail
+          rm -rf dist && mkdir dist
+          # páginas, scripts do navegador, estilos e ícones — fora das pastas de rotina
+          find . -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' -o -name '*.png' -o -name '*.svg' -o -name '*.ico' -o -name '*.webmanifest' \) \
+            -not -path './.git/*' -not -path './.github/*' -not -path './scripts/*' -not -path './servidor/*' \
+            -not -path './node_modules/*' -not -path './fluxo-pessoal/tools/*' -not -path './dist/*' \
+            -print0 | while IFS= read -r -d '' f; do mkdir -p "dist/$(dirname "$f")"; cp "$f" "dist/$f"; done
+          cp manifest.json dist/manifest.json
+          mkdir -p dist/api
+          cp servidor/api/index.php servidor/api/.htaccess dist/api/
+          cp servidor/raiz.htaccess dist/.htaccess
+          cp servidor/fluxo-pessoal.htaccess dist/fluxo-pessoal/.htaccess
+          # trava: nenhum arquivo de dados pode estar na pasta
+          if find dist -type f -name '*.json' ! -path 'dist/manifest.json' | grep -q .; then
+            echo "ERRO: arquivo .json de dados na pasta de publicação"; find dist -name '*.json'; exit 1
+          fi
+          find dist -type f | sort
+
+      - name: Envia por FTP com TLS
+        env:
+          FTP_HOST: ${{ secrets.HOSTGATOR_FTP_HOST }}
+          FTP_USUARIO: ${{ secrets.HOSTGATOR_FTP_USUARIO }}
+          FTP_SENHA: ${{ secrets.HOSTGATOR_FTP_SENHA }}
+        run: |
+          set -euo pipefail
+          if [ -z "${FTP_HOST}" ] || [ -z "${FTP_USUARIO}" ] || [ -z "${FTP_SENHA}" ]; then
+            echo "Segredos da HostGator ainda não cadastrados — nada publicado."; exit 0
+          fi
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp >/dev/null
+          lftp -u "${FTP_USUARIO},${FTP_SENHA}" "${FTP_HOST}" <<'LFTP'
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ssl:verify-certificate true
+          set net:max-retries 3
+          set net:timeout 30
+          mirror --reverse --delete --verbose=1 --parallel=4 \
+            --exclude-glob .well-known/ --exclude-glob cgi-bin/ --exclude-glob .user.ini --exclude-glob error_log \
+            dist/ ./
+          bye
+          LFTP
