@@ -177,7 +177,7 @@ async function entrar(){
   const erro=document.getElementById('lg-erro');
   erro.classList.remove('on');
   const user=await A.login(u,s,document.getElementById('lg-lembrar').checked);
-  if(!user){erro.classList.add('on');return;}
+  if(!user){erro.textContent=(A.ultimoErro||'Usuário ou senha incorretos. Tente de novo.');erro.classList.add('on');return;}
   document.getElementById('lg-senha').value='';
   pintaTudo();
   /* senha provisória do administrador: primeiro a pessoa cria a dela */

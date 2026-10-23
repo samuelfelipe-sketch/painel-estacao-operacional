@@ -210,6 +210,13 @@ function pintaChaves(){
   const t=!!token(),d=!!window.sapataoCofre.dek();
   const ct=document.getElementById('cs-token');ct.textContent=t?'presente':'ausente';ct.className='pill '+(t?'ok':'off');
   const cd=document.getElementById('cs-dek');cd.textContent=d?'presente':'ausente';cd.className='pill '+(d?'ok':'off');
+  if(window.sapataoAuth&&window.sapataoAuth.modoServidor){
+    /* modo servidor: o token do GitHub vive só no servidor do painel */
+    ct.textContent='no servidor';ct.className='pill ok';
+    document.getElementById('cs-tem').hidden=true;document.getElementById('cs-sem').hidden=true;
+    const tk=document.getElementById('tc-token');if(tk)tk.hidden=true;
+    return;
+  }
   document.getElementById('cs-tem').hidden=!t;
   document.getElementById('cs-sem').hidden=t;
 }
@@ -258,6 +265,23 @@ snBtn.addEventListener('click',async ()=>{
   const nova=document.getElementById('sn-nova').value;
   const conf=document.getElementById('sn-conf').value;
   if(!A||!A.user){snDiz('Recarregue a página e tente de novo.',true);return;}
+  if(A.modoServidor){
+    /* modo servidor: o próprio servidor confere a senha atual e aplica a regra */
+    const probl0=A.senhaProblema(nova,A.user);if(probl0){snDiz(probl0,true);return;}
+    if(nova!==conf){snDiz('A confirmação não bate com a senha nova.',true);return;}
+    snBtn.disabled=true;snDiz('Gravando senha nova…');
+    try{
+      const r=await fetch(A.api+'senha',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({atual:atual,nova:nova})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(j.erro||('HTTP '+r.status));
+      Object.assign(A.user,j.user||{});delete A.user.trocar;A.pw=nova;
+      await window.sapataoChave.garante();
+      ['sn-atual','sn-nova','sn-conf'].forEach(i=>document.getElementById(i).value='');
+      const av=document.getElementById('sn-aviso-trocar');if(av)av.hidden=true;
+      snDiz('Senha alterada! Os seus outros aparelhos vão pedir a senha nova.');
+    }catch(e){snDiz('Não consegui gravar ('+e.message+').',true);}
+    snBtn.disabled=false;return;
+  }
   if(!token()){snDiz('Este aparelho precisa da chave de publicação para gravar a senha — fale com o administrador.',true);return;}
   const probl=A.senhaProblema(nova,A.user);if(probl){snDiz(probl,true);return;}
   if(nova===atual){snDiz('A senha nova precisa ser diferente da atual.',true);return;}
@@ -402,8 +426,8 @@ document.getElementById('us-salvar').addEventListener('click',async ()=>{
     if(!A||!A.user||!A.user.admin){diz('Só o administrador troca a chave.',true);return;}
     const tk=document.getElementById('tc-token').value.trim(),pw=document.getElementById('tc-senha').value;
     if(!document.getElementById('tc-ok').checked){diz('Marque a caixa depois de combinar o horário com a equipe.',true);return;}
-    if(!tk){diz('Cole a chave de publicação nova. Crie o token no GitHub antes, conforme o guia.',true);return;}
-    if(tk===window.sapataoChave.token()){diz('Esse é o token que já está em uso. Crie um token novo no GitHub para a troca valer de verdade.',true);return;}
+    if(!A.modoServidor&&!tk){diz('Cole a chave de publicação nova. Crie o token no GitHub antes, conforme o guia.',true);return;}
+    if(!A.modoServidor&&tk===window.sapataoChave.token()){diz('Esse é o token que já está em uso. Crie um token novo no GitHub para a troca valer de verdade.',true);return;}
     if(!pw){diz('Digite a sua senha.',true);return;}
     if(!confirm('Trocar a chave dos dados agora? Todos, menos você, perdem o acesso até você redefinir a senha de cada um.'))return;
     btn.disabled=true;

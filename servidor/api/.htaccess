@@ -1,0 +1,5 @@
+# Toda chamada /api/* cai no index.php (o porteiro)
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]

@@ -1,0 +1,33 @@
+# =====================================================================
+# Estação Sapatão — painel.estacaosapatao.com.br (vai como public/.htaccess)
+# Publicado pelo workflow deploy-hostgator.yml. Não editar no servidor.
+# =====================================================================
+Options -Indexes
+DirectoryIndex index.html
+RewriteEngine On
+
+# HTTPS sempre
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# app pessoal: o arquivo cifrado dele vem pela API (login próprio do app)
+RewriteRule ^fluxo-pessoal/dados\.enc\.json$ api/index.php?rota=pessoal [QSA,L]
+
+# dados nunca saem direto do disco: só pela API, com login e permissão
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteCond %{REQUEST_URI} !/manifest\.json$
+RewriteRule \.(json|md|mjs|log|yml|yaml|php|sh|txt)$ - [F,L]
+
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "same-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'self'; manifest-src 'self'"
+  <FilesMatch "\.(html|js|css)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

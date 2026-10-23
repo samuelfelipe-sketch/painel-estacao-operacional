@@ -53,6 +53,44 @@
   var LS_TOKEN = 'sapatao-sync-token';
   var APP = (typeof window.SAPATAO_APP === 'string' && window.SAPATAO_APP) || 'roadmap';
 
+  /* ---------- MODO SERVIDOR (painel.estacaosapatao.com.br) ----------
+     Fora do GitHub Pages, o site fala com a API própria (/api/, na
+     HostGator): o login é conferido no servidor (cookie de sessão
+     HttpOnly), o token do GitHub fica só lá e cada arquivo é entregue
+     conforme a permissão do usuário. As páginas continuam chamando os
+     endereços do GitHub; aqui eles viram /api/... sem mexer em cada painel. */
+  var MODO_SERVIDOR = !/(^|\.)github\.io$/i.test(location.hostname);
+  var RAIZ_SITE = (function () {
+    try { var sc = document.currentScript || document.querySelector('script[src*="auth.js"]'); if (sc && sc.src) return sc.src.replace(/roadmap\/auth\.js.*$/, ''); } catch (e) {}
+    return location.origin + '/';
+  })();
+  var API_SITE = RAIZ_SITE + 'api/';
+  if (MODO_SERVIDOR && window.fetch && !window.fetch.__sapatao) {
+    var fetchOriginal = window.fetch.bind(window);
+    var PREFIXOS = [
+      ['https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/', API_SITE + 'raw/'],
+      ['https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/', API_SITE + 'contents/'],
+      ['https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/git/', API_SITE + 'git/']
+    ];
+    var fetchSapatao = function (url, opts) {
+      if (typeof url === 'string') {
+        for (var i = 0; i < PREFIXOS.length; i++) {
+          if (url.indexOf(PREFIXOS[i][0]) === 0) {
+            url = PREFIXOS[i][1] + url.slice(PREFIXOS[i][0].length);
+            opts = Object.assign({}, opts || {});
+            /* o "token" das páginas vira só um marcador: quem autentica é o cookie */
+            if (opts.headers) { var h = Object.assign({}, opts.headers); delete h.Authorization; delete h.authorization; opts.headers = h; }
+            opts.credentials = 'same-origin';
+            break;
+          }
+        }
+      }
+      return fetchOriginal(url, opts);
+    };
+    fetchSapatao.__sapatao = true;
+    window.fetch = fetchSapatao;
+  }
+
   /* SHA-256 em JS puro (domínio público — geraintluff/sha256) */
   function sha256(ascii) {
     ascii = unescape(encodeURIComponent(ascii)); // acentos viram bytes UTF-8
@@ -198,7 +236,10 @@
      Com "manter conectado", a sessão e as chaves (publicação e dados) ficam
      no localStorage. Sem, ficam só no sessionStorage: somem ao fechar a aba
      ou o navegador, e nada sobra num computador compartilhado. */
-  function lembrado() { try { return !!localStorage.getItem(CHAVE); } catch (e) { return false; } }
+  var LS_LEMBRAR = 'sapatao-lembrar-v1';
+  function lembrado() {
+    try { return MODO_SERVIDOR ? localStorage.getItem(LS_LEMBRAR) === '1' : !!localStorage.getItem(CHAVE); } catch (e) { return false; }
+  }
   function leGuardado(k) {
     try { var v = sessionStorage.getItem(k); if (v) return v; } catch (e) {}
     try { return localStorage.getItem(k) || ''; } catch (e) { return ''; }
@@ -243,6 +284,10 @@
     get hash() { return verif(A.user); }
   };
   window.sapataoSair = function () {
+    if (MODO_SERVIDOR) {
+      try { fetch(API_SITE + 'sair', { method: 'POST', credentials: 'same-origin', keepalive: true }).catch(function () {}); } catch (e) {}
+      try { localStorage.removeItem(LS_LEMBRAR); } catch (e) {}
+    }
     try { sessionStorage.removeItem(CHAVE); } catch (e) {}
     try { localStorage.removeItem(CHAVE); } catch (e) {}
     /* a chave de publicação e a chave dos dados saem do aparelho junto com a
@@ -320,6 +365,8 @@
     if (document.body) poe(); else document.addEventListener('DOMContentLoaded', poe);
   }
   A.precisaTrocar = function () { return !!(A.user && A.user.trocar); };
+  A.modoServidor = MODO_SERVIDOR;
+  A.api = API_SITE;
 
   /* ---------- cofre da chave de publicação (compartilhado entre os painéis) ----------
      roadmap/chave.enc.json v2: {v:2, envelopes:{usuarioId:{i,salt,iv,ct}}} — o token
@@ -352,8 +399,8 @@
   var KEY_URL = API_BASE + 'roadmap/chave.enc.json';
   var C = window.sapataoChave = {
     ls: LS_TOKEN,
-    token: function () { return leGuardado(LS_TOKEN); },
-    grava: function (t) { guarda(LS_TOKEN, t); },
+    token: function () { return MODO_SERVIDOR ? (A.user ? 'sessao' : '') : leGuardado(LS_TOKEN); },
+    grava: function (t) { if (!MODO_SERVIDOR) guarda(LS_TOKEN, t); else guarda(LS_TOKEN, ''); },
     /* baixa e abre o envelope do usuário logado (quando falta a chave de
        publicação OU a chave dos dados — um token velho no aparelho não pode
        impedir a recuperação: o envelope traz o token atual e a DEK juntos) */
@@ -374,7 +421,7 @@
             return abreEnvelope(envs[i], A.pw).then(function (t) {
               if (!t) return tenta(i + 1);
               var p = null; try { p = JSON.parse(t); } catch (e) {}
-              if (p && p.t) { C.grava(p.t); if (p.k) window.sapataoCofre.gravaDek(p.k); }
+              if (p && (p.t || p.k)) { if (p.t) C.grava(p.t); if (p.k) window.sapataoCofre.gravaDek(p.k); }
               else C.grava(t);
               /* envelope antigo sem a DEK: tenta o canal reserva com o token
                  recém-recebido (dek.enc.json embrulhado pelo token) */
@@ -441,14 +488,15 @@
             return abreEnvelope(envelopes[userId], pw).then(function (t) {
               var p = null; try { p = JSON.parse(t); } catch (e) { p = { t: t }; }
               var dek = window.sapataoCofre.dek();
-              return (p.t === token && (!dek || p.k === dek)) ? 'ok' : 'regrava';
+              return ((MODO_SERVIDOR ? !p.t : p.t === token) && (!dek || p.k === dek)) ? 'ok' : 'regrava';
             }).catch(function () { return 'regrava'; });
           }
           return 'regrava';
         })
         .then(function (st) {
           if (st === 'ok') return true;
-          var carga = { t: token };
+          /* no modo servidor o envelope guarda só a chave dos dados: o token do GitHub não sai do servidor */
+          var carga = MODO_SERVIDOR ? {} : { t: token };
           if (window.sapataoCofre.dek()) carga.k = window.sapataoCofre.dek();
           return fechaEnvelope(JSON.stringify(carga), pw).then(function (env) {
             envelopes[userId] = env;
@@ -567,7 +615,7 @@
     trocaChave: function (o) {
       o = o || {};
       var diz = o.progresso || function () {};
-      var token = (o.token || C.token() || '').trim();
+      var token = MODO_SERVIDOR ? 'sessao' : (o.token || C.token() || '').trim();
       if (!A.user || !A.user.admin) return Promise.reject(new Error('só o administrador troca a chave'));
       if (!token) return Promise.reject(new Error('falta a chave de publicação'));
       if (!K.dek()) return Promise.reject(new Error('este aparelho não tem a chave atual dos dados'));
@@ -627,7 +675,7 @@
               return K.kidDe(novaB64);
             }).then(function (kid) {
               entradas.push({ path: 'roadmap/chave-id.json', mode: '100644', type: 'blob', content: JSON.stringify({ v: 1, kid: kid, em: new Date().toISOString().slice(0, 10) }) + '\n' });
-              return fechaEnvelope(JSON.stringify({ t: token, k: novaB64 }), o.senha);
+              return fechaEnvelope(JSON.stringify(MODO_SERVIDOR ? { k: novaB64 } : { t: token, k: novaB64 }), o.senha);
             }).then(function (env) {
               var envs = {}; envs[A.user.id] = env;
               entradas.push({ path: 'roadmap/chave.enc.json', mode: '100644', type: 'blob', content: JSON.stringify({ v: 2, envelopes: envs }, null, 2) });
@@ -647,7 +695,15 @@
           })
           .then(function () { return n; });
       }
-      return confere(A.user, o.senha).then(function (ok) {
+      /* no modo servidor o aparelho não tem o verificador da senha: a prova é
+         abrir o próprio envelope do cofre com ela */
+      var confereSenha = MODO_SERVIDOR
+        ? fetch(KEY_URL + '?ref=main&t=' + Date.now(), { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' })
+            .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+            .then(function (j) { var d = JSON.parse(b64dec(j.content)); return abreEnvelope(d.envelopes[A.user.id], o.senha); })
+            .then(function () { return true; }, function () { return false; })
+        : confere(A.user, o.senha);
+      return confereSenha.then(function (ok) {
         if (!ok) throw new Error('a sua senha não confere');
         return Promise.all([K.chaveAes(), crypto.subtle.importKey('raw', novaRaw, 'AES-GCM', false, ['encrypt', 'decrypt'])]);
       }).then(function (ks) { chaveVelha = ks[0]; chaveNova = ks[1]; return rodada(1); })
@@ -693,6 +749,7 @@
     '.sptx-card.shake{animation:sptxShake .35s}';
 
   /* ---------- fluxo de entrada ---------- */
+  if (MODO_SERVIDOR) { fluxoServidor(); return; }
   var s = leSessao();
   /* login programático (usado pelo campo de login da central) */
   A.login = function (usuarioDig, senha, lembrar) {
@@ -789,7 +846,7 @@
 
   /* O login agora acontece só na CENTRAL DE ACESSOS.
      Sem sessão válida aqui, a página manda para lá. */
-  function vaiParaCentral() { location.replace('../index.html'); }
+  function vaiParaCentral() { location.replace(MODO_SERVIDOR ? RAIZ_SITE + 'index.html' : '../index.html'); }
   if (s) {
     /* a sessão não bateu com o cache local: confere a lista fresca
        (senha trocada há pouco / usuário novo) antes de redirecionar */
@@ -809,5 +866,63 @@
     }).catch(function () { vaiParaCentral(); });
   } else {
     vaiParaCentral();
+  }
+  /* ---------- entrada no modo servidor ----------
+     A sessão é o cookie HttpOnly; o navegador só pergunta ao servidor quem
+     está logado (/api/eu). Nada de verificador de senha no aparelho. */
+  function fluxoServidor() {
+    A.login = function (usuarioDig, senha, lembrar) {
+      A.ultimoErro = '';
+      if (!usuarioDig || !senha) return Promise.resolve(null);
+      return fetch(API_SITE + 'login', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario: usuarioDig, senha: senha, lembrar: lembrar === true })
+      }).then(function (r) {
+        if (r.status === 429) { A.ultimoErro = 'Muitas tentativas erradas. Espere 15 minutos e tente de novo.'; return null; }
+        if (!r.ok) return null;
+        return r.json();
+      }).then(function (j) {
+        if (!j || !j.user) return null;
+        try { if (lembrar === true) localStorage.setItem(LS_LEMBRAR, '1'); else localStorage.removeItem(LS_LEMBRAR); } catch (e) {}
+        realocaChaves();
+        try { sessionStorage.setItem(CHAVE, JSON.stringify({ u: j.user.id, servidor: 1 })); } catch (e) {}
+        A.user = j.user; A.usuarios = [j.user]; A.pw = senha;
+        anuncia();
+        try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
+        return j.user;
+      }).catch(function () { A.ultimoErro = 'Sem conexão com o servidor do painel.'; return null; });
+    };
+    if (APP !== 'central') { garanteEstilo(); document.documentElement.classList.add('sptx-lock'); }
+    fetch(API_SITE + 'eu', { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) { if (r.status === 401) return null; if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) {
+        if (!j || !j.user) {
+          /* sem sessão no servidor: nenhuma chave fica no aparelho */
+          [LS_TOKEN, 'sapatao-dek-v1'].forEach(function (k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} });
+          try { CACHES_CONTEUDO.forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
+          if (APP !== 'central') vaiParaCentral();
+          return;
+        }
+        A.user = j.user; A.usuarios = [j.user];
+        if (APP === 'central') { anuncia(); return; }
+        document.documentElement.classList.remove('sptx-lock');
+        if (!A.temAcesso(APP)) { bloqueiaSemAcesso(); return; }
+        if (precisaTrocar(A.user)) { bloqueiaTrocaSenha(); return; }
+        anuncia();
+        try { document.dispatchEvent(new CustomEvent('sapatao-login')); } catch (e) {}
+      })
+      .catch(function () {
+        if (APP === 'central') return;
+        document.documentElement.classList.remove('sptx-lock');
+        garanteEstilo();
+        document.documentElement.classList.add('sptx-lock');
+        var d = document.createElement('div');
+        d.className = 'sptx-gate';
+        d.innerHTML = '<div class="sptx-card"><div class="sptx-eyebrow">Estação Sapatão</div><h1 class="sptx-titulo">Sem <i>conexão</i></h1>'
+          + '<p class="sptx-sub">Não consegui falar com o servidor do painel. Confira a internet e recarregue a página.</p>'
+          + '<button type="button" class="sptx-btn" onclick="location.reload()">Tentar de novo</button></div>';
+        function poe() { document.body.appendChild(d); }
+        if (document.body) poe(); else document.addEventListener('DOMContentLoaded', poe);
+      });
   }
 })();
