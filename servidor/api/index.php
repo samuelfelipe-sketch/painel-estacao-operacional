@@ -233,19 +233,30 @@ function bloqueado(string $usuarioDig): bool {
 }
 
 /* --------------------------------------------------------------- sessão */
+/* o cookie é controlado aqui (um só Set-Cookie). Com HTTPS ele leva o
+   prefixo __Host-: só vale neste endereço exato e nenhum outro subdomínio
+   da empresa consegue sobrescrevê-lo. */
+function nomeCookie(): string { global $CFG; return $CFG['cookie_seguro'] ? '__Host-sapatao' : 'sapatao_sessao'; }
 function iniciaSessao(): void {
     global $CFG;
-    ini_set('session.use_strict_mode', '1');
+    ini_set('session.use_cookies', '0');
     ini_set('session.use_only_cookies', '1');
+    ini_set('session.use_trans_sid', '0');
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.cache_limiter', '');
     ini_set('session.gc_maxlifetime', (string)($CFG['lembrar_dias'] * 86400));
     session_save_path($CFG['dir_privado'] . '/sessoes');
-    session_name('sapatao_sessao');
-    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => (bool)$CFG['cookie_seguro'], 'httponly' => true, 'samesite' => 'Strict']);
-    session_start();
+    session_name('sapatao');
+    $c = (string)($_COOKIE[nomeCookie()] ?? '');
+    if ($c !== '' && preg_match('/^[A-Za-z0-9,-]{22,128}$/', $c)) { session_id($c); session_start(); }
+}
+function abreSessaoNova(): void {
+    if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+    session_regenerate_id(true); /* id novo depois do login: nada de sessão plantada antes */
 }
 function cookieSessao(bool $lembrar): void {
     global $CFG;
-    setcookie(session_name(), session_id(), [
+    setcookie(nomeCookie(), session_id(), [
         'expires' => $lembrar ? time() + $CFG['lembrar_dias'] * 86400 : 0,
         'path' => '/', 'secure' => (bool)$CFG['cookie_seguro'], 'httponly' => true, 'samesite' => 'Strict',
     ]);
@@ -254,7 +265,7 @@ function encerraSessao(): void {
     global $CFG;
     $_SESSION = [];
     if (session_status() === PHP_SESSION_ACTIVE) session_destroy();
-    setcookie('sapatao_sessao', '', ['expires' => time() - 3600, 'path' => '/', 'secure' => (bool)$CFG['cookie_seguro'], 'httponly' => true, 'samesite' => 'Strict']);
+    setcookie(nomeCookie(), '', ['expires' => time() - 3600, 'path' => '/', 'secure' => (bool)$CFG['cookie_seguro'], 'httponly' => true, 'samesite' => 'Strict']);
 }
 /* usuário da sessão, conferido de novo contra a lista a cada pedido:
    desativado, senha trocada ou sessão vencida = fora na hora */
@@ -388,7 +399,7 @@ if ($ROTA === 'login' && $M === 'POST') {
         sai(401, 'usuário ou senha incorretos');
     }
     limpaFalhas('u:' . $alvo);
-    session_regenerate_id(true);
+    abreSessaoNova();
     $lembrar = !empty($b['lembrar']);
     $_SESSION = ['uid' => $achou['id'], 'verif' => sha1(verificador($achou)), 'lembrar' => $lembrar, 'criada' => time(),
                  'expira' => time() + ($lembrar ? $CFG['lembrar_dias'] * 86400 : $CFG['sessao_horas'] * 3600)];
