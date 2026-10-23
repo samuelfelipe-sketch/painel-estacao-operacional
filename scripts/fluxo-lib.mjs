@@ -125,9 +125,16 @@ export function fornecedorDoMemo(desc, mapa) {
   const nome = nomeDoMemo(desc); if (!nome) return null;
   const pal = tokens(nome); if (!pal.length) return null;
   const idx = mapa.idx || {}, nomes = mapa.nomes || {}, apr = mapa.aprendidos || {};
+  /* aprendidos: a chave pode ter nascido de um memo truncado (XLS do Sicredi corta em ~15
+     letras: "NFS FOOD SERVIC") e o mesmo fornecedor chegar completo pelo OFX ("NFS FOOD
+     SERVICE LTDA") — vale o prefixo nos dois sentidos, se for único; nome curto (JTI) vale
+     quando é a palavra inteira */
+  const ka = Object.keys(apr);
   for (let i = 0; i < Math.min(pal.length, 3); i++) {
-    const n = chave14(pal.slice(i).join(' ')); if (n.length < 4) continue;
-    if (apr[n] && apr[n].conta) return { conta: apr[n].conta, chave: n, fonte: 'aprendido' };
+    const n = chave14(pal.slice(i).join(' '));
+    if (n.length >= 3 && apr[n] && apr[n].conta && (n.length >= 4 || pal.slice(i).length === 1 || chave14(pal[i]) === n)) return { conta: apr[n].conta, chave: n, fonte: 'aprendido' };
+    if (n.length >= 8) { const c = ka.filter(k => k.length >= 8 && (n.startsWith(k) || k.startsWith(n)) && apr[k].conta); if (c.length === 1) return { conta: apr[c[0]].conta, chave: c[0], fonte: 'aprendido~prefixo' }; }
+    if (n.length < 4) continue;
     if (idx[n] && (n.length === 14 || chave14(nomes[n] || '') === n)) return { conta: idx[n], chave: n, fonte: 'argo' };
   }
   const n0 = chave14(nome);
