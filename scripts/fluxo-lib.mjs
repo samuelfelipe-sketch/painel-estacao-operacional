@@ -15,8 +15,9 @@ import { resolve } from 'path';
 export const DADOS = [
   'DATA', 'METAS', 'METAS_MESES', 'PREV', 'PROJ', 'ERP', 'VENDAS', 'PAINEL', 'COMPROMISSOS',
   'DIA', 'RECEBER', 'STATUS', 'EMP_ORDER', 'EMP_FULL', 'SHORT', 'PER_LABEL', 'MES_LABEL',
-  'WEEKS', 'MES_WEEKS', 'PEND',
+  'WEEKS', 'MES_WEEKS', 'PEND', 'REVISAO',
 ];
+/* REVISAO[mes][empresa] = lançamentos classificados com baixa confiança na carga (card "Transações a revisar" + CSV) */
 /* o que o shell fluxo/index.html e a tela "Dia a dia por empresa" consomem */
 export const CONSTS_SHELL = ['DIA', 'DATA', 'SHORT', 'EMP_FULL', 'MES_LABEL', 'STATUS'];
 
