@@ -57,7 +57,7 @@
    "id": "davi",
    "nome": "Davi",
    "admin": false,
-   "ativo": true,
+   "ativo": false,
    "perm": {
     "roadmap": "le",
     "pe": "le",
@@ -94,7 +94,7 @@
    "id": "douglas",
    "nome": "Douglas",
    "admin": false,
-   "ativo": true,
+   "ativo": false,
    "perm": {
     "roadmap": "le",
     "pe": "le",
