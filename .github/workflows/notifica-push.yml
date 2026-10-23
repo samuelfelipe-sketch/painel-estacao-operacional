@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install --no-save web-push@3
+      - run: npm install --no-save web-push@3.6.7
       - run: node scripts/notifica-push.mjs
         env:
           MENSAGEM_COMMIT: ${{ github.event.head_commit.message }}

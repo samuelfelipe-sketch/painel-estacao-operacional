@@ -34,6 +34,9 @@ h1 span{color:var(--laranja);font-style:italic}
 .login-box{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:14px 16px;margin:18px auto 0;max-width:560px}
 .login-box .l{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--verde-suave);margin-bottom:8px}
 .login-linha{display:flex;gap:8px;flex-wrap:wrap}
+.login-lembrar{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--verde-suave,#5F6C7B);margin-top:9px;cursor:pointer}
+.login-lembrar input{accent-color:#004438;width:15px;height:15px;margin:0}
+.login-lembrar small{opacity:.8}
 .login-linha input{flex:1;min-width:130px;font-family:'Archivo',sans-serif;font-size:14px;border:1px solid var(--linha);border-radius:8px;padding:9px 11px;background:#fff;color:var(--verde)}
 .login-linha input:focus{outline:2px solid var(--laranja);outline-offset:1px}
 .login-linha button{font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;color:#fff;background:var(--laranja);border:none;border-radius:8px;padding:9px 20px;cursor:pointer}
@@ -87,6 +90,7 @@ footer i{font-family:'Fraunces',serif;font-weight:600;color:var(--verde)}
         <input type="password" id="lg-senha" placeholder="Senha" autocomplete="current-password">
         <button type="button" id="lg-entrar">Entrar</button>
       </div>
+      <label class="login-lembrar"><input type="checkbox" id="lg-lembrar"> Manter conectado neste aparelho <small>· só em celular ou computador pessoal</small></label>
       <div class="login-erro" id="lg-erro">Usuário ou senha incorretos. Tente de novo.</div>
     </div>
     <div class="login-ok" id="login-ok" hidden>
@@ -172,10 +176,12 @@ async function entrar(){
   const u=document.getElementById('lg-user').value,s=document.getElementById('lg-senha').value;
   const erro=document.getElementById('lg-erro');
   erro.classList.remove('on');
-  const user=await A.login(u,s);
+  const user=await A.login(u,s,document.getElementById('lg-lembrar').checked);
   if(!user){erro.classList.add('on');return;}
   document.getElementById('lg-senha').value='';
   pintaTudo();
+  /* senha provisória do administrador: primeiro a pessoa cria a dela */
+  if(user.trocar){try{await window.sapataoChave.busca();}catch(e){}location.href='configuracoes/#minha-senha';return;}
   /* baixa a chave de publicação e a chave dos dados para este aparelho */
   try{await window.sapataoChave.busca();await window.sapataoCofre.baixaDekPeloToken();}catch(e){}
   evCache=null;pintaSinoCentral();
@@ -189,9 +195,9 @@ const notifPane=document.getElementById('notif-pane'),notifScrim=document.getEle
 const API_RAIZ='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/';
 const LSN_PE='sapatao-notif-vistos-v1',LSN_RC='sapatao-notif-roadmap-vistos-v1';
 function b64d(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,''))));}
-function escN(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function fmtN(iso){if(!iso)return'';const p=iso.slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];}
-function horaN(ord){return ord&&ord.length>10?' '+ord.slice(11,16):'';}
+function escN(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtN(iso){if(!iso)return'';const p=String(iso).slice(0,10).split('-');return escN(p[2]+'/'+p[1]+'/'+p[0]);}
+function horaN(ord){return ord&&ord.length>10?' '+escN(String(ord).slice(11,16)):'';}
 function hashTx(s){let h=5381;s=s||'';for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return h;}
 function lsSet(k){try{return new Set(JSON.parse(localStorage.getItem(k)||'[]'));}catch(e){return new Set();}}
 function chaveDe(x){return x.painel==='pe'&&x.tp==='f'?(x.id+'|'+x.data+'|'+(x.por||'')+'|'+hashTx(x.txt)):(x.tp+'|'+x.id+'|'+x.data+'|'+(x.por||''));}

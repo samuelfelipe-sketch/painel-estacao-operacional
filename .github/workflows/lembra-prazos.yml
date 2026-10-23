@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install --no-save web-push@3
+      - run: npm install --no-save web-push@3.6.7
       - run: node scripts/lembra-prazos.mjs
         env:
           VAPID_PUBLIC_KEY: BEduLLWzJ5vBcC6wgokW5Yq_NL-x8y5nDtzfUQqvmXdXwQVb0j2dRO-OHCkCzoouyhH0KhS1EQEwY3ECDx_V_Hc

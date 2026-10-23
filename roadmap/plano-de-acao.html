@@ -86,8 +86,8 @@ td.prazo{white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:13px
      as criadas pós-imersão vêm de roadmap/execucoes.json e entram com selo NOVA */
   const alvo=document.getElementById('linhas');
   function aviso(t){alvo.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--verde-suave)">'+t+'</td></tr>';}
-  function fmt(iso){if(!iso)return'—';const p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
-  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function fmt(iso){if(!iso)return'—';const p=String(iso).split('-');return esc(p[2]+'/'+p[1]+'/'+p[0]);}
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   async function pega(path){
     try{
       const rr=await fetch('https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/'+path+'?t='+Date.now(),{cache:'no-store'});
@@ -119,7 +119,7 @@ td.prazo{white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:13px
     const l=doc.dados.ACOES.slice().concat(novas).sort((a,b)=>((b.gut||0)-(a.gut||0))||(a.id-b.id));
     alvo.innerHTML=l.map((a,i)=>'<tr><td class="num">'+(i+1)+'</td><td>'+esc(a.acao)
       +(a.nova?' <span style="font-weight:700;font-size:9px;letter-spacing:.08em;color:#C2531A;background:#F7E1D1;border-radius:10px;padding:1px 7px;vertical-align:middle">NOVA</span>':'')
-      +'</td><td>'+esc(a.bloco)+'</td><td>'+esc(a.resp)+'</td><td class="prazo">'+fmt(a.prazo)+'</td><td class="gut'+((a.gut||0)>=125?' max':'')+'">'+(a.gut||0)+'</td></tr>').join('');
+      +'</td><td>'+esc(a.bloco)+'</td><td>'+esc(a.resp)+'</td><td class="prazo">'+fmt(a.prazo)+'</td><td class="gut'+((a.gut||0)>=125?' max':'')+'">'+(+a.gut||0)+'</td></tr>').join('');
   }
   document.addEventListener('sapatao-login',carrega);
   carrega();

@@ -13,6 +13,7 @@ decifrado acontece só em `/tmp/fluxo`.
 | Estado da esteira | `fluxo/estado.enc.json` | as 20 constantes de dados da ferramenta (DATA, DIA, PREV, PROJ, STATUS, PAINEL…) — fonte da verdade; a ferramenta é gerada a partir dele |
 | Mapa de fornecedores | `fluxo/fornecedores.enc.json` | 527 fornecedores do Argo → conta do plano, mais os `aprendidos` pela esteira |
 | Regras do projeto | `fluxo/regras.enc.json` | os 3 docs de regras (Atualização, Configuração, Identidade Visual) + nota de versionamento |
+| Mapa de contas bancárias | `fluxo/regras.enc.json` → `contas` | dígitos finais/contas → empresa por banco, lido por `contasBancarias()` (fluxo-lib); fica só no cifrado |
 | Fonte dos extratos (semanal) | OneDrive do Samuel, `Financeiro/Fluxo de Caixa/Extratos/Fluxo On-line/` (item `013KRIELRP5L5KTEZ6ZBGLBRVBF43E2WXK`) | **fonte principal desde 21/10/2026**: toda segunda de manhã entram os extratos da semana **em qualquer formato que o banco exporte** — PDF, `.txt` (Banrisul em layout clássico; Itaú em `data;descrição;valor;`; OFX salvo como texto), `.csv`, `.xlsx` (Stone "Comprovante de Extrato") e `.xls` (Sicredi "extrato.xls") — com qualquer nome e qualquer organização em subpastas: a rotina reconhece formato, banco e empresa pelo CONTEÚDO (titular, CNPJ, número da conta), nunca pela extensão nem pelo nome. Os arquivos se acumulam; o `fluxo-mes` emenda as partes de um mesmo banco e exige que a cadeia de saldos feche e que o mês esteja coberto desde o dia 1º. Arquivo antigo que não cobre o mês é ignorado e citado |
 | Arquivo mensal permanente | `Financeiro/Financeiro/Bancos - Extratos/Extratos/AAAA/MM Mês AAAA/<Empresa>/` (PDF por banco); drive `b!VfxZ3Rv-PEGE3a_D-6KEfuBOwtNke0NCvkjtRDE2eZMLzILfb5O4SrVZVVJGP6Yx`, pasta `Extratos` = item `013KRIELSDFRVMIPZVCZDZFWCW3OGD5OR4`, ano 2026 = `013KRIELWEGW6OESMLZZGJ726N7N5JOQ2S` | fonte de reserva: fechamento de mês quando a pasta semanal não tiver o mês inteiro (o extrato do mês fechado substitui os pedaços) |
 | Chave dos dados | segredo `SAPATAO_DEK` do ambiente | base64 de 32 bytes (valor de `sapatao-dek-v1`); nunca em chat, log ou arquivo |
@@ -79,3 +80,7 @@ O relatório lista, por empresa, os lançamentos classificados com baixa confian
 ## Proibido
 
 Imprimir, commitar ou enviar valores fora dos arquivos cifrados; ajustar número para fechar soma; apagar mês ou regredir dias do diário; reescrever a previsão do mês corrente ou de mês fechado; mexer em qualquer outro arquivo do site; publicar sem validação aprovada; inventar movimento para conta sem extrato (ela fica no último saldo, com a observação); pedir ou procurar a chave dos dados fora do ambiente.
+
+## Chave dos dados trocada
+
+Se um script parar dizendo que a `SAPATAO_DEK` do ambiente é **ANTIGA**, o admin trocou a chave pelas Configurações. Não publique nada e não tente contornar: avise o Samuel em uma linha para colar a chave nova no segredo `SAPATAO_DEK` do ambiente da rotina.

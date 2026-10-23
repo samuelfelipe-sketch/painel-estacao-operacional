@@ -102,3 +102,7 @@ Revendedor. O painel usa o último mês ≤ ao mês selecionado.
 - comparativo anual = mesmos meses de janeiro ao mês escolhido nos dois anos;
   crescimento das bandeiras pela ANP (independe do Sapatão); participação do
   Sapatão no ano anterior só quando houver compras publicadas daqueles meses.
+
+## Chave dos dados trocada
+
+Se um script parar dizendo que a `SAPATAO_DEK` do ambiente é **ANTIGA**, o admin trocou a chave pelas Configurações. Não publique nada e não tente contornar: avise o Samuel em uma linha para colar a chave nova no segredo `SAPATAO_DEK` do ambiente da rotina.
