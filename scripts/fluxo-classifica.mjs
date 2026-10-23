@@ -139,10 +139,15 @@ export function classifica(mov, ctx = {}) {
   if (v < 0 && tem(t, '03546544', '03.546.544', 'MILLENNIUM', 'MILLENIUM')) return r(CONTAS.MILLENNIUM, true, { investimento: true });
   /* --- captação e serviço da dívida (sempre visíveis) --- */
   if (tem(t, 'LIBERACAO CREDITO')) return r(contrato && /C59830287|C69830413/.test(contrato) ? CONTAS.CAP_ROT(contrato) : CONTAS.CAP_NAOOP, true, { captacao: true });
-  if (tem(t, 'AMORTIZACAO CONTRATO', 'LIQUIDACAO DE PARCELA') && contrato && /C59830287|C69830413/.test(contrato)) return r(CONTAS.AMORT_ROT(contrato), true, { divida: true });
-  if (tem(t, 'CONSORCIO')) return r(CONTAS.CONSORCIO, true, { divida: true });
-  if (t.includes('C698309290')) return r(CONTAS.PARC_698, true, { divida: true });
-  if (tem(t, 'AMORTIZACAO', 'LIQUIDACAO DE PARCELA', 'PRESTACAO', 'FINANCIAMENTO', 'PARCELA EMPREST', 'PARCELA QUITADA')) return r(CONTAS.PARCELAS, true, { divida: true }); /* 'PARCELA QUITADA DO EMPRESTIMO' = empréstimo Stone (XLSX) */
+  /* CRÉDITO com cara de dívida (financiamento, empréstimo, capital de giro liberado) é CAPTAÇÃO —
+     nunca "Serviço da dívida": dívida só sai (v < 0). Caso real: 500 mil creditados na AS em
+     30/09/2026 com "FINANCIAMENTO" no memo caíram em "parcelas de financiamentos" como ENTRADA e a
+     previsão passou a repetir 500 mil/mês de recebimento. */
+  if (v > 0 && tem(t, 'FINANCIAMENTO', 'EMPRESTIMO', 'CAPITAL DE GIRO', 'CREDITO PESSOAL', 'CREDITO EMPRESARIAL', 'LIBERACAO')) return r(contrato && /C59830287|C69830413/.test(contrato) ? CONTAS.CAP_ROT(contrato) : CONTAS.CAP_NAOOP, true, { captacao: true });
+  if (v < 0 && tem(t, 'AMORTIZACAO CONTRATO', 'LIQUIDACAO DE PARCELA') && contrato && /C59830287|C69830413/.test(contrato)) return r(CONTAS.AMORT_ROT(contrato), true, { divida: true });
+  if (v < 0 && tem(t, 'CONSORCIO')) return r(CONTAS.CONSORCIO, true, { divida: true });
+  if (v < 0 && t.includes('C698309290')) return r(CONTAS.PARC_698, true, { divida: true });
+  if (v < 0 && tem(t, 'AMORTIZACAO', 'LIQUIDACAO DE PARCELA', 'PRESTACAO', 'FINANCIAMENTO', 'PARCELA EMPREST', 'PARCELA QUITADA')) return r(CONTAS.PARCELAS, true, { divida: true }); /* 'PARCELA QUITADA DO EMPRESTIMO' = empréstimo Stone (XLSX) */
 
   if (v >= 0) {
     /* ENTRADAS */

@@ -4,10 +4,13 @@
    - valor mensal por conta e empresa = MEDIANA dos meses completos (tipo full)
      em que a empresa existe; captações, amortizações do giro rotativo,
      resgates, distribuições, aquisições e aplicações = zero;
-   - serviço da dívida / consórcio / parcelas contratadas: só as contas que
-     ainda aparecem no último mês fechado (contrato encerrado sai sozinho);
-     valor = mediana dos últimos 3 meses em que aparecem, nas DATAS do último
-     mês fechado;
+   - serviço da dívida / consórcio / parcelas contratadas (SÓ em pagamentos):
+     só as contas que ainda aparecem no último mês fechado (contrato encerrado
+     sai sozinho); valor = mediana dos últimos 3 meses em que aparecem, nas
+     DATAS do último mês fechado;
+   - um RECEBIMENTO rotulado como dívida/investimento (ex.: crédito de
+     financiamento que caiu em "Serviço da dívida — parcelas") é captação:
+     nunca entra na previsão (= zero), em nenhum dos dois caminhos;
    - distribuição: perfil por dia do mês (share médio no diário dos meses-base)
      define as semanas; dentro da semana, perfil de dia da semana do projeto
      (recebimentos seg→dom 30/16/15/14/15/5/5 %, pagamentos 28/20/18/18/16/0/0 %);
@@ -31,6 +34,8 @@ import { wkOf, nSemanas } from './fluxo-montagem.mjs';
 
 const EXCLUIR = /^Captação|amortizações do giro rotativo|^Distribuição|Resgate|aquisição|Aquisição|Imobilizado|^6 · Aplicações|^Entre empresas/i;
 const PARCELAS = /^Serviço da dívida|parcelas contratadas|consórcio/i;
+/* rótulos de saída (dívida, investimento) que, aparecendo em RECEBIMENTOS, são captação/estorno: fora da previsão */
+const SO_SAIDA = /Serviço da dívida|^6 ·|Investimentos|financiamento|Aplicações/i;
 const PESO_IN = [5, 30, 16, 15, 14, 15, 5], PESO_OUT = [0, 28, 20, 18, 18, 16, 0]; /* índice = getDay (dom=0) */
 const MESES_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const r2 = n => Math.round(n * 100) / 100, sum = a => (a || []).reduce((x, y) => x + (y || 0), 0);
@@ -54,12 +59,12 @@ export function calculaPrevisao(est, mes) {
     if (!baseE.length) continue;
     const out = { cin: {}, cout: {} }, outD = { cin: {}, cout: {} };
     for (const t of ['cin', 'cout']) {
-      const contas = [...new Set(baseE.flatMap(m => Object.keys(DATA.meses[m].empresas[id][t] || {})))].filter(c => !EXCLUIR.test(c));
+      const contas = [...new Set(baseE.flatMap(m => Object.keys(DATA.meses[m].empresas[id][t] || {})))].filter(c => !EXCLUIR.test(c) && !(t === 'cin' && SO_SAIDA.test(c)));
       for (const c of contas) {
         const totais = baseE.map(m => sum((DATA.meses[m].empresas[id][t] || {})[c]));
         let total, perfil;
         const diario = m => { const e = (DIA[m] || {}).empresas; return e && e[id] && e[id][t] && e[id][t][c]; };
-        if (PARCELAS.test(c)) {
+        if (t === 'cout' && PARCELAS.test(c)) {
           /* cronograma: só o que ainda aparece no ÚLTIMO mês fechado (contrato
              encerrado ou relabelado sai sozinho); valor = mediana dos últimos 3
              meses em que aparece; datas = as do último mês fechado */
