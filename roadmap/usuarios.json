@@ -26,7 +26,9 @@
     "roadmap": "le",
     "pe": "followup",
     "operacional": "le",
-    "fluxo": "nao"
+    "fluxo": "nao",
+    "negociacao": "le",
+    "mercado": "le"
    },
    "kdf": {
     "alg": "pbkdf2-sha256",
@@ -77,7 +79,9 @@
     "roadmap": "le",
     "pe": "followup",
     "fluxo": "le",
-    "operacional": "le"
+    "operacional": "le",
+    "negociacao": "le",
+    "mercado": "le"
    },
    "kdf": {
     "alg": "pbkdf2-sha256",
@@ -113,7 +117,9 @@
     "roadmap": "nao",
     "pe": "followup",
     "fluxo": "nao",
-    "operacional": "le"
+    "operacional": "le",
+    "negociacao": "le",
+    "mercado": "le"
    },
    "kdf": {
     "alg": "pbkdf2-sha256",
