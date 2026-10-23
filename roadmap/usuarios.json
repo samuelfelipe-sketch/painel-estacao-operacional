@@ -13,8 +13,8 @@
    "kdf": {
     "alg": "pbkdf2-sha256",
     "i": 600000,
-    "s": "AlXBjv/RtGaUTjuSmoCN5Q==",
-    "h": "7UkMw9NbcjiNhBXdcmApD+akLhg7bMbBJSZjXxiD6DE="
+    "s": "CMTDhhMPKuXqQLY6ZTXZ5g==",
+    "h": "UMj7cNlNXMlcslGSlDgNG2WkZNkYX8WNAfUvz+6fZ58="
    }
   },
   {
