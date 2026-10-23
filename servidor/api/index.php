@@ -387,12 +387,15 @@ if ($ROTA === 'login' && $M === 'POST') {
     $dig = (string)($b['usuario'] ?? ''); $senha = (string)($b['senha'] ?? '');
     if ($dig === '' || $senha === '' || strlen($senha) > 512) sai(400, 'usuário e senha');
     if (bloqueado($dig)) sai(429, 'muitas tentativas — espere 15 minutos');
-    $alvo = normaliza($dig); $achou = null;
+    $alvo = normaliza($dig); $achou = null; $conferiu = false;
     foreach (usuarios()['usuarios'] as $u) {
         if (($u['ativo'] ?? true) === false) continue;
         if (normaliza((string)$u['nome']) !== $alvo && normaliza((string)$u['id']) !== $alvo) continue;
+        $conferiu = true;
         if (confereSenha($u, $senha)) { $achou = $u; break; }
     }
+    /* usuário inexistente gasta o mesmo tempo: a demora não revela quem existe */
+    if (!$conferiu) hash_pbkdf2('sha256', $senha, 'sapatao-tempo-igual', KDF_IT, 32, true);
     if (!$achou) {
         marcaFalha('u:' . $alvo); marcaFalha('ip:' . ip());
         usleep(400000);
