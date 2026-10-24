@@ -76,10 +76,24 @@ da data do nome (o de `01-MM` cobre o mês anterior inteiro).
    ausente → não publicar nada e encerrar a sessão com uma linha dizendo o motivo
    (sem números). Nunca escrever volumes, preços ou nomes em log, commit ou chat.
 
-**Histórico (2025 e jan–jun/2026):** o Argo exporta o mesmo relatório para
-qualquer período. Com um CSV (ou vários) cobrindo 01/01/2025 → 30/06/2026, o
-passo 2 carrega tudo de uma vez. Alternativa: `--manual meses.json` com os
-litros por mês × bandeira × produto (GC, GA, ET, S10, S500 ou otto/diesel).
+**Histórico e fechamento pelo PDF do Argo:** o "Relatório de Compra de Combustíveis"
+em PDF (Tipo Completo, qualquer período, todas as unidades) é a fonte mais completa.
+Carregado em 24/10/2026 o período 01/01/2025 → 30/09/2026 (jul–set/26 trocados pela
+versão do PDF). Passos, tudo fora do repositório:
+```
+pdftotext -layout relatorio.pdf /tmp/ms/rel.txt
+node scripts/compras-pdf.mjs --txt /tmp/ms/rel.txt --saida /tmp/ms/compras-pdf.csv
+node scripts/negociacao-compras.mjs --csv /tmp/ms/compras-pdf.csv --saida /tmp/ms/compras.json
+node scripts/mercado-sapatao.mjs grava --compras /tmp/ms/compras.json --periodo AAAA-MM-DD:AAAA-MM-DD
+```
+O `compras-pdf` confere cada "Total:" do dia, cada "Total Unidade de Negócio" e o
+"Total Geral" (reprovou, não grava). `--periodo` = o período impresso no cabeçalho do
+PDF (assim um mês cuja 1ª compra caiu no dia 2 não fica `parcial`).
+**Atenção — lançamento tardio:** na conferência de 24/10/2026, notas lançadas no Argo
+depois da janela de 30 dias não apareceram em nenhum CSV diário (jul e ago/26 ficaram
+menores que no PDF). Mês fechado só pelos CSVs diários pode ficar incompleto; o PDF do
+mês fechado corrige. Alternativa: `--manual meses.json` com os litros por mês ×
+bandeira × produto (GC, GA, ET, S10, S500 ou otto/diesel).
 
 **Carteira do Gerente de Vendas (GV):** `--carteiras 'Raízen=GV:0.5:RS,Ipiranga=GV:0.5:RS'`
 grava, no mesmo arquivo cifrado, a fatia da bandeira no recorte que fica na carteira do GV

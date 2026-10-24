@@ -21,7 +21,7 @@
    painel converte na tela).
 
    Uso:
-     node scripts/mercado-sapatao.mjs grava --compras <compras.json> [--desde AAAA-MM] [--manual <meses.json>] [--unidades '3=SF:Raízen,4=PS:Raízen,5=AS:Ipiranga'] [--carteiras 'Raízen=GV:0.5:RS,Ipiranga=GV:0.5:RS'] [--saida mercado/sapatao.enc.json]
+     node scripts/mercado-sapatao.mjs grava --compras <compras.json> [--desde AAAA-MM] [--periodo AAAA-MM-DD:AAAA-MM-DD] [--manual <meses.json>] [--unidades '3=SF:Raízen,4=PS:Raízen,5=AS:Ipiranga'] [--carteiras 'Raízen=GV:0.5:RS,Ipiranga=GV:0.5:RS'] [--saida mercado/sapatao.enc.json]
        → funde os meses do compras.json (e do manual) no arquivo publicado; meses já gravados
          só são trocados quando a leitura nova cobre o mês inteiro (ou com --forca)
      node scripts/mercado-sapatao.mjs abre --para <pasta fora do repo> [--entrada mercado/sapatao.enc.json]
@@ -132,7 +132,10 @@ if (comprasPath) {
   if (!cj.meses) falha('o compras.json não tem "meses".');
   /* cobertura global (menor "de" e maior "ate" entre as unidades) */
   const cobs = Object.values(cj.cobertura || {}).filter(Boolean);
-  const de = cobs.map(c => c.de).sort()[0], ate = cobs.map(c => c.ate).sort().slice(-1)[0];
+  let de = cobs.map(c => c.de).sort()[0], ate = cobs.map(c => c.ate).sort().slice(-1)[0];
+  /* --periodo: o período pedido no relatório (ex.: PDF de 01/01/2025 a 30/09/2026) — vale mais que a 1ª/última compra, que pode cair num feriado */
+  const per = opt('periodo');
+  if (per) { const m = /^(\d{4}-\d{2}-\d{2}):(\d{4}-\d{2}-\d{2})$/.exec(per); if (!m) falha('--periodo: use AAAA-MM-DD:AAAA-MM-DD.'); if (m[1] > de || m[2] < ate) falha('--periodo não contém as compras do arquivo.'); de = m[1]; ate = m[2]; }
   for (const [ym, g] of Object.entries(cj.meses)) {
     if (ym < desde) continue;
     const band = {};
