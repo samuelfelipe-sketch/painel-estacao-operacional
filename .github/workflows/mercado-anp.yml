@@ -2,11 +2,11 @@ name: Market Share — base ANP
 
 # Baixa a base aberta da ANP de vendas das distribuidoras (liquidos.zip) e
 # regrava mercado/anp-vendas.json. Roda no GitHub porque o ambiente da nuvem
-# do Claude Code não alcança o gov.br. A ANP fecha o mês M na segunda
-# quinzena de M+1: por isso dois disparos por mês.
+# do Claude Code não alcança o gov.br. Roda todo dia de madrugada; só commita
+# quando a ANP publicou algo novo (a ANP fecha o mês M na segunda quinzena de M+1).
 on:
   schedule:
-    - cron: '0 12 6,22 * *' # 09:00 em Brasília, dias 6 e 22
+    - cron: '45 6 * * *' # 03:45 em Brasília, todo dia
   push:
     paths:
       - '.github/workflows/mercado-anp.yml'

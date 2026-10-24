@@ -16,7 +16,7 @@ segmento (posto revendedor, só bandeirados, todos os segmentos).
 
 ## 1. Mercado (automático)
 
-`.github/workflows/mercado-anp.yml` roda nos dias **6 e 22** (09:00 BRT) e sempre
+`.github/workflows/mercado-anp.yml` roda **todo dia ~03:45 BRT** e sempre
 que o próprio workflow ou `scripts/mercado-anp.mjs` mudam. Baixa `liquidos.zip`
 dos dados abertos da ANP (o ambiente da nuvem do Claude Code **não alcança o
 gov.br**, por isso o GitHub faz o download), lê só os `Liquidos_Vendas_*.csv`
@@ -42,31 +42,39 @@ Regras do agregador (`scripts/mercado-anp.mjs`):
 Para rodar à mão: GitHub → Actions → "Market Share — base ANP" → Run workflow
 (`inspecionar` só descreve os arquivos; `desde` muda o primeiro mês da série).
 
-## 2. Sapatão (rotina mensal do Claude Code, após o dia 6)
+## 2. Sapatão (tarefa agendada do Claude Code, todo dia ~03:40 BRT)
 
 Fonte: `DD-MM-AAAA_RelatorioDeCompraDeCombustiveis.csv` na pasta
 `Financeiro/Compras/Painel de Negociação` do OneDrive do Samuel (mesma fonte da
 revisão semanal da Negociação). Cada CSV cobre **30 dias até o dia anterior** ao
-da data do nome.
+da data do nome (o de `01-MM` cobre o mês anterior inteiro).
 
-1. Ler pelo conector os CSVs que cubram o mês fechado inteiro (o do dia 1º do
-   mês seguinte cobre do dia 1º ao último dia do mês; se faltar, dois arquivos
-   que se emendem). Gravar cada um, sem alterar, em `/tmp/ms/compras-DD-MM-AAAA.csv`
-   (fora do repositório).
-2. Agregar e cifrar:
+### Rotina diária
+
+1. `git pull --rebase origin main`. Abrir o arquivo publicado para saber o estado:
+   `node scripts/mercado-sapatao.mjs abre --para /tmp/ms` → `/tmp/ms/sapatao-mercado.json`
+   (meses gravados e quais estão `parcial`). Nada dele vai para o chat.
+2. Listar a pasta pelo conector Microsoft 365 e ler o CSV **mais recente**
+   (o de hoje, se já chegou; senão o de ontem). Se o **mês anterior** ainda estiver
+   `parcial` no arquivo publicado (ou não existir), ler também o CSV do dia `01`
+   do mês corrente, que fecha o mês anterior. Gravar cada CSV, sem alterar, em
+   `/tmp/ms/compras-DD-MM-AAAA.csv` (fora do repositório). O conector devolve o texto
+   com acentos trocados por `�` — não importa, o script só usa as colunas numéricas.
+3. Agregar e cifrar (`--desde` = mês anterior, para não gravar meses com poucos
+   dias de cobertura nas bordas da janela):
    ```
-   node scripts/negociacao-compras.mjs --csv /tmp/ms/compras-A.csv [--csv ...] --saida /tmp/ms/compras.json
+   node scripts/negociacao-compras.mjs --csv /tmp/ms/compras-A.csv [--csv /tmp/ms/compras-B.csv] --saida /tmp/ms/compras.json
    node scripts/mercado-sapatao.mjs grava --compras /tmp/ms/compras.json --desde AAAA-MM
    ```
-   O `grava` funde os meses no arquivo publicado: mês novo entra; mês já gravado
-   só é trocado quando a leitura nova cobre o mês inteiro (`--forca` ignora a
-   regra). Um mês cuja cobertura não vai do dia 1º ao último dia fica `parcial`
-   e aparece assim no painel. `--desde` deixa de fora meses com poucos dias de
-   cobertura no CSV (ex.: 3 dias do mês anterior).
-3. Conferir: `node scripts/mercado-sapatao.mjs abre --para /tmp/ms` grava o JSON
-   decifrado para leitura; nada dele vai para o repositório nem para o chat.
-4. Commit `chore: atualiza os volumes do Sapatão no Market Share (automático)`
-   só de `mercado/sapatao.enc.json`, com `git pull --rebase` antes.
+   O `grava` funde os meses no arquivo publicado: mês novo entra; mês em curso
+   (`parcial`) é trocado pela leitura nova; mês já fechado só é trocado quando a
+   leitura nova também cobre o mês inteiro. Mantém unidades (SF, PS, AS) e carteiras do GV.
+4. Se `git status` mostrar `mercado/sapatao.enc.json` alterado: `git pull --rebase`,
+   commit **só desse arquivo** com `chore: atualiza os volumes do Sapatão no Market Share (automático)`
+   e push em `main`. Sem mudança, não commitar.
+5. Falhas: sem CSV novo há mais de 2 dias, CSV ilegível, script reprovado ou chave
+   ausente → não publicar nada e encerrar a sessão com uma linha dizendo o motivo
+   (sem números). Nunca escrever volumes, preços ou nomes em log, commit ou chat.
 
 **Histórico (2025 e jan–jun/2026):** o Argo exporta o mesmo relatório para
 qualquer período. Com um CSV (ou vários) cobrindo 01/01/2025 → 30/06/2026, o

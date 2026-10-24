@@ -22,7 +22,7 @@
    volume em mil m³ por distribuidora (as maiores do escopo; o resto em
    "Outras") e o total. O script confere que distribuidoras somam o total
    e que otto = gasolina + etanol; reprovou, não grava. */
-import { createReadStream, readdirSync, statSync, writeFileSync, openSync, readSync, closeSync } from 'fs';
+import { createReadStream, readdirSync, statSync, writeFileSync, openSync, readSync, closeSync, existsSync, readFileSync } from 'fs';
 import { createInterface } from 'readline';
 import { resolve, join, extname, basename } from 'path';
 
@@ -306,5 +306,13 @@ const out = {
   notas: ['Raízen soma todas as razões sociais que começam por RAIZEN (inclui Raízen Mime).', 'Vibra inclui a antiga Petrobras Distribuidora.', 'Um mês marcado parcial ainda está recebendo declarações das distribuidoras na ANP.'],
   dados
 };
+/* rodada diária: se nada além do carimbo mudou, mantém o arquivo como está (sem commit à toa) */
+if (existsSync(saida)) {
+  try {
+    const velho = JSON.parse(readFileSync(saida, 'utf8'));
+    const semData = o => JSON.stringify({ ...o, gerado_em: null });
+    if (semData(velho) === semData(out)) { console.log(`sem mudança na base da ANP (meses ${meses[0]} → ${meses[meses.length - 1]}, fechados até ${out.ultimo_fechado}) — arquivo mantido`); process.exit(0); }
+  } catch (e) { /* arquivo antigo ilegível: regrava */ }
+}
 writeFileSync(saida, JSON.stringify(out));
 console.log(`ok: ${saida} · ${lidas} linhas lidas · ${uteis} úteis · ${ignoradasProd} de outros produtos · ${foraPeriodo} antes de ${desde} · meses ${meses[0]} → ${meses[meses.length - 1]} · fechados até ${out.ultimo_fechado} · ${(JSON.stringify(out).length / 1024).toFixed(0)} KB`);
