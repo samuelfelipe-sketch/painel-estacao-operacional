@@ -139,16 +139,20 @@ var UNIS=(D.escopos||[]).filter(function(e){ return e.cod!=='REDE'; }).map(funct
   return {sig:SIGLA[e.cod]||e.cod, semAno:!!e.semBaseAno, c:b.TOTCOMB, m:b.TOTMERC};
 }).filter(function(u){ return u.c&&u.m; }).sort(function(a,b){ return a.sig<b.sig?-1:1; });
 function var_(a,b){ return (isFinite(a)&&isFinite(b)&&b)?(a/b-1)*100:NaN; }
+function pMeta(v,m){ return m>0?nf0.format(v/m*100)+'% meta':''; }
 var KUN=[
- function(u){ return {v:nf0.format(u.c.proj)+' L', s:'meta '+nf0.format(u.c.meta)+' L', a:u.c.difAnt, y:u.c.difAno}; },
- function(u){ return {v:'R$ '+nf0.format(u.m.proj), s:'meta R$ '+nf0.format(u.m.meta), a:u.m.difAnt, y:u.m.difAno}; },
- function(u){ var p=u.c.mrsProj+u.m.mrsProj; return {v:'R$ '+nf0.format(p), s:'comb. R$ '+nf0.format(u.c.mrsProj)+' + merc. R$ '+nf0.format(u.m.mrsProj), a:var_(p,u.c.mrsAnt+u.m.mrsAnt), y:var_(p,u.c.mrsAno+u.m.mrsAno)}; },
- function(u){ return {v:nf3.format(u.c.muA)+' R$/L', s:R.ant+' '+nf3.format(u.c.muB)+(u.semAno?'':' · '+R.ano+' '+nf3.format(u.c.muC)), a:var_(u.c.muA,u.c.muB), y:var_(u.c.muA,u.c.muC)}; }
+ function(u){ return {v:nf0.format(u.c.proj/1e3)+'<small>mil L</small>', s:pMeta(u.c.proj,u.c.meta), a:u.c.difAnt, y:u.c.difAno}; },
+ function(u){ return {v:brlCurto(u.m.proj), s:pMeta(u.m.proj,u.m.meta), a:u.m.difAnt, y:u.m.difAno}; },
+ function(u){ var p=u.c.mrsProj+u.m.mrsProj; return {v:brlCurto(p), s:nf0.format(p/margTotProj*100)+'% rede', a:var_(p,u.c.mrsAnt+u.m.mrsAnt), y:var_(p,u.c.mrsAno+u.m.mrsAno)}; },
+ function(u){ return {v:nf3.format(u.c.muA)+'<small>R$/L</small>', s:UI.fatBase==='ano'?(u.semAno?'':R.ano+' '+nf3.format(u.c.muC)):R.ant+' '+nf3.format(u.c.muB), a:var_(u.c.muA,u.c.muB), y:var_(u.c.muA,u.c.muC)}; }
 ];
+/* uma linha por unidade, no padrão do Market Share; a variação segue os botões "Δ vs ano / Δ vs mês" */
 function porUn(i){
-  return '<div class="kun"><div class="kcab">Por unidade</div>'+UNIS.map(function(u){
-    var x=KUN[i](u), y=(u.semAno||!isFinite(x.y))?'<span class="dl fl" title="Unidade sem '+R.ano+' para comparar">nova vs '+R.ano+'</span>':dl(VS_ANO,x.y);
-    return '<div class="ku"><b>'+esc(u.sig)+'</b><span class="kv">'+x.v+'</span><span class="ks">'+x.s+'</span><span class="kd">'+(isFinite(x.a)?dl(VS_ANT,x.a):'')+y+'</span></div>';
+  var ano=UI.fatBase==='ano';
+  return '<div class="kun"><div class="kcab">Por unidade · '+(ano?VS_ANO:VS_ANT)+'</div>'+UNIS.map(function(u){
+    var x=KUN[i](u), d=ano?x.y:x.a;
+    var pill=(ano&&u.semAno)?'<span class="dl fl" title="Unidade sem '+R.ano+' para comparar">nova</span>':isFinite(d)?'<span class="dl '+sgn(d)+'">'+pct(d)+'</span>':'<span></span>';
+    return '<div class="ku"><b>'+esc(u.sig)+'</b><span class="kv">'+x.v+'</span><span class="ks">'+x.s+'</span>'+pill+'</div>';
   }).join('')+'</div>';
 }
 function drawKpis(){
@@ -275,7 +279,7 @@ function setFatBase(b){
   byId('fAno').setAttribute('aria-pressed', b==='ano'?'true':'false');
   byId('fMes').setAttribute('aria-pressed', b==='ant'?'true':'false');
   byId('fhDelta').textContent = b==='ano'?'crescimento ano':'crescimento mês';
-  drawFat();
+  drawFat(); if(S.drawKpis) S.drawKpis();
 }
 S.drawFat=drawFat; S.sincFat=sincFat; S.setFatBase=setFatBase;
 setFatBase(UI.fatBase); sincFat();
