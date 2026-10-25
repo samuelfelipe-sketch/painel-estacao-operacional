@@ -61,7 +61,8 @@ function rotulos(meta){
 }
 
 /* ---------- estado da interface (sobrevive à re-renderização) ---------- */
-var UI={ fatAberto:{FTOT:true,FCOMB:false,FOTTO:false,FDIESEL:false,FMERC:false}, fatBase:'ano', modoDia:false, ordem:'vol' };
+var UI={ fatAberto:{FTOT:true,FCOMB:false,FOTTO:false,FDIESEL:false,FMERC:false}, fatBase:'ano', modoDia:false, ordem:'vol', kAberto:{} };
+var SIGLA={'3':'SF','4':'PS','5':'AS'}; /* unidades do Argo pelas iniciais */
 var S={}; /* funções da renderização corrente */
 
 /* ---------- tooltip ---------- */
@@ -132,11 +133,34 @@ var kpis=[
   sub:R.ant+' '+nf3.format(totComb.muB)+' · '+R.ano+' '+nf3.format(totComb.muC)+' R$/L',
   d:[[VS_ANT,(totComb.muA/totComb.muB-1)*100],[VS_ANO,(totComb.muA/totComb.muC-1)*100]]}
 ];
-byId('kpis').innerHTML = kpis.map(function(k){
-  return '<div class="kpi"><div class="lbl">'+k.lbl+'</div><div class="big">'+k.big+
-    (k.unit?'<small>'+k.unit+'</small>':'')+'</div><div class="sub">'+k.sub+'</div><div class="deltas">'+
-    k.d.map(function(x){return dl(x[0],x[1]);}).join('')+'</div></div>';
-}).join('');
+/* abertura por unidade (toque no cartão): mesma conta em cada unidade de D.escopos */
+var UNIS=(D.escopos||[]).filter(function(e){ return e.cod!=='REDE'; }).map(function(e){
+  var b={}; e.linhas.concat(e.grupos).forEach(function(l){ b[l.cod]=l; });
+  return {sig:SIGLA[e.cod]||e.cod, semAno:!!e.semBaseAno, c:b.TOTCOMB, m:b.TOTMERC};
+}).filter(function(u){ return u.c&&u.m; }).sort(function(a,b){ return a.sig<b.sig?-1:1; });
+function var_(a,b){ return (isFinite(a)&&isFinite(b)&&b)?(a/b-1)*100:NaN; }
+var KUN=[
+ function(u){ return {v:nf0.format(u.c.proj)+' L', s:'meta '+nf0.format(u.c.meta)+' L', a:u.c.difAnt, y:u.c.difAno}; },
+ function(u){ return {v:'R$ '+nf0.format(u.m.proj), s:'meta R$ '+nf0.format(u.m.meta), a:u.m.difAnt, y:u.m.difAno}; },
+ function(u){ var p=u.c.mrsProj+u.m.mrsProj; return {v:'R$ '+nf0.format(p), s:'comb. R$ '+nf0.format(u.c.mrsProj)+' + merc. R$ '+nf0.format(u.m.mrsProj), a:var_(p,u.c.mrsAnt+u.m.mrsAnt), y:var_(p,u.c.mrsAno+u.m.mrsAno)}; },
+ function(u){ return {v:nf3.format(u.c.muA)+' R$/L', s:R.ant+' '+nf3.format(u.c.muB)+(u.semAno?'':' · '+R.ano+' '+nf3.format(u.c.muC)), a:var_(u.c.muA,u.c.muB), y:var_(u.c.muA,u.c.muC)}; }
+];
+function porUn(i){
+  return '<div class="kun"><div class="kcab">Por unidade</div>'+UNIS.map(function(u){
+    var x=KUN[i](u), y=(u.semAno||!isFinite(x.y))?'<span class="dl fl" title="Unidade sem '+R.ano+' para comparar">nova vs '+R.ano+'</span>':dl(VS_ANO,x.y);
+    return '<div class="ku"><b>'+esc(u.sig)+'</b><span class="kv">'+x.v+'</span><span class="ks">'+x.s+'</span><span class="kd">'+(isFinite(x.a)?dl(VS_ANT,x.a):'')+y+'</span></div>';
+  }).join('')+'</div>';
+}
+function drawKpis(){
+  byId('kpis').innerHTML = kpis.map(function(k,i){
+    var tem=UNIS.length>0, ab=tem&&!!UI.kAberto[i];
+    return '<div class="kpi'+(tem?' abre':'')+'"'+(tem?' data-i="'+i+'" role="button" tabindex="0" aria-expanded="'+ab+'"':'')+'><div class="lbl">'+k.lbl+'</div><div class="big">'+k.big+
+      (k.unit?'<small>'+k.unit+'</small>':'')+'</div><div class="sub">'+k.sub+'</div><div class="deltas">'+
+      k.d.map(function(x){return dl(x[0],x[1]);}).join('')+'</div>'+
+      (tem?'<div class="kver">'+(ab?'Fechar':'Ver por unidade')+'</div>'+(ab?porUn(i):''):'')+'</div>';
+  }).join('');
+}
+S.drawKpis=drawKpis; drawKpis();
 
 /* ---------- meta rail ---------- */
 var FRAC = D.meta.dias_dec / D.meta.dias_mes;
@@ -664,6 +688,14 @@ byId('oMar').addEventListener('click',function(){
   UI.ordem='mar'; this.setAttribute('aria-pressed','true');
   byId('oVol').setAttribute('aria-pressed','false'); S.drawTbl();
 });
+/* cartões do topo: toque/clique abre (ou fecha) a abertura por unidade */
+function abreKpi(ev){
+  var c=ev.target.closest('.kpi[data-i]'); if(!c) return;
+  var i=c.getAttribute('data-i'); UI.kAberto[i]=!UI.kAberto[i]; S.drawKpis();
+  if(ev.type==='keydown'){ var n=byId('kpis').querySelector('.kpi[data-i="'+i+'"]'); if(n) n.focus(); }
+}
+byId('kpis').addEventListener('click',abreKpi);
+byId('kpis').addEventListener('keydown',function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); abreKpi(ev); } });
 var rt; addEventListener('resize',function(){ clearTimeout(rt); rt=setTimeout(function(){ S.redraw(); },140); });
 
 window.renderPainel(window.DADOS_PAINEL);
