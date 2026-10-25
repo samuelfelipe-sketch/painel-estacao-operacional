@@ -63,6 +63,15 @@ select.mes{font-family:var(--f-titulo);font-size:13px;font-weight:600;border:1px
 .bomba .sub.cart{margin-top:4px;color:var(--tinta)}.bomba .sub.cart small{color:var(--tinta-suave)}
 .bomba .delta{font-family:var(--f-mono);font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;background:#F1F4F8}
 .bomba .delta.up{background:#E4F2EC}.bomba .delta.dn{background:#FAEAE7}
+.bomba[data-k]{cursor:pointer;transition:box-shadow .15s}.bomba[data-k]:hover{box-shadow:0 4px 14px rgba(22,33,28,.10)}
+.bomba[data-k]:focus-visible{outline:2px solid var(--laranja,#EC6C22);outline-offset:2px}
+.bomba .abre{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-suave);margin-top:10px}
+.bomba .abre::after{content:' ▾';display:inline-block}.bomba[aria-expanded="true"] .abre::after{content:' ▴'}
+.bomba .porun{margin-top:8px;padding-top:8px;border-top:1px solid #E6EAF0;display:grid;gap:7px}
+.bomba .porun .cab{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-suave)}
+.bomba .un{display:grid;grid-template-columns:30px auto 1fr auto;gap:8px;align-items:baseline;font-size:12.5px}
+.bomba .un b{font-family:var(--f-mono);font-size:12px}.bomba .un .v{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.bomba .un small{color:var(--tinta-suave);min-width:0;white-space:nowrap}.bomba .un small.gv{grid-column:2/-1;margin-top:-5px}
 .up{color:var(--bom)}.dn{color:var(--ruim)}.ne{color:var(--tinta-fraca)}
 .abas{display:flex;flex-wrap:wrap;gap:4px;background:#fff;border:1px solid var(--linha);border-radius:14px;padding:5px;box-shadow:var(--sombra)}
 .abas button{flex:1 1 auto;font-family:var(--f-titulo);font-size:14px;font-weight:600;border:0;background:transparent;color:var(--tinta-suave);padding:10px 14px;border-radius:10px;cursor:pointer}
@@ -244,7 +253,7 @@ function mostra(){
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=1';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=2';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){

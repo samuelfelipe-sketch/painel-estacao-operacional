@@ -161,13 +161,38 @@
   }
 
   /* ---------- KPIs ---------- */
+  var kAbertos = {}; /* cartões abertos por unidade (toque no cartão) */
   function kpis() {
     var meses = mesesPeriodo(st.mes), par = soma(meses), sh = shares(par);
     var antMeses = periodoAnterior(meses), shAnt = shares(soma(antMeses));
     var shAno = shares(soma(meses.map(anoAnt)));
     var h = '';
-    function bomba(cl, lbl, val, sub, deltas, extra) {
-      return '<div class="bomba ' + cl + '"><div class="lbl">' + lbl + '</div><div class="val">' + val + '</div><div class="sub">' + sub + '</div>' + (extra || '') + (deltas ? '<div class="deltas">' + deltas + '</div>' : '') + '</div>';
+    function bomba(cl, lbl, val, sub, deltas, extra, k, media) {
+      var det = k ? detUn(k, media) : '', ab = !!(det && kAbertos[k]);
+      return '<div class="bomba ' + cl + '"' + (det ? ' data-k="' + k + '" role="button" tabindex="0" aria-expanded="' + ab + '"' : '') + '><div class="lbl">' + lbl + '</div><div class="val">' + val + '</div><div class="sub">' + sub + '</div>' + (extra || '') + (deltas ? '<div class="deltas">' + deltas + '</div>' : '') +
+        (det ? '<div class="abre">' + (ab ? 'Fechar' : 'Ver por unidade') + '</div>' + (ab ? det : '') : '') + '</div>';
+    }
+    /* abertura do cartão por unidade: k = 'mercado' | bandeira | 'posto' (media = m³/mês do posto médio do recorte) */
+    function detUn(k, media) {
+      var us = unSel().filter(function (u) { return k === 'mercado' || k === 'posto' || UNID()[u].bandeira === k; });
+      if (!us.length || !meses.some(function (m) { return D.sapatao.meses[m] && D.sapatao.meses[m].unid; })) return '';
+      var ref = perLbl(anoAnt(st.mes));
+      var ls = us.map(function (u) {
+        var nome = esc(UNID()[u].nome), p = soma(meses, st.esc, st.seg, st.prod, [u]), s = shares(p);
+        if (!s) return '<div class="un"><b>' + nome + '</b><span class="v">—</span><span></span></div>';
+        var n = p.meses.length || 1;
+        if (k === 'posto') {
+          var mm = p.S.total / n;
+          return '<div class="un"><b>' + nome + '</b><span class="v">' + (media ? num(mm / media, 1) + '×' : num(mm, 0)) + '</span><small>' + num(mm, 0) + ' m³/mês</small></div>';
+        }
+        var pa = soma(meses.map(anoAnt), st.esc, st.seg, st.prod, [u]), a = pa.S.total > 0 ? shares(pa) : null, nova = !!(pa.M && pa.S.total === 0);
+        var v = s[k], d = (a && a[k] != null && v != null) ? v - a[k] : null;
+        var gv = k !== 'mercado' ? naCarteira(k, v) : null;
+        return '<div class="un"><b>' + nome + '</b><span class="v">' + (v != null ? pct(v) : '—') + '</span><small>' + num(p.S.total, 0) + ' m³</small>' +
+          (d != null ? '<span class="delta ' + cls(d) + '">' + pp(d) + '</span>' : nova ? '<span class="delta" title="Sem compras no período de comparação">nova</span>' : '<span></span>') +
+          (gv != null ? '<small class="gv">≈ ' + pct(gv) + ' da carteira do GV</small>' : '') + '</div>';
+      });
+      return '<div class="porun"><div class="cab">Por unidade' + (k !== 'posto' ? ' · vs ' + ref : '') + '</div>' + ls.join('') + '</div>';
     }
     function deltas(k) {
       var s = '';
@@ -181,16 +206,16 @@
       var motivo = !D.sapatao.meses[st.mes] ? 'Sem compras em ' + mesLbl(st.mes) : (!todasUn() && !D.sapatao.meses[st.mes].unid) ? 'Mês sem abertura por unidade' : 'ANP sem ' + mesLbl(st.mes) + ' neste recorte';
       h += bomba('', 'Participação ' + ESC_CURTO[st.esc], '—', motivo) + bomba('raizen', 'Dentro da Raízen', '—', '') + bomba('ipiranga', 'Dentro da Ipiranga', '—', '');
     } else {
-      h += bomba('', 'Participação ' + ESC_CURTO[st.esc], pct(sh.mercado), num(par.S.total, 0) + ' m³ de ' + num(par.M.Total, 0) + ' mil m³' + (par.parcial ? ' · <span class="dn">parcial</span>' : ''), deltas('mercado'));
-      h += bomba('raizen', 'Dentro da Raízen', postosSel()['Raízen'] ? pct(sh['Raízen']) : '—', postosSel()['Raízen'] ? num(par.S['Raízen'], 0) + ' m³ de ' + num(par.M['Raízen'], 0) + ' mil m³' : 'Sem unidade Raízen na seleção', deltas('Raízen'), postosSel()['Raízen'] ? cartTxt('Raízen', sh['Raízen']) : '');
-      h += bomba('ipiranga', 'Dentro da Ipiranga', postosSel()['Ipiranga'] ? pct(sh['Ipiranga']) : '—', postosSel()['Ipiranga'] ? num(par.S['Ipiranga'], 0) + ' m³ de ' + num(par.M['Ipiranga'], 0) + ' mil m³' : 'Sem unidade Ipiranga na seleção', deltas('Ipiranga'), postosSel()['Ipiranga'] ? cartTxt('Ipiranga', sh['Ipiranga']) : '');
+      h += bomba('', 'Participação ' + ESC_CURTO[st.esc], pct(sh.mercado), num(par.S.total, 0) + ' m³ de ' + num(par.M.Total, 0) + ' mil m³' + (par.parcial ? ' · <span class="dn">parcial</span>' : ''), deltas('mercado'), '', 'mercado');
+      h += bomba('raizen', 'Dentro da Raízen', postosSel()['Raízen'] ? pct(sh['Raízen']) : '—', postosSel()['Raízen'] ? num(par.S['Raízen'], 0) + ' m³ de ' + num(par.M['Raízen'], 0) + ' mil m³' : 'Sem unidade Raízen na seleção', deltas('Raízen'), postosSel()['Raízen'] ? cartTxt('Raízen', sh['Raízen']) : '', postosSel()['Raízen'] ? 'Raízen' : '');
+      h += bomba('ipiranga', 'Dentro da Ipiranga', postosSel()['Ipiranga'] ? pct(sh['Ipiranga']) : '—', postosSel()['Ipiranga'] ? num(par.S['Ipiranga'], 0) + ' m³ de ' + num(par.M['Ipiranga'], 0) + ' mil m³' : 'Sem unidade Ipiranga na seleção', deltas('Ipiranga'), postosSel()['Ipiranga'] ? cartTxt('Ipiranga', sh['Ipiranga']) : '', postosSel()['Ipiranga'] ? 'Ipiranga' : '');
     }
     var snap = postosSnap(st.esc, st.mes), nUn = postosSel().total;
     if (sh && snap && snap.p.Total && nUn && st.seg !== 'tot') {
       var n = par.meses.length, porUn = par.S.total / n / nUn, media = par.M.Total * 1000 / n / snap.p.Total;
-      h += bomba('verde', 'Volume por posto', num(porUn / media, 1) + '<small>× a média</small>', num(porUn, 0) + ' m³/mês por unidade · média ' + ESC_CURTO[st.esc] + ' ' + num(media, 0) + ' m³');
+      h += bomba('verde', 'Volume por posto', num(porUn / media, 1) + '<small>× a média</small>', num(porUn, 0) + ' m³/mês por unidade · média ' + ESC_CURTO[st.esc] + ' ' + num(media, 0) + ' m³', '', '', 'posto', media);
     } else if (sh && nUn) {
-      h += bomba('verde', 'Volume por unidade', num(par.S.total / (par.meses.length || 1) / nUn, 0) + '<small>m³/mês</small>', st.seg === 'tot' ? 'Média por posto só vale em postos' : 'Sem contagem de postos para ' + ESC_NOME[st.esc]);
+      h += bomba('verde', 'Volume por unidade', num(par.S.total / (par.meses.length || 1) / nUn, 0) + '<small>m³/mês</small>', st.seg === 'tot' ? 'Média por posto só vale em postos' : 'Sem contagem de postos para ' + ESC_NOME[st.esc], '', '', 'posto', null);
     }
     el('kpis').innerHTML = h;
   }
@@ -458,6 +483,10 @@
     ligado = true;
     liga('segProd', 'prod'); liga('segEsc', 'esc'); liga('segPer', 'per');
     el('selSeg').addEventListener('change', function () { st.seg = this.value; guarda(); desenha(); });
+    /* toque/clique num cartão abre (ou fecha) a abertura por unidade */
+    function abreK(ev) { var c = ev.target.closest('.bomba[data-k]'); if (!c) return; kAbertos[c.dataset.k] = !kAbertos[c.dataset.k]; kpis(); var n = el('kpis').querySelector('.bomba[data-k="' + c.dataset.k + '"]'); if (n && ev.type === 'keydown') n.focus(); }
+    el('kpis').addEventListener('click', abreK);
+    el('kpis').addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abreK(ev); } });
     el('segSerie').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; st.serie = b.dataset.v; guarda(); serie(); });
     el('abas').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; st.aba = b.dataset.aba; guarda(); try { history.replaceState(null, '', '#' + st.aba); } catch (e) {} mostraAba(); });
     el('selMes').addEventListener('change', function () { st.mes = this.value; desenha(); });
