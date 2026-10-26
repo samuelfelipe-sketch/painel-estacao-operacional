@@ -102,8 +102,10 @@ for (const e of empresas) {
   const baseD = ((DATA.meses[mes] || {}).empresas || {})[id] || null; /* o que a empresa já tem carregado neste mês */
   const d0 = baseD ? (((DIA[mes] || {}).cobertura || {})[id] ?? ((DIA[mes] || {}).dias || 0)) : 0; /* último dia carregado */
   const limiteD0 = mes + '-' + dd(d0);
-  /* incremental: já há dias no mês, não é --refazer, e algum extrato não começa no dia 1º */
-  const incremental = d0 > 0 && !refazer && Object.values(porBanco).some(lista => lista.every(o => ((o.periodo && o.periodo.de) || (o.mov[0] || {}).data || '') > mes + '-01'));
+  /* incremental: já há dias no mês e não é --refazer — sempre (decisão do Samuel, 26/10/2026): um
+     extrato que começa no dia 1º tem os dias já carregados descartados depois de conferir o saldo
+     no dia do corte anterior; a recarga completa é só com --refazer */
+  const incremental = d0 > 0 && !refazer;
   if (incremental) { incrementais[e] = d0; avisos.push(`${e}: carga incremental a partir de ${dd(d0 + 1)}/${dd(mm)} (o mês já estava carregado até ${dd(d0)}/${dd(mm)}; cada conta é ancorada no saldo guardado desse dia)`); }
   const esperadasB = new Set([...((antM[id] || {}).contas || []), ...((baseD || {}).contas || [])].map(c => c.banco));
   const presentes = new Set(Object.keys(porBanco).map(b => BANCO_NOME[b]));
@@ -243,6 +245,9 @@ function somaNaBase(r, baseD, baseDia, nd) {
   const dif = r2(ini + sIn - sOut + sIcw - fim);
   return { ...r, DATA: DATAm, DIA: DIAm, reconcilia: Math.abs(dif) <= 0.015, dif, ini: r2(ini), fim: r2(fim), totalIn: r2(sIn), totalOut: r2(sOut), icwTotal: r2(sIcw), incremental: true };
 }
+/* carga incremental em que NENHUMA conta trouxe dia novo (pasta só com arquivos antigos): nada a
+   gravar — e nunca marcar todas as contas como SEM EXTRATO por isso */
+if (Object.keys(incrementais).length && !Object.values(resultados).some(r => (r.classificados || []).length)) falha(`carga incremental sem nenhum lançamento novo depois do último dia carregado — os arquivos da pasta não trazem dia novo (exportações antigas?). Nada gravado.`);
 if (encerradas.length) avisos.push(`conta(s) encerrada(s) sem extrato — saem do painel a partir deste mês (saldo zero): ${encerradas.join(', ')}`);
 
 /* até que dia o mês está coberto */
