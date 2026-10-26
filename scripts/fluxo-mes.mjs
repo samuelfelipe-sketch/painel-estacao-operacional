@@ -132,13 +132,21 @@ for (const e of empresas) {
         if (!antes.length) continue;
         mov = antes.concat(mov); de = p.periodo.de; saldoAnterior = p.saldoAnterior;
       }
-      const semSaldo = ps.some(p => p.semSaldo);
-      if (!semSaldo) {
-        const dif = r2(saldoAnterior + mov.reduce((a, x) => a + x.valor, 0) - base.saldoFinal);
-        if (Math.abs(dif) > 0.015) falha(`${e}/${banco}: as ${ps.length} partes não formam uma cadeia contínua (dif ${dif}) — falta uma semana ou há sobreposição com valores diferentes. Nada gravado.`);
-      }
-      o = { ...base, saldoAnterior: semSaldo ? null : saldoAnterior, saldoFinal: semSaldo ? null : base.saldoFinal, semSaldo, mov, periodo: { de, ate: base.periodo.ate } };
-      avisos.push(`${e}/${banco}: ${ps.length} partes emendadas (${de}→${base.periodo.ate})${semSaldo ? ' — partes sem saldo: cadeia não conferível' : ''}`);
+      /* as partes se completam: cada parte com saldo (no início, ou no fim da última) diz o
+         saldo da cadeia inteira; todas têm de concordar no centavo. Parte sem saldo (CSV do
+         Itaú) só entra com os lançamentos — a conta continua conferível se outra parte tiver
+         saldo (decisão do Samuel, 26/10/2026). Nenhuma parte com saldo: cadeia não conferível. */
+      void saldoAnterior;
+      const somaAntesDe = d => mov.filter(x => x.data < d).reduce((a, x) => a + x.valor, 0);
+      const estimativas = [];
+      for (const p of ps) if (!p.semSaldo && p.saldoAnterior != null && p.periodo && p.periodo.de && p.periodo.de >= de) estimativas.push({ x: r2(p.saldoAnterior - somaAntesDe(p.periodo.de)), q: `início de ${p.periodo.de}` });
+      if (!base.semSaldo && base.saldoFinal != null) estimativas.push({ x: r2(base.saldoFinal - mov.reduce((a, x) => a + x.valor, 0)), q: `fim de ${base.periodo.ate}` });
+      const semSaldo = !estimativas.length;
+      if (estimativas.length > 1) { const m = estimativas.find(z => Math.abs(z.x - estimativas[0].x) > 0.015); if (m) falha(`${e}/${banco}: as ${ps.length} partes não formam uma cadeia contínua (saldo pelo ${estimativas[0].q} ≠ pelo ${m.q}, dif ${r2(m.x - estimativas[0].x)}) — falta uma semana ou há sobreposição com valores diferentes. Nada gravado.`); }
+      const ini = semSaldo ? null : estimativas[0].x;
+      const parcial = !semSaldo && ps.some(p => p.semSaldo);
+      o = { ...base, saldoAnterior: ini, saldoFinal: semSaldo ? null : r2(ini + mov.reduce((a, x) => a + x.valor, 0)), semSaldo, mov, periodo: { de, ate: base.periodo.ate }, saldoFinalDerivado: base.saldoFinalDerivado || (parcial && (base.semSaldo || base.saldoFinal == null)) };
+      avisos.push(`${e}/${banco}: ${ps.length} partes emendadas (${de}→${base.periodo.ate})${semSaldo ? ' — nenhuma parte com saldo: cadeia não conferível' : parcial ? ` — parte(s) sem saldo completadas pelo saldo das outras (${estimativas.length} ponto(s) de conferência)` : ''}`);
     }
     /* o extrato tem de cobrir a conta desde o 1º dia do mês (extrato semanal avulso
        sem as semanas anteriores deixaria os primeiros dias zerados em silêncio) */
@@ -149,6 +157,17 @@ for (const e of empresas) {
       const proximo = mes + '-' + dd(d0 + 1);
       if (deCob > proximo) falha(`${e}/${banco}: o mês está carregado até ${dd(d0)}/${dd(mm)} e o extrato só começa em ${deCob.slice(8, 10)}/${deCob.slice(5, 7)} — faltam os dias ${dd(d0 + 1)}–${dd(+deCob.slice(8, 10) - 1)}/${dd(mm)}. Nada gravado.`);
       const guardada = ((baseD || {}).contas || []).find(c => c.banco === BANCO_NOME[banco]);
+      /* arquivo que não traz nenhum dia depois do último carregado (exportação antiga que ficou
+         na pasta): a conta conta como SEM EXTRATO nesta carga — parada no saldo guardado, com a
+         observação na nota/STATUS (decisão do Samuel, 26/10/2026); o saldo dele ainda é conferido */
+      const ateCob = (o.periodo && o.periodo.ate) || (o.mov[o.mov.length - 1] || {}).data || '';
+      if (guardada && ateCob && ateCob <= limiteD0) {
+        if (o.saldoAnterior != null) { const noCorteVelho = r2(o.saldoAnterior + o.mov.filter(m => m.data <= ateCob).reduce((a, m) => a + m.valor, 0)); const guardadoNoDia = ateCob === limiteD0 ? guardada.fim : null; if (guardadoNoDia != null && Math.abs(noCorteVelho - guardadoNoDia) > 0.015) falha(`${e}/${banco}: o extrato termina em ${ateCob.slice(8, 10)}/${ateCob.slice(5, 7)} com saldo ${brl(noCorteVelho)} ≠ saldo guardado ${brl(guardadoNoDia)}. Nada gravado.`); }
+        extratos.push({ banco, saldoAnterior: r2(guardada.fim), saldoFinal: r2(guardada.fim), mov: [], semExtrato: true });
+        semExtrato.push(`${id}·${BANCO_NOME[banco]} (parada em ${dd(d0)}/${dd(mm)}; o arquivo da pasta termina em ${ateCob.slice(8, 10)}/${ateCob.slice(5, 7)})`);
+        avisos.push(`${e}/${banco}: o arquivo lido termina em ${ateCob.slice(8, 10)}/${ateCob.slice(5, 7)}, antes do último dia carregado — conta SEM EXTRATO nesta carga, parada no saldo guardado (não use este arquivo para o dia de corte)`);
+        continue;
+      }
       const antes = o.mov.filter(m => m.data <= limiteD0);
       const somaAntes = antes.reduce((a, m) => a + m.valor, 0);
       o.mov = o.mov.filter(m => m.data > limiteD0);
@@ -242,7 +261,26 @@ const viradas = [];
 for (const id of new Set([...Object.keys(((DATA.meses[mes] || {}).empresas) || {}), ...Object.keys(antM)])) {
   const e = Object.keys(EMP_ID).find(k => EMP_ID[k] === id); if (!e || resultados[e] || semEmp.includes(e)) continue;
   const noMes = (((DATA.meses[mes] || {}).empresas || {})[id] || {}).contas || [];
-  if (noMes.length && !refazer) { if (Object.keys(incrementais).length) { avisos.push(`${e}: sem extrato nesta carga — fica com o realizado até o dia já carregado`); continue; } falha(`${e}: a empresa já tem lançamentos em ${mes} e não veio nesta carga — traga os extratos de novo. Nada gravado.`); }
+  if (noMes.length && !refazer) {
+    if (Object.keys(incrementais).length) {
+      /* carga incremental: a empresa sem nenhum arquivo fica com todas as contas paradas no saldo
+         guardado, sem movimento nos dias novos, e entra como SEM EXTRATO na nota/STATUS — a mesma
+         regra das contas (decisão do Samuel, 23 e 26/10/2026) */
+      const baseE = ((DATA.meses[mes] || {}).empresas || {})[id];
+      const d0e = (((DIA[mes] || {}).cobertura || {})[id] ?? ((DIA[mes] || {}).dias || 0));
+      const bId = nome => Object.keys(BANCO_NOME).find(k => BANCO_NOME[k] === nome);
+      const contasE = (baseE.contas || []).filter(c => bId(c.banco) && !contaEncerrada(e, bId(c.banco), mes));
+      const ext = contasE.map(c => ({ banco: bId(c.banco), saldoAnterior: r2(c.fim), saldoFinal: r2(c.fim), mov: [], semExtrato: true }));
+      let r = montaEmpresa({ empresa: e, mes, extratos: ext, fornMap, ajustes });
+      r = somaNaBase(r, baseE, ((DIA[mes] || {}).empresas || {})[id] || {}, nd);
+      if (!r.reconcilia) falha(`${e}: a empresa parada no saldo guardado não concilia (dif ${r.dif}) — nada gravado.`);
+      resultados[e] = r; incrementais[e] = d0e;
+      for (const c of contasE) semExtrato.push(`${id}·${c.banco} (parada em ${dd(d0e)}/${dd(mm)})`);
+      avisos.push(`${e}: nenhum extrato nesta carga — todas as contas paradas no saldo guardado de ${dd(d0e)}/${dd(mm)}`);
+      continue;
+    }
+    falha(`${e}: a empresa já tem lançamentos em ${mes} e não veio nesta carga — traga os extratos de novo. Nada gravado.`);
+  }
   const bancoId = nome => Object.keys(BANCO_NOME).find(k => BANCO_NOME[k] === nome);
   const contasAnt = ((antM[id] || {}).contas || []).filter(c => bancoId(c.banco) && !contaEncerrada(e, bancoId(c.banco), mes));
   if (!contasAnt.length) continue;
@@ -250,7 +288,8 @@ for (const id of new Set([...Object.keys(((DATA.meses[mes] || {}).empresas) || {
   resultados[e] = montaEmpresa({ empresa: e, mes, extratos, fornMap, ajustes });
   for (const c of contasAnt) semExtrato.push(`${id}·${c.banco}`);
 }
-if (semExtrato.length) avisos.push(`conta(s) sem extrato nesta carga, mantidas no último saldo conhecido (fechamento de ${MES_LABEL[mesAnt] || mesAnt}/${mesAnt.slice(0, 4)}), sem movimento: ${semExtrato.join(', ')}`);
+const refMantido = Object.keys(incrementais).length ? 'saldo guardado do último dia carregado' : `fechamento de ${MES_LABEL[mesAnt] || mesAnt}/${mesAnt.slice(0, 4)}`;
+if (semExtrato.length) avisos.push(`conta(s) sem extrato nesta carga, mantidas no último saldo conhecido (${refMantido}), sem movimento: ${semExtrato.join(', ')}`);
 const idsCarregados = Object.keys(resultados).map(e => EMP_ID[e]);
 const cobAnt = { ...((DIA[mes] && DIA[mes].cobertura) || {}) };
 /* meses carregados antes do controle de cobertura: assume os dias registrados no diário */
@@ -306,7 +345,7 @@ const nota = [`${tipo === 'full' ? 'Mês fechado' : 'Mês parcial'} pela rotina 
   `Semanas seg→dom (${sem.map(s => s.replace(' · ', ' ')).join(' · ')}).`,
   `Classificação pelas regras de memo e pelo mapa de fornecedores do Argo; ${totalRev} lançamento(s) ficaram marcados para revisão${ajustes.length ? `; ${ajustes.length} ajuste(s) aplicado(s)` : ''}.`,
   encerradas.length ? `Conta(s) encerrada(s), fora do painel a partir deste mês: ${encerradas.join(', ')}.` : '',
-  semExtrato.length ? `SEM EXTRATO nesta carga — mantidas no último saldo conhecido (${MES_LABEL[mesAnt] || mesAnt}/${mesAnt.slice(0, 4)}), sem movimento até chegar o extrato: ${semExtrato.join(', ')}.` : '',
+  semExtrato.length ? `SEM EXTRATO nesta carga — mantidas no último saldo conhecido (${refMantido}), sem movimento até chegar o extrato: ${semExtrato.join(', ')}.` : '',
   foraDesta.length ? `Fora desta carga (ficam com o realizado até o dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))}, por falta de extrato): ${foraDesta.join(', ')}.` : '',
   viradas.length ? `Virada de saldos a conferir: ${viradas.join('; ')}.` : '',
   opt(args, 'nota') || ''].filter(Boolean).join(' ');
@@ -318,7 +357,7 @@ if (!MES_LABEL[mes]) MES_LABEL[mes] = MESES_PT[mm - 1];
 const refBR = `${dd(dias)}/${dd(mm)}`;
 STATUS.dados_ate = `${dd(dias)}/${dd(mm)}/${ano}`; STATUS.atualizado = `${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}`;
 const bancos = [...new Set(Object.values(resultados).flatMap(r => r.DATA.contas.map(c => BANCO_NOME[c.banco])))];
-STATUS.extratos = `${bancos.join(', ')} até ${refBR} — extratos da pasta semanal do OneDrive (Financeiro/Fluxo de Caixa/Extratos/Fluxo On-line; formatos ${[...formatosUsados].sort().join(', ')}), lidos pela rotina automática em ${STATUS.atualizado}; ${mes} ${tipo === 'full' ? 'FECHADO' : 'parcial'}${semExtrato.length ? `; SEM EXTRATO (saldo mantido de ${MES_LABEL[mesAnt] || mesAnt}): ${semExtrato.join(', ')}` : ''}${foraDesta.length ? `; sem extrato completo neste mês: ${foraDesta.join(', ')} (realizado parado no dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))})` : ''}`;
+STATUS.extratos = `${bancos.join(', ')} até ${refBR} — extratos da pasta semanal do OneDrive (Financeiro/Fluxo de Caixa/Extratos/Fluxo On-line; formatos ${[...formatosUsados].sort().join(', ')}), lidos pela rotina automática em ${STATUS.atualizado}; ${mes} ${tipo === 'full' ? 'FECHADO' : 'parcial'}${semExtrato.length ? `; SEM EXTRATO (${Object.keys(incrementais).length ? 'saldo guardado mantido' : `saldo mantido de ${MES_LABEL[mesAnt] || mesAnt}`}): ${semExtrato.join(', ')}` : ''}${foraDesta.length ? `; sem extrato completo neste mês: ${foraDesta.join(', ')} (realizado parado no dia ${dd(Math.max(...foraDesta.map(id => cobAnt[id] || 0)))})` : ''}`;
 if (!PAINEL.empresas) PAINEL.empresas = {};
 for (const e of Object.keys(resultados)) { const id = EMP_ID[e]; PAINEL.empresas[id] = { ...(PAINEL.empresas[id] || {}), saldo: resultados[e].fim, ref: refBR }; }
 /* o painel aponta para o último mês com dados realizados */

@@ -38,6 +38,9 @@ const N = s => (s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const BANCO_NOME_ARQ = [['sicredi', /SICREDI/], ['stone', /STONE/], ['unicred', /UNICRED/], ['banrisul', /BANRISUL/], ['bradesco', /BRADESCO/], ['itau', /ITAU|(?<!\d)0912(?!\d)/], ['pagbank', /PAGBANK|PAGSEGURO/]];
 /* texto que não é texto: .xls/.ofx binário copiado com extensão .txt (o conector devolve
    bytes como caracteres de controle/substituição) — não é extrato legível */
+/* relatório do Argo (contas a pagar/receber, vendas, compras, DRE): a rotina lê esses arquivos na
+   mesma sessão para a conferência do contas a pagar — nunca são extrato bancário */
+export const ehRelatorioArgo = (t, nome) => /^\s*(cod_fornec;|Tipo Documento;Cliente;)/.test(t) || /Relatorio(De)?(ContasA|Vendas|Compra|Acompanhamento)|Demonstrativo|Contas a (pagar|receber)/i.test(nome || '');
 export const ehBinario = t => { const a = t.slice(0, 4000); const ruins = (a.match(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]/g) || []).length; return a.length > 200 && ruins / a.length > 0.02; };
 const EMP_NOME_ARQ = [['siss', /\bSISS\b/], ['st', /\bST\b|TRANSPORTES/], ['ss', /\bSS\b|SERVICOS/], ['as', /\bAS\b|SAFYR|COLONIAS/], ['sf', /\bSF\b|ESTANCIA/], ['ps', /\bPS\b|POSTO SAPATAO|ESTACAO/]];
 
@@ -169,6 +172,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const ROTULO = f => (f === 'pdf' ? 'texto (pdf/txt)' : f);
   for (const l of leituras) {
     if (/^\S.* \((?:file|folder), [^)]*\) file:\/\/\//m.test(l.texto.slice(0, 2000))) continue; /* listagem de pasta */
+    if (ehRelatorioArgo(l.texto, l.nome)) { ignorados++; continue; } /* relatório do Argo (conferência), não é extrato */
     if (ehBinario(l.texto)) { ignorados++; motivos.push(`${l.nome}: arquivo binário salvo como texto (.xls/.ofx copiado como .txt?) — ilegível; só OFX em texto, .xlsx, .xls, PDF, TXT ou CSV`); continue; }
     const formato = detectaFormato(l.texto);
     const banco = detectaBanco(l.texto, l.nome); const empresa = detectaEmpresa(l.texto, banco, l.nome);
