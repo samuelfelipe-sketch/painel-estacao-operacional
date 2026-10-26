@@ -119,7 +119,11 @@ var margTotAnt  = totComb.mrsAnt  + totMerc.mrsAnt;
 var margTotAno  = totComb.mrsAno  + totMerc.mrsAno;
 
 function dl(lbl,v){ return '<span class="dl '+sgn(v)+'"><em>'+lbl+'</em>'+pct(v)+'</span>'; }
+var FT=D.fat&&D.fat.FTOT, FC=D.fat&&D.fat.FCOMB, FM=D.fat&&D.fat.FMERC;
 var kpis=[
+ {lbl:'Faturamento total · projeção', big:'R$ '+nf0.format(FT.recA), unit:'', topo:true,
+  sub:'combustíveis R$ '+nf0.format(FC.recA)+' + mercadorias e serviços R$ '+nf0.format(FM.recA),
+  d:[[VS_ANT,FT.vAnt],[VS_ANO,FT.vAno]]},
  {lbl:'Volume combustíveis · projeção', big:nf0.format(totComb.proj), unit:'L',
   sub:nf0.format(totComb.acum)+' L acumulados · meta '+nf0.format(totComb.meta)+' L',
   d:[[VS_ANT,totComb.difAnt],[VS_ANO,totComb.difAno]]},
@@ -136,11 +140,12 @@ var kpis=[
 /* abertura por unidade (toque no cartão): mesma conta em cada unidade de D.escopos */
 var UNIS=(D.escopos||[]).filter(function(e){ return e.cod!=='REDE'; }).map(function(e){
   var b={}; e.linhas.concat(e.grupos).forEach(function(l){ b[l.cod]=l; });
-  return {sig:SIGLA[e.cod]||e.cod, semAno:!!e.semBaseAno, c:b.TOTCOMB, m:b.TOTMERC};
-}).filter(function(u){ return u.c&&u.m; }).sort(function(a,b){ return a.sig<b.sig?-1:1; });
+  return {sig:SIGLA[e.cod]||e.cod, semAno:!!e.semBaseAno, c:b.TOTCOMB, m:b.TOTMERC, f:e.fat&&e.fat.FTOT};
+}).filter(function(u){ return u.c&&u.m&&u.f; }).sort(function(a,b){ return a.sig<b.sig?-1:1; });
 function var_(a,b){ return (isFinite(a)&&isFinite(b)&&b)?(a/b-1)*100:NaN; }
 function pMeta(v,m){ return m>0?nf0.format(v/m*100)+'% meta':''; }
 var KUN=[
+ function(u){ return {v:brlCurto(u.f.recA), s:nf0.format(u.f.recA/FT.recA*100)+'% rede', a:u.f.vAnt, y:u.f.vAno}; },
  function(u){ return {v:nf0.format(u.c.proj/1e3)+'<small>mil L</small>', s:pMeta(u.c.proj,u.c.meta), a:u.c.difAnt, y:u.c.difAno}; },
  function(u){ return {v:brlCurto(u.m.proj), s:pMeta(u.m.proj,u.m.meta), a:u.m.difAnt, y:u.m.difAno}; },
  function(u){ var p=u.c.mrsProj+u.m.mrsProj; return {v:brlCurto(p), s:nf0.format(p/margTotProj*100)+'% rede', a:var_(p,u.c.mrsAnt+u.m.mrsAnt), y:var_(p,u.c.mrsAno+u.m.mrsAno)}; },
@@ -158,7 +163,7 @@ function porUn(i){
 function drawKpis(){
   byId('kpis').innerHTML = kpis.map(function(k,i){
     var tem=UNIS.length>0, ab=tem&&!!UI.kAberto[i];
-    return '<div class="kpi'+(tem?' abre':'')+'"'+(tem?' data-i="'+i+'" role="button" tabindex="0" aria-expanded="'+ab+'"':'')+'><div class="lbl">'+k.lbl+'</div><div class="big">'+k.big+
+    return '<div class="kpi'+(k.topo?' topo':'')+(tem?' abre':'')+'"'+(tem?' data-i="'+i+'" role="button" tabindex="0" aria-expanded="'+ab+'"':'')+'><div class="lbl">'+k.lbl+'</div><div class="big">'+k.big+
       (k.unit?'<small>'+k.unit+'</small>':'')+'</div><div class="sub">'+k.sub+'</div><div class="deltas">'+
       k.d.map(function(x){return dl(x[0],x[1]);}).join('')+'</div>'+
       (tem?'<div class="kver">'+(ab?'Fechar':'Ver por unidade')+'</div>'+(ab?porUn(i):''):'')+'</div>';
