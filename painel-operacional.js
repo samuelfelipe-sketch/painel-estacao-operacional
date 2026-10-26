@@ -121,8 +121,8 @@ var margTotAno  = totComb.mrsAno  + totMerc.mrsAno;
 function dl(lbl,v){ return '<span class="dl '+sgn(v)+'"><em>'+lbl+'</em>'+pct(v)+'</span>'; }
 var FT=D.fat&&D.fat.FTOT, FC=D.fat&&D.fat.FCOMB, FM=D.fat&&D.fat.FMERC;
 var kpis=[
- {lbl:'Faturamento total · projeção', big:'R$ '+nf0.format(FT.recA), unit:'', topo:true,
-  sub:'combustíveis R$ '+nf0.format(FC.recA)+' + mercadorias e serviços R$ '+nf0.format(FM.recA),
+ {lbl:'Faturamento total · projeção', big:'R$ '+nf0.format(FT.recA), unit:'',
+  sub:'combustíveis '+brlCurto(FC.recA)+' + mercadorias '+brlCurto(FM.recA),
   d:[[VS_ANT,FT.vAnt],[VS_ANO,FT.vAno]]},
  {lbl:'Volume combustíveis · projeção', big:nf0.format(totComb.proj), unit:'L',
   sub:nf0.format(totComb.acum)+' L acumulados · meta '+nf0.format(totComb.meta)+' L',
@@ -131,7 +131,7 @@ var kpis=[
   sub:'R$ '+nf0.format(totMerc.acum)+' acumulados · meta R$ '+nf0.format(totMerc.meta),
   d:[[VS_ANT,totMerc.difAnt],[VS_ANO,totMerc.difAno]]},
  {lbl:'Margem bruta total · projeção', big:'R$ '+nf0.format(margTotProj), unit:'',
-  sub:'combustíveis R$ '+nf0.format(totComb.mrsProj)+' + mercadorias R$ '+nf0.format(totMerc.mrsProj),
+  sub:'combustíveis '+brlCurto(totComb.mrsProj)+' + mercadorias '+brlCurto(totMerc.mrsProj),
   d:[[VS_ANT,(margTotProj/margTotAnt-1)*100],[VS_ANO,(margTotProj/margTotAno-1)*100]]},
  {lbl:'Margem média combustíveis', big:nf3.format(totComb.muA), unit:'R$/L',
   sub:R.ant+' '+nf3.format(totComb.muB)+' · '+R.ano+' '+nf3.format(totComb.muC)+' R$/L',
@@ -163,7 +163,7 @@ function porUn(i){
 function drawKpis(){
   byId('kpis').innerHTML = kpis.map(function(k,i){
     var tem=UNIS.length>0, ab=tem&&!!UI.kAberto[i];
-    return '<div class="kpi'+(k.topo?' topo':'')+(tem?' abre':'')+'"'+(tem?' data-i="'+i+'" role="button" tabindex="0" aria-expanded="'+ab+'"':'')+'><div class="lbl">'+k.lbl+'</div><div class="big">'+k.big+
+    return '<div class="kpi'+(tem?' abre':'')+'"'+(tem?' data-i="'+i+'" role="button" tabindex="0" aria-expanded="'+ab+'"':'')+'><div class="lbl">'+k.lbl+'</div><div class="big">'+k.big+
       (k.unit?'<small>'+k.unit+'</small>':'')+'</div><div class="sub">'+k.sub+'</div><div class="deltas">'+
       k.d.map(function(x){return dl(x[0],x[1]);}).join('')+'</div>'+
       (tem?'<div class="kver">'+(ab?'Fechar':'Ver por unidade')+'</div>'+(ab?porUn(i):''):'')+'</div>';

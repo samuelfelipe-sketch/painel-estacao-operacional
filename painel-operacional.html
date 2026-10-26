@@ -79,33 +79,29 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:va
 .kpi.abre:focus-visible{outline:2px solid var(--laranja);outline-offset:2px}
 .kpi .kver{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-top:11px}
 .kpi .kver::after{content:' ▾'}.kpi[aria-expanded="true"] .kver::after{content:' ▴'}
-@media (min-width:960px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.kpi.topo{grid-column:1/-1}.kpi.topo .big{font-size:28px}
-@media (min-width:700px){.kpi.topo .kun{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:28px}.kpi.topo .kun .kcab{grid-column:1/-1}}
-/* celular: os 5 cartões cabem numa tela — faturamento na largura toda e os outros 4 em 2×2; o cartão aberto ocupa a linha inteira */
-@media (max-width:640px){
-  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .kpi{padding:10px 11px 10px;border-left-width:4px;border-radius:12px}
-  .kpi .lbl{font-size:8.5px;letter-spacing:.06em;line-height:1.3}
-  .kpi .big{font-size:19px;margin-top:4px}.kpi .big small{font-size:11px}
-  .kpi .sub{font-size:10.5px;line-height:1.35;margin-top:3px}
-  .kpi .deltas{gap:4px;margin-top:7px}.kpi .dl{font-size:10px;padding:2px 5px}
-  .kpi .kver{font-size:8.5px;letter-spacing:.08em;margin-top:7px}
-  .kpi.topo .big{font-size:24px}
-  .kpi:not(.topo):not([aria-expanded="true"]) .sub{display:none}
-  .kpi:not(.topo):not([aria-expanded="true"]) .lbl{min-height:2.6em}
-  .kpi[aria-expanded="true"]{grid-column:1/-1}
-  .kpi[aria-expanded="true"] .lbl{font-size:9.5px;letter-spacing:.1em}
-  .kpi[aria-expanded="true"] .big{font-size:22px}
-  .kpi[aria-expanded="true"] .dl{font-size:11px;padding:2px 7px}
-}
+/* computador: os 5 cartões lado a lado; abrir um cartão não estica os vizinhos */
+.kpis{align-items:start}
+@media (min-width:1000px){.kpis{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (min-width:641px){.kpi .lbl{line-height:1.45;min-height:2.9em}.kpi .sub{line-height:1.3;min-height:2.6em}}
 .kun{margin-top:9px;padding-top:9px;border-top:1px solid #E6EAF0;display:grid;gap:7px}
 .kun .kcab{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);font-weight:600}
-.ku{display:grid;grid-template-columns:24px auto 1fr auto;gap:7px;align-items:baseline}
-.ku b{font-family:"IBM Plex Mono",monospace;font-size:12px}
-.ku .kv{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;white-space:nowrap}
+.ku{display:grid;grid-template-columns:24px minmax(0,1fr) auto;grid-template-areas:"b v d" ". s d";column-gap:7px;row-gap:1px;align-items:baseline}
+.ku b{grid-area:b;font-family:"IBM Plex Mono",monospace;font-size:12px}
+.ku .kv{grid-area:v;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;white-space:nowrap}
 .ku .kv small{font-size:10.5px;color:var(--ink3);font-weight:500;margin-left:2px}
-.ku .ks{font-size:11px;color:var(--ink3);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ku .ks{grid-area:s;font-size:11px;color:var(--ink3);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ku>:last-child{grid-area:d;align-self:center}
+/* celular: um cartão abaixo do outro, compacto — valor à esquerda, variações empilhadas à direita */
+@media (max-width:640px){
+  .kpis{grid-template-columns:minmax(0,1fr);gap:8px}
+  .kpi{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;align-items:center;padding:10px 13px 9px}
+  .kpi .lbl{grid-column:1/-1;font-size:9.5px;letter-spacing:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kpi .big{grid-column:1;grid-row:2;font-size:22px;margin-top:3px}
+  .kpi .deltas{grid-column:2;grid-row:2;flex-direction:column;align-items:flex-end;gap:3px;margin-top:3px}
+  .kpi .sub{grid-column:1/-1;font-size:11px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kpi .kver{grid-column:1/-1;margin-top:6px;font-size:9px}
+  .kpi .kun{grid-column:1/-1}
+}
 .up{background:var(--good-bg);color:var(--good)} .dn{background:var(--bad-bg);color:var(--bad)} .fl{background:var(--surf2);color:var(--ink2)}
 
 /* sections */
