@@ -62,7 +62,7 @@ function fecha(o) {
 /* aplica o período do cabeçalho por cima do inferido dos lançamentos */
 function comCabecalho(o, txt) {
   const pc = periodoCabecalho(txt);
-  if (pc) { o.periodo = o.periodo || {}; if (pc.de && (!o.periodo.de || pc.de < o.periodo.de)) o.periodo.de = pc.de; if (pc.ate && (!o.periodo.ate || pc.ate > o.periodo.ate)) o.periodo.ate = pc.ate; o.periodoDeclarado = pc; }
+  if (pc) { o.periodo = o.periodo || {}; if (pc.de && !o.saldoAnteriorEm && (!o.periodo.de || pc.de < o.periodo.de)) o.periodo.de = pc.de; /* com "saldo anterior em DD/MM" a cobertura começa ali, não no 1º do mês do cabeçalho */ if (pc.ate && (!o.periodo.ate || pc.ate > o.periodo.ate)) o.periodo.ate = pc.ate; o.periodoDeclarado = pc; }
   return o;
 }
 
@@ -225,6 +225,12 @@ export function banrisul(txt) {
     saldosDia.push({ data, saldo: sd }); saldoFinal = sd;
   }
   const o = fecha({ banco: 'banrisul', saldoAnterior, saldoFinal, mov, periodo: {} });
+  /* "SALDO ANT EM DD/MM/AAAA" diz a partir de quando a conta está coberta: o dia seguinte
+     (extrato semanal começa no meio do mês; o "MOVIMENTOS MMM/AAAA" do cabeçalho não
+     significa cobertura desde o dia 1º) */
+  const dAnt = new Date(+sa[3], +sa[2] - 1, +sa[1]); o.saldoAnteriorEm = iso(sa[1], sa[2], sa[3]);
+  const dSeg = new Date(dAnt.getTime() + 86400000); const deCob = `${dSeg.getFullYear()}-${String(dSeg.getMonth() + 1).padStart(2, '0')}-${String(dSeg.getDate()).padStart(2, '0')}`;
+  if (!o.periodo.de || deCob < o.periodo.de) o.periodo.de = deCob;
   /* conferência por dia: acumulado = "SALDO NA DATA" */
   let run = saldoAnterior; const diasNaoBatem = [];
   for (const sdia of saldosDia) { run = round2(run + mov.filter(x => x.data === sdia.data).reduce((a, x) => a + x.valor, 0)); if (Math.abs(run - sdia.saldo) > CENTAVO) diasNaoBatem.push(sdia.data); run = sdia.saldo; }
@@ -309,7 +315,10 @@ export function ofx(txt) {
   if (saldoFinal == null) throw new Error('OFX sem LEDGERBAL (saldo final) — não dá para ancorar o extrato');
   const soma = mov.reduce((a, x) => a + x.valor, 0);
   const saldoAnterior = round2(saldoFinal - soma);
-  const o = fecha({ banco: banco || 'ofx', saldoAnterior, saldoFinal: round2(saldoFinal), mov, periodo: { de: dataOFX(tag(txt, 'DTSTART')), ate: dataOFX(tag(txt, 'DTEND')) } });
+  /* DTEND costuma ser o fim nominal do período pedido (ex.: 31/10 num OFX exportado dia 23):
+     a cobertura real termina no dia da exportação (DTSERVER), nunca depois */
+  const dtEnd = dataOFX(tag(txt, 'DTEND')), dtServer = dataOFX(tag(txt, 'DTSERVER'));
+  const o = fecha({ banco: banco || 'ofx', saldoAnterior, saldoFinal: round2(saldoFinal), mov, periodo: { de: dataOFX(tag(txt, 'DTSTART')), ate: dtEnd && dtServer && dtServer < dtEnd ? dtServer : dtEnd } });
   o.formato = 'ofx'; o.empresa = empresa; o.bankid = bankid; o.conta = acct; o.saldoAnteriorDerivado = true;
   return o;
 }
@@ -354,6 +363,25 @@ const semDesconhecido = s => (s && !/^desconhecido$/i.test(s.trim()) ? s.trim() 
    A conta própria é a conta Stone que aparece em todas as linhas. */
 export const ehStoneXlsx = txt => /^Workbook:/m.test(txt.slice(0, 400)) && /Movimenta[çc][ãa]o\tTipo\tValor\tSaldo antes\tSaldo depois/i.test(txt.slice(0, 4000));
 const STONE_PROPRIA = /^stone\b/i;
+/* conta Stone própria (a mais citada como "Destino"/"Origem" na instituição Stone) →
+   empresa, sem depender do parse dos lançamentos */
+export function stoneXlsxConta(txt) {
+  const linhas = txt.replace(/\r/g, '').split('\n');
+  const hi = linhas.findIndex(l => /^Movimenta[çc][ãa]o\tTipo\tValor/i.test(l)); if (hi < 0) return { acct: null, empresa: null };
+  const cab = linhas[hi].split('\t').map(s => s.trim().toLowerCase());
+  const I = { mov: cab.indexOf('movimentação'), destInst: cab.indexOf('destino instituição'), destCta: cab.indexOf('destino conta'), oriInst: cab.indexOf('origem instituição'), oriCta: cab.indexOf('origem conta') };
+  const freq = {};
+  for (const l of linhas.slice(hi + 1)) {
+    const c = l.split('\t'); if (c.length < 5) continue;
+    const cred = /^cr[eé]dito/i.test((c[I.mov] || '').trim());
+    const [inst, cta] = cred ? [c[I.destInst], c[I.destCta]] : [c[I.oriInst], c[I.oriCta]];
+    if (STONE_PROPRIA.test((inst || '').trim()) && (cta || '').trim()) freq[cta.trim()] = (freq[cta.trim()] || 0) + 1;
+  }
+  const contaProp = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0] || null;
+  const acct = (contaProp || '').replace(/\D/g, '');
+  const empresa = (ofxContas().find(([b, d]) => b === 'stone' && acct && acct.endsWith(d)) || [])[2] || null;
+  return { acct: acct || null, empresa };
+}
 export function stoneXlsx(txt) {
   const linhas = txt.replace(/\r/g, '').split('\n');
   const hi = linhas.findIndex(l => /^Movimenta[çc][ãa]o\tTipo\tValor/i.test(l));
@@ -419,36 +447,63 @@ export function stoneXlsx(txt) {
    (saldoFinalDerivado — o fluxo-mes avisa). Sem lançamentos no período, o
    extrato vale como "sem movimento" e o saldo vem do mês anterior. */
 export const ehSicrediXls = txt => /Associado:\s+Cooperativa:\s+Conta:/.test(txt.slice(0, 600)) && /Lan[çc]amentos Futuros|Saldo da Conta em|Dados referentes ao per[ií]odo|N[ãa]o h[áa] lan[çc]amentos no per[ií]odo/i.test(txt);
+/* conta Sicredi ("24425-1" no rodapé "TITULAR  0101  24425-1") → empresa, sem depender do
+   parse dos lançamentos (um extrato ilegível ainda tem de dizer DE QUEM é) */
+export function sicrediXlsConta(txt) {
+  const contas = [...txt.matchAll(/\b(\d{4,6}-\d)\b/g)].map(m => m[1].replace(/\D/g, ''));
+  const acct = contas.find(d => ofxContas().some(([b, dd]) => b === 'sicredi' && d.endsWith(dd))) || null;
+  const empresa = acct ? (ofxContas().find(([b, d]) => b === 'sicredi' && acct.endsWith(d)) || [])[2] || null : null;
+  return { acct, empresa };
+}
+const RE_CEL_US = /\(R\$\s?[\d,]+\.\d{2}\)|-?R\$\s?[\d,]+\.\d{2}|#{4,}/g;
 export function sicrediXls(txt) {
   /* quebra de página = quebra de linha simples; vira separador de células (2+ espaços) */
   const t = txt.replace(/\r/g, '').replace(/\[(?:truncated|pages?)\b[^\]]*\]/g, ' ').replace(/\n/g, '  \n');
   const per = t.match(/per[ií]odo de (\d{2})\/(\d{2})\/(\d{4}) a (\d{2})\/(\d{2})\/(\d{4})/i);
   const periodo = per ? { de: iso(per[1], per[2], per[3]), ate: iso(per[4], per[5], per[6]) } : {};
-  /* conta ("24425-1") → empresa */
-  const contas = [...t.matchAll(/\b(\d{4,6}-\d)\b/g)].map(m => m[1].replace(/\D/g, ''));
-  const acct = contas.find(d => ofxContas().some(([b, dd]) => b === 'sicredi' && d.endsWith(dd))) || null;
-  const empresa = acct ? (ofxContas().find(([b, d]) => b === 'sicredi' && acct.endsWith(d)) || [])[2] || null : null;
+  const { acct, empresa } = sicrediXlsConta(t);
   const base = o => { o.formato = 'xls'; o.empresa = empresa; o.conta = acct; if (per) o.periodoDeclarado = { ...periodo }; return o; };
   if (/N[ãa]o h[áa] lan[çc]amentos no per[ií]odo/i.test(t)) return base(fechaSemSaldo({ banco: 'sicredi', mov: [], periodo: { ...periodo } }));
   const iSA = t.search(/Saldo Anterior/); const cabVal = t.match(/Valor \(R\$\)\s+Saldo \(R\$\)/);
   if (iSA < 0 || !cabVal) throw new Error('Sicredi XLS: não achei "Saldo Anterior" ou o cabeçalho "Valor (R$) Saldo (R$)"');
-  /* região das descrições: entre "Saldo Anterior" e o cabeçalho dos valores, sem
-     os rodapés de página e sem o bloco-resumo (saldos/limites/lançamentos futuros) */
-  let descReg = t.slice(iSA + 'Saldo Anterior'.length, cabVal.index);
-  /* rodapé: "NOME DO TITULAR [ nnn ] Extrato Dados referentes ao período de … a ….";
-     o nome tem espaços simples — dois espaços seguidos já são o separador de células */
-  descReg = descReg.replace(/\s{2,}[A-Z][A-Z0-9.&-]*(?: [A-Z0-9.&-]+)*(?:\s{2,}\d+)?\s{2,}Extrato\s{2,}Dados referentes ao per[ií]odo de \d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4}\./g, ' ');
-  const corte = descReg.search(/\s{2,}(?:#{4,}|R\$|\d+\.\d{2}%|Lan[çc]amentos Futuros|Saldo atual|Valores das opera|Saldo da Conta em)/);
-  if (corte >= 0) descReg = descReg.slice(0, corte);
-  const rows = []; const reRow = /(\d{2})\/(\d{2})\/(\d{4})\s{2,}([\s\S]*?)(?=\s{2,}\d{2}\/\d{2}\/\d{4}\s{2,}|\s*$)/g;
-  let m; while ((m = reRow.exec(descReg))) rows.push({ data: iso(m[1], m[2], m[3]), desc: limpa(m[4]) });
-  if (!rows.length) throw new Error('Sicredi XLS: nenhum lançamento reconhecido na região de descrições');
-  const toks = [...t.slice(cabVal.index + cabVal[0].length).matchAll(/\(R\$\s?[\d,]+\.\d{2}\)|-?R\$\s?[\d,]+\.\d{2}|#{4,}/g)].map(x => x[0]);
-  const precisa = 1 + 2 * rows.length;
-  if (toks.length < precisa) throw new Error(`Sicredi XLS: ${rows.length} lançamentos mas só ${toks.length} células de valor/saldo (esperava ${precisa}) — arquivo truncado? Releia todas as páginas (startPage).`);
-  const extras = toks.length - precisa;
-  if (extras && !(/Lan[çc]amentos Futuros/i.test(t) && !/N[ãa]o h[áa] lan[çc]amentos futuros/i.test(t) && extras <= 3)) throw new Error(`Sicredi XLS: ${extras} célula(s) de valor a mais do que lançamentos — não dá para casar linhas e valores com segurança.`);
   const ehIlegivel = s => /^#+$/.test(s);
+  const rows = []; let toks;
+  if (cabVal.index < iSA) {
+    /* LAYOUT DE UMA PÁGINA (planilha pequena cabe na folha): o cabeçalho inteiro vem
+       antes e cada linha traz "DD/MM/AAAA  DESC [DOC]  VALOR  SALDO" em sequência;
+       "Saldo Anterior  R$x" abre a lista e o bloco-resumo (#### / R$0.00 / %) fecha */
+    const reg = t.slice(iSA + 'Saldo Anterior'.length);
+    const partes = reg.split(/\s{2,}(?=\d{2}\/\d{2}\/\d{4}\s{2,})/);
+    const saTok = (partes[0].match(RE_CEL_US) || [])[0];
+    if (!saTok) throw new Error('Sicredi XLS: não achei o valor do "Saldo Anterior"');
+    toks = [saTok];
+    for (const p of partes.slice(1)) {
+      const dm = p.match(/^(\d{2})\/(\d{2})\/(\d{4})\s{2,}([\s\S]*)$/); if (!dm) continue;
+      const cel = [...dm[4].matchAll(RE_CEL_US)]; if (cel.length < 2) throw new Error(`Sicredi XLS: lançamento de ${dm[1]}/${dm[2]} sem valor/saldo legíveis na mesma linha`);
+      rows.push({ data: iso(dm[1], dm[2], dm[3]), desc: limpa(dm[4].slice(0, cel[0].index)) });
+      toks.push(cel[0][0], cel[1][0]);
+      if (/Lan[çc]amentos Futuros|Saldo atual|Valores das opera/i.test(p)) break; /* última linha: o resto é resumo */
+    }
+    if (!rows.length) throw new Error('Sicredi XLS: nenhum lançamento reconhecido (layout de uma página)');
+  } else {
+    /* LAYOUT DE DUAS PÁGINAS: todas as descrições, depois todas as células valor/saldo.
+       Região das descrições: entre "Saldo Anterior" e o cabeçalho dos valores, sem
+       os rodapés de página e sem o bloco-resumo (saldos/limites/lançamentos futuros) */
+    let descReg = t.slice(iSA + 'Saldo Anterior'.length, cabVal.index);
+    /* rodapé: "NOME DO TITULAR [ nnn ] Extrato Dados referentes ao período de … a ….";
+       o nome tem espaços simples — dois espaços seguidos já são o separador de células */
+    descReg = descReg.replace(/\s{2,}[A-Z][A-Z0-9.&-]*(?: [A-Z0-9.&-]+)*(?:\s{2,}\d+)?\s{2,}Extrato\s{2,}Dados referentes ao per[ií]odo de \d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4}\./g, ' ');
+    const corte = descReg.search(/\s{2,}(?:#{4,}|R\$|\d+\.\d{2}%|Lan[çc]amentos Futuros|Saldo atual|Valores das opera|Saldo da Conta em)/);
+    if (corte >= 0) descReg = descReg.slice(0, corte);
+    const reRow = /(\d{2})\/(\d{2})\/(\d{4})\s{2,}([\s\S]*?)(?=\s{2,}\d{2}\/\d{2}\/\d{4}\s{2,}|\s*$)/g;
+    let m; while ((m = reRow.exec(descReg))) rows.push({ data: iso(m[1], m[2], m[3]), desc: limpa(m[4]) });
+    if (!rows.length) throw new Error('Sicredi XLS: nenhum lançamento reconhecido na região de descrições');
+    toks = [...t.slice(cabVal.index + cabVal[0].length).matchAll(RE_CEL_US)].map(x => x[0]);
+    const precisa = 1 + 2 * rows.length;
+    if (toks.length < precisa) throw new Error(`Sicredi XLS: ${rows.length} lançamentos mas só ${toks.length} células de valor/saldo (esperava ${precisa}) — arquivo truncado? Releia todas as páginas (startPage).`);
+    const extras = toks.length - precisa;
+    if (extras && !(/Lan[çc]amentos Futuros/i.test(t) && !/N[ãa]o h[áa] lan[çc]amentos futuros/i.test(t) && extras <= 3)) throw new Error(`Sicredi XLS: ${extras} célula(s) de valor a mais do que lançamentos — não dá para casar linhas e valores com segurança.`);
+  }
   const valores = [], saldos = [];
   for (let i = 0; i < rows.length; i++) {
     const tv = toks[1 + 2 * i], ts = toks[2 + 2 * i];
@@ -461,7 +516,7 @@ export function sicrediXls(txt) {
   if (saldoAnterior == null) { let acc = 0; for (let i = 0; i < rows.length; i++) { if (valores[i] == null) break; acc = round2(acc + valores[i]); if (saldos[i] != null) { saldoAnterior = round2(saldos[i] - acc); break; } } }
   const mov = [];
   if (saldoAnterior == null) {
-    if (valores.some(v => v == null)) throw new Error('Sicredi XLS: saldo anterior e valores ilegíveis ("####") — peça o extrato em PDF ou OFX.');
+    if (valores.some(v => v == null)) throw new Error('Sicredi XLS: saldo anterior e valores ilegíveis ("####") — peça esta conta em OFX (salvo como .txt) ou a planilha salva como .xlsx.');
     for (let i = 0; i < rows.length; i++) mov.push({ data: rows[i].data, desc: rows[i].desc, valor: round2(valores[i]) });
     const o = base(fechaSemSaldo({ banco: 'sicredi', mov, periodo: { ...periodo } })); o.saldosIlegiveis = true; return o;
   }
@@ -471,7 +526,7 @@ export function sicrediXls(txt) {
   for (let i = 0; i < rows.length; i++) {
     let v = valores[i];
     if (v == null) {
-      if (saldos[i] == null) throw new Error(`Sicredi XLS: valor e saldo ilegíveis ("####") no lançamento ${i + 1} (${rows[i].data}) — peça o extrato em PDF ou OFX.`);
+      if (saldos[i] == null) throw new Error(`Sicredi XLS: valor e saldo ilegíveis ("####") no lançamento ${i + 1} (${rows[i].data} ${rows[i].desc.slice(0, 50)}) — número grande demais para a coluna do .xls; peça esta conta em OFX (salvo como .txt) ou a planilha salva como .xlsx.`);
       v = round2(saldos[i] - run); derivados++;
     }
     mov.push({ data: rows[i].data, desc: rows[i].desc, valor: round2(v) });
@@ -571,7 +626,7 @@ export function tabela(txt, { banco } = {}) {
   }
   if (!map) throw new Error('tabela: não achei a linha de cabeçalho (data + valor ou crédito/débito)');
   if (!map.desc.length) map.desc = T.celulas(T.ls[hi]).map((c, k) => k).filter(k => ![map.data, map.valor, map.credito, map.debito, map.saldo, map.dc].includes(k));
-  const rows = []; let saldoAnteriorDecl = null, dataAnterior = null;
+  const rows = []; let saldoAnteriorDecl = null, dataAnterior = null; const saldosDia = [];
   for (const l of T.ls.slice(hi + 1)) {
     const c = T.celulas(l); const data = dataQualquer(c[map.data]);
     const desc = limpa(map.desc.map(k => c[k]).filter(Boolean).join(' '));
@@ -580,7 +635,14 @@ export function tabela(txt, { banco } = {}) {
     if (map.valor >= 0) valor = numQualquer(c[map.valor]);
     if (valor == null && map.credito >= 0 && map.debito >= 0) { const cr = numQualquer(c[map.credito]), db = numQualquer(c[map.debito]); if (cr != null || db != null) valor = round2((cr || 0) - Math.abs(db || 0)); }
     if (valor != null && map.dc >= 0) { const dc = NRM(c[map.dc]); if (/^(D|DEBITO|DEB|SAIDA)$/.test(dc) && valor > 0) valor = -valor; }
-    if (valor == null) { if (/SALDO (ANTERIOR|INICIAL)/.test(NRM(desc)) && saldo != null) { saldoAnteriorDecl = saldo; dataAnterior = data; } continue; }
+    if (valor == null) {
+      const D = NRM(desc);
+      if (/SALDO (ANTERIOR|INICIAL)/.test(D) && saldo != null) { saldoAnteriorDecl = saldo; dataAnterior = data; }
+      /* "SALDO TOTAL DISPONÍVEL DIA" (Itaú), "SALDO DO DIA", "SALDO NA DATA", "SALDO FINAL": saldo
+         de fechamento do dia — ponto de conferência da cadeia, sem valor */
+      else if (/^SALDO\b/.test(D) && saldo != null && data) saldosDia.push({ data, saldo });
+      continue;
+    }
     if (!data) continue;
     rows.push({ data, desc: desc || 'lançamento', valor: round2(valor), saldo });
   }
@@ -588,7 +650,19 @@ export function tabela(txt, { banco } = {}) {
   const temSaldo = rows.some(r => r.saldo != null);
   if (!temSaldo) {
     const mov = rows.slice().sort((a, b) => a.data.localeCompare(b.data)).map(({ data, desc, valor }) => ({ data, desc, valor }));
-    const o = fechaSemSaldo({ banco: banco || 'tabela', mov, periodo: {} }); o.formato = 'tabela'; if (saldoAnteriorDecl != null) { o.saldoAnterior = saldoAnteriorDecl; o.saldoFinal = round2(saldoAnteriorDecl + mov.reduce((a, x) => a + x.valor, 0)); o.semSaldo = false; o.saldoFinalDerivado = true; } return comCabecalho(comAnterior(o, dataAnterior), txt);
+    const o = fechaSemSaldo({ banco: banco || 'tabela', mov, periodo: {} }); o.formato = 'tabela';
+    if (saldoAnteriorDecl != null) { o.saldoAnterior = saldoAnteriorDecl; o.saldoFinal = round2(saldoAnteriorDecl + mov.reduce((a, x) => a + x.valor, 0)); o.semSaldo = false; o.saldoFinalDerivado = true; }
+    /* saldos de fechamento do dia conferem a cadeia (e dão o saldo final quando o último é o do último dia) */
+    if (saldosDia.length && o.saldoAnterior != null) {
+      saldosDia.sort((a, b) => a.data.localeCompare(b.data));
+      let run = o.saldoAnterior, desde = ''; const naoBatem = [];
+      for (const sd of saldosDia) { run = round2(run + mov.filter(x => x.data > desde && x.data <= sd.data).reduce((a, x) => a + x.valor, 0)); if (Math.abs(run - sd.saldo) > CENTAVO) naoBatem.push(sd.data); run = sd.saldo; desde = sd.data; }
+      const ultimo = saldosDia[saldosDia.length - 1];
+      o.diasNaoBatem = naoBatem; o.ok = !naoBatem.length;
+      if (o.ok && ultimo.data >= mov[mov.length - 1].data) { o.saldoFinal = ultimo.saldo; o.saldoFinalDerivado = false; o.ancoradoAte = ultimo.data; }
+      else if (o.ok) o.ancoradoAte = ultimo.data;
+    }
+    return comCabecalho(comAnterior(o, dataAnterior), txt);
   }
   /* ordem cronológica = a que faz a cadeia de saldos fechar */
   const quebras = lista => { let q = 0, prev = null; for (const r of lista) { if (r.saldo != null && prev != null && Math.abs(round2(prev + r.valor) - r.saldo) > CENTAVO) q++; if (r.saldo != null) prev = r.saldo; } return q; };

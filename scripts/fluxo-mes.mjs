@@ -16,6 +16,14 @@
    lançamentos) é ancorada no fechamento do mês anterior do painel (aviso no relatório).
    Conta que existia no mês anterior e não veio nesta carga BLOQUEIA a carga.
 
+   Carga INCREMENTAL (semanal): quando o mês já tem dias carregados e os extratos
+   novos não começam no dia 1º, cada conta entra só com os dias DEPOIS do último
+   carregado, ancorada no saldo guardado daquele dia — o saldo anterior do extrato
+   (ou o derivado do OFX) tem de bater com ele no centavo (é a "virada semanal",
+   a conferência independente). Conta sem extrato nesta carga fica parada no saldo
+   guardado, sem movimento. Assim a pasta semanal pode ser limpa a cada rodada.
+   Extratos que cobrem o mês desde o dia 1º continuam fazendo a recarga completa.
+
    Garantias: nenhuma empresa é gravada sem conciliar; mês já fechado (dias =
    nd) só se refaz com --refazer; empresa sem extrato nesta rodada mantém o que
    já tinha no mês (e a nota avisa). O relatório de revisão vai para um arquivo
@@ -75,7 +83,7 @@ if (!empresas.length) falha('nenhuma pasta de empresa com extratos em ' + pastaE
 const mesAnt = mm === 1 ? `${ano - 1}-12` : `${ano}-${dd(mm - 1)}`;
 const antM = (DATA.meses[mesAnt] || {}).empresas || {};
 const semConta = (opt(args, 'sem-conta') || '').split(',').filter(Boolean); /* aceito por compatibilidade: conta sem extrato já é mantida no último saldo */
-const resultados = {}; const rel = []; let ultimoDia = 0; const avisos = []; const formatosUsados = new Set(); const semExtrato = []; const encerradas = []; /* semExtrato = contas sem arquivo nesta carga, mantidas no último saldo conhecido (decisão do Samuel, 23/10/2026) */
+const resultados = {}; const incrementais = {}; const rel = []; let ultimoDia = 0; const avisos = []; const formatosUsados = new Set(); const semExtrato = []; const encerradas = []; /* semExtrato = contas sem arquivo nesta carga, mantidas no último saldo conhecido (decisão do Samuel, 23/10/2026) */
 for (const e of empresas) {
   const extratos = [];
   const porBanco = {};
@@ -91,19 +99,25 @@ for (const e of empresas) {
   /* contas esperadas = as que a empresa tinha no mês anterior (ou já neste mês): nunca
      carregar a empresa com conta faltando — a conciliação ficaria errada em silêncio */
   const id = EMP_ID[e];
-  const esperadasB = new Set([...((antM[id] || {}).contas || []), ...(((DATA.meses[mes] || {}).empresas || {})[id] || {}).contas || []].map(c => c.banco));
+  const baseD = ((DATA.meses[mes] || {}).empresas || {})[id] || null; /* o que a empresa já tem carregado neste mês */
+  const d0 = baseD ? (((DIA[mes] || {}).cobertura || {})[id] ?? ((DIA[mes] || {}).dias || 0)) : 0; /* último dia carregado */
+  const limiteD0 = mes + '-' + dd(d0);
+  /* incremental: já há dias no mês, não é --refazer, e algum extrato não começa no dia 1º */
+  const incremental = d0 > 0 && !refazer && Object.values(porBanco).some(lista => lista.every(o => ((o.periodo && o.periodo.de) || (o.mov[0] || {}).data || '') > mes + '-01'));
+  if (incremental) { incrementais[e] = d0; avisos.push(`${e}: carga incremental a partir de ${dd(d0 + 1)}/${dd(mm)} (o mês já estava carregado até ${dd(d0)}/${dd(mm)}; cada conta é ancorada no saldo guardado desse dia)`); }
+  const esperadasB = new Set([...((antM[id] || {}).contas || []), ...((baseD || {}).contas || [])].map(c => c.banco));
   const presentes = new Set(Object.keys(porBanco).map(b => BANCO_NOME[b]));
   for (const nome of esperadasB) {
     const b = Object.keys(BANCO_NOME).find(k => BANCO_NOME[k] === nome);
     if (presentes.has(nome)) continue;
     if (contaEncerrada(e, b, mes)) { encerradas.push(`${EMP_ID[e]}·${nome}`); continue; } /* sai do painel: saldo zero daqui em diante */
-    const jaNoMes = ((((DATA.meses[mes] || {}).empresas || {})[id] || {}).contas || []).find(c => c.banco === nome);
-    if (jaNoMes && !refazer) falha(`${e}/${b}: a conta já tem lançamentos carregados em ${mes} e não veio nesta carga — recarregar a empresa sem ela apagaria esses lançamentos. Traga o extrato de novo (os arquivos antigos ficam na pasta). Nada gravado.`);
-    const ca = ((antM[id] || {}).contas || []).find(c => c.banco === nome) || jaNoMes;
+    const jaNoMes = ((baseD || {}).contas || []).find(c => c.banco === nome);
+    if (jaNoMes && !refazer && !incremental) falha(`${e}/${b}: a conta já tem lançamentos carregados em ${mes} e não veio nesta carga — recarregar a empresa sem ela apagaria esses lançamentos. Traga o extrato de novo (os arquivos antigos ficam na pasta). Nada gravado.`);
+    const ca = incremental ? (jaNoMes || ((antM[id] || {}).contas || []).find(c => c.banco === nome)) : (((antM[id] || {}).contas || []).find(c => c.banco === nome) || jaNoMes);
     if (!ca) continue;
     /* sem extrato: a conta fica no último saldo conhecido, sem movimento; a nota e o STATUS avisam */
     extratos.push({ banco: b, saldoAnterior: r2(ca.fim), saldoFinal: r2(ca.fim), mov: [], semExtrato: true });
-    semExtrato.push(`${EMP_ID[e]}·${nome}`);
+    semExtrato.push(`${EMP_ID[e]}·${nome}${incremental ? ` (parada em ${dd(d0)}/${dd(mm)})` : ''}`);
   }
   for (const banco of Object.keys(porBanco)) {
     let o = porBanco[banco][0];
@@ -129,7 +143,30 @@ for (const e of empresas) {
     /* o extrato tem de cobrir a conta desde o 1º dia do mês (extrato semanal avulso
        sem as semanas anteriores deixaria os primeiros dias zerados em silêncio) */
     const deCob = (o.periodo && o.periodo.de) || (o.mov[0] || {}).data || '';
-    if (deCob > mes + '-01' && deCob.slice(0, 7) === mes && (o.mov.length || deCob > mes + '-01')) falha(`${e}/${banco}: o extrato cobre a conta só a partir de ${deCob.slice(8, 10)}/${deCob.slice(5, 7)} — faltam os dias anteriores do mês (extratos semanais anteriores ou o extrato do mês inteiro). Nada gravado.`);
+    if (incremental) {
+      /* o extrato tem de alcançar o dia seguinte ao último carregado (pode começar antes: a
+         sobreposição é descartada depois de conferir o saldo no dia do corte anterior) */
+      const proximo = mes + '-' + dd(d0 + 1);
+      if (deCob > proximo) falha(`${e}/${banco}: o mês está carregado até ${dd(d0)}/${dd(mm)} e o extrato só começa em ${deCob.slice(8, 10)}/${deCob.slice(5, 7)} — faltam os dias ${dd(d0 + 1)}–${dd(+deCob.slice(8, 10) - 1)}/${dd(mm)}. Nada gravado.`);
+      const guardada = ((baseD || {}).contas || []).find(c => c.banco === BANCO_NOME[banco]);
+      const antes = o.mov.filter(m => m.data <= limiteD0);
+      const somaAntes = antes.reduce((a, m) => a + m.valor, 0);
+      o.mov = o.mov.filter(m => m.data > limiteD0);
+      if (guardada) {
+        if (o.saldoAnterior != null) {
+          const noCorte = r2(o.saldoAnterior + somaAntes); /* saldo do extrato no fim do dia d0 */
+          if (Math.abs(noCorte - guardada.fim) > 0.015) falha(`${e}/${banco}: virada semanal não bate — saldo em ${dd(d0)}/${dd(mm)} pelo extrato ${brl(noCorte)} ≠ saldo guardado ${brl(guardada.fim)}. Extrato de outra conta, período errado ou lançamento que mudou? Nada gravado.`);
+          o.saldoAnterior = r2(guardada.fim);
+          if (antes.length) avisos.push(`${e}/${banco}: ${antes.length} lançamento(s) até ${dd(d0)}/${dd(mm)} já estavam carregados — descartados (saldo do corte confere)`);
+        } else {
+          o.saldoAnterior = r2(guardada.fim); o.saldoFinal = r2(guardada.fim + o.mov.reduce((a, m) => a + m.valor, 0));
+          avisos.push(`${e}/${banco}: ${o.formato.toUpperCase()} sem saldo no arquivo — ancorado no saldo guardado de ${dd(d0)}/${dd(mm)}; nenhuma conferência independente de saldo — prefira OFX ou .xlsx`);
+        }
+        o.periodo = { ...(o.periodo || {}), de: proximo };
+      } else if (deCob > mes + '-01') falha(`${e}/${banco}: conta nova no mês sem extrato desde o dia 1º (começa em ${deCob.slice(8, 10)}/${deCob.slice(5, 7)}). Nada gravado.`);
+      o.ok = true; /* conferido pelo saldo do corte; o Σ dos dias novos fecha por construção */
+      if (o.saldoAnterior != null && o.saldoFinal != null && Math.abs(r2(o.saldoAnterior + o.mov.reduce((a, m) => a + m.valor, 0)) - o.saldoFinal) > 0.015) o.saldoFinal = r2(o.saldoAnterior + o.mov.reduce((a, m) => a + m.valor, 0));
+    } else if (deCob > mes + '-01' && deCob.slice(0, 7) === mes && (o.mov.length || deCob > mes + '-01')) falha(`${e}/${banco}: o extrato cobre a conta só a partir de ${deCob.slice(8, 10)}/${deCob.slice(5, 7)} — faltam os dias anteriores do mês (extratos semanais anteriores ou o extrato do mês inteiro). Nada gravado.`);
     const foraDoMes = o.mov.filter(m => m.data.slice(0, 7) !== mes);
     if (foraDoMes.length) {
       /* extrato com outro mês junto: mantém só o mês pedido e recalcula o saldo inicial */
@@ -155,7 +192,7 @@ for (const e of empresas) {
     }
     /* formato sem saldo (CSV do Itaú, XLS do Sicredi sem lançamentos ou ilegível):
        saldo inicial = fechamento do mês anterior no painel; sem conferência independente */
-    if (o.saldoAnterior == null) {
+    if (o.saldoAnterior == null && !incremental) {
       const ca = ((antM[id] || {}).contas || []).find(x => x.banco === BANCO_NOME[banco]);
       if (!ca) falha(`${e}/${banco}: o arquivo (${o.formato}) não traz saldo e não há fechamento de ${mesAnt} no painel para ancorar a conta — peça o extrato em PDF ou OFX. Nada gravado.`);
       o.saldoAnterior = r2(ca.fim); o.saldoFinal = r2(ca.fim + o.mov.reduce((a, m) => a + m.valor, 0));
@@ -167,9 +204,25 @@ for (const e of empresas) {
     extratos.push({ banco, saldoAnterior: o.saldoAnterior, saldoFinal: o.saldoFinal, mov: o.mov });
   }
   if (!extratos.length) continue;
-  const r = montaEmpresa({ empresa: e, mes, extratos, fornMap, ajustes });
-  if (!r.reconcilia) falha(`${e}: a montagem não concilia (dif ${r.dif}) — nada gravado.`);
+  let r = montaEmpresa({ empresa: e, mes, extratos, fornMap, ajustes });
+  if (!r.reconcilia) falha(`${e}: a montagem ${incremental ? 'dos dias novos ' : ''}não concilia (dif ${r.dif}) — nada gravado.`);
+  if (incremental) { r = somaNaBase(r, baseD, ((DIA[mes] || {}).empresas || {})[id] || {}, nd); if (!r.reconcilia) falha(`${e}: o mês emendado não concilia (dif ${r.dif}) — nada gravado.`); }
   resultados[e] = r;
+}
+/* carga incremental: soma os dias novos ao que o mês já tinha (semanas, dias, entre empresas,
+   giro) e mantém o saldo inicial das contas; o saldo final passa a ser o dos extratos novos */
+function somaNaBase(r, baseD, baseDia, nd) {
+  const somaMapa = (base, novo, n) => { const out = {}; for (const k of new Set([...Object.keys(base || {}), ...Object.keys(novo || {})])) { const a = (base || {})[k] || new Array(n).fill(0), b = (novo || {})[k] || new Array(n).fill(0); out[k] = a.map((v, i) => r2((v || 0) + (b[i] || 0))); } return out; };
+  const somaArr = (a, b) => (a || []).length >= (b || []).length ? (a || []).map((v, i) => r2((v || 0) + ((b || [])[i] || 0))) : (b || []).map((v, i) => r2((v || 0) + ((a || [])[i] || 0)));
+  const nw = r.DATA.icw.length;
+  const contas = r.DATA.contas.map(c => { const b = ((baseD || {}).contas || []).find(x => x.banco === BANCO_NOME[c.banco]); return { banco: c.banco, ini: b ? r2(b.ini) : c.ini, fim: c.fim }; });
+  const DATAm = { cin: somaMapa(baseD && baseD.cin, r.DATA.cin, nw), cout: somaMapa(baseD && baseD.cout, r.DATA.cout, nw), icw: somaArr(baseD && baseD.icw, r.DATA.icw), contas, giro: [r2(((baseD || {}).giro || [0, 0])[0] + r.DATA.giro[0]), r2(((baseD || {}).giro || [0, 0])[1] + r.DATA.giro[1])], icin: {}, icout: {} };
+  const DIAm = { cin: somaMapa(baseDia.cin, r.DIA.cin, nd), cout: somaMapa(baseDia.cout, r.DIA.cout, nd), icw: somaArr(baseDia.icw, r.DIA.icw) };
+  const sum = o => Object.values(o).reduce((a, v) => a + v.reduce((x, y) => x + y, 0), 0);
+  const ini = contas.reduce((a, c) => a + c.ini, 0), fim = contas.reduce((a, c) => a + c.fim, 0);
+  const sIn = sum(DATAm.cin), sOut = sum(DATAm.cout), sIcw = DATAm.icw.reduce((a, b) => a + b, 0);
+  const dif = r2(ini + sIn - sOut + sIcw - fim);
+  return { ...r, DATA: DATAm, DIA: DIAm, reconcilia: Math.abs(dif) <= 0.015, dif, ini: r2(ini), fim: r2(fim), totalIn: r2(sIn), totalOut: r2(sOut), icwTotal: r2(sIcw), incremental: true };
 }
 if (encerradas.length) avisos.push(`conta(s) encerrada(s) sem extrato — saem do painel a partir deste mês (saldo zero): ${encerradas.join(', ')}`);
 
@@ -189,7 +242,7 @@ const viradas = [];
 for (const id of new Set([...Object.keys(((DATA.meses[mes] || {}).empresas) || {}), ...Object.keys(antM)])) {
   const e = Object.keys(EMP_ID).find(k => EMP_ID[k] === id); if (!e || resultados[e] || semEmp.includes(e)) continue;
   const noMes = (((DATA.meses[mes] || {}).empresas || {})[id] || {}).contas || [];
-  if (noMes.length && !refazer) falha(`${e}: a empresa já tem lançamentos em ${mes} e não veio nesta carga — traga os extratos de novo. Nada gravado.`);
+  if (noMes.length && !refazer) { if (Object.keys(incrementais).length) { avisos.push(`${e}: sem extrato nesta carga — fica com o realizado até o dia já carregado`); continue; } falha(`${e}: a empresa já tem lançamentos em ${mes} e não veio nesta carga — traga os extratos de novo. Nada gravado.`); }
   const bancoId = nome => Object.keys(BANCO_NOME).find(k => BANCO_NOME[k] === nome);
   const contasAnt = ((antM[id] || {}).contas || []).filter(c => bancoId(c.banco) && !contaEncerrada(e, bancoId(c.banco), mes));
   if (!contasAnt.length) continue;
@@ -211,7 +264,7 @@ for (const e of Object.keys(resultados)) for (const c of resultados[e].DATA.cont
 }
 
 /* relatório (fora do repo) */
-rel.push(`# Fluxo de Caixa — carga de ${mes} (${tipo}, dias 01–${dd(dias)}) em ${hojeISO}`);
+rel.push(`# Fluxo de Caixa — carga de ${mes} (${tipo}, dias 01–${dd(dias)}) em ${hojeISO}` + (Object.keys(incrementais).length ? ` — INCREMENTAL: ${Object.entries(incrementais).map(([e, d]) => `${EMP_ID[e]} a partir de ${dd(d + 1)}`).join(', ')} (os totais abaixo são do mês inteiro; "para revisão" só dos dias novos)` : ''));
 for (const e of Object.keys(resultados)) {
   const r = resultados[e];
   rel.push(`\n## ${EMP_ID[e]} — ini ${brl(r.ini)} → fim ${brl(r.fim)} · entradas ${brl(r.totalIn)} · saídas ${brl(r.totalOut)} · entre empresas ${brl(r.icwTotal)} · concilia ${r.reconcilia ? 'OK' : 'NÃO'}`);
@@ -249,7 +302,7 @@ mesD.tipo = tipo;
 diaM.cobertura = { ...cobAnt }; for (const id of idsCarregados) diaM.cobertura[id] = dias;
 const foraDesta = [...esperadas].filter(id => !idsCarregados.includes(id));
 const sem = semanasDoMes(ano, mm);
-const nota = [`${tipo === 'full' ? 'Mês fechado' : 'Mês parcial'} pela rotina em ${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}: realizado 01–${dd(dias)}/${dd(mm)} lido dos extratos da pasta semanal do OneDrive (${[...formatosUsados].sort().join('/')}), conciliado no centavo em ${Object.values(resultados).reduce((a, r) => a + r.DATA.contas.length, 0)} contas de ${Object.keys(resultados).length} empresas.`,
+const nota = [`${tipo === 'full' ? 'Mês fechado' : 'Mês parcial'} pela rotina em ${dd(hoje.getDate())}/${dd(hoje.getMonth() + 1)}/${hoje.getFullYear()}: realizado 01–${dd(dias)}/${dd(mm)} lido dos extratos da pasta semanal do OneDrive (${[...formatosUsados].sort().join('/')}), conciliado no centavo em ${Object.values(resultados).reduce((a, r) => a + r.DATA.contas.length, 0)} contas de ${Object.keys(resultados).length} empresas${Object.keys(incrementais).length ? ` — carga incremental (${Object.entries(incrementais).map(([e, d]) => `${EMP_ID[e]} ${dd(d + 1)}–${dd(dias)}`).join(', ')}), ancorada nos saldos guardados` : ''}.`,
   `Semanas seg→dom (${sem.map(s => s.replace(' · ', ' ')).join(' · ')}).`,
   `Classificação pelas regras de memo e pelo mapa de fornecedores do Argo; ${totalRev} lançamento(s) ficaram marcados para revisão${ajustes.length ? `; ${ajustes.length} ajuste(s) aplicado(s)` : ''}.`,
   encerradas.length ? `Conta(s) encerrada(s), fora do painel a partir deste mês: ${encerradas.join(', ')}.` : '',
@@ -274,8 +327,10 @@ if (ultimoMesComDados === mes) { PAINEL.hoje = `${dd(hoje.getDate())}/${dd(hoje.
 /* transações a revisar: o que ficou sem confiança nesta carga vai para a ferramenta (card "Transações a revisar", com CSV) */
 REVISAO[mes] = REVISAO[mes] || {};
 for (const e of Object.keys(resultados)) {
-  REVISAO[mes][EMP_ID[e]] = resultados[e].classificados.filter(c => !c.confia).sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
+  const novos = resultados[e].classificados.filter(c => !c.confia).sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
     .map(c => ({ b: BANCO_NOME[c.banco] || c.banco, d: c.data, v: r2(c.valor), c: c.conta, m: String(c.desc || '').replace(/\s+/g, ' ').trim().slice(0, 140), f: c.semPar ? 'transferência própria sem par' : c.intercompany ? 'entre empresas do grupo' : c.sispag ? 'SISPAG sem par' : 'regra genérica' }));
+  /* incremental: os dias novos se somam aos itens que o mês já tinha (dias anteriores ao corte) */
+  REVISAO[mes][EMP_ID[e]] = incrementais[e] != null ? (REVISAO[mes][EMP_ID[e]] || []).filter(x => x.d <= mes + '-' + dd(incrementais[e])).concat(novos) : novos;
 }
 grava('DATA', DATA); grava('DIA', DIA); grava('MES_WEEKS', MES_WEEKS); grava('MES_LABEL', MES_LABEL); grava('STATUS', STATUS); grava('PAINEL', PAINEL); grava('REVISAO', REVISAO);
 console.log(`estado atualizado em ${pastaEst}: DATA.meses[${mes}] (${tipo}), DIA[${mes}] (${dias} dias), MES_WEEKS, MES_LABEL, STATUS, PAINEL, REVISAO`);

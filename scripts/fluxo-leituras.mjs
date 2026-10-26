@@ -30,12 +30,15 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSy
 import { join, resolve } from 'path';
 import { homedir } from 'os';
 import { falha, foraDoRepo, opt, contaEncerrada, contasBancarias } from './fluxo-lib.mjs';
-import { PARSERS, ehOFX, ofx, detectaFormato, stoneXlsx, sicrediXls, itauCsv, tabela, ofxContas } from './fluxo-extratos.mjs';
+import { PARSERS, ehOFX, ofx, detectaFormato, stoneXlsx, sicrediXls, sicrediXlsConta, stoneXlsxConta, itauCsv, tabela, ofxContas } from './fluxo-extratos.mjs';
 
 const BANCOS = ['sicredi', 'stone', 'unicred', 'banrisul', 'bradesco', 'itau', 'pagbank'];
 const N = s => (s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 /* pistas no NOME do arquivo (só reserva: o conteúdo manda) */
-const BANCO_NOME_ARQ = [['sicredi', /SICREDI/], ['stone', /STONE/], ['unicred', /UNICRED/], ['banrisul', /BANRISUL/], ['bradesco', /BRADESCO/], ['itau', /ITAU|\b0912\b/], ['pagbank', /PAGBANK|PAGSEGURO/]];
+const BANCO_NOME_ARQ = [['sicredi', /SICREDI/], ['stone', /STONE/], ['unicred', /UNICRED/], ['banrisul', /BANRISUL/], ['bradesco', /BRADESCO/], ['itau', /ITAU|(?<!\d)0912(?!\d)/], ['pagbank', /PAGBANK|PAGSEGURO/]];
+/* texto que não é texto: .xls/.ofx binário copiado com extensão .txt (o conector devolve
+   bytes como caracteres de controle/substituição) — não é extrato legível */
+export const ehBinario = t => { const a = t.slice(0, 4000); const ruins = (a.match(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]/g) || []).length; return a.length > 200 && ruins / a.length > 0.02; };
 const EMP_NOME_ARQ = [['siss', /\bSISS\b/], ['st', /\bST\b|TRANSPORTES/], ['ss', /\bSS\b|SERVICOS/], ['as', /\bAS\b|SAFYR|COLONIAS/], ['sf', /\bSF\b|ESTANCIA/], ['ps', /\bPS\b|POSTO SAPATAO|ESTACAO/]];
 
 export function detectaBanco(t, nomeArq) {
@@ -48,6 +51,8 @@ export function detectaBanco(t, nomeArq) {
     const U = N(nomeArq); for (const [b, re] of BANCO_NOME_ARQ) if (re.test(U)) return b;
     const C = N(t.slice(0, 4000));
     if (/ASSOCIADO:.{0,80}COOPERATIVA:/.test(C) || /COOPERATIVA DE CREDITO.*SICREDI|\bSICREDI\b/.test(C)) return 'sicredi'; /* planilha do Sicredi salva como .xlsx */
+    /* planilha "Extrato_Lançamentos" do app do Itaú: "Agência: 0912", "SALDO TOTAL DISPONÍVEL DIA" */
+    if (/AGENCIA:?\s*0912(?!\d)/.test(C) || /SALDO TOTAL DISPONIVEL DIA/.test(C) || /\bITAU\b/.test(C)) return 'itau';
     for (const [b, re] of BANCO_NOME_ARQ) if (b !== 'itau' && re.test(C)) return b;
     return null;
   }
@@ -66,8 +71,10 @@ const EMP_NOME = [['ss', /SAPATAO SERVICOS|62\.?681\.?375/], ['st', /SAPATAO TRA
 export function detectaEmpresa(t, banco, nomeArq) {
   const f = detectaFormato(t);
   if (f === 'ofx') { try { return ofx(t).empresa; } catch (e) { return null; } }
-  if (f === 'xlsx') { try { return stoneXlsx(t).empresa; } catch (e) { return null; } }
-  if (f === 'xls') { try { return sicrediXls(t).empresa; } catch (e) { return null; } }
+  /* a empresa vem da CONTA no arquivo, não do sucesso do parse: um extrato ilegível
+     ("####" no XLS) tem de ser citado com a empresa certa e o motivo real */
+  if (f === 'xlsx') return stoneXlsxConta(t).empresa;
+  if (f === 'xls') return sicrediXlsConta(t).empresa;
   if (f === 'csv' || f === 'tabela') {
     /* 1) conta no nome do arquivo (Itaú: Extrato_0912_123882_…); 2) empresa no nome;
        3) CNPJ/conta no conteúdo; 4) banco com uma única conta no grupo */
@@ -138,7 +145,12 @@ export function leiturasDoTranscript(arq) {
     }
   }
   const porUri = {};
-  for (const id of Object.keys(usos)) { const u = usos[id]; const texto = res[id] || ''; if (texto.length < 200 || /^Error:/.test(texto.trim())) continue; (porUri[u.uri] = porUri[u.uri] || []).push({ pagina: u.pagina, texto }); }
+  for (const id of Object.keys(usos)) {
+    const u = usos[id]; const texto = res[id] || ''; if (texto.length < 200 || /^Error:/.test(texto.trim())) continue;
+    const lista = porUri[u.uri] = porUri[u.uri] || [];
+    /* a mesma página lida duas vezes (releitura) não pode virar duas cópias dos lançamentos: fica a última */
+    const i = lista.findIndex(p => p.pagina === u.pagina); if (i >= 0) lista[i] = { pagina: u.pagina, texto }; else lista.push({ pagina: u.pagina, texto });
+  }
   return Object.keys(porUri).map(uri => ({ uri, nome: nomes[uri] || uri.split('/').pop(), texto: emendaPartes(porUri[uri]), partes: porUri[uri].length }));
 }
 /* o arquivo cobre (parte d)o mês pedido? — um XLSX da Stone traz vários meses; o fluxo-mes recorta */
@@ -157,6 +169,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const ROTULO = f => (f === 'pdf' ? 'texto (pdf/txt)' : f);
   for (const l of leituras) {
     if (/^\S.* \((?:file|folder), [^)]*\) file:\/\/\//m.test(l.texto.slice(0, 2000))) continue; /* listagem de pasta */
+    if (ehBinario(l.texto)) { ignorados++; motivos.push(`${l.nome}: arquivo binário salvo como texto (.xls/.ofx copiado como .txt?) — ilegível; só OFX em texto, .xlsx, .xls, PDF, TXT ou CSV`); continue; }
     const formato = detectaFormato(l.texto);
     const banco = detectaBanco(l.texto, l.nome); const empresa = detectaEmpresa(l.texto, banco, l.nome);
     if (!banco || !empresa) { ignorados++; if (formato !== 'pdf' || /SALDO|EXTRATO/i.test(l.texto.slice(0, 3000))) motivos.push(`${l.nome}: ${ROTULO(formato)}, banco ${banco || '?'}, empresa ${empresa || '?'} — não reconhecido`); continue; }
@@ -176,7 +189,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   for (const k of Object.keys(cand).sort()) {
     const [e, b] = k.split('/'); mkdirSync(join(para, e), { recursive: true });
     let lista = cand[k].sort((x, y) => ((x.de || '') + (x.ate || '')).localeCompare((y.de || '') + (y.ate || '')));
-    const melhor = Math.max(...lista.map(c => c.qualidade)); lista = lista.filter(c => c.qualidade === melhor);
+    /* qualidade decide só entre arquivos do MESMO período: um CSV de 01–16 e um XLSX de 19–25 são
+       partes diferentes e ficam os dois; um XLS de 01–18 ao lado de um OFX de 01–22 sai */
+    lista = lista.filter(c => !lista.some(o => o !== c && o.qualidade > c.qualidade && o.de && o.ate && c.de && c.ate && o.de <= c.de && o.ate >= c.ate));
     /* exportação mais longa que CONTÉM outra (mesmo banco, mesma qualidade) substitui a contida —
        ex.: OFX 01/09→22/10 e OFX 01/10→22/10: fica o primeiro (o fluxo-mes recorta o mês) */
     lista = lista.filter(c => !lista.some(o => o !== c && o.de && o.ate && c.de && c.ate && o.de <= c.de && o.ate >= c.ate && o.n >= c.n && (o.de < c.de || o.ate > c.ate || o.n > c.n)));
