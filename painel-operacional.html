@@ -305,13 +305,15 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
 </div>
 <div id="carregando"><b>Carregando o painel…</b>Destravando os dados do mês.</div>
 <div id="app" hidden>
-<div class="wrap" style="padding-top:28px">
+<div class="wrap" style="padding-top:28px;padding-bottom:18px">
   <h1 class="pagetit">Vendas</h1>
   <div class="pagesub">Metas e margens de venda &middot; <b id="hdPeriodo"></b> &middot; <span id="hdMeta"></span></div>
 </div>
 
 
 <div class="wrap">
+  <div class="kpis" id="kpis" style="margin-top:0"></div>
+
   <div class="fatpanel">
     <div class="fathero">
       <div class="l">
@@ -344,7 +346,6 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
     </details>
   </div>
 
-  <div class="kpis" id="kpis"></div>
 
   <div class="rail" id="rail"></div>
   <p id="railNota" style="font-size:11.5px;color:var(--ink3);margin:8px 2px 0"></p>
