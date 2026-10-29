@@ -86,8 +86,8 @@
    "kdf": {
     "alg": "pbkdf2-sha256",
     "i": 600000,
-    "s": "1UrJmUJIz5DxXdBh9UVQIw==",
-    "h": "8PH3I1WPwP/c/081K3CosfXovywNsLTH461HbvrO5hQ="
+    "s": "ck1cQP1uRjfe3vncK1c1SQ==",
+    "h": "OeGRE61wQA0RK7KEqNT2PxrQOv3+Szo18iAwfSYQ5YA="
    }
   },
   {
