@@ -32,10 +32,12 @@ const anteriorPath = opt('anterior');
 /* ---------- 1. texto → tabelas ---------- */
 const bruto = readFileSync(txtPath, 'utf8');
 
-const rodape = /Página\s+\d+\s+de\s+\d+\s+Argo Service Core\s+(v\.[\d.]+).*?GERADO EM:\s*(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}).*?Data:\s*(\d{2}\/\d{2}\/\d{4}).*?Unidades:\s*([\d,]+)/gs;
+/* o produto do rodapé já mudou de nome ("Argo Service Core" até out/2026, "Argo Gerenciador v.11.10.14 - Argo Sistemas"
+   desde 31/10/2026): aceita qualquer "Argo <Nome>" seguido da versão */
+const rodape = /Página\s+\d+\s+de\s+\d+\s+(Argo\s+[A-Za-z][A-Za-z ]*?)\s+(v\.[\d.]+).*?GERADO EM:\s*(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}).*?Data:\s*(\d{2}\/\d{2}\/\d{4}).*?Unidades:\s*([\d,]+)/gs;
 const rod = rodape.exec(bruto);
 if (!rod) falha('não achei o rodapé do Argo (GERADO EM / Data / Unidades) — o texto não parece ser o relatório.');
-const META_ARGO = { versao: 'Argo Service Core ' + rod[1], gerado: rod[2] + ' ' + rod[3], data: rod[4], unidades: rod[5].split(',').map(s => s.trim()).join(', ') };
+const META_ARGO = { versao: rod[1].trim() + ' ' + rod[2], gerado: rod[3] + ' ' + rod[4], data: rod[5], unidades: rod[6].split(',').map(s => s.trim()).join(', ') };
 const texto = bruto.replace(rodape, ' ').replace(/\s+/g, ' ');
 
 /* secções: "3 - NOME | CNPJ: x" ... e "TODAS UNIDADES" */
