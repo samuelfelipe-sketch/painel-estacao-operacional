@@ -139,6 +139,8 @@ const COMB = ['GC', 'DS', 'DC', 'GA', 'ET', 'GNV', 'ARL'], OTTO = ['GC', 'GA', '
 const GRUPOS = [['TOTCOMB', 'Total Combustíveis', 'comb'], ['OTTO', 'Ciclo Otto', 'comb'], ['DIESEL', 'Ciclo Diesel', 'comb'], ['TOTMERC', 'Total Mercadorias', 'merc']];
 
 function linha(cod, nome, tipo, m, p, semAno) {
+  /* linha sem venda no acumulado do mês: o Argo omite da projeção — entra zerada */
+  if (m && !p && m.A.q === 0) p = { meta: 0, acum: 0, pctMeta: 0, proj: 0, difAnt: m.B.q ? -100 : 0, difAno: m.C.q ? -100 : 0 };
   if (!m || !p) falha(`faltou a linha ${cod} na análise mensal ou na projeção.`);
   const comb = tipo === 'comb';
   const L = { cod, nome, tipo, ant: m.B.q, ano: semAno ? null : m.C.q };
@@ -260,7 +262,7 @@ function confereEscopo(E, e) {
   }
   for (const L of e.linhas) {
     const esperado = L.acum / meta.dias_dec * meta.dias_mes;
-    if (L.proj && !perto(L.proj, esperado, Math.max(2, esperado * 0.005))) erros.push(`${E.cod}/${L.cod}: projeção não bate com acumulado ÷ dias × dias do mês`);
+    if (L.proj && !perto(L.proj, esperado, Math.max(2, esperado * 0.005, 0.5 * meta.dias_mes / meta.dias_dec))) erros.push(`${E.cod}/${L.cod}: projeção não bate com acumulado ÷ dias × dias do mês`);
   }
   const d = e.decomp;
   for (const b of ['ano', 'ant']) if (d[b] && !perto(d[b].vol + d[b].mix + d[b].pre + d[b].merc, d[b].dTot, 0.01)) erros.push(`${E.cod}: decomposição (${b}) não fecha`);
