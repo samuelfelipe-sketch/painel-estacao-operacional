@@ -323,13 +323,13 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
 <div class="wrap" style="padding-top:28px;padding-bottom:18px">
   <h1 class="pagetit">Vendas</h1>
   <div class="pagesub">Metas e margens de venda &middot; <b id="hdPeriodo"></b> &middot; <span id="hdMeta"></span></div>
-  <!-- controles que valem para a página inteira: base da variação (cartões + faturamento) e nível de detalhe da árvore do faturamento -->
+  <!-- controles que valem para a página inteira: base da variação (cartões + faturamento) e nível de detalhe (cartões por unidade + árvore do faturamento) -->
   <div class="pagectl">
     <div class="seg" role="group" aria-label="Base do crescimento">
       <button id="fAno" aria-pressed="true">Δ vs ano</button>
       <button id="fMes" aria-pressed="false">Δ vs mês</button>
     </div>
-    <div class="seg" role="group" aria-label="Detalhe do faturamento">
+    <div class="seg" role="group" aria-label="Detalhe">
       <button id="fAll" aria-pressed="true">Tudo aberto</button>
       <button id="fTop" aria-pressed="false">Só totais</button>
     </div>
@@ -350,7 +350,7 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
       <div class="r" id="fatBoxes"></div>
     </div>
     <div class="fatctl">
-      <span class="fatnote">Abre por combustíveis e mercadorias, e daí por ciclo e por linha. Os filhos somam exatamente o pai. A base da variação e o nível de detalhe se escolhem nos botões do topo da página.</span>
+      <span class="fatnote">Abre por combustíveis e mercadorias, e daí por ciclo e por linha. Os filhos somam exatamente o pai. A base da variação e o nível de detalhe (aqui e nos cartões) se escolhem nos botões do topo da página.</span>
     </div>
     <div class="fatbody">
       <div class="fhead"><span>Linha</span><span data-r="ano"></span><span data-r="ant"></span><span><span data-r="cur"></span> proj.</span><span>part.</span><span>vs <span data-r="antMes"></span></span><span>vs <span data-r="ano"></span></span><span id="fhDelta">crescimento ano</span><span>quantidade <span data-r="cur"></span></span></div>

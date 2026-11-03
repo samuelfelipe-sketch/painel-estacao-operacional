@@ -61,7 +61,7 @@ function rotulos(meta){
 }
 
 /* ---------- estado da interface (sobrevive à re-renderização) ---------- */
-var UI={ fatAberto:{FTOT:true,FCOMB:false,FOTTO:false,FDIESEL:false,FMERC:false}, fatBase:'ano', modoDia:false, ordem:'vol', kAberto:{} };
+var UI={ fatAberto:{FTOT:true,FCOMB:false,FOTTO:false,FDIESEL:false,FMERC:false}, fatBase:'ano', modoDia:false, ordem:'vol', kAberto:{0:false,1:false,2:false,3:false,4:false} };
 var SIGLA={'3':'SF','4':'PS','5':'AS'}; /* unidades do Argo pelas iniciais */
 var S={}; /* funções da renderização corrente */
 
@@ -274,10 +274,12 @@ function drawFat(){
     });
   });
 }
+/* "Tudo aberto / Só totais" valem para a árvore do faturamento E para os cartões do topo (por unidade) */
 function sincFat(){
-  var ks=Object.keys(UI.fatAberto);
-  byId('fAll').setAttribute('aria-pressed', ks.every(function(k){return UI.fatAberto[k];})?'true':'false');
-  byId('fTop').setAttribute('aria-pressed', ks.every(function(k){return k==='FTOT'?UI.fatAberto[k]:!UI.fatAberto[k];})?'true':'false');
+  var ks=Object.keys(UI.fatAberto), ki=kpis.map(function(_,i){return i;});
+  var cartTodos=ki.every(function(i){return !!UI.kAberto[i];}), cartNenhum=ki.every(function(i){return !UI.kAberto[i];});
+  byId('fAll').setAttribute('aria-pressed', (ks.every(function(k){return UI.fatAberto[k];}) && cartTodos)?'true':'false');
+  byId('fTop').setAttribute('aria-pressed', (ks.every(function(k){return k==='FTOT'?UI.fatAberto[k]:!UI.fatAberto[k];}) && cartNenhum)?'true':'false');
 }
 function setFatBase(b){
   UI.fatBase=b;
@@ -678,9 +680,13 @@ redraw(); drawTbl();
 byId('fAno').addEventListener('click',function(){ S.setFatBase('ano'); });
 byId('fMes').addEventListener('click',function(){ S.setFatBase('ant'); });
 byId('fAll').addEventListener('click',function(){
-  Object.keys(UI.fatAberto).forEach(function(k){ UI.fatAberto[k]=true; }); S.drawFat(); S.sincFat(); });
+  Object.keys(UI.fatAberto).forEach(function(k){ UI.fatAberto[k]=true; });
+  Object.keys(UI.kAberto).forEach(function(i){ UI.kAberto[i]=true; });
+  S.drawFat(); S.drawKpis(); S.sincFat(); });
 byId('fTop').addEventListener('click',function(){
-  Object.keys(UI.fatAberto).forEach(function(k){ UI.fatAberto[k]=(k==='FTOT'); }); S.drawFat(); S.sincFat(); });
+  Object.keys(UI.fatAberto).forEach(function(k){ UI.fatAberto[k]=(k==='FTOT'); });
+  Object.keys(UI.kAberto).forEach(function(i){ UI.kAberto[i]=false; });
+  S.drawFat(); S.drawKpis(); S.sincFat(); });
 byId('bMes').addEventListener('click',function(){
   UI.modoDia=false; this.setAttribute('aria-pressed','true');
   byId('bDia').setAttribute('aria-pressed','false'); S.drawVol();
@@ -700,7 +706,7 @@ byId('oMar').addEventListener('click',function(){
 /* cartões do topo: toque/clique abre (ou fecha) a abertura por unidade */
 function abreKpi(ev){
   var c=ev.target.closest('.kpi[data-i]'); if(!c) return;
-  var i=c.getAttribute('data-i'); UI.kAberto[i]=!UI.kAberto[i]; S.drawKpis();
+  var i=c.getAttribute('data-i'); UI.kAberto[i]=!UI.kAberto[i]; S.drawKpis(); S.sincFat();
   if(ev.type==='keydown'){ var n=byId('kpis').querySelector('.kpi[data-i="'+i+'"]'); if(n) n.focus(); }
 }
 byId('kpis').addEventListener('click',abreKpi);
