@@ -265,7 +265,8 @@ h1.pagetit{font-family:Archivo,sans-serif;font-weight:800;letter-spacing:-.01em;
 h1.pagetit span{color:var(--laranja);font-style:normal}
 .pagesub{font-family:Archivo,sans-serif;font-size:13.5px;line-height:1.5;color:var(--tinta-suave);margin-top:6px}
 .pagesub b{color:var(--tinta)}
-@media (max-width:640px){h1.pagetit{display:none}.pagesub{margin-top:0;font-size:12px}#app>.wrap:first-child{padding-top:12px!important;padding-bottom:10px!important}}
+.pagectl{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:16px}
+@media (max-width:640px){h1.pagetit{display:none}.pagesub{margin-top:0;font-size:12px}.pagectl{margin-top:10px;gap:6px 10px}#app>.wrap:first-child{padding-top:12px!important;padding-bottom:10px!important}}
 
 /* ---- decomposição · gaveta ---- */
 .dec{border-top:1px solid var(--line);background:var(--surf2)}
@@ -322,6 +323,17 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
 <div class="wrap" style="padding-top:28px;padding-bottom:18px">
   <h1 class="pagetit">Vendas</h1>
   <div class="pagesub">Metas e margens de venda &middot; <b id="hdPeriodo"></b> &middot; <span id="hdMeta"></span></div>
+  <!-- controles que valem para a página inteira: base da variação (cartões + faturamento) e nível de detalhe da árvore do faturamento -->
+  <div class="pagectl">
+    <div class="seg" role="group" aria-label="Base do crescimento">
+      <button id="fAno" aria-pressed="true">Δ vs ano</button>
+      <button id="fMes" aria-pressed="false">Δ vs mês</button>
+    </div>
+    <div class="seg" role="group" aria-label="Detalhe do faturamento">
+      <button id="fAll" aria-pressed="true">Tudo aberto</button>
+      <button id="fTop" aria-pressed="false">Só totais</button>
+    </div>
+  </div>
 </div>
 
 
@@ -338,17 +350,7 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
       <div class="r" id="fatBoxes"></div>
     </div>
     <div class="fatctl">
-      <span class="fatnote">Abre por combustíveis e mercadorias, e daí por ciclo e por linha. Os filhos somam exatamente o pai.</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <div class="seg" role="group" aria-label="Base do crescimento">
-          <button id="fAno" aria-pressed="true">Δ vs ano</button>
-          <button id="fMes" aria-pressed="false">Δ vs mês</button>
-        </div>
-        <div class="seg" role="group" aria-label="Detalhe">
-          <button id="fAll" aria-pressed="true">Tudo aberto</button>
-          <button id="fTop" aria-pressed="false">Só totais</button>
-        </div>
-      </div>
+      <span class="fatnote">Abre por combustíveis e mercadorias, e daí por ciclo e por linha. Os filhos somam exatamente o pai. A base da variação e o nível de detalhe se escolhem nos botões do topo da página.</span>
     </div>
     <div class="fatbody">
       <div class="fhead"><span>Linha</span><span data-r="ano"></span><span data-r="ant"></span><span><span data-r="cur"></span> proj.</span><span>part.</span><span>vs <span data-r="antMes"></span></span><span>vs <span data-r="ano"></span></span><span id="fhDelta">crescimento ano</span><span>quantidade <span data-r="cur"></span></span></div>
