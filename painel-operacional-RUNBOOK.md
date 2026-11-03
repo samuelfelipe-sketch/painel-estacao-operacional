@@ -34,8 +34,28 @@ Na mesma pasta chegam três CSVs por dia (`RelatorioDeVendasPorDataDeEmissao{As,
 2. **Texto do relatório.** Ler o PDF do dia pelo conector e gravar o texto devolvido, **sem alterar nada** (uma página por linha, exatamente como veio), em `/tmp/vendas/relatorio.txt`. Não "corrigir" número, não arredondar, não reordenar.
 3. **Montar.** `node scripts/vendas-monta.mjs --txt /tmp/vendas/relatorio.txt --saida /tmp/vendas/dados.json --anterior /tmp/vendas/vendas-anterior.json`. O script transcreve as três tabelas de cada secção (3 unidades + TODAS UNIDADES), calcula os campos derivados (regras §2) e confere: filhos = pai (Otto + Diesel + Arla = Combustíveis; linhas = Mercadorias), projeção = acumulado ÷ dias × dias do mês, rede = soma das unidades, decomposição fecha, acumulado não regride dentro do mês. **Reprovado → não publica**: o erro mais comum é texto mal copiado no passo 2; reler o PDF e repetir. Se continuar reprovado, avisar o Samuel com a lista de itens e encerrar com a versão anterior no ar.
 4. **Publicar.** `node scripts/vendas-publica.mjs publica --json /tmp/vendas/dados.json` grava `operacional-conteudo.json` cifrado (conferência de ida e volta antes de gravar).
-5. **Commit na branch principal.** `git pull --rebase origin main` → `git add operacional-conteudo.json` → commit `chore: publica os dados do painel Vendas (automático)` → `git push origin HEAD:main`. Se o push for recusado, abrir um PR com o mesmo título e mesclá-lo (squash). O site mostra o dia novo em 1 a 2 minutos; os aparelhos redesenham sozinhos.
+4b. **Histórico (seção Ano a ano).** `node scripts/vendas-historico.mjs anota --json /tmp/vendas/dados.json` acrescenta a `operacional-historico.json` (cifrado) o que o relatório do dia diz sobre os seus três meses: mês anterior e mesmo mês do ano passado (fechados) e o mês corrente (parcial, dias 1 a N). Mês fechado de relatório mais novo substitui o anterior; parcial nunca substitui fechado. O log diz só os meses gravados.
+5. **Commit na branch principal.** `git pull --rebase origin main` → `git add operacional-conteudo.json operacional-historico.json` → commit `chore: publica os dados do painel Vendas (automático)` → `git push origin HEAD:main`. Se o push for recusado, abrir um PR com o mesmo título e mesclá-lo (squash). O site mostra o dia novo em 1 a 2 minutos; os aparelhos redesenham sozinhos.
 6. **Avisar** o Samuel em uma mensagem curta: corte publicado (data), mês de referência, e se alguma conferência precisou de releitura. Sem valores. Relatório do dia ausente no OneDrive → não publica e diz isso em uma linha.
+
+## Semeadura do histórico (uma vez)
+
+A seção **Ano a ano** compara o faturamento mês a mês do ano corrente com o anterior. O histórico começou em 03/11/2026 com o que havia na pasta (relatórios de 01/10 e 01/11 e o do dia): set–nov/2025 e ago–nov/2026. Para completar jan–jul/2026, jan–ago/2025 e dez/2025, o Samuel gera no Argo **o mesmo relatório** (Acompanhamento de Metas e Margens de Vendas, unidades 3/4/5, 1º nível, todas as análises, PDF) com o campo **Data** no último dia de cada mês:
+
+| Data do relatório | Meses que ele traz |
+|---|---|
+| 31/01/2026 | jan/2026 · dez/2025 · jan/2025 |
+| 28/02/2026 | fev/2026 · jan/2026 · fev/2025 |
+| 31/03/2026 | mar/2026 · fev/2026 · mar/2025 |
+| 30/04/2026 | abr/2026 · mar/2026 · abr/2025 |
+| 31/05/2026 | mai/2026 · abr/2026 · mai/2025 |
+| 30/06/2026 | jun/2026 · mai/2026 · jun/2025 |
+| 31/07/2026 | jul/2026 · jun/2026 · jul/2025 |
+| 31/08/2026 | ago/2026 · jul/2026 · ago/2025 |
+
+Os oito PDFs vão para `Operações/Vendas/Claude/Historico/` no OneDrive (qualquer nome). A rotina (ou uma sessão) lê cada um pelo conector, grava o texto em `/tmp/vendas/hist/<AAAA-MM>.txt`, monta com `vendas-monta.mjs --txt … --saida /tmp/vendas/hist/<AAAA-MM>.json` (sem `--anterior`) e roda `vendas-historico.mjs anota --json` em cada JSON, em qualquer ordem. Depois, commit de `operacional-historico.json` com a mensagem `chore: semeia o histórico do painel Vendas (automático)`. A linha "Ano inteiro" da seção aparece quando o ano anterior tiver os 12 meses.
+
+Outros comandos: `vendas-historico.mjs abre --para /tmp/vendas` (decifra para `/tmp/vendas/historico.json`, para conferir) e `importa --json` (substitui tudo — só por decisão do Samuel). Os cofres dos scripts do Vendas vivem em `scripts/vendas-lib.mjs`.
 
 ## Virada de mês
 

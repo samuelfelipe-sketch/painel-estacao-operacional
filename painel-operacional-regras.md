@@ -210,3 +210,26 @@ Desde 19/10/2026 a atualização é diária e automática: o Argo deixa o PDF do
 **Conferência mínima antes de publicar:** a projeção de cada linha bate com a coluna PROJEÇÃO do PDF; os filhos somam o pai nos dois lados; nenhum `% meta` absurdo passou sem a marca de meta inválida.
 
 Se as inconsistências da §4 tiverem sido corrigidas no Argo, remover o tratamento correspondente — e comemorar.
+
+## Histórico mensal e seção "Ano a ano"
+
+Arquivo `operacional-historico.json` (raiz), CIFRADO como o `operacional-conteudo.json`, mantido por `scripts/vendas-historico.mjs` (procedimento no RUNBOOK). Decifrado:
+
+```json
+{ "v": 1, "atualizadoEm": "2026-11-03T16:18",
+  "meses": {
+    "2026-10": { "fat": 0, "comb": 0, "merc": 0, "litros": 0, "margem": 0, "fechado": true,  "corte": "02/11/2026", "un": { "3": 0, "4": 0, "5": 0 } },
+    "2026-11": { "fat": 0, "proj": 0, "comb": 0, "merc": 0, "litros": 0, "margem": 0, "fechado": false, "dias_dec": 2, "dias_mes": 30, "corte": "02/11/2026", "un": { "3": 0, "4": 0, "5": 0 } }
+  } }
+```
+
+| Campo | Origem no JSON diário |
+|---|---|
+| `fat` / `comb` / `merc` | `fat.FTOT/FCOMB/FMERC` → `recB` (mês anterior), `recC` (ano passado), `recA × dias_dec/dias_mes` (mês corrente, acumulado) |
+| `proj` | `fat.FTOT.recA` — só no mês parcial |
+| `litros` | `grupos.TOTCOMB` → `ant` / `ano` / `acum` |
+| `margem` | `TOTCOMB.mrs* + TOTMERC.mrs*` (no parcial, `mrsProj × dias_dec/dias_mes`) |
+| `un` | `unidades[].recB/recC/recA` por código do Argo |
+| `fechado` / `corte` | fechado = mês inteiro; `corte` = `meta.data` do relatório que gravou |
+
+Regras de mesclagem: fechado substitui parcial; entre dois do mesmo tipo vale o relatório de corte mais novo. A seção no painel (`window.renderHistorico`, `painel-operacional.js`) desenha cartões, tabela e gráfico (barras ano anterior × atual, linha de crescimento) do ano de `meta.mes_ref` contra o anterior: mês parcial é comparado ao mesmo mês do ano anterior **no ritmo proporcional** (× dias_dec/dias_mes), a mesma regra das metas; meses sem os dois anos ficam fora dos totais e são listados no rodapé; "Ano inteiro" = ano anterior realizado (12 meses) × projeção do corrente (fechados + mês corrente projetado + meses restantes no mesmo mês do ano anterior × crescimento do período). Sem o arquivo, a seção fica oculta.

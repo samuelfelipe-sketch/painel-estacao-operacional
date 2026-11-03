@@ -117,6 +117,26 @@ section{margin-top:34px}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin-bottom:12px}
 .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:5px}
 
+/* ano a ano */
+.aacards{margin-top:0;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.aacards .kpi.cresc{border-left-color:var(--accent)}
+.aacards .kpi .big.pos{color:var(--good)} .aacards .kpi .big.neg{color:var(--bad)}
+.aatblbox{margin-top:12px}
+table.aat{min-width:0}
+table.aat th,table.aat td{padding:8px 12px}
+table.aat th:first-child,table.aat td:first-child{text-align:left}
+table.aat td.n{font-weight:500}
+table.aat td.n.cur{font-weight:600;color:var(--ink)}
+table.aat td .dias{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--ink3);margin-left:6px;letter-spacing:.04em}
+table.aat tr.vazio td{color:var(--ink3)}
+table.aat tr.grp td:first-child{font-weight:600}
+table.aat td .mini{display:block;font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--ink3);font-weight:500;margin-top:2px}
+.aafoot{font-size:11.5px;color:var(--ink3);margin:10px 2px 0;line-height:1.5}
+#cAnoAno{max-width:none} /* no celular rola na horizontal em vez de encolher 12 meses */
+svg .aapill{font-size:10px;font-weight:600;fill:#fff}
+svg .aalbl{fill:var(--ink2);font-size:10.5px}
+@media (max-width:640px){ table.aat th,table.aat td{padding:7px 8px} table.aat td:first-child{white-space:normal;max-width:150px} table.aat td .mini{font-size:9px} }
+
 /* charts */
 .chartbox{overflow-x:auto}
 svg{display:block;max-width:100%}
@@ -133,7 +153,7 @@ table{border-collapse:collapse;width:100%;min-width:940px;font-size:12px}
 th,td{padding:7px 7px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th{font-family:Archivo,sans-serif;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:600;background:var(--surf2);position:sticky;top:0}
 th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surf);z-index:2}
-th:first-child{background:var(--surf2);z-index:3}
+th:first-child{background:var(--verde);z-index:3} /* o tema pinta os cabeçalhos de verde; a primeira coluna fixa acompanha */
 tbody tr:hover td{background:var(--surf2)}
 tbody tr:hover td:first-child{background:var(--surf2)}
 tr.grp td{background:var(--surf2);font-weight:600}
@@ -362,6 +382,23 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
     </details>
   </div>
 
+  <!-- Ano a ano: faturamento mês a mês do ano corrente contra o anterior (histórico cifrado em operacional-historico.json; sem ele a seção fica oculta) -->
+  <section class="anoano" id="anoAno" hidden>
+    <div class="sechd">
+      <div>
+        <h2>Ano a ano</h2>
+        <p id="aaNota"></p>
+      </div>
+    </div>
+    <div class="kpis aacards" id="aaCards"></div>
+    <div class="tblbox aatblbox"><table class="aat" id="aaTbl"><thead></thead><tbody></tbody></table></div>
+    <div class="panel" style="margin-top:12px">
+      <div class="legend" id="aaLeg"></div>
+      <div class="eyebrow" style="margin-bottom:6px" id="aaEyebrow">Evolução mês a mês · faturamento</div>
+      <div class="chartbox"><svg id="cAnoAno" role="img" aria-label="Faturamento mês a mês, ano atual contra o anterior"></svg></div>
+      <p class="aafoot" id="aaFoot"></p>
+    </div>
+  </section>
 
   <div class="rail" id="rail"></div>
   <p id="railNota" style="font-size:11.5px;color:var(--ink3);margin:8px 2px 0"></p>
@@ -462,8 +499,11 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
    Configurações (admin). */
 var CACHE='sapatao-conteudo-operacional-v1';
 var ARQUIVO='operacional-conteudo.json';
-var RAW='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/'+ARQUIVO;
-var API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/'+ARQUIVO;
+/* histórico mensal (seção "Ano a ano") — opcional: sem o arquivo, a seção fica oculta */
+var CACHE_H='sapatao-conteudo-operacional-hist-v1';
+var ARQ_HIST='operacional-historico.json';
+var RAW_BASE='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/';
+var API_BASE='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/';
 var abriu=false;
 function mostra(dados){
   window.DADOS_PAINEL=dados;
@@ -479,14 +519,27 @@ async function decifraDoc(doc){
   if(!window.sapataoCofre.dek()){try{await window.sapataoCofre.baixaDekPeloToken();}catch(e){}}
   return await window.sapataoCofre.decifra(doc);
 }
-async function pega(){
-  try{const r=await fetch(RAW+'?t='+Date.now(),{cache:'no-store'});if(r.ok)return await r.json();if(r.status===404)return null;}catch(e){}
-  try{const r=await fetch(API+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+async function pega(arq){
+  arq=arq||ARQUIVO;
+  try{const r=await fetch(RAW_BASE+arq+'?t='+Date.now(),{cache:'no-store'});if(r.ok)return await r.json();if(r.status===404)return null;}catch(e){}
+  try{const r=await fetch(API_BASE+arq+'?ref=main&t='+Date.now(),{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
     if(r.status===404)return null;
     if(r.ok){const j=await r.json();return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,'')))));}
   }catch(e){}
-  try{const r=await fetch(ARQUIVO+'?t='+Date.now(),{cache:'no-store'});if(r.ok)return await r.json();}catch(e){}
+  try{const r=await fetch(arq+'?t='+Date.now(),{cache:'no-store'});if(r.ok)return await r.json();}catch(e){}
   return null;
+}
+function mostraHist(h){ window.DADOS_HIST=h; if(abriu&&window.renderHistorico)window.renderHistorico(h); }
+async function carregaHist(){
+  var c=null;
+  try{ c=JSON.parse(localStorage.getItem(CACHE_H)||'null'); if(c){var h=await decifraDoc(c);if(h)mostraHist(h);} }catch(e){c=null;}
+  try{
+    var doc=await pega(ARQ_HIST);
+    if(!doc){ if(!c)mostraHist(null); return; }
+    var mudou=!c||c.ct!==doc.ct||c.iv!==doc.iv;
+    if(doc.enc===1&&mudou){try{localStorage.setItem(CACHE_H,JSON.stringify(doc));}catch(e){}}
+    if(mudou){var h2=await decifraDoc(doc);if(h2)mostraHist(h2);}
+  }catch(e){}
 }
 async function carrega(){
   var A=window.sapataoAuth;
@@ -508,6 +561,7 @@ async function carrega(){
       else if(!abriu)falha('Este aparelho ainda não tem a chave dos dados. Saia e entre com o seu usuário e senha na central.');
     }
   }catch(e){falha('Sem conexão para buscar os dados ('+e.message+').');}
+  carregaHist(); /* depois dos dados do mês: a seção "Ano a ano" entra quando o histórico chegar */
 }
 document.addEventListener('sapatao-login',carrega);
 carrega();

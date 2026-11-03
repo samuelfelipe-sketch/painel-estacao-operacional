@@ -314,7 +314,7 @@ function podeLer(array $u, string $p): bool {
     if (strpos($p, 'fluxo/') === 0) return perm($u, 'fluxo') !== 'nao';
     if (strpos($p, 'negociacao/') === 0) return perm($u, 'negociacao') !== 'nao';
     if (strpos($p, 'mercado/') === 0) return perm($u, 'mercado') !== 'nao';
-    if ($p === 'operacional-conteudo.json') return perm($u, 'operacional') !== 'nao';
+    if ($p === 'operacional-conteudo.json' || $p === 'operacional-historico.json') return perm($u, 'operacional') !== 'nao'; /* dados do mês e histórico mensal do Vendas */
     return false;
 }
 function podeGravar(array $u, string $p): bool {

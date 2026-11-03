@@ -713,5 +713,113 @@ byId('kpis').addEventListener('click',abreKpi);
 byId('kpis').addEventListener('keydown',function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); abreKpi(ev); } });
 var rt; addEventListener('resize',function(){ clearTimeout(rt); rt=setTimeout(function(){ S.redraw(); },140); });
 
+/* ---------- Ano a ano: faturamento mês a mês, ano corrente × anterior ----------
+   Fonte: operacional-historico.json (cifrado), mantido por scripts/vendas-historico.mjs
+   a partir dos relatórios diários do Argo. Mês corrente é parcial (dias 1 a N): a
+   comparação com o ano anterior usa o mesmo mês no ritmo proporcional (× N/dias do mês),
+   a mesma regra das metas do painel. Meses sem os dois anos ficam fora dos totais. */
+window.renderHistorico=function(H){
+  var sec=byId('anoAno'); if(!sec) return;
+  var M=H&&H.meses?H.meses:{}, refs=Object.keys(M).sort();
+  if(!refs.length){ sec.hidden=true; return; }
+  var D=window.DADOS_PAINEL||{}, mesRef=(D.meta&&D.meta.mes_ref)||refs[refs.length-1];
+  var ano=+mesRef.slice(0,4), ant=ano-1, mesCur=+mesRef.slice(5,7);
+  var g=function(a,m){ return M[a+'-'+(m<10?'0'+m:m)]; };
+  var var_=function(a,b){ return (isFinite(a)&&isFinite(b)&&b)?(a/b-1)*100:NaN; }; /* fora do escopo do renderPainel */
+  var cap=function(t){ return t.charAt(0).toUpperCase()+t.slice(1); };
+  var ROWS=[], sPrev=0, sCur=0, nPer=0, semBase=[], ultimo=null;
+  for(var m=1;m<=12;m++){
+    var cur=g(ano,m), prev=g(ant,m);
+    var r={m:m, nome:cap(MES_NOME[m-1]), abr:MES_ABR[m-1].toUpperCase(), cur:cur, prev:prev, curV:cur?cur.fat:NaN, prevV:prev?prev.fat:NaN, parcial:!!(cur&&!cur.fechado), base:NaN, cresc:NaN};
+    if(cur&&prev){
+      r.base = r.parcial ? prev.fat*cur.dias_dec/cur.dias_mes : prev.fat;
+      r.cresc = var_(cur.fat, r.base);
+      sPrev+=r.base; sCur+=cur.fat; nPer++;
+    } else if(cur||prev){ if(m<=mesCur) semBase.push(MES_ABR[m-1]); }
+    if(cur) ultimo=r;
+    ROWS.push(r);
+  }
+  var cresc=var_(sCur,sPrev), temPer=nPer>0;
+  var corte=(ultimo&&ultimo.cur&&ultimo.cur.corte)||'';
+  var pMes=ultimo?ultimo.nome:'';
+  /* cards */
+  var cards=[
+    {lbl:'Total '+ant+' · mesmo período', big:temPer?brlCurto(sPrev):'—', sub: temPer?(ROWS.filter(function(r){return r.cur&&r.prev;}).map(function(r){return r.abr.toLowerCase();}).join(', ')+(ultimo&&ultimo.parcial&&ultimo.prev?' · '+ultimo.nome.slice(0,3)+' no ritmo de '+ultimo.cur.dias_dec+' dia'+(ultimo.cur.dias_dec>1?'s':''):'')):'sem meses com os dois anos'},
+    {lbl:'Total '+ano+' até '+(corte?corte.slice(0,5):'hoje'), big:temPer?brlCurto(sCur):'—', sub: ultimo?('01/01 a '+(corte?corte.slice(0,5):'')+' · '+(ultimo.parcial?pMes.toLowerCase()+' parcial':'meses fechados')):''},
+    {lbl:'Crescimento no período', big:temPer?pct(cresc):'—', cls:'cresc'+(temPer?(cresc>=0?' pos':' neg'):''), sub: temPer?(brlCurto(Math.abs(sCur-sPrev))+' '+(sCur>=sPrev?'a mais':'a menos')+' que '+ant):''}
+  ];
+  byId('aaCards').innerHTML=cards.map(function(k){ return '<div class="kpi '+(k.cls||'')+'"><div class="lbl">'+esc(k.lbl)+'</div><div class="big'+(k.cls&&k.cls.indexOf('pos')>=0?' pos':(k.cls&&k.cls.indexOf('neg')>=0?' neg':''))+'">'+esc(k.big)+'</div><div class="sub">'+esc(k.sub)+'</div></div>'; }).join('');
+  byId('aaNota').textContent='Faturamento total (combustíveis + mercadorias e serviços) de '+ano+' contra '+ant+', mês a mês. Mês corrente parcial comparado no ritmo proporcional.';
+  /* tabela */
+  var cel=function(v,cls){ return '<td class="n '+(cls||'')+'">'+(isFinite(v)?brl(v):'—')+'</td>'; };
+  var celP=function(v){ return '<td class="n '+(isFinite(v)?(v>=0?'pos':'neg'):'')+'">'+(isFinite(v)?pct(v):'—')+'</td>'; };
+  byId('aaTbl').querySelector('thead').innerHTML='<tr><th>Mês</th><th>'+ant+'</th><th>'+ano+'</th><th>Crescimento</th></tr>';
+  var tb=ROWS.map(function(r){
+    var vazio=!r.cur&&!r.prev;
+    return '<tr class="'+(vazio?'vazio':'')+'"><td>'+r.nome+(r.parcial?'<span class="dias">dias 1 a '+r.cur.dias_dec+'</span>':'')+'</td>'+cel(r.prevV)+cel(r.curV,'cur')+
+      (r.parcial&&isFinite(r.cresc)?'<td class="n '+(r.cresc>=0?'pos':'neg')+'">'+pct(r.cresc)+'<span class="mini">vs ritmo de '+ant+'</span></td>':celP(r.cresc))+'</tr>';
+  });
+  tb.push('<tr class="grp"><td>Total do período<span class="mini">meses com os dois anos'+(ultimo&&ultimo.parcial?' · '+pMes.toLowerCase()+' no ritmo':'')+'</span></td>'+cel(temPer?sPrev:NaN)+cel(temPer?sCur:NaN,'cur')+celP(temPer?cresc:NaN)+'</tr>');
+  /* ano inteiro: ano anterior realizado (12 meses) × projeção do corrente (fechados + mês corrente projetado + restantes no ritmo do crescimento do período) */
+  var prevAno=0, prevOk=true; for(var i=1;i<=12;i++){ var p=g(ant,i); if(p&&p.fechado) prevAno+=p.fat; else prevOk=false; }
+  var projAno=0, projOk=temPer;
+  for(var j=1;j<=12;j++){ var c=g(ano,j), q=g(ant,j);
+    if(c&&c.fechado) projAno+=c.fat;
+    else if(c&&!c.fechado) projAno+=(isFinite(c.proj)?c.proj:c.fat);
+    else if(q&&q.fechado) projAno+=q.fat*(1+cresc/100);
+    else projOk=false; }
+  tb.push('<tr class="grp"><td>Ano inteiro<span class="mini">'+ant+' realizado × '+ano+' projetado</span></td>'+cel(prevOk?prevAno:NaN)+'<td class="n cur">'+(projOk?brl(projAno)+'<span class="mini">projeção</span>':'—')+'</td>'+celP(prevOk&&projOk?var_(projAno,prevAno):NaN)+'</tr>');
+  byId('aaTbl').querySelector('tbody').innerHTML=tb.join('');
+  /* rodapé */
+  var foot=[];
+  if(semBase.length) foot.push('Sem os dois anos no histórico: '+semBase.join(', ')+' — ficam fora dos totais até a semeadura dos relatórios antigos.');
+  if(ultimo&&ultimo.parcial) foot.push(pMes+' tem '+ultimo.cur.dias_dec+' de '+ultimo.cur.dias_mes+' dias: a barra clara é o projetado do mês; o crescimento compara com '+ant+' no ritmo proporcional.');
+  if(!prevOk) foot.push('"Ano inteiro" aparece quando '+ant+' tiver os 12 meses no histórico.');
+  byId('aaFoot').textContent=foot.join(' ');
+  byId('aaLeg').innerHTML='<span><i style="background:var(--p1)"></i>'+ant+'</span><span><i style="background:var(--p3)"></i>'+ano+'</span><span><i style="background:var(--laranja);border-radius:50%"></i>crescimento %</span>';
+  sec.hidden=false;
+  /* gráfico: barras agrupadas + linha de crescimento */
+  function draw(){
+    var svg=byId('cAnoAno'); svg.textContent='';
+    var W=Math.max(640, Math.min(1360, (svg.parentNode.clientWidth||880)));
+    var L=58, Rm=46, TOP=30, BOT=26, H=270, PH=H-TOP-BOT, PW=W-L-Rm, slot=PW/12, bw=Math.min(22, slot*0.3);
+    svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('width',W); svg.setAttribute('height',H);
+    var vmax=0; ROWS.forEach(function(r){ vmax=Math.max(vmax, r.prevV||0, r.curV||0, (r.cur&&r.cur.proj)||0); });
+    var max=niceMax(vmax||1), y=function(v){ return TOP+PH-(v/max)*PH; };
+    var gs=ROWS.filter(function(r){return isFinite(r.cresc);}).map(function(r){return Math.abs(r.cresc);});
+    var gl=niceMax(Math.max(10, Math.max.apply(null, gs.length?gs:[10]))), y2=function(p){ return TOP+PH-((p+gl)/(2*gl))*PH; };
+    for(var t=0;t<=4;t++){ var v=max*t/4;
+      svg.appendChild(SVG('line',{x1:L,x2:L+PW,y1:y(v),y2:y(v),class:'grid'}));
+      var tx=SVG('text',{x:L-8,y:y(v)+3.5,class:'axis','text-anchor':'end'}); tx.textContent=v>=1e6?nf1.format(v/1e6)+' mi':nf0.format(v/1e3)+' mil'; svg.appendChild(tx);
+    }
+    [gl,0,-gl].forEach(function(p){ var tx=SVG('text',{x:L+PW+8,y:y2(p)+3.5,class:'axis','text-anchor':'start'}); tx.textContent=(p>0?'+':'')+nf0.format(p)+'%'; svg.appendChild(tx); });
+    svg.appendChild(SVG('line',{x1:L,x2:L+PW,y1:y2(0),y2:y2(0),class:'grid','stroke-dasharray':'3 3'}));
+    var pts=[];
+    ROWS.forEach(function(r,i){
+      var x0=L+i*slot, xc=x0+slot/2;
+      var lb=SVG('text',{x:xc,y:H-8,class:'axis cat','text-anchor':'middle'}); lb.textContent=r.abr; svg.appendChild(lb);
+      var tt='<b>'+r.nome+'</b><br>'+ant+': '+(isFinite(r.prevV)?brl(r.prevV):'—')+'<br>'+ano+': '+(isFinite(r.curV)?brl(r.curV):'—')+(r.parcial?' (dias 1 a '+r.cur.dias_dec+'; projeção '+brl(r.cur.proj||r.curV)+')':'')+(isFinite(r.cresc)?'<br>Crescimento: '+pct(r.cresc)+(r.parcial?' vs ritmo':''):'');
+      if(isFinite(r.prevV)){ var b1=SVG('rect',{x:xc-bw-2,y:y(r.prevV),width:bw,height:Math.max(1,TOP+PH-y(r.prevV)),rx:4,fill:'var(--p1)'}); bind(b1,tt); svg.appendChild(b1); }
+      if(isFinite(r.curV)){
+        if(r.parcial&&isFinite(r.cur.proj)){ var gh=SVG('rect',{x:xc+2,y:y(r.cur.proj),width:bw,height:Math.max(1,TOP+PH-y(r.cur.proj)),rx:4,fill:'var(--p3)','fill-opacity':'.18',stroke:'var(--p3)','stroke-dasharray':'3 3'}); bind(gh,tt); svg.appendChild(gh); }
+        var b2=SVG('rect',{x:xc+2,y:y(r.curV),width:bw,height:Math.max(1,TOP+PH-y(r.curV)),rx:4,fill:'var(--p3)'}); bind(b2,tt); svg.appendChild(b2);
+      }
+      if(isFinite(r.cresc)) pts.push({x:xc,y:y2(r.cresc),g:r.cresc});
+    });
+    if(pts.length>1){ var d=pts.map(function(p,i){return (i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ');
+      svg.appendChild(SVG('path',{d:d,fill:'none',stroke:'var(--laranja)','stroke-width':'2','stroke-linejoin':'round'})); }
+    pts.forEach(function(p){
+      svg.appendChild(SVG('circle',{cx:p.x,cy:p.y,r:3.5,fill:'#fff',stroke:'var(--laranja)','stroke-width':'2'}));
+      var lab=pct(p.g), w=lab.length*6.2+10, py=p.y-20<TOP?p.y+10:p.y-22;
+      svg.appendChild(SVG('rect',{x:p.x-w/2,y:py,width:w,height:14,rx:7,fill:p.g>=0?'var(--good)':'var(--bad)'}));
+      var t=SVG('text',{x:p.x,y:py+10.5,class:'aapill','text-anchor':'middle'}); t.textContent=lab; svg.appendChild(t);
+    });
+  }
+  draw();
+  try{ var cb=byId('cAnoAno').parentNode; cb.scrollLeft=cb.scrollWidth; }catch(e){} /* no celular, começa pelos meses recentes */
+  if(!window.__aaResize){ window.__aaResize=true; var rt2; addEventListener('resize',function(){ clearTimeout(rt2); rt2=setTimeout(function(){ if(window.DADOS_HIST&&!byId('anoAno').hidden) window.renderHistorico(window.DADOS_HIST); },160); }); }
+};
+
 window.renderPainel(window.DADOS_PAINEL);
+if(window.DADOS_HIST&&window.renderHistorico) window.renderHistorico(window.DADOS_HIST);
 })();

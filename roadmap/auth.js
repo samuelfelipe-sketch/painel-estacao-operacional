@@ -297,7 +297,7 @@
       try { sessionStorage.removeItem(k); } catch (e) {}
     });
     /* solta as cópias locais do conteúdo: a próxima entrada baixa tudo fresco */
-    try { ['sapatao-conteudo-roadmap-v1', 'sapatao-conteudo-pe-v1', 'sapatao-conteudo-operacional-v1', 'sapatao-fluxo-v1', 'sapatao-negociacao-v1', 'sapatao-mercado-v1'].forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
+    try { ['sapatao-conteudo-roadmap-v1', 'sapatao-conteudo-pe-v1', 'sapatao-conteudo-operacional-v1', 'sapatao-conteudo-operacional-hist-v1', 'sapatao-fluxo-v1', 'sapatao-negociacao-v1', 'sapatao-mercado-v1'].forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
     /* aproveita a saída para rebuscar os arquivos do app direto da rede
        (atualiza o cache do navegador) e conferir se há sw.js novo — assim a
        próxima carga já vem com a última versão publicada do site */
@@ -522,7 +522,7 @@
   var DEK_URL = API_BASE + 'roadmap/dek.enc.json';
   var KID_URL = API_BASE + 'roadmap/chave-id.json';
   var kidRemotoP = null;
-  var CACHES_CONTEUDO = ['sapatao-conteudo-roadmap-v1', 'sapatao-conteudo-pe-v1', 'sapatao-conteudo-operacional-v1', 'sapatao-fluxo-v1', 'sapatao-negociacao-v1', 'sapatao-mercado-v1'];
+  var CACHES_CONTEUDO = ['sapatao-conteudo-roadmap-v1', 'sapatao-conteudo-pe-v1', 'sapatao-conteudo-operacional-v1', 'sapatao-conteudo-operacional-hist-v1', 'sapatao-fluxo-v1', 'sapatao-negociacao-v1', 'sapatao-mercado-v1'];
   var K = window.sapataoCofre = {
     ls: LS_DEK,
     dek: function () { return leGuardado(LS_DEK); },
