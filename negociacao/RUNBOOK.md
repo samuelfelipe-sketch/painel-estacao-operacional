@@ -24,17 +24,30 @@ Pasta de referência no OneDrive: `Financeiro/Compras/Painel de Negociação` no
 | Diário de negociação | `negociacao/diario.enc.json` (CIFRADO no repositório, append-only): `node scripts/negociacao-diario.mjs abre --para /tmp/neg` → `/tmp/neg/diario.md` | alavancas: concedido, saldo, prazos, pedidos em aberto, avisos permanentes do cabeçalho |
 | Checagem externa (subvenções, mistura, MPs) | busca na web, quando a política de rede permitir | notas de contexto, prioridade nº 1 |
 
-Fonte indisponível no dia → a seção correspondente fica com a leitura anterior **marcada como tal** ("leitura de DD/MM, fonte indisponível em DD/MM"). Nunca inventar número.
+Fonte indisponível no dia → o número da seção fica como está, marcado em poucas palavras ("leitura de DD/MM"). Nunca inventar número.
 
 ## Passos (todo dia, ~06:00 Brasília)
 
 1. **Estado de ontem.** `node scripts/negociacao-publica.mjs abre --para /tmp/neg` → `/tmp/neg/negociacao-anterior.html` (a versão no ar, decifrada). É a base da edição; fora do repositório.
 2. **Fontes novas.** Ler pelo conector só o que mudou desde a referência da versão anterior (a data em `.topbar .ref`).
-3. **Atualizar** `/tmp/neg/negociacao-novo.html` a partir do anterior: compras, margens, prioridade nº 1, alavancas, top 3, referência do dia. Manter estrutura, seções, ids e identidade. As regras de cálculo são as do pedido do Samuel (impacto = R$/L do saldo × volume de referência; mês ×3 = trimestre; ×12 = ano; conservador = mínimos; timing = comparação com o menor preço da mesma bandeira nos 5 dias anteriores).
+3. **Atualizar** `/tmp/neg/negociacao-novo.html` a partir do anterior: compras, margens, prioridade nº 1, alavancas, roteiro de mesa, referência do dia. Manter estrutura, seções, ids e identidade, e **seguir "Formato da página" abaixo: trocar o número velho pelo novo, nunca empilhar.** As regras de cálculo são as do pedido do Samuel (impacto = R$/L do saldo × volume de referência; mês ×3 = trimestre; ×12 = ano; conservador = mínimos; timing = comparação com o menor preço da mesma bandeira nos 5 dias anteriores).
 4. **Validar.** `node scripts/negociacao-valida.mjs --html /tmp/neg/negociacao-novo.html --pw /tmp/pw/node_modules/playwright`. Reprovado → **não publica**; corrige se for erro de edição, senão avisa o Samuel com a lista de itens e encerra com a versão anterior no ar.
 5. **Publicar.** `node scripts/negociacao-publica.mjs publica --html /tmp/neg/negociacao-novo.html` grava `negociacao/dados.enc.json` cifrado.
 6. **Commit na branch principal.** `git pull --rebase origin main` → `git add negociacao/dados.enc.json` → commit `chore: publica a ferramenta de Negociação de Preços (automático)` → `git push origin HEAD:main`. Se o push for recusado, abrir um PR com o mesmo título e mesclá-lo (squash). O site mostra a versão nova em 1 a 2 minutos.
 7. **Avisar** o Samuel em uma mensagem curta: referência publicada, o que mudou (sem valores sigilosos fora do site), fontes que faltaram. Sem mudança nenhuma nas fontes → não publica e avisa em uma linha.
+
+## Formato da página (decisão do Samuel de 03/11/2026)
+
+A ferramenta é a **cola de mesa** para argumentar com a Raízen e a Ipiranga: só o que se usa na conversa. Tudo o mais (histórico de leituras, retroativos, linhas conferidas, memória de cálculo, divergências entre fontes) vai para o diário — na semanal — e para o histórico do git; nunca para a página.
+
+- **01 · Resumo e roteiro** (`#resumo`): 3 KPIs (em jogo por mês no alvo, prioridade nº 1 com a data, "se executar até o fim do mês"), o **roteiro de mesa** em duas colunas — "Com a Raízen" e "Com a Ipiranga", até 4 itens cada, uma frase por item: o pedido em R$/L + o argumento com número e data — e uma faixa de contexto (Brent, dólar, subvenções, prazos regulatórios) com até 5 pílulas curtas.
+- **02 · Alavancas** (`#mapa`, `#al-a`, `#al-b`, `#al-d`, `#al-nao`, `#al-e`, `#al-f`): por alavanca, caixas abrir/alvo/mínimo (ou já concedido), **até 3 argumentos de uma linha** e o impacto mês/trimestre/ano. Argumento bom = número comparável e datado (margem do BI, preço da outra bandeira na mesma data, variação de preço da NF, volume).
+- **03 / 04** (`#impacto`, `#consolidado`): gráfico e tabela com movimento em poucas palavras.
+- **05 · Compras** (`#compras2026`): 3 cartões, gráfico, tabela por mês e por produto, uma linha de fonte. Sem parágrafos de conferência.
+- **06 · Margens** (`#margens`): margem por produto nas últimas leituras do BI, uma coluna "Para a mesa".
+- A leitura nova **substitui** a anterior. Proibido "leitura anterior", "revisão anterior" ou cadeia de leituras na página. Data da fonte entre parênteses basta ("BI 27/10", "NFs 29–31/10").
+- A validação barra: texto visível acima de 9.000 caracteres, qualquer bloco acima de 220 caracteres e a expressão "leitura/revisão anterior".
+- Comparações entre bandeiras usam o mesmo produto e a data mais recente de cada lado; a régua do S10 (Raízen até R$ 0,04/L acima da Ipiranga) vale nos dois sentidos — Ipiranga acima da Raízen é argumento com a Ipiranga.
 
 ## O que a rotina nunca faz
 
@@ -56,7 +69,7 @@ O que a semanal faz a mais:
    node scripts/negociacao-compras.mjs --csv /tmp/neg/compras-A.csv --csv /tmp/neg/compras-B.csv --saida /tmp/neg/compras.json
    ```
 
-   O script deduplica linhas repetidas entre arquivos, exclui ARLA e GNV, agrupa por mês × bandeira (3 e 4 = Raízen, 5 = Ipiranga) × produto (VP e GA = aditivada) × unidade, calcula preço médio = gasto ÷ volume e confere que meses somam o ano e produtos somam o total; reprovado, não grava. A seção 05 recebe os números do `compras.json`: soma dos meses = total do ano, soma dos produtos = total do ano, em volume e em gasto. Mês cuja cobertura (`cobertura` no JSON) não chega ao dia 1º fica marcado "parcial (desde DD/MM)"; meses anteriores à janela disponível mantêm o número guardado, marcados "leitura de DD/MM". Divergência entre o que a diária publicou e o CSV: prevalece o CSV, e a diferença vai na nota da seção.
+   O script deduplica linhas repetidas entre arquivos, exclui ARLA e GNV, agrupa por mês × bandeira (3 e 4 = Raízen, 5 = Ipiranga) × produto (VP e GA = aditivada) × unidade, calcula preço médio = gasto ÷ volume e confere que meses somam o ano e produtos somam o total; reprovado, não grava. A seção 05 recebe os números do `compras.json`: soma dos meses = total do ano, soma dos produtos = total do ano, em volume e em gasto. Mês cuja cobertura (`cobertura` no JSON) não chega ao dia 1º fica marcado "parcial (desde DD/MM)"; meses anteriores à janela disponível mantêm o número guardado (a linha de fonte da seção diz quais). Divergência entre o que a diária publicou e o CSV: prevalece o CSV, e a diferença vai **na entrada do diário** (a página só mostra o número reconciliado).
 2. **VPricing dos últimos 7 dias** (e-mail, qualquer remetente `@valenciopricing.com.br`): Resumo Diário (Brent, dólar), Boletim mensal e "Análise de Compras" (margem por produto e por fornecedor) → seções 06 e contexto. O relatório de Paridade de Importação só entra se bater com o Resumo Diário do mesmo dia.
 3. **Diário de negociação** (`node scripts/negociacao-diario.mjs abre --para /tmp/neg` → `/tmp/neg/diario.md`): ler TODOS os avisos do cabeçalho (regras permanentes) e as entradas dos últimos 7 dias. Concessões obtidas, pedidos em aberto, prazos, saldos. Concessão que não está no diário não existe.
 4. **Checagem externa** (busca na web em fontes primárias: Planalto/DOU, gov.br, ANP): subvenções PIS/COFINS, mistura, MP do diesel, prazos regulatórios — só o que mudou, com a data da checagem.
