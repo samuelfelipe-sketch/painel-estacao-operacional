@@ -109,7 +109,8 @@ function grupoDoMes(D){
   Object.keys(EMP).forEach(function(e){ var x=EMP[e]; if(!x||!x.meses) return;
     var inf=infoEmpresa(e,x), rot=inf.nome+' ('+inf.sig+')';
     var a=x.meses[m.mes_ref]; if(!a){ G.semMes.push(rot); return; }
-    var A=a.fat||0, B=(x.meses[m.ant_ref]||{}).fat||0, C=(x.meses[m.ano_ref]||{}).fat||0;
+    /* mês ainda parcial na empresa (rotina diária): projeta pelo ritmo, como o recA dos postos */
+    var A=(a.parcial&&a.dia>0)?(a.fat||0)/a.dia*m.dias_mes:(a.fat||0), B=(x.meses[m.ant_ref]||{}).fat||0, C=(x.meses[m.ano_ref]||{}).fat||0;
     G.nomes.push(rot); G.emp.push({key:e,sig:inf.sig,nome:inf.nome,papel:inf.papel,A:A,B:B,C:C}); G.A+=A; G.B+=B; G.C+=C; });
   G.emp.sort(function(a,b){ return a.sig<b.sig?-1:1; }); /* SE antes de ST */
   return G;
@@ -136,7 +137,7 @@ if(GI&&GI.nomes.length){ D=JSON.parse(JSON.stringify(D)); aplicaGrupo(D,GI); }
   if(!GI){ n.hidden=true; return; }
   var mes=(D.meta.mes_rotulo||'').toLowerCase();
   if(GI.nomes.length){
-    n.innerHTML='<b>Grupo</b> '+esc(GI.nomes.join(' + '))+' somadas em '+esc(mes)+' <small>· linha "Outras empresas do grupo"</small>';
+    n.innerHTML='<b>Grupo</b> '+esc(GI.nomes.join(' + '))+(GI.nomes.length>1?' somadas':' somada')+' em '+esc(mes)+(GI.semMes.length?' <small>· sem lançamento: '+esc(GI.semMes.join(' + '))+'</small>':' <small>· linha "Outras empresas do grupo"</small>');
     n.title='Faturamento das outras empresas somado ao dos postos no mês exibido e nos dois períodos de comparação. Volumes, margens e metas seguem sendo só dos postos.';
   } else {
     n.innerHTML='<b>Grupo</b> '+esc(GI.semMes.join(' + '))+' sem lançamento em '+esc(mes)+' <small>· este mês mostra só os postos</small>';
@@ -776,9 +777,14 @@ window.renderHistorico=function(H){
   /* "Grupo": soma às vendas dos postos o faturamento das outras empresas (H.empresas: Transportadora, Holding), mês a mês */
   var EMP=H.empresas||{}, EMPK=Object.keys(EMP).filter(function(e){ return EMP[e]&&EMP[e].meses; }), GRUPO=!!window.AA_GRUPO&&EMPK.length>0;
   var seg=byId('segGrupo'); if(seg){ seg.hidden=!EMPK.length; byId('gGrupo').setAttribute('aria-pressed',GRUPO?'true':'false'); byId('gPostos').setAttribute('aria-pressed',GRUPO?'false':'true'); }
-  var extras=function(ref,k,e){ var s=0; (e?[e]:EMPK).forEach(function(n){ var x=EMP[n].meses[ref]; if(x&&isFinite(x[k])) s+=x[k]; }); return s; };
+  /* valor da empresa no mês; num mês parcial dos postos (dias 1 a N), empresa também parcial é levada ao mesmo dia N (modo 'acum') ou ao mês inteiro (modo 'proj') pelo ritmo */
+  var extras=function(ref,k,e,modo,dias){ var s=0; (e?(Array.isArray(e)?e:[e]):EMPK).forEach(function(n){ var x=EMP[n].meses[ref]; if(!x||!isFinite(x[k])) return;
+      var v=x[k]; if(x.parcial&&x.dia>0&&modo&&dias) v=v/x.dia*(modo==='acum'?dias.dec:dias.mes); s+=v; }); return s; };
   var g=function(a,m){ var ref=a+'-'+(m<10?'0'+m:m), x=M[ref]; if(!x||!GRUPO) return x;
-    var o=Object.assign({},x); o.postos=x.fat; o.fat=x.fat+extras(ref,'fat'); if(isFinite(x.proj)) o.proj=x.proj+extras(ref,'fat'); o.intra=extras(ref,'intra'); o.ref=ref; return o; };
+    var dias=x.fechado?null:{dec:x.dias_dec,mes:x.dias_mes}, mm=ref.slice(5);
+    /* igual com igual: a empresa só entra no mês se tem esse mês lançado nos DOIS anos comparados */
+    var ok=EMPK.filter(function(n){ return EMP[n].meses[ano+'-'+mm]&&EMP[n].meses[ant+'-'+mm]; }); if(!ok.length) ok=[];
+    var o=Object.assign({},x); o.postos=x.fat; o.emp=ok; o.fat=x.fat+(ok.length?extras(ref,'fat',ok,'acum',dias):0); if(isFinite(x.proj)) o.proj=x.proj+(ok.length?extras(ref,'fat',ok,'proj',dias):0); o.intra=ok.length?extras(ref,'intra',ok,'acum',dias):0; o.ref=ref; return o; };
   var var_=function(a,b){ return (isFinite(a)&&isFinite(b)&&b)?(a/b-1)*100:NaN; }; /* fora do escopo do renderPainel */
   var cap=function(t){ return t.charAt(0).toUpperCase()+t.slice(1); };
   var ROWS=[], sPrev=0, sCur=0, nPer=0, semBase=[], ultimo=null;
@@ -831,10 +837,13 @@ window.renderHistorico=function(H){
   if(!prevOk) foot.push('"Ano inteiro" aparece quando '+ant+' tiver os 12 meses no histórico.');
   if(GRUPO){
     var per=ROWS.filter(function(r){return r.cur&&r.prev;}).map(function(r){return r.cur.ref;});
-    var partes=EMPK.map(function(e){ var t=0; per.forEach(function(ref){ t+=extras(ref,'fat',e); }); return EMP[e].nome+' '+brlCurto(t); });
-    var intra=0; per.forEach(function(ref){ intra+=extras(ref,'intra'); });
-    var ultEmp=EMPK.map(function(e){ var p=EMP[e].periodo; return p&&p.ate?p.ate:null; }).filter(Boolean).sort().pop();
-    foot.push('No período de '+ano+': '+partes.join(' · ')+(intra>0?' — '+brlCurto(intra)+' disso foi faturado a empresas do próprio grupo (aluguéis, energia e fretes internos), somado no bruto.':'.')+(ultEmp?' Empresas lançadas até '+ultEmp.slice(5,7)+'/'+ultEmp.slice(0,4)+'; depois disso o grupo vale só os postos.':''));
+    var rowsPer=ROWS.filter(function(r){return r.cur&&r.prev;});
+    var partes=EMPK.map(function(e){ var t=0, n=0; rowsPer.forEach(function(r){ if(r.cur.emp&&r.cur.emp.indexOf(e)>=0){ t+=extras(r.cur.ref,'fat',e,'acum',r.cur.fechado?null:{dec:r.cur.dias_dec,mes:r.cur.dias_mes}); n++; } }); var inf=infoEmpresa(e,EMP[e]); return inf.nome+' ('+inf.sig+') '+(n?brlCurto(t)+' em '+n+' '+(n>1?'meses':'mês'):'fora — sem os dois anos lançados'); });
+    var intra=0; rowsPer.forEach(function(r){ intra+=r.cur.intra||0; });
+    /* até quando cada empresa está lançada (períodos guardados como AAAA-MM-DD; a carga antiga como AAAA-MM) */
+    var dataBR=function(p){ return p.length>7?p.slice(8,10)+'/'+p.slice(5,7)+'/'+p.slice(0,4):p.slice(5,7)+'/'+p.slice(0,4); };
+    var lanc=EMPK.map(function(e){ var p=EMP[e].periodo, inf=infoEmpresa(e,EMP[e]); return p&&p.ate?inf.sig+' até '+dataBR(p.ate):null; }).filter(Boolean);
+    foot.push('Grupo em '+ano+': '+partes.join(' · ')+(intra>0?' — '+brlCurto(intra)+' disso foi faturado a empresas do próprio grupo (aluguéis, energia e fretes internos), somado no bruto.':'.')+' Cada empresa só entra no mês em que tem os dois anos lançados'+(lanc.length?' ('+lanc.join(', ')+')':'')+'.');
   }
   byId('aaFoot').textContent=foot.join(' ');
   byId('aaEyebrow').textContent='Evolução mês a mês · faturamento '+(GRUPO?'do grupo':'dos postos');
