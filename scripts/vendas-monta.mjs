@@ -102,7 +102,10 @@ function linhasDaTabela(seg, rotulos, esperado) {
   return out;
 }
 
-const ESC = secoes.map(s => {
+/* secção sem nenhuma linha (empresa cadastrada sem venda, ex.: holding em jan/2026) não entra no painel */
+const vazias = secoes.filter(s => !/TOTAL COMBUSTÍVEIS|TOTAL MERCADORIAS|MERCADORIAS/.test(s.corpo));
+if (vazias.length) console.log('secções sem movimento, ignoradas: ' + vazias.map(s => s.cod + ' - ' + s.nome).join('; '));
+const ESC = secoes.filter(s => !vazias.includes(s)).map(s => {
   const t = tabelas(s.corpo);
   const mensal = linhasDaTabela(t.mensal, ROTULOS_ANALISE, 15);
   const proj = linhasDaTabela(t.proj, ROTULOS_PROJ, 10);

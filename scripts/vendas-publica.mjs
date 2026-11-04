@@ -14,6 +14,10 @@
      node scripts/vendas-publica.mjs publica --json <fora-do-repo>/dados.json [--saida operacional-conteudo.json]
      node scripts/vendas-publica.mjs abre --para <pasta-fora-do-repo> [--entrada operacional-conteudo.json]
        → grava <pasta>/vendas-anterior.json (a versão publicada decifrada — estado do dia anterior)
+     node scripts/vendas-publica.mjs arquiva --json <dados.json de um mês FECHADO>
+       → grava operacional-meses/AAAA-MM.json (cifrado) e atualiza operacional-meses/indice.json
+         (só a lista de meses, em claro). O "publica" faz isso sozinho quando o relatório
+         é do último dia do mês (dias_dec = dias_mes) — é o seletor de mês do painel.
 
    Os logs dizem só datas, contagens e "ok"; nenhum valor do painel. */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
@@ -23,6 +27,20 @@ import { chave, cifra, decifra, falha } from './vendas-lib.mjs';
 const args = process.argv.slice(2);
 const modo = args[0];
 function opt(nome, padrao) { const i = args.indexOf('--' + nome); return i >= 0 && args[i + 1] ? args[i + 1] : padrao; }
+/* arquivo mensal: operacional-meses/AAAA-MM.json (cifrado, o JSON inteiro do painel) + indice.json em claro só com a lista */
+function arquiva(dados, doc) {
+  const dir = resolve('operacional-meses'); mkdirSync(dir, { recursive: true });
+  const ref = dados.meta.mes_ref; if (!/^\d{4}-\d{2}$/.test(ref)) falha('meta.mes_ref inválido.');
+  writeFileSync(join(dir, ref + '.json'), JSON.stringify(doc));
+  const idxPath = join(dir, 'indice.json');
+  let idx = { v: 1, meses: [] };
+  if (existsSync(idxPath)) { try { idx = JSON.parse(readFileSync(idxPath, 'utf8')); } catch (e) { idx = { v: 1, meses: [] }; } }
+  if (!Array.isArray(idx.meses)) idx.meses = [];
+  if (!idx.meses.includes(ref)) idx.meses.push(ref);
+  idx.meses = idx.meses.filter(m => /^\d{4}-\d{2}$/.test(m)).sort().reverse();
+  writeFileSync(idxPath, JSON.stringify(idx) + '\n');
+  console.log(`arquivado: operacional-meses/${ref}.json · ${idx.meses.length} meses no índice (${idx.meses[idx.meses.length - 1]} → ${idx.meses[0]})`);
+}
 function resumo(d) { return `${d.meta.mes_rotulo} · corte ${d.meta.data} · ${d.linhas.length} linhas` + (d.decomp ? ' · com decomposição' : '') + (Array.isArray(d.unidades) ? ` · ${d.unidades.length} unidades` : ''); }
 
 if (modo === 'publica') {
@@ -38,6 +56,16 @@ if (modo === 'publica') {
   if (JSON.stringify(decifra(doc, k)) !== JSON.stringify(dados)) falha('a conferência de ida e volta falhou — nada gravado.');
   writeFileSync(saida, JSON.stringify(doc));
   console.log(`publicado: ${saida} · ${resumo(dados)} · cifrado ${(JSON.stringify(doc).length / 1024).toFixed(0)} KB`);
+  if (dados.meta.dias_dec === dados.meta.dias_mes) arquiva(dados, doc); /* último dia do mês: guarda o mês inteiro para o seletor */
+} else if (modo === 'arquiva') {
+  const jsonPath = opt('json'); if (!jsonPath) falha('informe --json <arquivo>.');
+  let dados; try { dados = JSON.parse(readFileSync(jsonPath, 'utf8')); } catch (e) { falha('o arquivo não é um JSON válido.'); }
+  if (!dados || !dados.meta || !dados.fat) falha('esse JSON não parece ser o do painel.');
+  if (dados.meta.dias_dec !== dados.meta.dias_mes) falha(`o relatório é do dia ${dados.meta.dias_dec} de ${dados.meta.dias_mes}: só se arquiva mês fechado (relatório com Data no último dia do mês).`);
+  const k = chave();
+  const doc = cifra(dados, k);
+  if (JSON.stringify(decifra(doc, k)) !== JSON.stringify(dados)) falha('a conferência de ida e volta falhou — nada gravado.');
+  arquiva(dados, doc);
 } else if (modo === 'abre') {
   const para = opt('para'); if (!para) falha('informe --para <pasta fora do repositório>.');
   const entrada = resolve(opt('entrada', 'operacional-conteudo.json'));
@@ -50,5 +78,5 @@ if (modo === 'publica') {
   writeFileSync(alvo, JSON.stringify(d));
   console.log(`aberto: ${alvo} · ${resumo(d)} · gerado no Argo em ${d.meta.gerado || '?'}`);
 } else {
-  falha('modo desconhecido — use "publica" ou "abre".');
+  falha('modo desconhecido — use "publica", "arquiva" ou "abre".');
 }

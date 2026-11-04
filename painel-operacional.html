@@ -286,6 +286,12 @@ h1.pagetit span{color:var(--laranja);font-style:normal}
 .pagesub{font-family:Archivo,sans-serif;font-size:13.5px;line-height:1.5;color:var(--tinta-suave);margin-top:6px}
 .pagesub b{color:var(--tinta)}
 .pagectl{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:16px}
+.selmes{display:inline-flex;align-items:center;gap:8px;padding:5px 8px 5px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;box-shadow:var(--shadow);font-family:Archivo,sans-serif;font-size:12.5px;font-weight:700;color:var(--ink2)}
+.selmes .lb{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.selmes select{font:inherit;font-weight:700;color:var(--ink);border:none;background:var(--surf2);border-radius:999px;padding:4px 10px;cursor:pointer}
+.selmes select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.mesnota{font-size:12px;color:var(--ink3);font-family:Archivo,sans-serif}
+.mesnota b{color:var(--laranja)}
 @media (max-width:640px){h1.pagetit{display:none}.pagesub{margin-top:0;font-size:12px}.pagectl{margin-top:10px;gap:6px 10px}#app>.wrap:first-child{padding-top:12px!important;padding-bottom:10px!important}}
 
 /* ---- decomposição · gaveta ---- */
@@ -345,6 +351,9 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
   <div class="pagesub">Metas e margens de venda &middot; <b id="hdPeriodo"></b> &middot; <span id="hdMeta"></span></div>
   <!-- controles que valem para a página inteira: base da variação (cartões + faturamento) e nível de detalhe (cartões por unidade + árvore do faturamento) -->
   <div class="pagectl">
+    <!-- seletor de mês: o corrente (ao vivo) + meses fechados arquivados em operacional-meses/ (cifrados); some sem arquivo -->
+    <label class="selmes" id="selMesBox" hidden><span class="lb">Mês</span><select id="selMes" aria-label="Mês do painel"></select></label>
+    <span class="mesnota" id="mesNota" hidden></span>
     <div class="seg" role="group" aria-label="Base do crescimento">
       <button id="fAno" aria-pressed="true">Δ vs ano</button>
       <button id="fMes" aria-pressed="false">Δ vs mês</button>
@@ -506,7 +515,8 @@ var RAW_BASE='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estac
 var API_BASE='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/';
 var abriu=false;
 function mostra(dados){
-  window.DADOS_PAINEL=dados;
+  window.DADOS_PAINEL=dados; window.DADOS_ATUAL=dados; /* o mês ao vivo; o seletor pode trocar DADOS_PAINEL por um mês arquivado */
+  atualizaSeletor();
   if(abriu){ if(window.renderPainel)window.renderPainel(dados); return; } /* arquivo mais novo que o cache: redesenha no lugar */
   abriu=true;
   document.getElementById('carregando').hidden=true;
@@ -530,6 +540,44 @@ async function pega(arq){
   return null;
 }
 function mostraHist(h){ window.DADOS_HIST=h; if(abriu&&window.renderHistorico)window.renderHistorico(h); }
+/* ---- seletor de mês: meses fechados arquivados em operacional-meses/AAAA-MM.json (cifrados); o índice é só a lista ---- */
+var MESES_ARQ=[], MES_CACHE={}, MES_SEL='atual';
+var NOMES_MES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function rotuloMes(ref){ var a=ref.slice(0,4), m=+ref.slice(5,7); return NOMES_MES[m-1]+' '+a; }
+function atualizaSeletor(){
+  var box=document.getElementById('selMesBox'), sel=document.getElementById('selMes'), A=window.DADOS_ATUAL;
+  if(!A||!A.meta){ box.hidden=true; return; }
+  var cur=A.meta.mes_ref, lista=MESES_ARQ.filter(function(r){ return r!==cur; });
+  if(!lista.length){ box.hidden=true; return; }
+  var ops=[{v:'atual',t:rotuloMes(cur)+' · em andamento'}].concat(lista.map(function(r){ return {v:r,t:rotuloMes(r)}; }));
+  sel.innerHTML=ops.map(function(o){ return '<option value="'+o.v+'">'+o.t+'</option>'; }).join('');
+  if(!ops.some(function(o){return o.v===MES_SEL;})) MES_SEL='atual';
+  sel.value=MES_SEL; box.hidden=false; notaMes();
+}
+function notaMes(){
+  var n=document.getElementById('mesNota'), D=window.DADOS_PAINEL;
+  if(MES_SEL==='atual'||!D){ n.hidden=true; n.textContent=''; return; }
+  n.innerHTML='<b>Mês fechado</b> · valores realizados ('+D.meta.data+'); "projeção" = realizado'; n.hidden=false;
+}
+async function carregaMeses(){
+  try{ var idx=await pega('operacional-meses/indice.json'); if(idx&&Array.isArray(idx.meses)) MESES_ARQ=idx.meses.filter(function(r){return /^\d{4}-\d{2}$/.test(r);}).sort().reverse(); }catch(e){}
+  atualizaSeletor();
+}
+async function trocaMes(ref){
+  MES_SEL=ref;
+  var sel=document.getElementById('selMes'); sel.disabled=true;
+  try{
+    var d;
+    if(ref==='atual') d=window.DADOS_ATUAL;
+    else { d=MES_CACHE[ref]; if(!d){ var doc=await pega('operacional-meses/'+ref+'.json'); d=doc?await decifraDoc(doc):null; if(d)MES_CACHE[ref]=d; } }
+    if(!d){ alert('Não consegui abrir '+rotuloMes(ref)+'.'); MES_SEL='atual'; sel.value='atual'; return; }
+    window.DADOS_PAINEL=d; if(window.renderPainel)window.renderPainel(d);
+    if(window.DADOS_HIST&&window.renderHistorico)window.renderHistorico(window.DADOS_HIST);
+    notaMes();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }finally{ sel.disabled=false; }
+}
+document.getElementById('selMes').addEventListener('change',function(){ trocaMes(this.value); });
 async function carregaHist(){
   var c=null;
   try{ c=JSON.parse(localStorage.getItem(CACHE_H)||'null'); if(c){var h=await decifraDoc(c);if(h)mostraHist(h);} }catch(e){c=null;}
@@ -562,6 +610,7 @@ async function carrega(){
     }
   }catch(e){falha('Sem conexão para buscar os dados ('+e.message+').');}
   carregaHist(); /* depois dos dados do mês: a seção "Ano a ano" entra quando o histórico chegar */
+  carregaMeses(); /* e o seletor de mês ganha os meses arquivados */
 }
 document.addEventListener('sapatao-login',carrega);
 carrega();
