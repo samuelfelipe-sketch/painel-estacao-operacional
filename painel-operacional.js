@@ -108,9 +108,10 @@ function grupoDoMes(D){
   var m=D.meta, G={A:0,B:0,C:0,nomes:[],semMes:[],emp:[]};
   Object.keys(EMP).forEach(function(e){ var x=EMP[e]; if(!x||!x.meses) return;
     var inf=infoEmpresa(e,x), rot=inf.nome+' ('+inf.sig+')';
-    var a=x.meses[m.mes_ref]; if(!a){ G.semMes.push(rot); return; }
+    var a=x.meses[m.mes_ref]; if(!a||a.lacuna){ G.semMes.push(rot); return; } /* lacuna = mês com dias faltando no histórico */
     /* mês ainda parcial na empresa (rotina diária): projeta pelo ritmo, como o recA dos postos */
-    var A=(a.parcial&&a.dia>0)?(a.fat||0)/a.dia*m.dias_mes:(a.fat||0), B=(x.meses[m.ant_ref]||{}).fat||0, C=(x.meses[m.ano_ref]||{}).fat||0;
+    var mB=x.meses[m.ant_ref], mC=x.meses[m.ano_ref];
+    var A=(a.parcial&&a.dia>0)?(a.fat||0)/a.dia*m.dias_mes:(a.fat||0), B=(mB&&!mB.lacuna)?mB.fat||0:0, C=(mC&&!mC.lacuna)?mC.fat||0:0;
     G.nomes.push(rot); G.emp.push({key:e,sig:inf.sig,nome:inf.nome,papel:inf.papel,A:A,B:B,C:C}); G.A+=A; G.B+=B; G.C+=C; });
   G.emp.sort(function(a,b){ return a.sig<b.sig?-1:1; }); /* SE antes de ST */
   return G;
@@ -783,7 +784,8 @@ window.renderHistorico=function(H){
   var g=function(a,m){ var ref=a+'-'+(m<10?'0'+m:m), x=M[ref]; if(!x||!GRUPO) return x;
     var dias=x.fechado?null:{dec:x.dias_dec,mes:x.dias_mes}, mm=ref.slice(5);
     /* igual com igual: a empresa só entra no mês se tem esse mês lançado nos DOIS anos comparados */
-    var ok=EMPK.filter(function(n){ return EMP[n].meses[ano+'-'+mm]&&EMP[n].meses[ant+'-'+mm]; }); if(!ok.length) ok=[];
+    var tem=function(x){ return x&&!x.lacuna; };
+    var ok=EMPK.filter(function(n){ return tem(EMP[n].meses[ano+'-'+mm])&&tem(EMP[n].meses[ant+'-'+mm]); });
     var o=Object.assign({},x); o.postos=x.fat; o.emp=ok; o.fat=x.fat+(ok.length?extras(ref,'fat',ok,'acum',dias):0); if(isFinite(x.proj)) o.proj=x.proj+(ok.length?extras(ref,'fat',ok,'proj',dias):0); o.intra=ok.length?extras(ref,'intra',ok,'acum',dias):0; o.ref=ref; return o; };
   var var_=function(a,b){ return (isFinite(a)&&isFinite(b)&&b)?(a/b-1)*100:NaN; }; /* fora do escopo do renderPainel */
   var cap=function(t){ return t.charAt(0).toUpperCase()+t.slice(1); };
