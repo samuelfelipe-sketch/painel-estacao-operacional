@@ -94,8 +94,44 @@ function niceMax(v){
   return s*p;
 }
 
+/* ---------- modo Grupo (botão Postos / Grupo) ----------
+   Soma Transportadora e Holding (histórico cifrado, bloco `empresas`) ao faturamento dos
+   postos do mês exibido — só quando as empresas têm esse mês lançado; os três períodos
+   (atual, mês anterior, ano passado) recebem o mesmo acréscimo, para comparar igual com igual.
+   Entra como a linha "Outras empresas do grupo" na árvore do faturamento (sem quantidade),
+   no cartão e no painel de faturamento. Volumes, margens e metas seguem sendo dos postos. */
+function grupoDoMes(D){
+  if(!window.AA_GRUPO) return null;
+  var H=window.DADOS_HIST, EMP=H&&H.empresas; if(!EMP||!D||!D.meta) return null;
+  var m=D.meta, G={A:0,B:0,C:0,nomes:[],semMes:[]};
+  Object.keys(EMP).forEach(function(e){ var x=EMP[e]; if(!x||!x.meses) return;
+    var a=x.meses[m.mes_ref]; if(!a){ G.semMes.push(x.nome||e); return; }
+    G.nomes.push(x.nome||e); G.A+=a.fat||0; G.B+=(x.meses[m.ant_ref]||{}).fat||0; G.C+=(x.meses[m.ano_ref]||{}).fat||0; });
+  return G;
+}
+function aplicaGrupo(D,G){
+  var F=D.fat, T=F.FTOT, semAno=!(T.recC>0);
+  var pc=function(a,b){ return b>0?(a/b-1)*100:null; };
+  D.meta.grupo={nomes:G.nomes, postos:{recA:T.recA,recB:T.recB,recC:T.recC}};
+  var g=F.FGRUPO={nome:'Outras empresas do grupo', un:'R$', recA:G.A, recB:G.B, recC:semAno?null:G.C, qtdA:null,qtdB:null,qtdC:null, qAnt:null,qAno:null, qNota:G.nomes.join(' + ')};
+  T.recA+=G.A; T.recB+=G.B; if(!semAno) T.recC+=G.C;
+  T.dAnt=T.recA-T.recB; T.dAno=semAno?null:T.recA-T.recC; T.vAnt=pc(T.recA,T.recB); T.vAno=semAno?null:pc(T.recA,T.recC);
+  g.dAnt=g.recA-g.recB; g.dAno=semAno?null:g.recA-g.recC; g.vAnt=pc(g.recA,g.recB); g.vAno=semAno?null:pc(g.recA,g.recC);
+  Object.keys(F).forEach(function(k){ var f=F[k]; if(k==='FTOT'||!f||!isFinite(f.recA)) return;
+    f.part=T.recA>0?f.recA/T.recA*100:0; f.cAnt=T.dAnt?f.dAnt/T.dAnt*100:0;
+    f.cAno=(T.dAno===null||f.dAno==null||!T.dAno)?null:f.dAno/T.dAno*100; });
+}
 window.renderPainel=function(D){
 hideTip();
+var GI=grupoDoMes(D);
+if(GI&&GI.nomes.length){ D=JSON.parse(JSON.stringify(D)); aplicaGrupo(D,GI); }
+(function(){ var n=byId('grupoNota'); if(!n) return;
+  if(!GI){ n.hidden=true; return; }
+  var mes=(D.meta.mes_rotulo||'').toLowerCase();
+  n.innerHTML = GI.nomes.length
+    ? '<b>Grupo</b> · '+esc(GI.nomes.join(' e '))+' somadas ao faturamento dos postos em '+esc(mes)+' e nos dois períodos de comparação (linha "Outras empresas do grupo"). Volumes, margens e metas são só dos postos.'
+    : '<b>Grupo</b> · '+esc(GI.semMes.join(' e '))+' ainda não lançadas em '+esc(mes)+': os números deste mês são só dos postos. O Ano a ano, abaixo, soma o grupo nos meses lançados.';
+  n.hidden=false; })();
 var LIN = D.linhas, GRP = D.grupos, F = D.fat, R = rotulos(D.meta||{});
 var byCod = {}; LIN.concat(GRP).forEach(function(l){ byCod[l.cod]=l; l.metaOk = l.meta > 1000; });
 var VS_ANT='vs '+R.ant, VS_ANO='vs '+R.ano;
@@ -103,7 +139,7 @@ var VS_ANT='vs '+R.ant, VS_ANO='vs '+R.ano;
 /* rótulos fixos da página */
 Array.prototype.forEach.call(document.querySelectorAll('[data-r]'), function(el){ var v=R[el.getAttribute('data-r')]; if(v!=null) el.textContent=v; });
 byId('fAno').textContent='Δ '+VS_ANO; byId('fMes').textContent='Δ '+VS_ANT;
-byId('fatEyebrow').textContent='Faturamento total · projeção '+R.curN+'/'+R.curAno;
+byId('fatEyebrow').textContent='Faturamento total · projeção '+R.curN+'/'+R.curAno+(F.FGRUPO?' · grupo':'');
 byId('railNota').textContent='A barra mostra o acumulado do mês; o traço vertical marca onde a meta deveria estar no '+D.meta.dias_dec+'º dia ('+Math.round(D.meta.dias_dec/D.meta.dias_mes*100)+'% do mês). O percentual compara os dois.';
 byId('volNota').textContent='Projeção linear do mês (acumulado ÷ '+D.meta.dias_dec+' × '+D.meta.dias_mes+') contra '+R.antL+' e '+R.anoL+' fechados.';
 byId('lgNota').textContent = D.meta.dias_ant!==D.meta.dias_mes
@@ -121,8 +157,8 @@ var margTotAno  = totComb.mrsAno  + totMerc.mrsAno;
 function dl(lbl,v){ return '<span class="dl '+sgn(v)+'"><em>'+lbl+'</em>'+pct(v)+'</span>'; }
 var FT=D.fat&&D.fat.FTOT, FC=D.fat&&D.fat.FCOMB, FM=D.fat&&D.fat.FMERC;
 var kpis=[
- {lbl:'Faturamento total · projeção', big:'R$ '+nf0.format(FT.recA), unit:'',
-  sub:'combustíveis '+brlCurto(FC.recA)+' + mercadorias '+brlCurto(FM.recA),
+ {lbl:'Faturamento total · projeção'+(F.FGRUPO?' · grupo':''), big:'R$ '+nf0.format(FT.recA), unit:'',
+  sub:'combustíveis '+brlCurto(FC.recA)+' + mercadorias '+brlCurto(FM.recA)+(F.FGRUPO?' + outras empresas '+brlCurto(F.FGRUPO.recA):''),
   d:[[VS_ANT,FT.vAnt],[VS_ANO,FT.vAno]]},
  {lbl:'Volume combustíveis · projeção', big:nf0.format(totComb.proj), unit:'L',
   sub:nf0.format(totComb.acum)+' L acumulados · meta '+nf0.format(totComb.meta)+' L',
@@ -158,7 +194,8 @@ function porUn(i){
     var x=KUN[i](u), d=ano?x.y:x.a;
     var pill=(ano&&u.semAno)?'<span class="dl fl" title="Unidade sem '+R.ano+' para comparar">nova</span>':isFinite(d)?'<span class="dl '+sgn(d)+'">'+pct(d)+'</span>':'<span></span>';
     return '<div class="ku"><b>'+esc(u.sig)+'</b><span class="kv">'+x.v+'</span><span class="ks">'+x.s+'</span>'+pill+'</div>';
-  }).join('')+'</div>';
+  }).join('')+(i===0&&F.FGRUPO?(function(){ var f=F.FGRUPO, d=ano?f.vAno:f.vAnt;
+    return '<div class="ku"><b title="'+esc(f.qNota)+'">GRP</b><span class="kv">'+brlCurto(f.recA)+'</span><span class="ks">'+nf0.format(f.recA/FT.recA*100)+'% rede</span>'+((d!=null&&isFinite(d))?'<span class="dl '+sgn(d)+'">'+pct(d)+'</span>':'<span></span>')+'</div>'; })():'')+'</div>';
 }
 function drawKpis(){
   byId('kpis').innerHTML = kpis.map(function(k,i){
@@ -206,6 +243,7 @@ function fQ(f){ return UI.fatBase==='ano'? f.qAno : f.qAnt; }
     {k:'Combustíveis', v:nf1.format(F.FCOMB.part)+'%', b:brlCurto(F.FCOMB.recA), c:null},
     {k:'Mercadorias', v:nf1.format(F.FMERC.part)+'%', b:brlCurto(F.FMERC.recA), c:null}
   ];
+  if(F.FGRUPO) boxes.push({k:'Outras empresas', v:nf1.format(F.FGRUPO.part)+'%', b:brlCurto(F.FGRUPO.recA), c:null});
   byId('fatBoxes').innerHTML = boxes.map(function(x){
     var col = x.c===null?'var(--ink)':(x.c?'var(--good)':'var(--bad)');
     return '<div class="fbox"><div class="k">'+x.k+'</div><div class="v" style="color:'+col+'">'+x.v+'</div><div class="b">'+x.b+'</div></div>';
@@ -218,7 +256,7 @@ function flatFat(node, nivel, out, visivel){
 }
 function drawFat(){
   var el=byId('fatTree'), rows=[];
-  flatFat(FTREE,1,rows,true);
+  flatFat(F.FGRUPO?{cod:'FTOT',filhos:FTREE.filhos.concat([{cod:'FGRUPO'}])}:FTREE,1,rows,true);
   var vis=rows.filter(function(r){ return r.visivel; });
   var maxD=Math.max.apply(null, rows.filter(function(r){return r.nivel>1;}).map(function(r){ return Math.abs(fD(F[r.cod])); }))||1;
   el.innerHTML = vis.map(function(r){
@@ -503,7 +541,7 @@ function drawTbl(){
   ['OTTO','DIESEL','TOTCOMB','TOTMERC'].forEach(function(c){ if(byCod[c]) rows.push(tr(byCod[c],true)); });
   /* totalizador geral: combustíveis (litros) + mercadorias (R$) só se somam em
      faturamento — a linha fica em R$, com a margem total e a margem % sobre a receita */
-  var ft=F&&F.FTOT, tg=totalGeral(ft);
+  var ft=(D.meta.grupo&&D.meta.grupo.postos)||(F&&F.FTOT), tg=totalGeral(ft); if(tg&&D.meta.grupo) tg.nome='Total geral (postos)';
   if(tg) rows.push(tr(tg,true,'tot'));
   t.tBodies[0].innerHTML=rows.join('');
 }
@@ -598,7 +636,7 @@ function leiturasAutomaticas(){
 var reads = (Array.isArray(D.leituras)&&D.leituras.length)
   ? D.leituras.map(function(r){ return {k:({crit:1,ok:1,wn:1})[r.k]?r.k:'wn', t:r.t||'', p:esc(r.p||''), a:r.a||''}; })
   : leiturasAutomaticas();
-byId('reads').innerHTML=reads.map(function(r){
+if(byId('reads')) byId('reads').innerHTML=reads.map(function(r){ /* seção Leituras retirada do painel em 04/11/2026; fica o código */
   var nome={crit:'atenção',ok:'no rumo',wn:'ajuste'}[r.k];
   return '<div class="read '+r.k+'"><h3><span class="tag '+r.k+'">'+nome+'</span>'+esc(r.t)+'</h3><p>'+r.p+'</p>'+
    (r.a?'<div class="ask"><b>Pergunta para a reunião</b>'+esc(r.a)+'</div>':'')+'</div>';
@@ -831,8 +869,9 @@ window.renderHistorico=function(H){
   draw();
   try{ var cb=byId('cAnoAno').parentNode; cb.scrollLeft=cb.scrollWidth; }catch(e){} /* no celular, começa pelos meses recentes */
   if(!window.__aaGrupo){ window.__aaGrupo=true;
-    byId('gGrupo').addEventListener('click',function(){ window.AA_GRUPO=true; if(window.DADOS_HIST) window.renderHistorico(window.DADOS_HIST); });
-    byId('gPostos').addEventListener('click',function(){ window.AA_GRUPO=false; if(window.DADOS_HIST) window.renderHistorico(window.DADOS_HIST); });
+    var troca=function(on){ window.AA_GRUPO=on; if(window.DADOS_PAINEL&&window.renderPainel) window.renderPainel(window.DADOS_PAINEL); if(window.DADOS_HIST) window.renderHistorico(window.DADOS_HIST); };
+    byId('gGrupo').addEventListener('click',function(){ troca(true); });
+    byId('gPostos').addEventListener('click',function(){ troca(false); });
   }
   if(!window.__aaResize){ window.__aaResize=true; var rt2; addEventListener('resize',function(){ clearTimeout(rt2); rt2=setTimeout(function(){ if(window.DADOS_HIST&&!byId('anoAno').hidden) window.renderHistorico(window.DADOS_HIST); },160); }); }
 };

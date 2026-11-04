@@ -354,9 +354,9 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
     <!-- seletor de mês: o corrente (ao vivo) + meses fechados arquivados em operacional-meses/ (cifrados); some sem arquivo -->
     <label class="selmes" id="selMesBox" hidden><span class="lb">Mês</span><select id="selMes" aria-label="Mês do painel"></select></label>
     <span class="mesnota" id="mesNota" hidden></span>
-    <!-- abrangência da seção Ano a ano: só os postos (Argo) ou o grupo (postos + Transportadora + Holding); aparece quando o histórico traz as empresas -->
+    <!-- abrangência da página: só os postos (Argo) ou o grupo (postos + Transportadora + Holding, do histórico cifrado); aparece quando o histórico traz as empresas -->
     <div class="seg" role="group" aria-label="Abrangência do Ano a ano" id="segGrupo" hidden>
-      <button id="gPostos" aria-pressed="true">Só postos</button>
+      <button id="gPostos" aria-pressed="true">Postos</button>
       <button id="gGrupo" aria-pressed="false">Grupo</button>
     </div>
     <div class="seg" role="group" aria-label="Base do crescimento">
@@ -368,6 +368,7 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
       <button id="fTop" aria-pressed="false">Só totais</button>
     </div>
   </div>
+  <p class="mesnota" id="grupoNota" hidden style="margin:10px 2px 0"></p>
 </div>
 
 
@@ -494,10 +495,6 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
     <div class="tblbox"><table id="tbl"><thead></thead><tbody></tbody></table></div>
   </section>
 
-  <section>
-    <div class="sechd"><div><h2>Leituras</h2><p>O que os números acima pedem de decisão.</p></div></div>
-    <div class="reads" id="reads"></div>
-  </section>
 
   <footer id="foot"></footer>
 </div>
