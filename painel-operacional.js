@@ -61,7 +61,7 @@ function rotulos(meta){
 }
 
 /* ---------- estado da interface (sobrevive à re-renderização) ---------- */
-var UI={ fatAberto:{FTOT:true,FCOMB:false,FOTTO:false,FDIESEL:false,FMERC:false}, fatBase:'ano', modoDia:false, ordem:'vol', kAberto:{0:false,1:false,2:false,3:false,4:false} };
+var UI={ fatAberto:{FTOT:true,FCOMB:false,FOTTO:false,FDIESEL:false,FMERC:false,FGRUPO:false}, fatBase:'ano', modoDia:false, ordem:'vol', kAberto:{0:false,1:false,2:false,3:false,4:false} };
 var SIGLA={'3':'SF','4':'PS','5':'AS'}; /* unidades do Argo pelas iniciais */
 var S={}; /* funções da renderização corrente */
 
@@ -100,23 +100,30 @@ function niceMax(v){
    (atual, mês anterior, ano passado) recebem o mesmo acréscimo, para comparar igual com igual.
    Entra como a linha "Outras empresas do grupo" na árvore do faturamento (sem quantidade),
    no cartão e no painel de faturamento. Volumes, margens e metas seguem sendo dos postos. */
+var EMPRESA_INFO={ holding:{sig:'SE', nome:'Siss Empreendimentos', papel:'holding'}, transportadora:{sig:'ST', nome:'Sapatão Transportes', papel:'transportadora'} };
+function infoEmpresa(e,x){ var i=EMPRESA_INFO[e]||{}; return {key:e, sig:i.sig||e.slice(0,2).toUpperCase(), nome:i.nome||(x&&x.nome)||e, papel:i.papel||''}; }
 function grupoDoMes(D){
   if(!window.AA_GRUPO) return null;
   var H=window.DADOS_HIST, EMP=H&&H.empresas; if(!EMP||!D||!D.meta) return null;
-  var m=D.meta, G={A:0,B:0,C:0,nomes:[],semMes:[]};
+  var m=D.meta, G={A:0,B:0,C:0,nomes:[],semMes:[],emp:[]};
   Object.keys(EMP).forEach(function(e){ var x=EMP[e]; if(!x||!x.meses) return;
-    var a=x.meses[m.mes_ref]; if(!a){ G.semMes.push(x.nome||e); return; }
-    G.nomes.push(x.nome||e); G.A+=a.fat||0; G.B+=(x.meses[m.ant_ref]||{}).fat||0; G.C+=(x.meses[m.ano_ref]||{}).fat||0; });
+    var inf=infoEmpresa(e,x), rot=inf.nome+' ('+inf.sig+')';
+    var a=x.meses[m.mes_ref]; if(!a){ G.semMes.push(rot); return; }
+    var A=a.fat||0, B=(x.meses[m.ant_ref]||{}).fat||0, C=(x.meses[m.ano_ref]||{}).fat||0;
+    G.nomes.push(rot); G.emp.push({key:e,sig:inf.sig,nome:inf.nome,papel:inf.papel,A:A,B:B,C:C}); G.A+=A; G.B+=B; G.C+=C; });
+  G.emp.sort(function(a,b){ return a.sig<b.sig?-1:1; }); /* SE antes de ST */
   return G;
 }
 function aplicaGrupo(D,G){
   var F=D.fat, T=F.FTOT, semAno=!(T.recC>0);
   var pc=function(a,b){ return b>0?(a/b-1)*100:null; };
   D.meta.grupo={nomes:G.nomes, postos:{recA:T.recA,recB:T.recB,recC:T.recC}};
-  var g=F.FGRUPO={nome:'Outras empresas do grupo', un:'R$', recA:G.A, recB:G.B, recC:semAno?null:G.C, qtdA:null,qtdB:null,qtdC:null, qAnt:null,qAno:null, qNota:G.nomes.join(' + ')};
+  var g=F.FGRUPO={nome:'Outras empresas do grupo', un:'R$', recA:G.A, recB:G.B, recC:semAno?null:G.C, qtdA:null,qtdB:null,qtdC:null, qAnt:null,qAno:null, qNota:G.nomes.join(' + '), empresas:G.emp.map(function(e){return 'FG_'+e.key;})};
   T.recA+=G.A; T.recB+=G.B; if(!semAno) T.recC+=G.C;
   T.dAnt=T.recA-T.recB; T.dAno=semAno?null:T.recA-T.recC; T.vAnt=pc(T.recA,T.recB); T.vAno=semAno?null:pc(T.recA,T.recC);
-  g.dAnt=g.recA-g.recB; g.dAno=semAno?null:g.recA-g.recC; g.vAnt=pc(g.recA,g.recB); g.vAno=semAno?null:pc(g.recA,g.recC);
+  var fecha=function(f){ f.dAnt=f.recA-f.recB; f.dAno=semAno?null:f.recA-f.recC; f.vAnt=pc(f.recA,f.recB); f.vAno=semAno?null:pc(f.recA,f.recC); };
+  fecha(g);
+  G.emp.forEach(function(e){ var f=F['FG_'+e.key]={nome:e.nome+' · '+e.papel, sig:e.sig, un:'R$', recA:e.A, recB:e.B, recC:semAno?null:e.C, qtdA:null,qtdB:null,qtdC:null, qAnt:null,qAno:null}; fecha(f); });
   Object.keys(F).forEach(function(k){ var f=F[k]; if(k==='FTOT'||!f||!isFinite(f.recA)) return;
     f.part=T.recA>0?f.recA/T.recA*100:0; f.cAnt=T.dAnt?f.dAnt/T.dAnt*100:0;
     f.cAno=(T.dAno===null||f.dAno==null||!T.dAno)?null:f.dAno/T.dAno*100; });
@@ -128,9 +135,13 @@ if(GI&&GI.nomes.length){ D=JSON.parse(JSON.stringify(D)); aplicaGrupo(D,GI); }
 (function(){ var n=byId('grupoNota'); if(!n) return;
   if(!GI){ n.hidden=true; return; }
   var mes=(D.meta.mes_rotulo||'').toLowerCase();
-  n.innerHTML = GI.nomes.length
-    ? '<b>Grupo</b> · '+esc(GI.nomes.join(' e '))+' somadas ao faturamento dos postos em '+esc(mes)+' e nos dois períodos de comparação (linha "Outras empresas do grupo"). Volumes, margens e metas são só dos postos.'
-    : '<b>Grupo</b> · '+esc(GI.semMes.join(' e '))+' ainda não lançadas em '+esc(mes)+': os números deste mês são só dos postos. O Ano a ano, abaixo, soma o grupo nos meses lançados.';
+  if(GI.nomes.length){
+    n.innerHTML='<b>Grupo</b> '+esc(GI.nomes.join(' + '))+' somadas em '+esc(mes)+' <small>· linha "Outras empresas do grupo"</small>';
+    n.title='Faturamento das outras empresas somado ao dos postos no mês exibido e nos dois períodos de comparação. Volumes, margens e metas seguem sendo só dos postos.';
+  } else {
+    n.innerHTML='<b>Grupo</b> '+esc(GI.semMes.join(' + '))+' sem lançamento em '+esc(mes)+' <small>· este mês mostra só os postos</small>';
+    n.title='As outras empresas ainda não têm este mês no histórico. O Ano a ano soma o grupo nos meses lançados.';
+  }
   n.hidden=false; })();
 var LIN = D.linhas, GRP = D.grupos, F = D.fat, R = rotulos(D.meta||{});
 var byCod = {}; LIN.concat(GRP).forEach(function(l){ byCod[l.cod]=l; l.metaOk = l.meta > 1000; });
@@ -158,7 +169,7 @@ function dl(lbl,v){ return '<span class="dl '+sgn(v)+'"><em>'+lbl+'</em>'+pct(v)
 var FT=D.fat&&D.fat.FTOT, FC=D.fat&&D.fat.FCOMB, FM=D.fat&&D.fat.FMERC;
 var kpis=[
  {lbl:'Faturamento total · projeção'+(F.FGRUPO?' · grupo':''), big:'R$ '+nf0.format(FT.recA), unit:'',
-  sub:'combustíveis '+brlCurto(FC.recA)+' + mercadorias '+brlCurto(FM.recA)+(F.FGRUPO?' + outras empresas '+brlCurto(F.FGRUPO.recA):''),
+  sub:'combustíveis '+brlCurto(FC.recA)+' + mercadorias '+brlCurto(FM.recA)+(F.FGRUPO?(F.FGRUPO.empresas||[]).map(function(c){ return ' + '+F[c].sig+' '+brlCurto(F[c].recA); }).join(''):''),
   d:[[VS_ANT,FT.vAnt],[VS_ANO,FT.vAno]]},
  {lbl:'Volume combustíveis · projeção', big:nf0.format(totComb.proj), unit:'L',
   sub:nf0.format(totComb.acum)+' L acumulados · meta '+nf0.format(totComb.meta)+' L',
@@ -194,8 +205,8 @@ function porUn(i){
     var x=KUN[i](u), d=ano?x.y:x.a;
     var pill=(ano&&u.semAno)?'<span class="dl fl" title="Unidade sem '+R.ano+' para comparar">nova</span>':isFinite(d)?'<span class="dl '+sgn(d)+'">'+pct(d)+'</span>':'<span></span>';
     return '<div class="ku"><b>'+esc(u.sig)+'</b><span class="kv">'+x.v+'</span><span class="ks">'+x.s+'</span>'+pill+'</div>';
-  }).join('')+(i===0&&F.FGRUPO?(function(){ var f=F.FGRUPO, d=ano?f.vAno:f.vAnt;
-    return '<div class="ku"><b title="'+esc(f.qNota)+'">GRP</b><span class="kv">'+brlCurto(f.recA)+'</span><span class="ks">'+nf0.format(f.recA/FT.recA*100)+'% rede</span>'+((d!=null&&isFinite(d))?'<span class="dl '+sgn(d)+'">'+pct(d)+'</span>':'<span></span>')+'</div>'; })():'')+'</div>';
+  }).join('')+(i===0&&F.FGRUPO?(F.FGRUPO.empresas||[]).map(function(c){ var f=F[c], d=ano?f.vAno:f.vAnt;
+    return '<div class="ku"><b title="'+esc(f.nome)+'">'+esc(f.sig)+'</b><span class="kv">'+brlCurto(f.recA)+'</span><span class="ks">'+nf0.format(f.recA/FT.recA*100)+'% rede</span>'+((d!=null&&isFinite(d))?'<span class="dl '+sgn(d)+'">'+pct(d)+'</span>':'<span></span>')+'</div>'; }).join(''):'')+'</div>';
 }
 function drawKpis(){
   byId('kpis').innerHTML = kpis.map(function(k,i){
@@ -243,7 +254,7 @@ function fQ(f){ return UI.fatBase==='ano'? f.qAno : f.qAnt; }
     {k:'Combustíveis', v:nf1.format(F.FCOMB.part)+'%', b:brlCurto(F.FCOMB.recA), c:null},
     {k:'Mercadorias', v:nf1.format(F.FMERC.part)+'%', b:brlCurto(F.FMERC.recA), c:null}
   ];
-  if(F.FGRUPO) boxes.push({k:'Outras empresas', v:nf1.format(F.FGRUPO.part)+'%', b:brlCurto(F.FGRUPO.recA), c:null});
+  if(F.FGRUPO) (F.FGRUPO.empresas||[]).forEach(function(c){ var f=F[c]; boxes.push({k:f.sig+' · '+f.nome.split(' · ')[1], v:nf1.format(f.part)+'%', b:brlCurto(f.recA), c:null}); });
   byId('fatBoxes').innerHTML = boxes.map(function(x){
     var col = x.c===null?'var(--ink)':(x.c?'var(--good)':'var(--bad)');
     return '<div class="fbox"><div class="k">'+x.k+'</div><div class="v" style="color:'+col+'">'+x.v+'</div><div class="b">'+x.b+'</div></div>';
@@ -256,7 +267,7 @@ function flatFat(node, nivel, out, visivel){
 }
 function drawFat(){
   var el=byId('fatTree'), rows=[];
-  flatFat(F.FGRUPO?{cod:'FTOT',filhos:FTREE.filhos.concat([{cod:'FGRUPO'}])}:FTREE,1,rows,true);
+  flatFat(F.FGRUPO?{cod:'FTOT',filhos:FTREE.filhos.concat([{cod:'FGRUPO',filhos:(F.FGRUPO.empresas||[]).map(function(c){return {cod:c};})}])}:FTREE,1,rows,true);
   var vis=rows.filter(function(r){ return r.visivel; });
   var maxD=Math.max.apply(null, rows.filter(function(r){return r.nivel>1;}).map(function(r){ return Math.abs(fD(F[r.cod])); }))||1;
   el.innerHTML = vis.map(function(r){
@@ -277,7 +288,7 @@ function drawFat(){
       ? '<b style="color:'+(pos?'var(--good)':'var(--bad)')+'">'+mais(d)+brl(Math.abs(d))+'</b><div class="c"><span>crescimento total</span></div>'
       : '<b style="color:'+(pos?'var(--good)':'var(--bad)')+'">'+mais(d)+brl(Math.abs(d))+'</b>'+
         '<div class="c"><span class="growbar"><i style="width:'+(Math.abs(d)/maxD*100).toFixed(1)+'%;background:'+(pos?'var(--p2)':'var(--bad)')+'"></i></span><span>'+nf0.format(c)+'%</span></div>';
-    var chip = (r.nivel>=3) ? '<span class="code">'+(CODES[r.cod]||r.cod)+'</span>' : '';
+    var chip = (r.nivel>=3) ? '<span class="code">'+(f.sig||CODES[r.cod]||r.cod)+'</span>' : '';
     return '<div class="frow '+cls+'" data-f="'+r.cod+'">'+
       '<span class="tname">'+
         (temF?'<button class="tw" data-ft="'+r.cod+'" aria-expanded="'+(!!UI.fatAberto[r.cod])+'" aria-label="Abrir '+esc(f.nome)+'">'+(UI.fatAberto[r.cod]?'−':'+')+'</button>'

@@ -285,14 +285,21 @@ h1.pagetit{font-family:Archivo,sans-serif;font-weight:800;letter-spacing:-.01em;
 h1.pagetit span{color:var(--laranja);font-style:normal}
 .pagesub{font-family:Archivo,sans-serif;font-size:13.5px;line-height:1.5;color:var(--tinta-suave);margin-top:6px}
 .pagesub b{color:var(--tinta)}
-.pagectl{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:16px}
-.selmes{display:inline-flex;align-items:center;gap:8px;padding:5px 8px 5px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;box-shadow:var(--shadow);font-family:Archivo,sans-serif;font-size:12.5px;font-weight:700;color:var(--ink2)}
-.selmes .lb{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:600}
-.selmes select{font:inherit;font-weight:700;color:var(--ink);border:none;background:var(--surf2);border-radius:999px;padding:4px 10px;cursor:pointer}
+.pagectl{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:flex-end;margin-top:16px}
+.ctl{display:flex;flex-direction:column;gap:5px}
+.ctl-lb{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding-left:3px}
+.selmes{display:inline-flex;align-items:center;padding:3px 6px;border:1px solid var(--line);border-radius:999px;background:#fff;box-shadow:var(--shadow);font-family:Archivo,sans-serif;font-size:12.5px;font-weight:700;color:var(--ink2)}
+.selmes select{font:inherit;font-weight:700;color:var(--ink);border:none;background:transparent;border-radius:999px;padding:3px 8px;cursor:pointer}
 .selmes select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.mesnota{font-size:12px;color:var(--ink3);font-family:Archivo,sans-serif}
-.mesnota b{color:var(--laranja)}
-@media (max-width:640px){h1.pagetit{display:none}.pagesub{margin-top:0;font-size:12px}.pagectl{margin-top:10px;gap:6px 10px}#app>.wrap:first-child{padding-top:12px!important;padding-bottom:10px!important}}
+/* pílulas de estado (mês fechado, grupo) */
+.pagestatus{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pagestatus:empty{display:none}
+.st{display:inline-flex;align-items:center;gap:7px;font-family:Archivo,sans-serif;font-size:12px;color:var(--ink2);background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 12px 4px 10px;box-shadow:var(--shadow);max-width:100%}
+.st::before{content:'';flex:none;width:8px;height:8px;border-radius:50%;background:var(--laranja)}
+.st.grupo::before{background:var(--accent)}
+.st b{color:var(--ink);font-weight:700;white-space:nowrap}
+.st small{color:var(--ink3);font-size:11.5px}
+@media (max-width:640px){h1.pagetit{display:none}.pagesub{margin-top:0;font-size:12px}.pagectl{margin-top:10px;gap:8px 14px}.pagestatus{margin-top:10px}.st{font-size:11.5px}#app>.wrap:first-child{padding-top:12px!important;padding-bottom:10px!important}}
 
 /* ---- decomposição · gaveta ---- */
 .dec{border-top:1px solid var(--line);background:var(--surf2)}
@@ -350,25 +357,34 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
   <h1 class="pagetit">Vendas</h1>
   <div class="pagesub">Metas e margens de venda &middot; <b id="hdPeriodo"></b> &middot; <span id="hdMeta"></span></div>
   <!-- controles que valem para a página inteira: base da variação (cartões + faturamento) e nível de detalhe (cartões por unidade + árvore do faturamento) -->
+  <!-- barra de controles: grupos com rótulo; os avisos de estado vão em pílulas na linha de baixo (#pageStatus) -->
   <div class="pagectl">
     <!-- seletor de mês: o corrente (ao vivo) + meses fechados arquivados em operacional-meses/ (cifrados); some sem arquivo -->
-    <label class="selmes" id="selMesBox" hidden><span class="lb">Mês</span><select id="selMes" aria-label="Mês do painel"></select></label>
-    <span class="mesnota" id="mesNota" hidden></span>
+    <div class="ctl" id="selMesBox" hidden><span class="ctl-lb">Mês</span><label class="selmes"><select id="selMes" aria-label="Mês do painel"></select></label></div>
     <!-- abrangência da página: só os postos (Argo) ou o grupo (postos + Transportadora + Holding, do histórico cifrado); aparece quando o histórico traz as empresas -->
-    <div class="seg" role="group" aria-label="Abrangência do Ano a ano" id="segGrupo" hidden>
-      <button id="gPostos" aria-pressed="true">Postos</button>
-      <button id="gGrupo" aria-pressed="false">Grupo</button>
+    <div class="ctl" id="segGrupo" hidden><span class="ctl-lb">Abrangência</span>
+      <div class="seg" role="group" aria-label="Abrangência">
+        <button id="gPostos" aria-pressed="true">Postos</button>
+        <button id="gGrupo" aria-pressed="false">Grupo</button>
+      </div>
     </div>
-    <div class="seg" role="group" aria-label="Base do crescimento">
-      <button id="fAno" aria-pressed="true">Δ vs ano</button>
-      <button id="fMes" aria-pressed="false">Δ vs mês</button>
+    <div class="ctl"><span class="ctl-lb">Comparar com</span>
+      <div class="seg" role="group" aria-label="Base do crescimento">
+        <button id="fAno" aria-pressed="true">Δ vs ano</button>
+        <button id="fMes" aria-pressed="false">Δ vs mês</button>
+      </div>
     </div>
-    <div class="seg" role="group" aria-label="Detalhe">
-      <button id="fAll" aria-pressed="true">Tudo aberto</button>
-      <button id="fTop" aria-pressed="false">Só totais</button>
+    <div class="ctl"><span class="ctl-lb">Detalhe</span>
+      <div class="seg" role="group" aria-label="Detalhe">
+        <button id="fAll" aria-pressed="true">Tudo aberto</button>
+        <button id="fTop" aria-pressed="false">Só totais</button>
+      </div>
     </div>
   </div>
-  <p class="mesnota" id="grupoNota" hidden style="margin:10px 2px 0"></p>
+  <div class="pagestatus" id="pageStatus">
+    <span class="st fechado" id="mesNota" hidden></span>
+    <span class="st grupo" id="grupoNota" hidden></span>
+  </div>
 </div>
 
 
@@ -559,7 +575,7 @@ function atualizaSeletor(){
 function notaMes(){
   var n=document.getElementById('mesNota'), D=window.DADOS_PAINEL;
   if(MES_SEL==='atual'||!D){ n.hidden=true; n.textContent=''; return; }
-  n.innerHTML='<b>Mês fechado</b> · valores realizados ('+D.meta.data+'); "projeção" = realizado'; n.hidden=false;
+  n.innerHTML='<b>Mês fechado</b> realizado até '+D.meta.data+' <small>· projeção = realizado</small>'; n.title='Mês encerrado: todos os valores são realizados; onde o painel diz "projeção", leia realizado.'; n.hidden=false;
 }
 async function carregaMeses(){
   try{ var idx=await pega('operacional-meses/indice.json'); if(idx&&Array.isArray(idx.meses)) MESES_ARQ=idx.meses.filter(function(r){return /^\d{4}-\d{2}$/.test(r);}).sort().reverse(); }catch(e){}
