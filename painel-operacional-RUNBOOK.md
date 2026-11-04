@@ -58,6 +58,10 @@ Os oito PDFs podem ir para `Operações/Vendas/Claude/Historico/` no OneDrive (q
 
 Outros comandos: `vendas-historico.mjs abre --para /tmp/vendas` (decifra para `/tmp/vendas/historico.json`, para conferir) e `importa --json` (substitui tudo — só por decisão do Samuel). Os cofres dos scripts do Vendas vivem em `scripts/vendas-lib.mjs`.
 
+## Transportadora e Holding (botão "Grupo / Só postos")
+
+Fora da rotina diária. Quando o Samuel quiser atualizar, gera no Argo os dois relatórios com o período desejado (pode ser o ano inteiro; os meses do período são substituídos) e envia como arquivo: **Relatório de MDF-es Emitidos** (unidade 99, situação Autorizado) e **Relatório de Vendas - Nota Avulsa** (unidade 1, tipo Completo). Em seguida, `node scripts/vendas-grupo.mjs confere --pdf <arquivo.pdf>` (lê e confere, sem gravar) e `node scripts/vendas-grupo.mjs importa --pdf <arquivo.pdf>` para cada um; commit de `operacional-historico.json` com `chore: atualiza Transportadora e Holding no histórico do Vendas`. Primeira carga em 04/11/2026: jan/2025 → out/2026 nas duas. Regras em `painel-operacional-regras.md`.
+
 ## Virada de mês
 
 No dia 1º o relatório traz o corte do último dia do mês anterior (mês fechado, `dias_dec = dias_mes`); no dia 2 começa o mês novo (`mes_ref` muda, `dias_dec = 1`). O montador trata isso sozinho pelas datas do rodapé; a comparação com o anterior só se aplica dentro do mesmo `mes_ref`.

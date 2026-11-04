@@ -354,6 +354,11 @@ table.dt tr.grp+tr td{border-top:1px dashed var(--line)}
     <!-- seletor de mês: o corrente (ao vivo) + meses fechados arquivados em operacional-meses/ (cifrados); some sem arquivo -->
     <label class="selmes" id="selMesBox" hidden><span class="lb">Mês</span><select id="selMes" aria-label="Mês do painel"></select></label>
     <span class="mesnota" id="mesNota" hidden></span>
+    <!-- abrangência da seção Ano a ano: só os postos (Argo) ou o grupo (postos + Transportadora + Holding); aparece quando o histórico traz as empresas -->
+    <div class="seg" role="group" aria-label="Abrangência do Ano a ano" id="segGrupo" hidden>
+      <button id="gPostos" aria-pressed="true">Só postos</button>
+      <button id="gGrupo" aria-pressed="false">Grupo</button>
+    </div>
     <div class="seg" role="group" aria-label="Base do crescimento">
       <button id="fAno" aria-pressed="true">Δ vs ano</button>
       <button id="fMes" aria-pressed="false">Δ vs mês</button>

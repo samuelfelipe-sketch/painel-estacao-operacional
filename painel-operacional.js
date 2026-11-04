@@ -724,7 +724,12 @@ window.renderHistorico=function(H){
   if(!refs.length){ sec.hidden=true; return; }
   var D=window.DADOS_PAINEL||{}, mesRef=(D.meta&&D.meta.mes_ref)||refs[refs.length-1];
   var ano=+mesRef.slice(0,4), ant=ano-1, mesCur=+mesRef.slice(5,7);
-  var g=function(a,m){ return M[a+'-'+(m<10?'0'+m:m)]; };
+  /* "Grupo": soma às vendas dos postos o faturamento das outras empresas (H.empresas: Transportadora, Holding), mês a mês */
+  var EMP=H.empresas||{}, EMPK=Object.keys(EMP).filter(function(e){ return EMP[e]&&EMP[e].meses; }), GRUPO=!!window.AA_GRUPO&&EMPK.length>0;
+  var seg=byId('segGrupo'); if(seg){ seg.hidden=!EMPK.length; byId('gGrupo').setAttribute('aria-pressed',GRUPO?'true':'false'); byId('gPostos').setAttribute('aria-pressed',GRUPO?'false':'true'); }
+  var extras=function(ref,k,e){ var s=0; (e?[e]:EMPK).forEach(function(n){ var x=EMP[n].meses[ref]; if(x&&isFinite(x[k])) s+=x[k]; }); return s; };
+  var g=function(a,m){ var ref=a+'-'+(m<10?'0'+m:m), x=M[ref]; if(!x||!GRUPO) return x;
+    var o=Object.assign({},x); o.postos=x.fat; o.fat=x.fat+extras(ref,'fat'); if(isFinite(x.proj)) o.proj=x.proj+extras(ref,'fat'); o.intra=extras(ref,'intra'); o.ref=ref; return o; };
   var var_=function(a,b){ return (isFinite(a)&&isFinite(b)&&b)?(a/b-1)*100:NaN; }; /* fora do escopo do renderPainel */
   var cap=function(t){ return t.charAt(0).toUpperCase()+t.slice(1); };
   var ROWS=[], sPrev=0, sCur=0, nPer=0, semBase=[], ultimo=null;
@@ -749,7 +754,7 @@ window.renderHistorico=function(H){
     {lbl:'Crescimento no período', big:temPer?pct(cresc):'—', cls:'cresc'+(temPer?(cresc>=0?' pos':' neg'):''), sub: temPer?(brlCurto(Math.abs(sCur-sPrev))+' '+(sCur>=sPrev?'a mais':'a menos')+' que '+ant):''}
   ];
   byId('aaCards').innerHTML=cards.map(function(k){ return '<div class="kpi '+(k.cls||'')+'"><div class="lbl">'+esc(k.lbl)+'</div><div class="big'+(k.cls&&k.cls.indexOf('pos')>=0?' pos':(k.cls&&k.cls.indexOf('neg')>=0?' neg':''))+'">'+esc(k.big)+'</div><div class="sub">'+esc(k.sub)+'</div></div>'; }).join('');
-  byId('aaNota').textContent='Faturamento total (combustíveis + mercadorias e serviços) de '+ano+' contra '+ant+', mês a mês. Mês corrente parcial comparado no ritmo proporcional.';
+  byId('aaNota').textContent=(GRUPO?'Faturamento do grupo — postos (combustíveis + mercadorias e serviços) mais '+EMPK.map(function(e){return EMP[e].nome;}).join(' e ')+' — de ':'Faturamento total dos postos (combustíveis + mercadorias e serviços) de ')+ano+' contra '+ant+', mês a mês. Mês corrente parcial comparado no ritmo proporcional.';
   /* tabela */
   var cel=function(v,cls){ return '<td class="n '+(cls||'')+'">'+(isFinite(v)?brl(v):'—')+'</td>'; };
   var celP=function(v){ return '<td class="n '+(isFinite(v)?(v>=0?'pos':'neg'):'')+'">'+(isFinite(v)?pct(v):'—')+'</td>'; };
@@ -775,7 +780,15 @@ window.renderHistorico=function(H){
   if(semBase.length) foot.push('Sem os dois anos no histórico: '+semBase.join(', ')+' — ficam fora dos totais até a semeadura dos relatórios antigos.');
   if(ultimo&&ultimo.parcial) foot.push(pMes+' tem '+ultimo.cur.dias_dec+' de '+ultimo.cur.dias_mes+' dias: a barra clara é o projetado do mês; o crescimento compara com '+ant+' no ritmo proporcional.');
   if(!prevOk) foot.push('"Ano inteiro" aparece quando '+ant+' tiver os 12 meses no histórico.');
+  if(GRUPO){
+    var per=ROWS.filter(function(r){return r.cur&&r.prev;}).map(function(r){return r.cur.ref;});
+    var partes=EMPK.map(function(e){ var t=0; per.forEach(function(ref){ t+=extras(ref,'fat',e); }); return EMP[e].nome+' '+brlCurto(t); });
+    var intra=0; per.forEach(function(ref){ intra+=extras(ref,'intra'); });
+    var ultEmp=EMPK.map(function(e){ var p=EMP[e].periodo; return p&&p.ate?p.ate:null; }).filter(Boolean).sort().pop();
+    foot.push('No período de '+ano+': '+partes.join(' · ')+(intra>0?' — '+brlCurto(intra)+' disso foi faturado a empresas do próprio grupo (aluguéis, energia e fretes internos), somado no bruto.':'.')+(ultEmp?' Empresas lançadas até '+ultEmp.slice(5,7)+'/'+ultEmp.slice(0,4)+'; depois disso o grupo vale só os postos.':''));
+  }
   byId('aaFoot').textContent=foot.join(' ');
+  byId('aaEyebrow').textContent='Evolução mês a mês · faturamento '+(GRUPO?'do grupo':'dos postos');
   byId('aaLeg').innerHTML='<span><i style="background:var(--p1)"></i>'+ant+'</span><span><i style="background:var(--p3)"></i>'+ano+'</span><span><i style="background:var(--laranja);border-radius:50%"></i>crescimento %</span>';
   sec.hidden=false;
   /* gráfico: barras agrupadas + linha de crescimento */
@@ -817,6 +830,10 @@ window.renderHistorico=function(H){
   }
   draw();
   try{ var cb=byId('cAnoAno').parentNode; cb.scrollLeft=cb.scrollWidth; }catch(e){} /* no celular, começa pelos meses recentes */
+  if(!window.__aaGrupo){ window.__aaGrupo=true;
+    byId('gGrupo').addEventListener('click',function(){ window.AA_GRUPO=true; if(window.DADOS_HIST) window.renderHistorico(window.DADOS_HIST); });
+    byId('gPostos').addEventListener('click',function(){ window.AA_GRUPO=false; if(window.DADOS_HIST) window.renderHistorico(window.DADOS_HIST); });
+  }
   if(!window.__aaResize){ window.__aaResize=true; var rt2; addEventListener('resize',function(){ clearTimeout(rt2); rt2=setTimeout(function(){ if(window.DADOS_HIST&&!byId('anoAno').hidden) window.renderHistorico(window.DADOS_HIST); },160); }); }
 };
 

@@ -237,3 +237,14 @@ Regras de mesclagem: fechado substitui parcial; entre dois do mesmo tipo vale o 
 ## Meses arquivados (seletor de mês)
 
 `operacional-meses/AAAA-MM.json` = o JSON do painel de um mês **fechado** (relatório com `Data` no último dia do mês, `dias_dec = dias_mes`), cifrado como o `operacional-conteudo.json`; `operacional-meses/indice.json` = `{ "v": 1, "meses": ["2026-10", "2026-09"] }` em claro (só a lista). O `vendas-publica.mjs` arquiva sozinho no `publica` do dia 1º e tem o modo `arquiva --json` para semear. No painel, o seletor "Mês" do topo lista o mês ao vivo mais os do índice; ao trocar, a página baixa e decifra o arquivo, chama `renderPainel` com ele (os botões do topo seguem funcionando) e mostra a nota "Mês fechado · valores realizados" — num mês fechado a projeção é o realizado. Voltar ao mês ao vivo não refaz download. A seção Ano a ano não muda com o seletor.
+
+### Outras empresas do grupo (botão "Grupo / Só postos")
+
+O mesmo `operacional-historico.json` traz o bloco `empresas`, gravado por `scripts/vendas-grupo.mjs importa --pdf` a partir de dois relatórios do Argo linha a linha (período escolhido na geração): **Transportadora** (unidade 99, "Relatório de MDF-es Emitidos", situação Autorizado — soma do Valor por mês de emissão) e **Holding** (unidade 1 SISS, "Relatório de Vendas - Nota Avulsa", tipo Completo — soma do Valor Total por mês; o script confere contra o "Total Geral" do rodapé).
+
+```json
+"empresas": { "holding": { "nome": "Holding", "fonte": "Relatório de Vendas - Nota Avulsa", "periodo": { "de": "2025-01", "ate": "2026-10" }, "atualizadoEm": "…",
+  "meses": { "2026-10": { "fat": 0, "intra": 0, "docs": 0 } } }, "transportadora": { … } }
+```
+
+`fat` = bruto do mês; `intra` = parte faturada a empresas do próprio grupo (clientes POSTO SAPATÃO, SF, SAFYR, SAPATAO TRANSPORTES, SISS — aluguéis, energia e fretes internos), informada no rodapé da seção e **somada no bruto**; `docs` = quantidade. Reimportar substitui os meses do período do relatório. No painel, "Só postos" (padrão) usa só `meses`; "Grupo" soma `empresas[*].meses[ref].fat` ao faturamento dos postos em cada mês (inclusive na projeção do mês corrente, quando a empresa tem o mês) — vale para a seção Ano a ano; os cartões e o painel de metas seguem sendo dos postos (o Argo só projeta os postos). Mês em que as empresas ainda não foram lançadas vale só os postos, e o rodapé diz até quando elas estão lançadas.
