@@ -47,28 +47,36 @@ Para rodar à mão: GitHub → Actions → "Market Share — base ANP" → Run w
 Fonte: `DD-MM-AAAA_RelatorioDeCompraDeCombustiveis.csv` na pasta
 `Financeiro/Compras/Painel de Negociação` do OneDrive do Samuel (mesma fonte da
 revisão semanal da Negociação). Cada CSV cobre **30 dias até o dia anterior** ao
-da data do nome (o de `01-MM` cobre o mês anterior inteiro).
+da data do nome (o de `01-MM` NÃO cobre o dia 1º de um mês anterior de 31 dias).
+
+**O Argo corrige o passado** (conferência de 04/11/2026: nota de 20/10 lançada só
+em 04/11, notas que mudam de dia entre 31/10 e 01/11). Por isso o mês anterior é
+**refeito todo dia** com a versão mais nova de cada data, até sair da janela de 30 dias.
 
 ### Rotina diária
 
 1. `git pull --rebase origin main`. Abrir o arquivo publicado para saber o estado:
    `node scripts/mercado-sapatao.mjs abre --para /tmp/ms` → `/tmp/ms/sapatao-mercado.json`
    (meses gravados e quais estão `parcial`). Nada dele vai para o chat.
-2. Listar a pasta pelo conector Microsoft 365 e ler o CSV **mais recente**
-   (o de hoje, se já chegou; senão o de ontem). Se o **mês anterior** ainda estiver
-   `parcial` no arquivo publicado (ou não existir), ler também o CSV do dia `01`
-   do mês corrente, que fecha o mês anterior. Gravar cada CSV, sem alterar, em
-   `/tmp/ms/compras-DD-MM-AAAA.csv` (fora do repositório). O conector devolve o texto
-   com acentos trocados por `�` — não importa, o script só usa as colunas numéricas.
-3. Agregar e cifrar (`--desde` = mês anterior, para não gravar meses com poucos
-   dias de cobertura nas bordas da janela):
+2. Listar a pasta pelo conector Microsoft 365 e ler **dois** CSVs: o **mais recente**
+   (o de hoje, se já chegou; senão o de ontem) e o do **último dia do mês anterior**
+   (ex.: em novembro, `31-10-AAAA`; em dezembro, `30-11-AAAA`), que cobre o começo do
+   mês anterior. Gravar cada um, sem alterar, em `/tmp/ms/compras-DD-MM-AAAA.csv`
+   (fora do repositório; o nome com a data é obrigatório). O conector devolve o texto
+   com acentos trocados por `�` — não importa, os scripts só usam as colunas numéricas.
+3. Compor (cada data vem do arquivo mais novo que a cobre), agregar e cifrar:
    ```
-   node scripts/negociacao-compras.mjs --csv /tmp/ms/compras-A.csv [--csv /tmp/ms/compras-B.csv] --saida /tmp/ms/compras.json
-   node scripts/mercado-sapatao.mjs grava --compras /tmp/ms/compras.json --desde AAAA-MM
+   node scripts/compras-compoe.mjs --csv /tmp/ms/compras-<último dia do mês anterior>.csv --csv /tmp/ms/compras-<mais recente>.csv \
+     --mes <AAAA-MM do mês anterior> --saida /tmp/ms/composto.csv      # imprime periodo=INI:FIM
+   node scripts/negociacao-compras.mjs --csv /tmp/ms/composto.csv --saida /tmp/ms/compras.json
+   node scripts/mercado-sapatao.mjs grava --compras /tmp/ms/compras.json --desde <AAAA-MM do mês anterior> --periodo INI:FIM --forca
    ```
-   O `grava` funde os meses no arquivo publicado: mês novo entra; mês em curso
-   (`parcial`) é trocado pela leitura nova; mês já fechado só é trocado quando a
-   leitura nova também cobre o mês inteiro. Mantém unidades (SF, PS, AS) e carteiras do GV.
+   Com `--periodo` o mês anterior sai `fechado` e o corrente `parcial`; `--forca` troca
+   os dois pela leitura nova (é o que pega as correções do Argo). Se o `compras-compoe`
+   reclamar de dia fora da janela (arquivo do último dia não achado), **não usar
+   `--forca`**: rodar só com o CSV mais recente e `grava --desde <AAAA-MM do mês corrente>`
+   (atualiza o mês em curso e mantém o anterior como está) e dizer isso na resposta.
+   Mantém unidades (SF, PS, AS) e carteiras do GV.
 4. Se `git status` mostrar `mercado/sapatao.enc.json` alterado: `git pull --rebase`,
    commit **só desse arquivo** com `chore: atualiza os volumes do Sapatão no Market Share (automático)`
    e push em `main`. Sem mudança, não commitar.
