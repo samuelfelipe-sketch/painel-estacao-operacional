@@ -20,12 +20,13 @@
    Gravação: operacional-historico.json (cifrado), bloco `empresas`:
      empresas: { transportadora|holding: { nome, fonte, cobertura:[[de,ate],…], importados:[…],
                  dias: { "2026-10-05": { fat, intra, docs } },
-                 meses: { "2026-10": { fat, intra, docs [, parcial:true, dia:N | lacuna:true] } } } }
+                 meses: { "2026-10": { fat, intra, docs [, parcial:true, dia:N | incompleto:true, diasDe, diasAte, diasCobertos] } } } }
    O faturamento fica POR DIA: cada relatório substitui os dias do seu período (dia sem
    documento = 0) e os períodos vão se encaixando — a janela móvel de 30 dias da rotina
    diária completa os meses aos poucos. `meses` é derivado dos dias: mês inteiro coberto =
-   fechado; coberto do dia 1º até o último dia carregado = `parcial` com `dia`; com buraco
-   = `lacuna` (o painel ignora até o buraco ser preenchido por um arquivo do período).
+   fechado; coberto do dia 1º até o último dia carregado = `parcial` com `dia` (em andamento,
+   o painel projeta); faltando dias = `incompleto` com `diasDe`/`diasAte`/`diasCobertos`
+   (entra no painel com o que está lançado, sem projeção, marcado como parcial).
    Troca de fonte (ex.: MDF-e → CT-e) descarta os dias antigos daquela empresa. Arquivo
    já importado (mesmo GERADO EM, ou mesmo conteúdo no CSV) é ignorado.
 
@@ -193,15 +194,16 @@ function derivaMeses(dias, cobertura) {
   const refs = [...new Set(Object.keys(dias).map(d => d.slice(0, 7)))].sort(), meses = {};
   for (const ref of refs) {
     const [a, m] = ref.split('-').map(Number), n = diasNoMes(a, m);
-    const x = { fat: 0, intra: 0, docs: 0 }; let ult = 0, contiguo = true;
+    const x = { fat: 0, intra: 0, docs: 0 }, cob = [];
     for (let i = 1; i <= n; i++) {
       const d = `${ref}-${String(i).padStart(2, '0')}`;
-      if (coberto(d)) { if (!contiguo) { ult = -1; } else ult = i; const y = dias[d]; if (y) { x.fat = r2(x.fat + y.fat); x.intra = r2(x.intra + y.intra); x.docs += y.docs; } }
-      else contiguo = false;
+      if (!coberto(d)) continue;
+      cob.push(i); const y = dias[d]; if (y) { x.fat = r2(x.fat + y.fat); x.intra = r2(x.intra + y.intra); x.docs += y.docs; }
     }
-    if (ult === n) { /* fechado */ }
-    else if (ult > 0 && `${ref}-${String(ult).padStart(2, '0')}` === fimGeral) { x.parcial = true; x.dia = ult; }
-    else x.lacuna = true;
+    const ini = cob[0], fim = cob[cob.length - 1], continuo = cob.length === fim - ini + 1;
+    if (cob.length === n) { /* fechado */ }
+    else if (ini === 1 && continuo && `${ref}-${String(fim).padStart(2, '0')}` === fimGeral) { x.parcial = true; x.dia = fim; } /* mês em andamento: o painel projeta pelo ritmo */
+    else { x.incompleto = true; x.diasDe = ini; x.diasAte = fim; x.diasCobertos = cob.length; } /* faltam dias: entra com o que está lançado, sem projeção, marcado no painel */
     meses[ref] = x;
   }
   return meses;
@@ -239,8 +241,8 @@ if (modo === 'confere') {
   const doc = cifra(h, K);
   if (JSON.stringify(decifra(doc, K)) !== JSON.stringify(h)) falha('a conferência de ida e volta falhou — nada gravado.');
   writeFileSync(saida, JSON.stringify(doc));
-  const ms = Object.keys(meses), f = ms.filter(k => !meses[k].parcial && !meses[k].lacuna), p = ms.filter(k => meses[k].parcial), l = ms.filter(k => meses[k].lacuna);
-  console.log(`ok: ${saida} · ${resumo}${aviso} · cobertura ${cobertura.map(c => c.join('→')).join(', ')} · meses fechados ${f.length}${p.length ? ' · parcial ' + p.map(k => k + ' até o dia ' + meses[k].dia).join(', ') : ''}${l.length ? ' · com buraco (fora do painel até completar): ' + l.join(', ') : ''}`);
+  const ms = Object.keys(meses), f = ms.filter(k => !meses[k].parcial && !meses[k].incompleto), p = ms.filter(k => meses[k].parcial), l = ms.filter(k => meses[k].incompleto);
+  console.log(`ok: ${saida} · ${resumo}${aviso} · cobertura ${cobertura.map(c => c.join('→')).join(', ')} · meses fechados ${f.length}${p.length ? ' · em andamento ' + p.map(k => k + ' até o dia ' + meses[k].dia).join(', ') : ''}${l.length ? ' · incompletos (entram com o lançado, marcados): ' + l.map(k => k + ' dias ' + meses[k].diasDe + '–' + meses[k].diasAte + (meses[k].diasCobertos < meses[k].diasAte - meses[k].diasDe + 1 ? ' com falhas' : '')).join(', ') : ''}`);
 } else {
   falha('modo desconhecido — use "importa" ou "confere".');
 }

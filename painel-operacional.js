@@ -105,13 +105,14 @@ function infoEmpresa(e,x){ var i=EMPRESA_INFO[e]||{}; return {key:e, sig:i.sig||
 function grupoDoMes(D){
   if(!window.AA_GRUPO) return null;
   var H=window.DADOS_HIST, EMP=H&&H.empresas; if(!EMP||!D||!D.meta) return null;
-  var m=D.meta, G={A:0,B:0,C:0,nomes:[],semMes:[],emp:[]};
+  var m=D.meta, G={A:0,B:0,C:0,nomes:[],semMes:[],emp:[],incompletos:[]};
   Object.keys(EMP).forEach(function(e){ var x=EMP[e]; if(!x||!x.meses) return;
     var inf=infoEmpresa(e,x), rot=inf.nome+' ('+inf.sig+')';
-    var a=x.meses[m.mes_ref]; if(!a||a.lacuna){ G.semMes.push(rot); return; } /* lacuna = mês com dias faltando no histórico */
+    var a=x.meses[m.mes_ref]; if(!a||a.lacuna){ G.semMes.push(rot); return; }
+    if(a.incompleto) G.incompletos.push(inf.sig+' dias '+a.diasDe+' a '+a.diasAte); /* faltam dias: entra o lançado, sem projeção */
     /* mês ainda parcial na empresa (rotina diária): projeta pelo ritmo, como o recA dos postos */
     var mB=x.meses[m.ant_ref], mC=x.meses[m.ano_ref];
-    var A=(a.parcial&&a.dia>0)?(a.fat||0)/a.dia*m.dias_mes:(a.fat||0), B=(mB&&!mB.lacuna)?mB.fat||0:0, C=(mC&&!mC.lacuna)?mC.fat||0:0;
+    var A=(a.parcial&&!a.incompleto&&a.dia>0)?(a.fat||0)/a.dia*m.dias_mes:(a.fat||0), B=(mB&&!mB.lacuna)?mB.fat||0:0, C=(mC&&!mC.lacuna)?mC.fat||0:0;
     G.nomes.push(rot); G.emp.push({key:e,sig:inf.sig,nome:inf.nome,papel:inf.papel,A:A,B:B,C:C}); G.A+=A; G.B+=B; G.C+=C; });
   G.emp.sort(function(a,b){ return a.sig<b.sig?-1:1; }); /* SE antes de ST */
   return G;
@@ -138,7 +139,7 @@ if(GI&&GI.nomes.length){ D=JSON.parse(JSON.stringify(D)); aplicaGrupo(D,GI); }
   if(!GI){ n.hidden=true; return; }
   var mes=(D.meta.mes_rotulo||'').toLowerCase();
   if(GI.nomes.length){
-    n.innerHTML='<b>Grupo</b> '+esc(GI.nomes.join(' + '))+(GI.nomes.length>1?' somadas':' somada')+' em '+esc(mes)+(GI.semMes.length?' <small>· sem lançamento: '+esc(GI.semMes.join(' + '))+'</small>':' <small>· linha "Outras empresas do grupo"</small>');
+    n.innerHTML='<b>Grupo</b> '+esc(GI.nomes.join(' + '))+(GI.nomes.length>1?' somadas':' somada')+' em '+esc(mes)+(GI.incompletos.length?' <small>· parcial: '+esc(GI.incompletos.join(', '))+'</small>':'')+(GI.semMes.length?' <small>· sem lançamento: '+esc(GI.semMes.join(' + '))+'</small>':(GI.incompletos.length?'':' <small>· linha "Outras empresas do grupo"</small>'));
     n.title='Faturamento das outras empresas somado ao dos postos no mês exibido e nos dois períodos de comparação. Volumes, margens e metas seguem sendo só dos postos.';
   } else {
     n.innerHTML='<b>Grupo</b> '+esc(GI.semMes.join(' + '))+' sem lançamento em '+esc(mes)+' <small>· este mês mostra só os postos</small>';
@@ -780,7 +781,7 @@ window.renderHistorico=function(H){
   var seg=byId('segGrupo'); if(seg){ seg.hidden=!EMPK.length; byId('gGrupo').setAttribute('aria-pressed',GRUPO?'true':'false'); byId('gPostos').setAttribute('aria-pressed',GRUPO?'false':'true'); }
   /* valor da empresa no mês; num mês parcial dos postos (dias 1 a N), empresa também parcial é levada ao mesmo dia N (modo 'acum') ou ao mês inteiro (modo 'proj') pelo ritmo */
   var extras=function(ref,k,e,modo,dias){ var s=0; (e?(Array.isArray(e)?e:[e]):EMPK).forEach(function(n){ var x=EMP[n].meses[ref]; if(!x||!isFinite(x[k])) return;
-      var v=x[k]; if(x.parcial&&x.dia>0&&modo&&dias) v=v/x.dia*(modo==='acum'?dias.dec:dias.mes); s+=v; }); return s; };
+      var v=x[k]; if(x.parcial&&!x.incompleto&&x.dia>0&&modo&&dias) v=v/x.dia*(modo==='acum'?dias.dec:dias.mes); s+=v; }); return s; };
   var g=function(a,m){ var ref=a+'-'+(m<10?'0'+m:m), x=M[ref]; if(!x||!GRUPO) return x;
     var dias=x.fechado?null:{dec:x.dias_dec,mes:x.dias_mes}, mm=ref.slice(5);
     /* igual com igual: a empresa só entra no mês se tem esse mês lançado nos DOIS anos comparados */
@@ -844,8 +845,9 @@ window.renderHistorico=function(H){
     var intra=0; rowsPer.forEach(function(r){ intra+=r.cur.intra||0; });
     /* até quando cada empresa está lançada (períodos guardados como AAAA-MM-DD; a carga antiga como AAAA-MM) */
     var dataBR=function(p){ return p.length>7?p.slice(8,10)+'/'+p.slice(5,7)+'/'+p.slice(0,4):p.slice(5,7)+'/'+p.slice(0,4); };
+    var incs=[]; EMPK.forEach(function(e){ var inf=infoEmpresa(e,EMP[e]); Object.keys(EMP[e].meses).forEach(function(ref){ var x=EMP[e].meses[ref]; if(x.incompleto&&(ref.slice(0,4)==String(ano)||ref.slice(0,4)==String(ant))) incs.push(inf.sig+' '+ref.slice(5,7)+'/'+ref.slice(2,4)+' só dias '+x.diasDe+' a '+x.diasAte); }); });
     var lanc=EMPK.map(function(e){ var p=EMP[e].periodo, inf=infoEmpresa(e,EMP[e]); return p&&p.ate?inf.sig+' até '+dataBR(p.ate):null; }).filter(Boolean);
-    foot.push('Grupo em '+ano+': '+partes.join(' · ')+(intra>0?' — '+brlCurto(intra)+' disso foi faturado a empresas do próprio grupo (aluguéis, energia e fretes internos), somado no bruto.':'.')+' Cada empresa só entra no mês em que tem os dois anos lançados'+(lanc.length?' ('+lanc.join(', ')+')':'')+'.');
+    foot.push('Grupo em '+ano+': '+partes.join(' · ')+(intra>0?' — '+brlCurto(intra)+' disso foi faturado a empresas do próprio grupo (aluguéis, energia e fretes internos), somado no bruto.':'.')+' Cada empresa só entra no mês em que tem os dois anos lançados'+(lanc.length?' ('+lanc.join(', ')+')':'')+'.'+(incs.length?' Meses parciais (entram com o que está lançado): '+incs.join(', ')+'.':''));
   }
   byId('aaFoot').textContent=foot.join(' ');
   byId('aaEyebrow').textContent='Evolução mês a mês · faturamento '+(GRUPO?'do grupo':'dos postos');
