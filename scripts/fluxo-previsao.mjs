@@ -7,6 +7,11 @@
      repartida entre as contas do bloco pelo mix do último mês fechado — assim a
      troca de rótulo entre meses (boleto → PIX, IRPJ → DARF em Tributos) não
      derruba a mediana de cada conta;
+   - PESSOAS (contas 3.1*: salários, benefícios, FGTS/GPS) é bloco próprio, com a
+     mediana dos ÚLTIMOS 3 meses fechados (a folha cresce: a mediana de todos os
+     meses fica abaixo do que já se paga); lançamentos programados de pessoas (13º
+     salário em novembro) vêm de `previsao.pessoasExtras` em fluxo/regras.enc.json
+     (valores só no cifrado) e somam em "3.1 · Pessoas — Salários e férias";
    - mês de ARRANQUE de uma empresa (primeiro mês com dados, quando já havia mês
      fechado antes dele — ex.: Safyr em jul/2026, adquirida) fica fora da base;
    - captações, amortizações do giro rotativo, resgates, aquisições, aplicações e
@@ -54,6 +59,7 @@ export const BLOCOS = [
   ['receita bruta', /^1 · Receita/],
   ['custos', /^2 · Custos/],
   ['tributos e impostos', /^2\.1 · Tributos|^7 · Impostos/],
+  ['pessoas', /^3\.1(?:\.|\s)/], /* salários, benefícios e encargos da folha: bloco próprio, mediana dos ÚLTIMOS 3 meses (decisão de 05/11/2026) */
   ['despesas', /^3\./],
   ['financeiras', /^5 · Despesas financeiras/],
 ];
@@ -98,6 +104,14 @@ export function distribuicoesDoMes(regras, id, mes) {
   const ex = (cfg.extras || {})[mes];
   if (ex) { const v = typeof ex === 'number' ? ex : ex.valor; const d = typeof ex === 'number' ? (cfg.dia || 25) : (ex.dia || cfg.dia || 25); if (v) out.push({ valor: r2(v), dia: diaUtil(ano, mm, d) }); }
   return out;
+}
+
+/* lançamentos programados de pessoas no mês: regras.pessoasExtras[AAAA-MM][empresa] = {valor, dia, conta?} (13º etc.) */
+export const CONTA_PESSOAS = '3.1 · Pessoas — Salários e férias';
+export function extrasPessoasDoMes(regras, id, mes) {
+  const ex = (((regras || {}).pessoasExtras || {})[mes] || {})[id]; if (!ex) return [];
+  const [ano, mm] = mes.split('-').map(Number);
+  return (Array.isArray(ex) ? ex : [ex]).filter(x => x && x.valor).map(x => ({ valor: r2(x.valor), dia: diaUtil(ano, mm, x.dia || 20), conta: x.conta || CONTA_PESSOAS }));
 }
 
 /* previsão de um mês para todas as empresas, a partir do estado */
@@ -158,7 +172,8 @@ export function calculaPrevisao(est, mes, regras = {}) {
       /* mediana por bloco; mix do último mês fechado em que o bloco teve valor */
       for (const membros of Object.values(blocos)) {
         const totais = baseE.map(m => membros.reduce((a, c) => a + valorDe(m, t, c), 0));
-        const total = r2(med(totais)); if (!total) continue;
+        const janela = membros.every(c => BLOCOS.find(([n]) => n === 'pessoas')[1].test(c)) ? 3 : Infinity; /* folha cresce: olha só os 3 últimos meses fechados */
+        const total = r2(med(totais.slice(-janela))); if (!total) continue;
         let ref = null; for (let i = baseE.length - 1; i >= 0; i--) if (totais[i] > 0) { ref = baseE[i]; break; }
         if (!ref) continue;
         const tRef = membros.reduce((a, c) => a + valorDe(ref, t, c), 0);
@@ -171,6 +186,11 @@ export function calculaPrevisao(est, mes, regras = {}) {
     for (const { valor, dia } of distribuicoesDoMes(regras, id, mes)) {
       const dias = (outD.cout[CONTA_DISTRIB] || new Array(nd).fill(0)).slice(); dias[dia - 1] = r2(dias[dia - 1] + valor);
       outD.cout[CONTA_DISTRIB] = dias; out.cout[CONTA_DISTRIB] = semanaDe(dias);
+    }
+    /* lançamentos programados de pessoas (ex.: 13º salário — 1ª parcela em novembro): valores só em regras.enc.json */
+    for (const { valor, dia, conta } of extrasPessoasDoMes(regras, id, mes)) {
+      const dias = (outD.cout[conta] || new Array(nd).fill(0)).slice(); dias[dia - 1] = r2(dias[dia - 1] + valor);
+      outD.cout[conta] = dias; out.cout[conta] = semanaDe(dias);
     }
     if (!Object.keys(out.cin).length && !Object.keys(out.cout).length) continue;
     prevM.empresas[id] = out; prevD[id] = outD;
