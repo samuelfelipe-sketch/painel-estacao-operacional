@@ -30,7 +30,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSy
 import { join, resolve } from 'path';
 import { homedir } from 'os';
 import { falha, foraDoRepo, opt, contaEncerrada, contasBancarias } from './fluxo-lib.mjs';
-import { PARSERS, ehOFX, ofx, detectaFormato, stoneXlsx, sicrediXls, sicrediXlsConta, stoneXlsxConta, itauCsv, tabela, ofxContas } from './fluxo-extratos.mjs';
+import { PARSERS, ehOFX, ofx, detectaFormato, stoneXlsx, sicrediXls, sicrediXlsConta, sicrediCnabConta, stoneXlsxConta, itauCsv, tabela, ofxContas } from './fluxo-extratos.mjs';
 
 const BANCOS = ['sicredi', 'stone', 'unicred', 'banrisul', 'bradesco', 'itau', 'pagbank'];
 const N = s => (s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -48,7 +48,7 @@ export function detectaBanco(t, nomeArq) {
   const f = detectaFormato(t);
   if (f === 'ofx') { try { return ofx(t).banco; } catch (e) { return null; } }
   if (f === 'xlsx') return 'stone';
-  if (f === 'xls') return 'sicredi';
+  if (f === 'xls' || f === 'cnab') return 'sicredi';
   if (f === 'csv') return 'itau';
   if (f === 'tabela') { /* banco pelo nome do arquivo ou por menção no conteúdo */
     const U = N(nomeArq); for (const [b, re] of BANCO_NOME_ARQ) if (re.test(U)) return b;
@@ -78,6 +78,7 @@ export function detectaEmpresa(t, banco, nomeArq) {
      ("####" no XLS) tem de ser citado com a empresa certa e o motivo real */
   if (f === 'xlsx') return stoneXlsxConta(t).empresa;
   if (f === 'xls') return sicrediXlsConta(t).empresa;
+  if (f === 'cnab') return sicrediCnabConta(t).empresa;
   if (f === 'csv' || f === 'tabela') {
     /* 1) conta no nome do arquivo (Itaú: Extrato_0912_123882_…); 2) empresa no nome;
        3) CNPJ/conta no conteúdo; 4) banco com uma única conta no grupo */

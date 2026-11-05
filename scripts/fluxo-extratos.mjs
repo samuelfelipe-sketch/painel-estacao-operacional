@@ -240,8 +240,22 @@ export function banrisul(txt) {
 /* Itaú (export "Entradas e Saídas" do app ou extrato): newest-first; "DD/MM/AAAA
    SALDO TOTAL DISPONÍVEL DIA x" fecha o dia; "DD/MM/AAAA SALDO ANTERIOR x" no fim;
    demais linhas com data = lançamentos (último número = valor, "-" = débito). */
+/* o relatório do Itaú quebra a razão social em duas linhas (antes e/ou depois da linha com a data e o
+   valor); o texto solto corta o valor no fim do registro. Linhas sem data dentro da tabela saem —
+   o texto da primeira vira descrição só quando a linha da data não tem nenhum (ex.: "RENDIMENTOS …") */
+function itauSemContinuacao(txt) {
+  const out = []; let dentro = false, pend = '';
+  for (const l of txt.split(/\r?\n/)) {
+    if (/^Data\s+Lançamentos/.test(l)) { dentro = true; out.push(l); continue; }
+    if (/^aviso:/.test(l)) dentro = false;
+    if (dentro && l.trim() && !/^\d{2}\/\d{2}\/\d{4}/.test(l)) { if (!pend) pend = l.trim(); continue; }
+    if (dentro && /^\d{2}\/\d{2}\/\d{4}\s+-?[\d.]+,\d{2}\s*$/.test(l) && pend) out.push(l.replace(/^(\d{2}\/\d{2}\/\d{4})\s+/, `$1 ${pend} `)); else out.push(l);
+    if (dentro && /^\d{2}\/\d{2}\/\d{4}/.test(l)) pend = '';
+  }
+  return out.join('\n');
+}
 export function itau(txt) {
-  const linhas = txt.replace(/\s+/g, ' ');
+  const linhas = itauSemContinuacao(txt).replace(/\s+/g, ' ');
   const re = /(\d{2})\/(\d{2})\/(\d{4})\s+(.+?)(?=\s+\d{2}\/\d{2}\/\d{4}\s|\s*$)/g;
   let m; const bruto = [];
   while ((m = re.exec(linhas))) bruto.push({ data: iso(m[1], m[2], m[3]), resto: m[4].trim() });
@@ -322,6 +336,43 @@ export function ofx(txt) {
   o.formato = 'ofx'; o.empresa = empresa; o.bankid = bankid; o.conta = acct; o.saldoAnteriorDerivado = true;
   return o;
 }
+/* ---- Sicredi CNAB 240 (extrato para conciliação bancária, layout FEBRABAN "E") ----
+   Chega como .txt de 240 posições por linha: 748 0000 0 (header de arquivo) · 748 0001 1 E
+   (header de lote: CNPJ, agência/conta, saldo inicial com data) · 748 0001 3 …E (um por lançamento:
+   "N" + data do lançamento + data contábil + valor em centavos (18) + C/D + categoria (3) + código
+   (4) + histórico (25) + documento/CNPJ/nome da contraparte) · 748 0001 5 (trailer: saldo final com
+   data) · 748 99999. Saldo inicial e final vêm declarados, então a cadeia é conferida no centavo
+   (o saldo inicial é o de FECHAMENTO do dia anotado no header; a cobertura começa no dia seguinte). */
+export const ehSicrediCnab = txt => { const ls = txt.split(/\r?\n/).filter(l => l.trim()); return ls.length >= 4 && /^748\d{4}0\s/.test(ls[0]) && ls.some(l => /^748\d{4}1E/.test(l)) && ls.some(l => /^748\d{4}3\d{5}E/.test(l) || /^748\d{4}5\s/.test(l)); };
+const dataCnab = s => iso(s.slice(0, 2), s.slice(2, 4), s.slice(4, 8));
+const valCnab = (v, cd) => round2((cd === 'D' ? -1 : 1) * parseInt(v, 10) / 100);
+export function sicrediCnabConta(txt) {
+  const h = txt.split(/\r?\n/).find(l => /^748\d{4}1E/.test(l)) || '';
+  const m = h.match(/\d(\d{14})\s+(\d{19})\s/);
+  const conta = m ? m[2] : ''; const cnpj = m ? m[1] : '';
+  const empresa = (ofxContas().find(([b, d]) => b === 'sicredi' && conta.endsWith(d)) || [])[2] || null;
+  return { conta, cnpj, empresa };
+}
+export function sicrediCnab(txt) {
+  const ls = txt.split(/\r?\n/).filter(l => l.trim());
+  const cab = ls.find(l => /^748\d{4}1E/.test(l)), tr = ls.find(l => /^748\d{4}5\s/.test(l));
+  if (!cab || !tr) throw new Error('CNAB 240 do Sicredi sem header ou trailer de lote — arquivo incompleto (releia todas as páginas)');
+  const sI = cab.match(/(\d{8})(\d{18})([CD])([PF])BRL/), sF = tr.match(/(\d{8})(\d{18})([CD])([PF])/);
+  if (!sI || !sF) throw new Error('CNAB 240 do Sicredi: saldo inicial ou final não encontrado');
+  const mov = [];
+  for (const l of ls) {
+    if (!/^748\d{4}3\d{5}E/.test(l)) continue;
+    const m = l.match(/\sN(\d{8})(\d{8})(\d{18})([CD])(\d{3})(\w{4})(.{25})(.*)$/);
+    if (!m) throw new Error('CNAB 240 do Sicredi: lançamento ilegível — ' + l.slice(0, 40));
+    mov.push({ data: dataCnab(m[1]), desc: limpa(m[7] + ' ' + m[8]), valor: valCnab(m[3], m[4]) });
+  }
+  const ant = dataCnab(sI[1]), d = new Date(ant + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 1);
+  const de = d.toISOString().slice(0, 10), ate = dataCnab(sF[1]);
+  const o = fecha({ banco: 'sicredi', saldoAnterior: valCnab(sI[2], sI[3]), saldoFinal: valCnab(sF[2], sF[3]), mov, periodo: { de, ate } });
+  const c = sicrediCnabConta(txt);
+  o.formato = 'cnab'; o.empresa = c.empresa; o.conta = c.conta; o.saldoAnteriorEm = ant;
+  return o;
+}
 /* ---- outros formatos que chegam na pasta semanal (além de PDF e OFX) ----
    O conector Microsoft 365 devolve: .xlsx como "Workbook: … / ## Sheet: …" com
    linhas separadas por TAB; .xls convertido para PDF (texto achatado, com as
@@ -361,11 +412,32 @@ const semDesconhecido = s => (s && !/^desconhecido$/i.test(s.trim()) ? s.trim() 
    o Δ difere do "Valor" exatamente pela "Tarifa", a tarifa vira lançamento
    próprio (como no PDF, em que venda e tarifa vinham em linhas separadas).
    A conta própria é a conta Stone que aparece em todas as linhas. */
+/* Stone exportada como .csv (colunas "Movimentação,Tipo,Valor,Saldo antes,Saldo depois,…,Data,Horário,…,Descrição"):
+   mesmo conteúdo do .xlsx — vira o TSV do .xlsx (sem Horário e sem Descrição, mesma ordem das linhas)
+   e segue o leitor da Stone (valor = Δ saldo, reconcilia no centavo) */
+export const ehStoneCsv = txt => /^\uFEFF?Movimenta[çc][ãa]o,Tipo,Valor,Saldo antes,Saldo depois/i.test(txt.slice(0, 200));
+function csvLinhas(t) {
+  const rows = []; let r = [], c = '', q = false;
+  for (let i = 0; i < t.length; i++) { const ch = t[i];
+    if (q) { if (ch === '"') { if (t[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
+    else if (ch === '"') q = true; else if (ch === ',') { r.push(c); c = ''; }
+    else if (ch === '\n') { r.push(c.replace(/\r$/, '')); rows.push(r); r = []; c = ''; } else c += ch; }
+  if (c || r.length) { r.push(c.replace(/\r$/, '')); rows.push(r); }
+  return rows.filter(x => x.length > 5);
+}
+export function stoneCsvParaTsv(txt) {
+  if (!ehStoneCsv(txt)) return txt;
+  const rows = csvLinhas(txt.replace(/^\uFEFF/, '')); const h = rows[0];
+  const ih = h.indexOf('Horário'), id = h.indexOf('Descrição');
+  const keep = h.map((_, i) => i).filter(i => i !== ih && i !== id);
+  return ['Workbook: 1 worksheet. (Stone .csv convertido para o layout do .xlsx)', 'This read covers sheet 1.', '', `## Sheet: Extrato — ${rows.length} rows × ${keep.length} columns`, ...rows.map(r => keep.map(i => r[i] ?? '').join('\t'))].join('\n') + '\n';
+}
 export const ehStoneXlsx = txt => /^Workbook:/m.test(txt.slice(0, 400)) && /Movimenta[çc][ãa]o\tTipo\tValor\tSaldo antes\tSaldo depois/i.test(txt.slice(0, 4000));
 const STONE_PROPRIA = /^stone\b/i;
 /* conta Stone própria (a mais citada como "Destino"/"Origem" na instituição Stone) →
    empresa, sem depender do parse dos lançamentos */
 export function stoneXlsxConta(txt) {
+  txt = stoneCsvParaTsv(txt);
   const linhas = txt.replace(/\r/g, '').split('\n');
   const hi = linhas.findIndex(l => /^Movimenta[çc][ãa]o\tTipo\tValor/i.test(l)); if (hi < 0) return { acct: null, empresa: null };
   const cab = linhas[hi].split('\t').map(s => s.trim().toLowerCase());
@@ -383,6 +455,7 @@ export function stoneXlsxConta(txt) {
   return { acct: acct || null, empresa };
 }
 export function stoneXlsx(txt) {
+  txt = stoneCsvParaTsv(txt);
   const linhas = txt.replace(/\r/g, '').split('\n');
   const hi = linhas.findIndex(l => /^Movimenta[çc][ãa]o\tTipo\tValor/i.test(l));
   if (hi < 0) throw new Error('Stone XLSX: não achei o cabeçalho da tabela');
@@ -691,10 +764,11 @@ function comAnterior(o, dataAnterior) {
    fluxo-leituras fica com a melhor): OFX e XLSX da Stone trazem valores e
    saldos exatos; PDF idem; o XLS convertido perde saldos; CSV sem saldo depende
    do mês anterior */
-export const QUALIDADE = { ofx: 4, xlsx: 4, pdf: 3, tabela: 2, xls: 2, csv: 1 };
+export const QUALIDADE = { ofx: 4, cnab: 4, xlsx: 4, pdf: 3, tabela: 2, xls: 2, csv: 1 };
 export function detectaFormato(txt) {
   if (ehOFX(txt)) return 'ofx';
-  if (ehStoneXlsx(txt)) return 'xlsx';
+  if (ehSicrediCnab(txt)) return 'cnab';
+  if (ehStoneXlsx(txt) || ehStoneCsv(txt)) return 'xlsx';
   if (ehSicrediXls(txt)) return 'xls';
   if (ehItauCsv(txt)) return 'csv';
   if (ehTabela(txt)) return 'tabela';
@@ -705,6 +779,7 @@ function porFormato(banco, txt) {
   const f = detectaFormato(txt);
   let o;
   if (f === 'ofx') o = ofx(txt);
+  else if (f === 'cnab') o = sicrediCnab(txt);
   else if (f === 'xlsx') o = stoneXlsx(txt);
   else if (f === 'xls') o = sicrediXls(txt);
   else if (f === 'csv') o = itauCsv(txt);
@@ -717,7 +792,7 @@ function porFormato(banco, txt) {
   return o;
 }
 export const PARSERS = Object.fromEntries(Object.keys(_P).map(k => [k, txt => porFormato(k, txt)]));
-PARSERS.ofx = ofx; PARSERS.xlsx = stoneXlsx; PARSERS.xls = sicrediXls; PARSERS.csv = itauCsv; PARSERS.tabela = txt => tabela(txt);
+PARSERS.ofx = ofx; PARSERS.cnab = sicrediCnab; PARSERS.xlsx = stoneXlsx; PARSERS.xls = sicrediXls; PARSERS.csv = itauCsv; PARSERS.tabela = txt => tabela(txt);
 /* leitura sem dizer o banco: descobre formato e banco pelo conteúdo (PDF exige o banco) */
 export function leQualquer(txt, banco) { return porFormato(banco || null, txt); }
 
