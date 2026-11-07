@@ -47,7 +47,7 @@ A ferramenta é a **cola de mesa** para argumentar com a Raízen e a Ipiranga: s
 - **06 · Margens** (`#margens`): margem por produto nas últimas leituras do BI, uma coluna "Para a mesa".
 - A leitura nova **substitui** a anterior. Proibido "leitura anterior", "revisão anterior" ou cadeia de leituras na página. Data da fonte entre parênteses basta ("BI 27/10", "NFs 29–31/10").
 - A validação barra: texto visível acima de 9.000 caracteres, qualquer bloco acima de 220 caracteres e a expressão "leitura/revisão anterior".
-- Comparação de preço (entre bandeiras ou entre unidades) só com o mesmo produto **na mesma data**; se um lado não comprou no dia, só vale o preço dele quando as NFs mostram que não mudou no intervalo (e a página diz isso, ex.: "sem mudança de 26/10 a 03/11"). Senão, não compare — diferença entre dias é reajuste, não diferença de condição. Sempre com a data na frase; a régua do S10 (Raízen até R$ 0,04/L acima da Ipiranga) vale nos dois sentidos — Ipiranga acima da Raízen é argumento com a Ipiranga.
+- Comparação de preço (entre bandeiras ou entre unidades) só com o mesmo produto **na mesma data**; se um lado não comprou no dia, só vale o preço dele quando as NFs mostram que não mudou no intervalo (e a página diz isso, ex.: "sem mudança de 26/10 a 03/11"). Senão, não compare — diferença entre dias é reajuste, não diferença de condição. Sempre com a data na frase. Produtos equivalentes entre bandeiras: Comum × Comum, V-Power × Ipimax (aditivadas), S10 × S10, S500 × S500; a régua do S10 (Raízen até R$ 0,04/L acima da Ipiranga) vale nos dois sentidos — Ipiranga acima da Raízen é argumento com a Ipiranga.
 
 ## O que a rotina nunca faz
 
