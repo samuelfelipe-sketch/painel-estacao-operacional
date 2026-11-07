@@ -2,6 +2,8 @@
 
    Confere o contrato que o shell negociacao/index.html espera e a coerência
    interna dos números (somas), abrindo o HTML no Chromium em 1440px e 390px.
+   Também barra página inchada (concisão, decisão de 03/11/2026: texto total e tamanho
+   de cada bloco limitados; nada de "leitura anterior" na página).
    Imprime só "ok"/"falhou" por item — nunca os valores da ferramenta.
 
    Uso:
@@ -37,6 +39,10 @@ const semAlvo = alvos.map(a => a.slice(7, -1)).filter(id => !ids.has(id));
 item('todo link do menu aponta para uma seção que existe', alvos.length >= 6 && semAlvo.length === 0, true, semAlvo.length ? semAlvo.length + ' sem alvo' : alvos.length + ' links');
 item('seções 01 a 06 presentes', ['resumo', 'mapa', 'impacto', 'consolidado', 'compras2026', 'margens'].every(id => ids.has(id)));
 item('tema claro fixo (color-scheme:light)', /color-scheme\s*:\s*light/.test(html));
+/* concisão: só a leitura vigente fica na página; histórico de leituras vai para o diário */
+const LIMITE_TOTAL = 9000, LIMITE_BLOCO = 220;
+const corpoTexto = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '');
+item('sem histórico de leituras na página ("leitura anterior", "revisão anterior")', !/(leitura|revisão) anterior/i.test(corpoTexto));
 
 /* ---- datas: nenhuma data DD/MM/AAAA no futuro ---- */
 const hoje = new Date(); hoje.setHours(23, 59, 59, 999);
@@ -60,6 +66,15 @@ item('nenhuma data completa no futuro', futuras.length === 0, true, futuras.leng
     item(`${w}px: sem rolagem lateral`, m.sx <= m.cw + 1);
     if (w === 390) item('390px: menu vira gaveta (position fixed)', m.menu === 'fixed');
     if (w === 1440) {
+      /* concisão (decisão do Samuel de 03/11/2026): a página é a cola de mesa para argumentar com
+         Raízen e Ipiranga — histórico de leituras, memória de cálculo e conferências vão para o diário */
+      const conc = await p.evaluate(() => {
+        const ws = document.querySelector('.wrap'); if (!ws) return { total: 0, maior: 0 };
+        const folhas = Array.from(ws.querySelectorAll('*')).filter(e => !Array.from(e.children).some(c => getComputedStyle(c).display !== 'inline'));
+        return { total: ws.innerText.length, maior: folhas.reduce((m, e) => Math.max(m, e.textContent.trim().length), 0) };
+      });
+      item('concisão: texto da página até ' + LIMITE_TOTAL + ' caracteres', conc.total <= LIMITE_TOTAL, true, conc.total + ' caracteres');
+      item('concisão: nenhum bloco de texto acima de ' + LIMITE_BLOCO + ' caracteres', conc.maior <= LIMITE_BLOCO, true, 'maior bloco ' + conc.maior);
       const somas = await p.evaluate(() => {
         const num = t => { const s = (t || '').replace(/\s/g, '').replace(/[R$milL]/g, ''); if (!/\d/.test(s) || /—/.test(s)) return null; return parseFloat(s.replace(/\./g, '').replace(',', '.')); };
         const linhas = tbl => Array.from(tbl.querySelectorAll('tbody tr, tr')).filter(tr => tr.querySelectorAll('td').length >= 3)
