@@ -121,6 +121,22 @@ td .parc{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var
 .falta{color:var(--tinta-fraca);font-style:italic}
 .aviso{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--aviso-fundo);border:1px solid var(--aviso-borda);font-size:13px}
 .aviso[hidden]{display:none}
+/* momento de mercado */
+.veredito{display:grid;gap:8px;margin-bottom:14px}
+.veredito .frase{font-size:16px;line-height:1.45}
+.veredito .frase b.up,.veredito .frase b.dn{font-weight:700}
+.veredito .selos{display:flex;flex-wrap:wrap;gap:6px}
+.selo{font-family:var(--f-mono);font-size:11.5px;font-weight:600;border-radius:999px;padding:4px 10px;background:#F1F4F8;color:var(--tinta-suave)}
+.selo.up{background:#E4F2EC;color:var(--bom)}.selo.dn{background:#FAEAE7;color:var(--ruim)}
+.mbar{display:grid;gap:7px}
+.mb{display:grid;grid-template-columns:150px 1fr 70px;align-items:center;gap:10px;font-size:13.5px;min-width:0}
+.mb .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mb .n small{color:var(--tinta-fraca);font-weight:500;font-family:var(--f-mono);margin-right:5px}
+.mb .tr{position:relative;height:16px;background:#F0F3F7;border-radius:4px}
+.mb .tr .z{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--tinta-fraca)}
+.mb .tr b{position:absolute;top:0;bottom:0;background:var(--mercado);border-radius:3px}
+.mb.sap .tr b{background:var(--sapatao)}
+.mb .v{font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:480px){.mb{grid-template-columns:128px 1fr 54px;gap:8px}#tMom,#tMomMes{min-width:0;font-size:12.5px}#tMom .mo,#tMomMes .mo{display:none}#tMom td,#tMom th{padding-left:6px;padding-right:6px}}
 .duplo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:560px){.duplo{grid-template-columns:1fr}}
 .mini{border:1px solid var(--linha);border-radius:12px;padding:12px 14px;min-width:0}
@@ -185,6 +201,7 @@ body.so-leitura .so-edita{display:none}
 
   <nav class="abas" id="abas" aria-label="Seções">
     <button type="button" data-aba="unidades" aria-selected="true">Unidades</button>
+    <button type="button" data-aba="momento" aria-selected="false">Momento</button>
     <button type="button" data-aba="mensal" aria-selected="false">Mês a mês</button>
     <button type="button" data-aba="bandeiras" aria-selected="false">Bandeiras</button>
     <button type="button" data-aba="anual" aria-selected="false">Ano a ano</button>
@@ -195,6 +212,18 @@ body.so-leitura .so-edita{display:none}
     <h2 id="t-un">Cada posto no mercado e na bandeira</h2>
     <p class="nota" id="n-un">Clique numa linha para ver o painel só dela.</p>
     <div class="tabela"><table id="tUn"><thead></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card aba" data-aba="momento" aria-labelledby="t-mom" hidden>
+    <h2 id="t-mom">Momento de mercado</h2>
+    <p class="nota" id="n-mom"></p>
+    <div class="veredito" id="mVer"></div>
+    <div class="mbar" id="mBar"></div>
+    <div class="tabela" style="margin-top:14px"><table id="tMom"><thead></thead><tbody></tbody></table></div>
+    <div class="aviso" id="a-mom" hidden></div>
+    <h2 style="margin-top:26px">Mês a mês contra o mesmo mês do ano anterior</h2>
+    <p class="nota" id="n-momMes"></p>
+    <div class="tabela"><table id="tMomMes"><thead></thead><tbody></tbody></table></div>
   </section>
 
   <section class="card aba" data-aba="mensal" aria-labelledby="t-serie" hidden>
