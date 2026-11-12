@@ -1,0 +1,72 @@
+name: Market Share — postos e frota da região (descoberta)
+
+# Etapa 1: descobrir o que as bases públicas trazem antes de montar a visão
+# por raio. Lista os links e mostra cabeçalho/linhas de amostra:
+# - cadastro de revendedores varejistas da ANP (endereço, bandeira, tancagem?)
+# - frota de veículos por município (Senatran)
+# Só lê e imprime no log; não grava nada no repositório.
+on:
+  push:
+    paths:
+      - '.github/workflows/mercado-postos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  descobrir:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ANP — página e arquivos do cadastro de revendedores
+        run: |
+          mkdir -p /tmp/p && cd /tmp/p
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          for pg in \
+            'https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/dados-cadastrais-dos-revendedores-varejistas-de-combustiveis-automotivos' \
+            'https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos' ; do
+            echo "### $pg"; curl -sL --retry 3 --max-time 120 -A "$UA" "$pg" > pag.html || true
+            grep -oiE 'href="[^"]*(revendedor|varejista|cadastr|posto|tancagem|bico)[^"]*"' pag.html | sed -E 's/^href="//; s/"$//' | sort -u | head -60
+          done
+      - name: ANP — baixar o cadastro e mostrar a estrutura (RS, região)
+        run: |
+          cd /tmp/p
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          curl -sL --retry 3 --max-time 120 -A "$UA" 'https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/dados-cadastrais-dos-revendedores-varejistas-de-combustiveis-automotivos' > pag.html || true
+          grep -oiE 'href="[^"]*\.(csv|zip|xlsx)"' pag.html | sed -E 's/^href="//; s/"$//' | sort -u | tee arquivos.txt
+          n=0
+          while read -r u; do
+            case "$u" in http*) ;; *) u="https://www.gov.br$u";; esac
+            n=$((n+1)); f="arq$n.$(echo "$u" | sed -E 's/.*\.//')"
+            curl -sL --fail --retry 3 --max-time 600 -A "$UA" -o "$f" "$u" && echo "ok $f $(wc -c < "$f") $u" || echo "falhou $u"
+          done < arquivos.txt
+          for f in arq*; do
+            case "$f" in *.zip) unzip -o -q "$f" -d "z_$f"; ls -la "z_$f";; esac
+          done
+          for f in $(find . -name '*.csv'); do
+            echo "===== $f ($(wc -l < "$f") linhas)"
+            head -3 "$f" | iconv -f latin1 -t utf-8 2>/dev/null || head -3 "$f"
+            echo "--- linhas do RS: $(grep -ciE ';RS;|,RS,|"RS"' "$f")"
+            echo "--- unidades do Sapatão (por CNPJ):"
+            grep -E '13\.?047\.?383|43\.?510\.?250|47\.?857\.?489' "$f" | iconv -f latin1 -t utf-8 2>/dev/null | head -10
+            echo "--- amostra Novo Hamburgo:"
+            grep -iE 'NOVO HAMBURGO' "$f" | head -3 | iconv -f latin1 -t utf-8 2>/dev/null
+          done
+      - name: Senatran — frota por município (links)
+        run: |
+          cd /tmp/p
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          for pg in \
+            'https://www.gov.br/transportes/pt-br/assuntos/transito/conteudo-Senatran/frota-de-veiculos-2026' \
+            'https://www.gov.br/transportes/pt-br/assuntos/transito/conteudo-Senatran/frota-de-veiculos-2025' ; do
+            echo "### $pg"; curl -sL --retry 3 --max-time 120 -A "$UA" "$pg" > fr.html || true
+            grep -oiE 'href="[^"]*\.(xls|xlsx|csv|zip)"' fr.html | sed -E 's/^href="//; s/"$//' | sort -u | head -40
+          done
+      - name: DNIT — contagem de tráfego (links)
+        run: |
+          cd /tmp/p
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          for pg in 'https://servicos.dnit.gov.br/dadospnct/' 'https://www.gov.br/dnit/pt-br/assuntos/planejamento-e-pesquisa/plano-nacional-de-contagem-de-trafego'; do
+            echo "### $pg"; curl -sL --retry 2 --max-time 60 -A "$UA" "$pg" > dn.html || true
+            grep -oiE 'href="[^"]*"' dn.html | grep -iE 'vmda|contagem|pnct|\.xls|\.csv|\.zip' | sort -u | head -30
+          done
