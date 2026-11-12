@@ -1,0 +1,62 @@
+name: Market Share — vendas por município (ANP)
+
+# Baixa as vendas anuais por município da ANP (gasolina C, etanol hidratado,
+# óleo diesel) e grava mercado/regiao.json só com os municípios da região de
+# atuação (lista em mercado/regiao-municipios.json) e o total do RS. Dados
+# públicos. Roda no GitHub porque o ambiente da nuvem não alcança o gov.br.
+# A ANP publica o ano fechado uma vez por ano; roda todo dia 10.
+on:
+  schedule:
+    - cron: '20 7 10 * *'
+  push:
+    paths:
+      - '.github/workflows/mercado-municipios.yml'
+      - 'scripts/mercado-municipios.mjs'
+      - 'mercado/regiao-municipios.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mercado-municipios-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Descobrir os arquivos por município na página de dados abertos
+        run: |
+          mkdir -p /tmp/mun
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          for pg in \
+            'https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/vendas-de-derivados-de-petroleo-e-biocombustiveis' \
+            'https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/vendas-anuais-de-etanol-hidratado-e-derivados-de-petroleo-por-municipio'; do
+            curl -sL --retry 3 --max-time 120 -A "$UA" "$pg" >> /tmp/mun/paginas.html || true
+          done
+          grep -oiE 'href="[^"]*(vaehdpm|municipio)[^"]*"' /tmp/mun/paginas.html | sed -E 's/^href="//; s/"$//' | sort -u | tee /tmp/mun/links.txt
+      - name: Baixar os CSVs por município
+        run: |
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          grep -iE '\.csv$' /tmp/mun/links.txt | grep -iE 'gasolina|etanol|diesel' | while read -r u; do
+            case "$u" in http*) ;; *) u="https://www.gov.br$u";; esac
+            f="/tmp/mun/$(basename "$u")"
+            curl -sL --fail --retry 3 --retry-delay 10 --max-time 600 -A "$UA" -o "$f" "$u" && echo "ok $(wc -c < "$f") $f" || echo "falhou $u"
+          done
+          for f in /tmp/mun/*.csv; do echo "== $f"; head -c 400 "$f" | iconv -f latin1 -t utf-8 2>/dev/null || head -c 400 "$f"; echo; done
+      - name: Agregar a região
+        run: node scripts/mercado-municipios.mjs --pasta /tmp/mun --regiao mercado/regiao-municipios.json --saida mercado/regiao.json
+      - name: Publicar se mudou
+        run: |
+          git add mercado/regiao.json
+          if git diff --cached --quiet; then echo "sem mudança"; exit 0; fi
+          git config user.name 'Rotina Market Share'
+          git config user.email 'noreply@estacaosapatao.com.br'
+          git commit -m 'chore: atualiza as vendas por município da região no Market Share (automático)'
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"

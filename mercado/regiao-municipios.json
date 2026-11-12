@@ -1,0 +1,9 @@
+{
+  "uf": "RS",
+  "nota": "Municípios da área de atuação de cada unidade (decisão do Samuel, 12/11/2026). PS é posto de rodovia (BR-116, km 234): área ao longo da BR. Nomes como a ANP grava, sem acento.",
+  "unidades": {
+    "3": ["ESTANCIA VELHA", "PORTAO"],
+    "4": ["NOVO HAMBURGO", "IVOTI", "DOIS IRMAOS", "SAO LEOPOLDO"],
+    "5": ["CAMPO BOM", "SAPIRANGA"]
+  }
+}
