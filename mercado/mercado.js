@@ -421,8 +421,8 @@
     var quem = todasUn() ? 'Sapatão' : us.map(function (u) { return UNID()[u].nome; }).join(' + ');
     var linhas = [
       { k: 'TAM', nome: 'Mercado total ' + ESC_CURTO[st.esc], nota: 'postos, TRR e consumidor final', a: mk(base, 'tot', 'Total'), b: mk(ok, 'tot', 'Total'), mil: true },
-      { k: 'SAM', nome: 'Postos revendedores ' + ESC_CURTO[st.esc], nota: 'bandeirados + bandeira branca', a: mk(base, 'rev', 'Total'), b: mk(ok, 'rev', 'Total'), mil: true },
-      { k: 'SOM', nome: 'Postos ' + (bs.join(' + ') || '—') + ' ' + ESC_CURTO[st.esc], nota: 'as bandeiras das unidades selecionadas', a: bs.length ? mk(base, 'band', bs) : null, b: bs.length ? mk(ok, 'band', bs) : null, mil: true },
+      { k: 'Postos', nome: 'Postos revendedores ' + ESC_CURTO[st.esc], nota: 'bandeirados + bandeira branca', a: mk(base, 'rev', 'Total'), b: mk(ok, 'rev', 'Total'), mil: true },
+      { k: 'Bandeiras', nome: 'Postos ' + (bs.join(' + ') || '—') + ' ' + ESC_CURTO[st.esc], nota: 'as bandeiras das unidades selecionadas', a: bs.length ? mk(base, 'band', bs) : null, b: bs.length ? mk(ok, 'band', bs) : null, mil: true },
       { k: '', nome: quem + ' · mesmas unidades', nota: mesmas.length === us.length ? 'todas tinham compras no período base' : 'sem ' + us.filter(function (u) { return mesmas.indexOf(u) < 0; }).map(function (u) { return UNID()[u].nome; }).join(', ') + ' (não comprava no período base)', a: mesmas.length ? sp(base, mesmas) : null, b: mesmas.length ? sp(ok, mesmas) : null, sap: true, dest: true },
       { k: '', nome: quem + ' · rede', nota: 'todas as unidades selecionadas', a: sp(base, us), b: sp(ok, us), sap: true }
     ];
@@ -438,7 +438,7 @@
       var mesS = us.filter(function (u) { return vS(okS.map(anoAnt), [u]) > 0 && vS(okS, [u]) > 0; });
       var gSo = okS.length && mesS.length ? cresc(vS(okS.map(anoAnt), mesS), vS(okS, mesS)) : null;
       el('mVer').innerHTML = '<div class="frase">' + (gSo != null ? 'O ' + quem + ' (mesmas unidades) fez <b class="' + cls(gSo) + '">' + (gSo > 0 ? '+' : '') + num(gSo, 1) + '%</b> contra ' + baseTxt + '. ' : '') + '<span class="falta">' + (!anpMes(st.mes, st.esc) ? 'O mercado de ' + perTxt + ' entra quando a ANP publicar o mês.' : 'Faltam compras do Sapatão no período ou no ano anterior.') + '</span></div>';
-      el('mBar').innerHTML = ''; t.querySelector('tbody').innerHTML = ''; av.hidden = true; momentoMes(); return;
+      el('mBar').innerHTML = ''; t.querySelector('tbody').innerHTML = ''; av.hidden = true; momentoMes(); regiao(); return;
     }
     function ritmo(g) { return g == null ? '—' : g > MOM_FAIXA ? 'em expansão' : g < -MOM_FAIXA ? 'em retração' : 'estável'; }
     function lado(d) { return d == null ? null : d > MOM_FAIXA ? 'acima' : d < -MOM_FAIXA ? 'abaixo' : 'em linha'; }
@@ -446,15 +446,16 @@
     var dSAM = (gS != null && linhas[1].g != null) ? gS - linhas[1].g : null;
     var frase = 'O mercado ' + ESC_CURTO[st.esc] + ' está <b class="' + cls(linhas[0].g) + '">' + ritmo(linhas[0].g) + '</b> (' + (linhas[0].g == null ? '—' : sinal(linhas[0].g)) + '); nos postos, ' + (linhas[1].g == null ? '—' : sinal(linhas[1].g)) + '. ';
     frase += gS == null ? 'Sem base do ' + quem + ' para comparar.' : 'O ' + quem + ' (mesmas unidades) fez <b class="' + cls(gS) + '">' + sinal(gS) + '</b> — <b class="' + (dSAM > MOM_FAIXA ? 'up' : dSAM < -MOM_FAIXA ? 'dn' : '') + '">' + lado(dSAM) + ' do mercado de postos</b>' + (dSAM == null ? '' : ' (' + (dSAM > 0 ? '+' : '') + num(dSAM, 1) + ' p.p.)') + (dSAM > MOM_FAIXA ? ', ganhando participação.' : dSAM < -MOM_FAIXA ? ', perdendo participação.' : ', mantendo a participação.');
-    var selos = cmp.map(function (l) { var d = (gS != null && l.g != null) ? gS - l.g : null; return '<span class="selo ' + (d > MOM_FAIXA ? 'up' : d < -MOM_FAIXA ? 'dn' : '') + '">vs ' + l.k + ': ' + (d == null ? '—' : lado(d) + ' ' + (d > 0 ? '+' : '') + num(d, 1) + ' p.p.') + '</span>'; }).join('');
+    var selos = cmp.map(function (l) { var d = (gS != null && l.g != null) ? gS - l.g : null; return '<span class="selo ' + (d > MOM_FAIXA ? 'up' : d < -MOM_FAIXA ? 'dn' : '') + '">vs ' + (l.k === 'TAM' ? 'TAM' : l.k.toLowerCase()) + ': ' + (d == null ? '—' : lado(d) + ' ' + (d > 0 ? '+' : '') + num(d, 1) + ' p.p.') + '</span>'; }).join('');
     el('mVer').innerHTML = '<div class="frase">' + frase + '</div><div class="selos">' + selos + '</div>';
     /* barras de crescimento, com o zero no meio */
+    function rotBar(l) { return l.k === 'TAM' ? '<small>TAM</small>Mercado' : l.k ? esc(l.k) : esc((todasUn() ? 'Sapatão' : quem) + (l.dest ? ' (mesmas)' : ' (rede)')); }
     var gs = linhas.map(function (l) { return l.g; }).filter(function (g) { return g != null; });
     var mx = Math.max(1, Math.max.apply(null, gs.map(Math.abs))) * 1.08, z = 50;
     el('mBar').innerHTML = linhas.map(function (l) {
-      if (l.g == null) return '<div class="mb' + (l.sap ? ' sap' : '') + '"><span class="n">' + (l.k ? '<small>' + l.k + '</small>' : '') + esc(l.k ? l.k : (todasUn() ? 'Sapatão' : quem) + (l.dest ? ' (mesmas)' : ' (rede)')) + '</span><span class="tr"><span class="z" style="left:50%"></span></span><span class="v falta">—</span></div>';
+      if (l.g == null) return '<div class="mb' + (l.sap ? ' sap' : '') + '"><span class="n">' + rotBar(l) + '</span><span class="tr"><span class="z" style="left:50%"></span></span><span class="v falta">—</span></div>';
       var w = Math.abs(l.g) / mx * 50, left = l.g >= 0 ? z : z - w;
-      return '<div class="mb' + (l.sap ? ' sap' : '') + '" title="' + esc(l.nota) + '"><span class="n">' + (l.k ? '<small>' + l.k + '</small>' : '') + esc(l.k ? l.k === 'TAM' ? 'Mercado' : l.k === 'SAM' ? 'Postos' : 'Bandeiras' : (todasUn() ? 'Sapatão' : quem) + (l.dest ? ' (mesmas)' : ' (rede)')) + '</span><span class="tr"><span class="z" style="left:50%"></span><b style="left:' + left.toFixed(2) + '%;width:' + Math.max(w, 0.4).toFixed(2) + '%"></b></span><span class="v ' + cls(l.g) + '">' + sinal(l.g) + '</span></div>';
+      return '<div class="mb' + (l.sap ? ' sap' : '') + '" title="' + esc(l.nota) + '"><span class="n">' + rotBar(l) + '</span><span class="tr"><span class="z" style="left:50%"></span><b style="left:' + left.toFixed(2) + '%;width:' + Math.max(w, 0.4).toFixed(2) + '%"></b></span><span class="v ' + cls(l.g) + '">' + sinal(l.g) + '</span></div>';
     }).join('');
     /* tabela: volumes, crescimento, participação do Sapatão em cada camada */
     var sB = linhas[4].b, sA = linhas[4].a;
@@ -463,21 +464,78 @@
       var f = function (v) { return v == null ? '<span class="falta">—</span>' : l.mil ? num(v, 1) + ' <small class="falta">mil m³</small>' : num(v, 0) + ' <small class="falta">m³</small>'; };
       var d = (!l.sap && gS != null && l.g != null) ? gS - l.g : null;
       var shA = l.mil && l.a && sA != null ? sA / (l.a * 1000) * 100 : null, shB = l.mil && l.b && sB != null ? sB / (l.b * 1000) * 100 : null;
-      return '<tr' + (l.dest ? ' class="dest"' : '') + '><td>' + (l.k ? '<b>' + l.k + '</b> · ' : '<span class="ponto s"></span>') + esc(l.nome) + '<br><small class="falta mo">' + esc(l.nota) + '</small></td><td class="num mo">' + f(l.a) + '</td><td class="num">' + f(l.b) + '</td><td class="num">' + fmtVar(l.g) + '</td><td class="num mo">' + (l.sap ? '' : fmtDif(d)) + '</td><td class="num mo">' + (shA == null ? '' : pct(shA)) + '</td><td class="num">' + (shB == null ? '' : pct(shB)) + '</td></tr>';
+      return '<tr' + (l.dest ? ' class="dest"' : '') + '><td>' + (l.k === 'TAM' ? '<b>TAM</b> · ' : l.k ? '' : '<span class="ponto s"></span>') + esc(l.nome) + '<br><small class="falta mo">' + esc(l.nota) + '</small></td><td class="num mo">' + f(l.a) + '</td><td class="num">' + f(l.b) + '</td><td class="num">' + fmtVar(l.g) + '</td><td class="num mo">' + (l.sap ? '' : fmtDif(d)) + '</td><td class="num mo">' + (shA == null ? '' : pct(shA)) + '</td><td class="num">' + (shB == null ? '' : pct(shB)) + '</td></tr>';
     }).join('');
     var avisos = [];
     if (ok.some(anpParcial)) avisos.push('A ANP ainda está fechando ' + ok.filter(anpParcial).map(mesLbl).join(', ') + '; o crescimento do mercado pode mudar.');
     if (!mesmas.length) avisos.push(quem + ' não comprava em ' + baseTxt + ': não há crescimento para comparar.');
     else if (mesmas.length < us.length) avisos.push('A rede inclui unidade que não comprava em ' + baseTxt + '; por isso o veredito usa as mesmas unidades.');
     av.hidden = !avisos.length; av.textContent = avisos.join(' ');
-    momentoMes();
+    momentoMes(); regiao();
+  }
+  /* ---------- nossa região: SAM (mercado da área de atuação) e SOM (nossa fatia) ----------
+     A ANP só publica vendas por município por ano e com atraso (mercado/regiao.json,
+     último ano publicado). O mercado da área no período é ESTIMADO: peso da área no RS
+     nesse ano (por grupo de produto) × vendas do RS no período (todos os segmentos,
+     base mensal). Inclui TRR e consumidor final da área (a base municipal não separa). */
+  var CIDADES = { 'ESTANCIA VELHA': 'Estância Velha', 'PORTAO': 'Portão', 'DOIS IRMAOS': 'Dois Irmãos', 'SAO LEOPOLDO': 'São Leopoldo' };
+  function nomeCidade(m) { if (CIDADES[m]) return CIDADES[m]; return m.toLowerCase().split(' ').map(function (w) { return /^(de|do|da|dos|das)$/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1); }).join(' '); }
+  function regiao() {
+    var box = el('regBloco'), R = D.regiao; if (!box) return;
+    if (!R || !R.municipios || !R.unidades) { box.hidden = true; return; }
+    box.hidden = false;
+    var ano = R.ultimo_ano;
+    function grupos() { return st.prod === 'otto' ? [['otto', ['gasolina', 'etanol']]] : st.prod === 'diesel' ? [['diesel', ['diesel']]] : [['otto', ['gasolina', 'etanol']], ['diesel', ['diesel']]]; }
+    function volArea(mun, a, ps) { return mun.reduce(function (s, m) { var x = (R.municipios[m] || {})[a] || {}; return s + ps.reduce(function (t, p) { return t + (x[p] || 0); }, 0); }, 0); }
+    function volRS(a, ps) { var x = R.rs[a] || {}; return ps.reduce(function (t, p) { return t + (x[p] || 0); }, 0); }
+    /* mercado estimado da área (m³) nos meses dados; null se faltar ANP */
+    function estArea(mun, ms) {
+      var tot = 0, G = grupos();
+      for (var i = 0; i < ms.length; i++) for (var g = 0; g < G.length; g++) {
+        var x = mkt(ms[i], 'RS', 'tot', G[g][0]); if (!x) return null;
+        var w = volRS(ano, G[g][1]) ? volArea(mun, ano, G[g][1]) / volRS(ano, G[g][1]) : 0;
+        tot += w * x.Total * 1000;
+      }
+      return tot;
+    }
+    function vS(ms, uu) { var s = 0; for (var i = 0; i < ms.length; i++) { var x = sap(ms[i], st.prod, uu); if (!x) return null; s += x.total; } return s; }
+    var meses = mesesPeriodo(st.mes).filter(function (m) { return anpMes(m, 'RS'); });
+    var base = meses.map(anoAnt).filter(function (m) { return anpMes(m, 'RS'); });
+    var us = unSel().filter(function (u) { return R.unidades[u]; });
+    el('n-reg').textContent = 'SAM = mercado da área de atuação de cada unidade, estimado: peso da área no RS em ' + ano + ' (último ano que a ANP publicou por município) × vendas do RS no período, todos os segmentos. SOM = a fatia do Sapatão nessa área (sem meta definida, mostra a fatia atual). ' + PROD_NOME[st.prod] + ' · ' + perLbl(st.mes) + '.';
+    var t = el('tReg');
+    t.querySelector('thead').innerHTML = '<tr><th>Unidade · área</th><th class="num">SAM (m³)</th><th class="num mo">Nossas compras (m³)</th><th class="num">SOM ' + perLbl(st.mes) + '</th><th class="num mo">SOM ' + perLbl(anoAnt(st.mes)) + '</th><th class="num">Var.</th></tr>';
+    function linha(nome, area, uu, dest) {
+      var mun = []; area.forEach(function (m) { if (mun.indexOf(m) < 0) mun.push(m); });
+      var sam = meses.length ? estArea(mun, meses) : null, nos = meses.length ? vS(meses, uu) : null;
+      var temBase = base.length === meses.length && base.length;
+      var samA = temBase ? estArea(mun, base) : null, nosA = temBase ? vS(base, uu) : null;
+      var som = sam && nos != null ? nos / sam * 100 : null, somA = samA && nosA ? nosA / samA * 100 : null;
+      return '<tr' + (dest ? ' class="total"' : '') + '><td><b>' + esc(nome) + '</b><br><small class="falta' + (dest ? ' mo' : '') + '">' + esc(mun.map(nomeCidade).join(', ')) + '</small></td><td class="num">' + (sam == null ? '<span class="falta">—</span>' : num(sam, 0)) + '</td><td class="num mo">' + (nos == null ? '<span class="falta">—</span>' : num(nos, 0)) + '</td><td class="num"><b>' + (som == null ? '—' : pct(som, 1)) + '</b></td><td class="num mo">' + (somA == null ? '<span class="falta">—</span>' : pct(somA, 1)) + '</td><td class="num">' + (som != null && somA != null ? fmtDif(som - somA) : '<span class="falta">' + (temBase && !nosA ? 'nova' : '—') + '</span>') + '</td></tr>';
+    }
+    var linhas = us.map(function (u) { return linha(UNID()[u].nome, R.unidades[u], [u]); });
+    var todos = []; us.forEach(function (u) { todos = todos.concat(R.unidades[u]); });
+    if (us.length > 1) linhas.push(linha(todasUn() ? 'Rede' : 'Seleção', todos, us, true));
+    t.querySelector('tbody').innerHTML = meses.length ? linhas.join('') : '<tr><td colspan="6" class="falta">A ANP ainda não publicou ' + perLbl(st.mes) + ' para o RS.</td></tr>';
+    /* tendência da área na base anual: a região cresce mais ou menos que o RS? */
+    var anos = (R.anos || []).filter(function (a) { return +a >= +ano - 4; });
+    var ps = []; grupos().forEach(function (g) { ps = ps.concat(g[1]); });
+    var area = []; todos.forEach(function (m) { if (area.indexOf(m) < 0) area.push(m); });
+    el('n-regTend').textContent = 'Base anual da ANP por município · ' + PROD_NOME[st.prod] + ': a área de atuação cresce mais ou menos que o RS? Ajuda a separar o que é mérito nosso do que é a região andando diferente do estado.';
+    var tt = el('tRegTend');
+    tt.querySelector('thead').innerHTML = '<tr><th>Ano</th><th class="num">Área (m³)</th><th class="num">Var. área</th><th class="num">Var. RS</th><th class="num">Dif.</th><th class="num mo">Peso no RS</th></tr>';
+    tt.querySelector('tbody').innerHTML = anos.map(function (a) {
+      var ar = volArea(area, a, ps), r = volRS(a, ps), pa = String(+a - 1);
+      var gA = cresc(volArea(area, pa, ps), ar), gR = cresc(volRS(pa, ps), r);
+      return '<tr' + (a === ano ? ' class="dest"' : '') + '><td>' + a + '</td><td class="num">' + num(ar, 0) + '</td><td class="num">' + fmtVar(gA) + '</td><td class="num">' + fmtVar(gR) + '</td><td class="num">' + fmtDif(gA != null && gR != null ? gA - gR : null) + '</td><td class="num mo">' + (r ? pct(ar / r * 100, 2) : '—') + '</td></tr>';
+    }).join('');
   }
   /* crescimento de cada mês contra o mesmo mês do ano anterior, últimos 12 meses */
   function momentoMes() {
     var t = el('tMomMes'), us = unSel(), bs = BANDS.filter(function (b) { return postosSel()[b]; });
     var ms = []; for (var i = 11; i >= 0; i--) ms.push(shiftMes(st.mes, -i));
-    el('n-momMes').textContent = 'Cada mês contra o mesmo mês do ano anterior · ' + PROD_NOME[st.prod] + ' · ' + ESC_NOME[st.esc] + '. Diferença = Sapatão (mesmas unidades) menos postos (SAM).';
-    t.querySelector('thead').innerHTML = '<tr><th>Mês</th><th class="num mo">TAM</th><th class="num">SAM</th><th class="num">SOM</th><th class="num">Sapatão</th><th class="num">Dif. vs SAM</th></tr>';
+    el('n-momMes').textContent = 'Cada mês contra o mesmo mês do ano anterior · ' + PROD_NOME[st.prod] + ' · ' + ESC_NOME[st.esc] + '. Diferença = Sapatão (mesmas unidades) menos postos do recorte.';
+    t.querySelector('thead').innerHTML = '<tr><th>Mês</th><th class="num mo">TAM</th><th class="num">Postos</th><th class="num">Bandeiras</th><th class="num">Sapatão</th><th class="num">Dif. vs postos</th></tr>';
     function g1(m, seg, k) { var a = mkt(anoAnt(m), st.esc, seg, st.prod), b = mkt(m, st.esc, seg, st.prod); if (!a || !b) return null; var sa = 0, sb = 0; (Array.isArray(k) ? k : [k]).forEach(function (kk) { sa += a[kk] || 0; sb += b[kk] || 0; }); return cresc(sa, sb); }
     var linhas = ms.map(function (m) {
       var tem = !!anpMes(m, st.esc), gT = g1(m, 'tot', 'Total'), gA = g1(m, 'rev', 'Total'), gO = bs.length ? g1(m, 'band', bs) : null;

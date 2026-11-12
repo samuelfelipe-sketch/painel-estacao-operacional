@@ -136,7 +136,7 @@ td .parc{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var
 .mb .tr b{position:absolute;top:0;bottom:0;background:var(--mercado);border-radius:3px}
 .mb.sap .tr b{background:var(--sapatao)}
 .mb .v{font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
-@media (max-width:480px){.mb{grid-template-columns:128px 1fr 54px;gap:8px}#tMom,#tMomMes{min-width:0;font-size:12.5px}#tMom .mo,#tMomMes .mo{display:none}#tMom td,#tMom th{padding-left:6px;padding-right:6px}}
+@media (max-width:480px){.mb{grid-template-columns:128px 1fr 54px;gap:8px}#tMom,#tMomMes,#tReg,#tRegTend{min-width:0;font-size:12.5px}#tMom .mo,#tMomMes .mo,#tReg .mo,#tRegTend .mo{display:none}#tMom td,#tMom th{padding-left:6px;padding-right:6px}}
 .duplo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:560px){.duplo{grid-template-columns:1fr}}
 .mini{border:1px solid var(--linha);border-radius:12px;padding:12px 14px;min-width:0}
@@ -221,6 +221,13 @@ body.so-leitura .so-edita{display:none}
     <div class="mbar" id="mBar"></div>
     <div class="tabela" style="margin-top:14px"><table id="tMom"><thead></thead><tbody></tbody></table></div>
     <div class="aviso" id="a-mom" hidden></div>
+    <div id="regBloco" hidden>
+      <h2 style="margin-top:26px">Nossa região: SAM e SOM</h2>
+      <p class="nota" id="n-reg"></p>
+      <div class="tabela"><table id="tReg"><thead></thead><tbody></tbody></table></div>
+      <p class="nota" id="n-regTend" style="margin-top:12px"></p>
+      <div class="tabela"><table id="tRegTend"><thead></thead><tbody></tbody></table></div>
+    </div>
     <h2 style="margin-top:26px">Mês a mês contra o mesmo mês do ano anterior</h2>
     <p class="nota" id="n-momMes"></p>
     <div class="tabela"><table id="tMomMes"><thead></thead><tbody></tbody></table></div>
@@ -274,15 +281,15 @@ body.so-leitura .so-edita{display:none}
 var CACHE_S='sapatao-mercado-v1', CACHE_A='sapatao-mercado-anp-v1';
 var REPO='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/mercado/';
 var API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/mercado/';
-var abriu=false, ANP=null, SAP=null, POSTOS=null;
+var abriu=false, ANP=null, SAP=null, POSTOS=null, REGIAO=null;
 function mostra(){
   if(!ANP||!SAP)return;
-  window.DADOS_MERCADO={anp:ANP,sapatao:SAP,postos:POSTOS};
+  window.DADOS_MERCADO={anp:ANP,sapatao:SAP,postos:POSTOS,regiao:REGIAO};
   if(abriu){ if(window.renderMercado)window.renderMercado(window.DADOS_MERCADO); return; }
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=2';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=3';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){
@@ -307,15 +314,17 @@ async function carrega(){
     var ca=JSON.parse(localStorage.getItem(CACHE_A)||'null'); if(ca&&ca.dados)ANP=ca;
     var cs=JSON.parse(localStorage.getItem(CACHE_S)||'null'); if(cs){var d=await decifraDoc(cs); if(d)SAP=d;}
     POSTOS=JSON.parse(localStorage.getItem(CACHE_A+'-postos')||'null');
+    REGIAO=JSON.parse(localStorage.getItem(CACHE_A+'-regiao')||'null');
     mostra();
   }catch(e){}
   /* 2) rede: o que mudou manda */
   try{
-    var [anp,sap,postos]=await Promise.all([pega('anp-vendas.json'),pega('sapatao.enc.json'),pega('postos.json')]);
+    var [anp,sap,postos,regiao]=await Promise.all([pega('anp-vendas.json'),pega('sapatao.enc.json'),pega('postos.json'),pega('regiao.json')]);
     if(!anp&&!ANP){falha(' A base da ANP ainda não foi publicada (o workflow "Market Share — base ANP" grava mercado/anp-vendas.json).');return;}
     if(!sap&&!SAP){falha(' Os volumes do Sapatão ainda não foram publicados (scripts/mercado-sapatao.mjs).');return;}
     var mudou=false;
     if(anp&&JSON.stringify(anp)!==JSON.stringify(ANP)){ANP=anp;mudou=true;try{localStorage.setItem(CACHE_A,JSON.stringify(anp));}catch(e){}}
+    if(regiao&&JSON.stringify(regiao)!==JSON.stringify(REGIAO)){REGIAO=regiao;mudou=true;try{localStorage.setItem(CACHE_A+'-regiao',JSON.stringify(regiao));}catch(e){}}
     if(postos&&JSON.stringify(postos)!==JSON.stringify(POSTOS)){POSTOS=postos;mudou=true;try{localStorage.setItem(CACHE_A+'-postos',JSON.stringify(postos));}catch(e){}}
     if(sap&&sap.enc===1){
       var c=null; try{c=JSON.parse(localStorage.getItem(CACHE_S)||'null');}catch(e){}

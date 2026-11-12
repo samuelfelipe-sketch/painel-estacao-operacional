@@ -121,14 +121,21 @@ Revendedor. O painel usa o último mês ≤ ao mês selecionado.
 
 ## 4. Como o painel calcula
 
-- **Momento de mercado** (aba Momento, 11/11/2026): TAM = tudo o que as distribuidoras
-  venderam no recorte (postos, TRR, consumidor final — segmento `tot`); SAM = postos
-  revendedores (`rev`); SOM = postos bandeirados das bandeiras das unidades selecionadas
-  (`band`, Raízen e/ou Ipiranga). Crescimento contra o mesmo período do ano anterior, só
-  nos meses com ANP e compras dos dois lados. O veredito compara o Sapatão em **mesmas
-  unidades** (sem unidade que não comprava no período base, ex.: AS antes de jul/2026)
-  com o SAM: diferença > +1 p.p. = acima (ganhando participação), < −1 p.p. = abaixo,
-  entre as duas = em linha. Mercado ±1% = estável. Sem ANP do mês, mostra só o Sapatão.
+- **Momento de mercado** (aba Momento, revista em 12/11/2026): momento = crescimento contra
+  o mesmo período do ano anterior do **TAM** (tudo o que as distribuidoras venderam no RS,
+  segmento `tot`), dos **postos** do recorte (`rev`) e dos **postos das nossas bandeiras**
+  (`band`, comparação à parte), só nos meses com ANP e compras dos dois lados. Veredito do
+  Sapatão em **mesmas unidades** (sem unidade que não comprava no período base) contra os
+  postos: > +1 p.p. acima, < −1 p.p. abaixo, entre as duas em linha. Sem ANP do mês, só o Sapatão.
+- **Nossa região: SAM e SOM** (mesma aba): **SAM** = mercado da área de atuação de cada
+  unidade (municípios em `mercado/regiao-municipios.json`: SF = Estância Velha + Portão;
+  PS = Novo Hamburgo, Ivoti, Dois Irmãos, São Leopoldo — posto de rodovia, BR-116 km 234;
+  AS = Campo Bom + Sapiranga), ESTIMADO = peso da área no RS no último ano da base ANP por
+  município (`mercado/regiao.json`, anual e com atraso; workflow `mercado-municipios.yml`,
+  dia 10) × vendas do RS no período (todos os segmentos), por grupo otto/diesel. **SOM** = a
+  fatia do Sapatão nessa área (sem meta definida; o Samuel ainda não tem meta). Tabela da
+  tendência anual da área contra o RS (a base municipal não separa segmento: inclui TRR e
+  consumidor final da área).
 - participação = compras do Sapatão (m³) ÷ vendas das distribuidoras ao segmento
   (mil m³ × 1000), no mesmo mês, recorte e produto;
 - "dentro da Raízen" = unidades 3 e 4 ÷ volume da Raízen no recorte; "dentro da
