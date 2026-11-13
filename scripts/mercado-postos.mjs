@@ -118,8 +118,11 @@ for (const { p, o } of pares) {
   casou.add(p.cnpj); usado.add(o.id);
   cache[p.cnpj] = { ...cache[p.cnpj], lat: +o.lat.toFixed(6), lon: +o.lon.toFixed(6), prec: 'osm', osm: o.id };
 }
+/* unidades da rede: coordenada informada (link do Google Maps) vale mais que tudo */
+for (const u of Object.values(CFG.unidades)) if (u.lat != null && u.lon != null) cache[u.cnpj] = { ...(cache[u.cnpj] || {}), lat: u.lat, lon: u.lon, prec: 'manual' };
 /* quem não casou fica com a coordenada do endereço (aproximada) */
-for (const p of alvo) if (cache[p.cnpj] && !casou.has(p.cnpj) && cache[p.cnpj].prec === 'osm') cache[p.cnpj].prec = 'aprox';
+const nossos = new Set(Object.values(CFG.unidades).map(u => u.cnpj));
+for (const p of alvo) if (cache[p.cnpj] && !casou.has(p.cnpj) && !nossos.has(p.cnpj) && cache[p.cnpj].prec === 'osm') cache[p.cnpj].prec = 'aprox';
 writeFileSync(CACHE, JSON.stringify(cache));
 console.log(`casados com o OSM: ${casou.size} de ${alvo.filter(p => cache[p.cnpj]).length} · postos do OSM sem par na ANP: ${osm.length - usado.size}`);
 
@@ -130,15 +133,16 @@ const hoje = out.gerado_em.slice(0, 10), contagem = {};
 for (const [cod, u] of Object.entries(CFG.unidades)) {
   const eu = rs.find(p => p.cnpj === u.cnpj), ge = cache[eu.cnpj];
   if (!ge) falha(`sem coordenada para a unidade ${cod}`);
-  const lista = [];
+  const lista = [], rede = [];
   for (const p of alvo) {
     const g = cache[p.cnpj]; if (!g || p.cnpj === u.cnpj) continue;
+    if (nossos.has(p.cnpj)) { const d = dist(ge, g); if (d <= u.raio_km) rede.push({ cnpj: p.cnpj, km: +d.toFixed(2) }); continue; }
     const d = dist(ge, g), br = u.rodovia && naBR(p, u.rodovia.nome) && d <= u.rodovia.raio_km;
     if (d <= u.raio_km || br) lista.push({ cnpj: p.cnpj, nome: p.nome, bandeira: p.bandeira, municipio: p.mun, bairro: p.bairro, km: +d.toFixed(2), prec: g.prec, ...(br ? { rodovia: true } : {}) });
   }
   lista.sort((a, b) => a.km - b.km);
   const resumo = {}; lista.forEach(p => { resumo[p.bandeira] = (resumo[p.bandeira] || 0) + 1; });
-  out.unidades[cod] = { nome: eu.nome, endereco: `${eu.end} · ${eu.bairro} · ${eu.mun}`, bandeira: eu.bandeira, lat: ge.lat, lon: ge.lon, prec: ge.prec, raio_km: u.raio_km, rodovia: u.rodovia || null, concorrentes: lista.length, por_bandeira: resumo, postos: lista };
+  out.unidades[cod] = { nome: eu.nome, endereco: `${eu.end} · ${eu.bairro} · ${eu.mun}`, bandeira: eu.bandeira, lat: ge.lat, lon: ge.lon, prec: ge.prec, raio_km: u.raio_km, rodovia: u.rodovia || null, concorrentes: lista.length, rede_no_raio: rede, por_bandeira: resumo, postos: lista };
   contagem[cod] = lista.length;
   console.log(`unidade ${cod}: coordenada por ${ge.prec} · ${lista.length} concorrentes (${lista.filter(p => p.rodovia).length} pela rodovia) · precisão: ${['osm', 'endereco', 'cep', 'rua', 'bairro', 'aprox'].map(k => k + ' ' + lista.filter(p => p.prec === k).length).join(', ')}`);
 }

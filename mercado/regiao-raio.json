@@ -1,10 +1,12 @@
 {
-  "nota": "Raio de concorrência de cada unidade (decisão do Samuel, 12/11/2026): SF e AS 5 km; PS 10 km e o trecho da BR-116 do km 220 ao 250 (PS fica no km 234; o trecho é aproximado pelos postos da BR-116 a até 16 km do PS). CNPJ das unidades = cadastro público da ANP.",
+  "nota": "Raio de concorrência de cada unidade (decisão do Samuel, 12/11/2026): SF e AS 5 km; PS 10 km e o trecho da BR-116 do km 220 ao 250 (PS fica no km 234; o trecho é aproximado pelos postos da BR-116 a até 16 km do PS). CNPJ das unidades = cadastro público da ANP. Coordenadas das unidades: links do Google Maps enviados pelo Samuel (13/11/2026).",
   "uf": "RS",
   "unidades": {
     "3": {
       "cnpj": "13047383000103",
-      "raio_km": 5
+      "raio_km": 5,
+      "lat": -29.669056,
+      "lon": -51.196949
     },
     "4": {
       "cnpj": "43510250000184",
@@ -15,11 +17,15 @@
         "km_ini": 220,
         "km_fim": 250,
         "raio_km": 16
-      }
+      },
+      "lat": -29.650834,
+      "lon": -51.143702
     },
     "5": {
       "cnpj": "47857489000186",
-      "raio_km": 5
+      "raio_km": 5,
+      "lat": -29.650764,
+      "lon": -51.057844
     }
   },
   "municipios_candidatos": [
