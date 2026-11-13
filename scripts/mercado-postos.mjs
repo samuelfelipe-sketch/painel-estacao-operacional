@@ -77,6 +77,52 @@ for (const p of alvo) { const g = await geo(p); if (!g) semGeo++; }
 writeFileSync(CACHE, JSON.stringify(cache));
 console.log(`coordenadas: ${consultas} consultas novas · sem coordenada: ${semGeo}`);
 
+/* ---- ponto exato: postos mapeados no OpenStreetMap (amenity=fuel) ----
+   O endereço quase nunca acha o número no Brasil e cai no meio da rua. Cada posto
+   da ANP é casado com o posto do OSM mais parecido (número + rua, nome, bandeira)
+   perto da coordenada aproximada; casou, vale a coordenada do OSM (prec 'osm'). */
+const STOP = new Set('POSTO POSTOS COMBUSTIVEIS COMBUSTIVEL COMERCIO COMERCIAL DE DO DA DOS DAS E LTDA EIRELI ME EPP SA S A DERIVADOS PETROLEO ABASTECEDORA AUTO REDE SERVICO SERVICOS LUBRIFICANTES CONVENIENCIA'.split(' '));
+const toks = s => norm(s).replace(/[^A-Z0-9 ]/g, ' ').split(' ').filter(t => t.length > 1 && !STOP.has(t));
+const MARCA = { RAIZEN: /SHELL|RAIZEN/, VIBRA: /PETROBRAS|VIBRA|\bBR\b/, IPIRANGA: /IPIRANGA/, RODOIL: /RODOIL/, CHARRUA: /CHARRUA/, STANG: /STANG/, MAXSUL: /MAXSUL/, SIM: /\bSIM\b/ };
+let osm = [];
+try {
+  const q = '[out:json][timeout:90];nwr["amenity"="fuel"](-29.95,-51.45,-29.45,-50.85);out center tags;';
+  for (const host of ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+    try { const r = await fetch(host, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) }); if (r.ok) { osm = (await r.json()).elements || []; break; } } catch (e) {}
+  }
+} catch (e) {}
+osm = osm.map(e => ({ id: e.type + '/' + e.id, lat: e.lat ?? e.center?.lat, lon: e.lon ?? e.center?.lon, t: e.tags || {} })).filter(e => e.lat != null);
+console.log(`OSM: ${osm.length} postos mapeados na área`);
+const usado = new Set(); const pares = [];
+for (const p of alvo) {
+  const g = cache[p.cnpj]; if (!g) continue;
+  const { rua, num } = partes(p.end), tRua = toks(rua), tNome = toks(p.nome), marca = MARCA[norm(p.bandeira)];
+  const longe = /RODOVIA|BR-?\d|RS-?\d|ERS|ESTRADA/i.test(rua) ? 8 : 4;
+  for (const o of osm) {
+    const d = dist(g, o); if (d > longe) continue;
+    const oNome = norm([o.t.name, o.t.brand, o.t.operator].filter(Boolean).join(' ')), oRua = toks(o.t['addr:street'] || ''), oNum = String(o.t['addr:housenumber'] || '').replace(/\D/g, '');
+    let sc = 0;
+    if (num && oNum && num === oNum && oRua.some(t => tRua.includes(t))) sc += 6;
+    const nomeComum = tNome.filter(t => t.length > 2 && oNome.includes(t));
+    if (nomeComum.length) sc += 3 + Math.min(nomeComum.length, 2);
+    if (marca && marca.test(oNome)) sc += 2;
+    if (oRua.some(t => tRua.includes(t))) sc += 1;
+    sc -= d / 4;
+    if (sc >= 3) pares.push({ p, o, sc });
+  }
+}
+pares.sort((a, b) => b.sc - a.sc);
+const casou = new Set();
+for (const { p, o } of pares) {
+  if (casou.has(p.cnpj) || usado.has(o.id)) continue;
+  casou.add(p.cnpj); usado.add(o.id);
+  cache[p.cnpj] = { ...cache[p.cnpj], lat: +o.lat.toFixed(6), lon: +o.lon.toFixed(6), prec: 'osm', osm: o.id };
+}
+/* quem não casou fica com a coordenada do endereço (aproximada) */
+for (const p of alvo) if (cache[p.cnpj] && !casou.has(p.cnpj) && cache[p.cnpj].prec === 'osm') cache[p.cnpj].prec = 'aprox';
+writeFileSync(CACHE, JSON.stringify(cache));
+console.log(`casados com o OSM: ${casou.size} de ${alvo.filter(p => cache[p.cnpj]).length} · postos do OSM sem par na ANP: ${osm.length - usado.size}`);
+
 /* ---- raio de cada unidade ---- */
 const ant = existsSync(SAIDA) ? JSON.parse(readFileSync(SAIDA, 'utf8')) : null;
 const out = { v: 1, gerado_em: new Date().toISOString().slice(0, 16), fonte: 'ANP — dados cadastrais dos revendedores varejistas; coordenadas: OpenStreetMap (Nominatim)', uf: CFG.uf, rs_postos: rs.length, rs_bandeiras: porBand, unidades: {}, historico: (ant && ant.historico) || {} };
@@ -94,7 +140,7 @@ for (const [cod, u] of Object.entries(CFG.unidades)) {
   const resumo = {}; lista.forEach(p => { resumo[p.bandeira] = (resumo[p.bandeira] || 0) + 1; });
   out.unidades[cod] = { nome: eu.nome, endereco: `${eu.end} · ${eu.bairro} · ${eu.mun}`, bandeira: eu.bandeira, lat: ge.lat, lon: ge.lon, prec: ge.prec, raio_km: u.raio_km, rodovia: u.rodovia || null, concorrentes: lista.length, por_bandeira: resumo, postos: lista };
   contagem[cod] = lista.length;
-  console.log(`unidade ${cod}: coordenada por ${ge.prec} · ${lista.length} concorrentes (${lista.filter(p => p.rodovia).length} pela rodovia) · precisão: ${['endereco', 'cep', 'rua', 'bairro'].map(k => k + ' ' + lista.filter(p => p.prec === k).length).join(', ')}`);
+  console.log(`unidade ${cod}: coordenada por ${ge.prec} · ${lista.length} concorrentes (${lista.filter(p => p.rodovia).length} pela rodovia) · precisão: ${['osm', 'endereco', 'cep', 'rua', 'bairro', 'aprox'].map(k => k + ' ' + lista.filter(p => p.prec === k).length).join(', ')}`);
 }
 const ultimo = Object.keys(out.historico).sort().pop();
 if (!ultimo || JSON.stringify(out.historico[ultimo]) !== JSON.stringify(contagem)) out.historico[hoje] = contagem;
