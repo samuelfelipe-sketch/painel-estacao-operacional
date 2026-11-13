@@ -1,0 +1,46 @@
+{
+  "nota": "Raio de concorrência de cada unidade (decisão do Samuel, 12/11/2026): SF e AS 5 km; PS 10 km e o trecho da BR-116 do km 220 ao 250 (PS fica no km 234; o trecho é aproximado pelos postos da BR-116 a até 16 km do PS). CNPJ das unidades = cadastro público da ANP.",
+  "uf": "RS",
+  "unidades": {
+    "3": {
+      "cnpj": "13047383000103",
+      "raio_km": 5
+    },
+    "4": {
+      "cnpj": "43510250000184",
+      "raio_km": 10,
+      "rodovia": {
+        "nome": "BR-116",
+        "km_ref": 234,
+        "km_ini": 220,
+        "km_fim": 250,
+        "raio_km": 16
+      }
+    },
+    "5": {
+      "cnpj": "47857489000186",
+      "raio_km": 5
+    }
+  },
+  "municipios_candidatos": [
+    "NOVO HAMBURGO",
+    "SAO LEOPOLDO",
+    "ESTANCIA VELHA",
+    "PORTAO",
+    "IVOTI",
+    "DOIS IRMAOS",
+    "CAMPO BOM",
+    "SAPIRANGA",
+    "SAPUCAIA DO SUL",
+    "LINDOLFO COLLOR",
+    "PRESIDENTE LUCENA",
+    "MORRO REUTER",
+    "NOVA HARTZ",
+    "ARARICA",
+    "SAO JOSE DO HORTENCIO",
+    "CAPELA DE SANTANA",
+    "NOVA SANTA RITA",
+    "PICADA CAFE",
+    "SANTA MARIA DO HERVAL"
+  ]
+}
