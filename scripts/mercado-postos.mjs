@@ -8,8 +8,9 @@
    se não, pela rua na cidade. Cache em mercado/postos-geo.json (só geocodifica o
    que é novo ou mudou de endereço, 1 consulta por segundo, como pede o Nominatim).
    Saída: mercado/postos-raio.json — total de postos do RS (e por bandeira) e,
-   por unidade, os postos no raio com bandeira, distância e precisão da coordenada;
-   histórico das contagens para ver posto que abre ou fecha.
+   por unidade, os concorrentes ESCOLHIDOS pelo Samuel (lista em regiao-raio.json)
+   com bandeira, distância e precisão da coordenada; `a_revisar` = posto novo no
+   raio/trecho/corredor que ainda não foi classificado; histórico das contagens.
 
    Uso: node scripts/mercado-postos.mjs --cadastro <csv> --config mercado/regiao-raio.json \
           --cache mercado/postos-geo.json --saida mercado/postos-raio.json [--max-geo 600] */
@@ -126,25 +127,65 @@ for (const p of alvo) if (cache[p.cnpj] && !casou.has(p.cnpj) && !nossos.has(p.c
 writeFileSync(CACHE, JSON.stringify(cache));
 console.log(`casados com o OSM: ${casou.size} de ${alvo.filter(p => cache[p.cnpj]).length} · postos do OSM sem par na ANP: ${osm.length - usado.size}`);
 
-/* ---- raio de cada unidade ---- */
+/* ---- traçado das rodovias de corredor (OpenStreetMap) ----
+   Unidade com `corredor: {rodovia:'RS-239', km:5, lateral_km:0.6}`: candidato é
+   o posto a até `lateral_km` do traçado da rodovia e a até `km` (em linha reta)
+   da unidade — numa rodovia quase reta, isso é o trecho de `km` para cada lado. */
+async function tracado(ref) {
+  const num = ref.replace(/\D/g, ''), q = `[out:json][timeout:90];way["ref"~"(^|;)\\s*E?RS[- ]?${num}(;|$)"](-29.95,-51.45,-29.45,-50.85);out geom;`;
+  for (const host of ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+    try { const r = await fetch(host, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) }); if (r.ok) return ((await r.json()).elements || []).filter(e => e.geometry).map(e => e.geometry.map(g => ({ lat: g.lat, lon: g.lon }))); } catch (e) {}
+  }
+  return [];
+}
+function lateral(pt, linhas) { /* km do ponto ao traçado (projeção local plana) */
+  const kx = 111.32 * Math.cos(rad(pt.lat)), ky = 110.57; let min = Infinity;
+  for (const l of linhas) for (let i = 1; i < l.length; i++) {
+    const ax = (l[i - 1].lon - pt.lon) * kx, ay = (l[i - 1].lat - pt.lat) * ky, bx = (l[i].lon - pt.lon) * kx, by = (l[i].lat - pt.lat) * ky;
+    const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, -(ax * dx + ay * dy) / ((dx * dx + dy * dy) || 1)));
+    min = Math.min(min, Math.hypot(ax + t * dx, ay + t * dy));
+  }
+  return min;
+}
+
+/* ---- concorrentes de cada unidade ----
+   A lista vale pela escolha do Samuel (`concorrentes` em regiao-raio.json,
+   revisão de 13/11/2026); o raio só serve para achar posto NOVO: o que entrar no
+   raio (ou no trecho da rodovia / corredor) e não estiver nem na lista nem em
+   `descartados` vai para `a_revisar`. Posto da lista que sumiu do cadastro da ANP
+   fica marcado `fora_do_cadastro` (fechou ou trocou de CNPJ). */
 const ant = existsSync(SAIDA) ? JSON.parse(readFileSync(SAIDA, 'utf8')) : null;
-const out = { v: 1, gerado_em: new Date().toISOString().slice(0, 16), fonte: 'ANP — dados cadastrais dos revendedores varejistas; coordenadas: OpenStreetMap (Nominatim)', uf: CFG.uf, rs_postos: rs.length, rs_bandeiras: porBand, unidades: {}, historico: (ant && ant.historico) || {} };
+const out = { v: 2, gerado_em: new Date().toISOString().slice(0, 16), fonte: 'ANP — dados cadastrais dos revendedores varejistas; coordenadas: OpenStreetMap', uf: CFG.uf, rs_postos: rs.length, rs_bandeiras: porBand, unidades: {}, historico: (ant && ant.historico) || {} };
 const hoje = out.gerado_em.slice(0, 10), contagem = {};
+const porCnpj = new Map(rs.map(p => [p.cnpj, p]));
+const linha = (p, ge, extra) => { const g = cache[p.cnpj]; return { cnpj: p.cnpj, nome: p.nome, bandeira: p.bandeira, municipio: p.mun, bairro: p.bairro, km: g ? +dist(ge, g).toFixed(2) : null, prec: g ? g.prec : null, ...extra }; };
 for (const [cod, u] of Object.entries(CFG.unidades)) {
-  const eu = rs.find(p => p.cnpj === u.cnpj), ge = cache[eu.cnpj];
+  const eu = porCnpj.get(u.cnpj), ge = cache[eu.cnpj];
   if (!ge) falha(`sem coordenada para a unidade ${cod}`);
-  const lista = [], rede = [];
+  const lista = (u.concorrentes || []).map(c => { const p = porCnpj.get(c.cnpj); return p ? linha(p, ge) : { cnpj: c.cnpj, nome: c.nome, bandeira: null, municipio: c.municipio, bairro: c.bairro, km: null, prec: null, fora_do_cadastro: true }; });
+  const naLista = new Set(lista.map(p => p.cnpj)), desc = new Set(u.descartados || []);
+  let linhasCor = []; if (u.corredor) { linhasCor = await tracado(u.corredor.rodovia); console.log(`unidade ${cod}: traçado da ${u.corredor.rodovia} com ${linhasCor.length} trechos`); }
+  const revisar = [], corredor = [], rede = [];
   for (const p of alvo) {
     const g = cache[p.cnpj]; if (!g || p.cnpj === u.cnpj) continue;
-    if (nossos.has(p.cnpj)) { const d = dist(ge, g); if (d <= u.raio_km) rede.push({ cnpj: p.cnpj, km: +d.toFixed(2) }); continue; }
-    const d = dist(ge, g), br = u.rodovia && naBR(p, u.rodovia.nome) && d <= u.rodovia.raio_km;
-    if (d <= u.raio_km || br) lista.push({ cnpj: p.cnpj, nome: p.nome, bandeira: p.bandeira, municipio: p.mun, bairro: p.bairro, km: +d.toFixed(2), prec: g.prec, ...(br ? { rodovia: true } : {}) });
+    const d = dist(ge, g);
+    if (nossos.has(p.cnpj)) { if (d <= u.raio_km) rede.push({ cnpj: p.cnpj, km: +d.toFixed(2) }); continue; }
+    const br = u.rodovia && naBR(p, u.rodovia.nome) && d <= u.rodovia.raio_km;
+    let cor = false, lat = null;
+    if (u.corredor) {
+      const naRod = naBR(p, u.corredor.rodovia);
+      lat = linhasCor.length ? lateral(g, linhasCor) : null;
+      cor = (lat != null && lat <= u.corredor.lateral_km && d <= u.corredor.km + 0.5) || (naRod && d <= u.corredor.km * 2);
+      if (cor) corredor.push(linha(p, ge, { lateral_km: lat == null ? null : +lat.toFixed(2), endereco_na_rodovia: naRod || undefined, situacao: naLista.has(p.cnpj) ? 'na lista' : desc.has(p.cnpj) ? 'descartado' : 'novo' }));
+    }
+    if ((d <= u.raio_km || br || cor) && !naLista.has(p.cnpj) && !desc.has(p.cnpj)) revisar.push(linha(p, ge, br ? { rodovia: true } : cor ? { corredor: true } : {}));
   }
-  lista.sort((a, b) => a.km - b.km);
-  const resumo = {}; lista.forEach(p => { resumo[p.bandeira] = (resumo[p.bandeira] || 0) + 1; });
-  out.unidades[cod] = { nome: eu.nome, endereco: `${eu.end} · ${eu.bairro} · ${eu.mun}`, bandeira: eu.bandeira, lat: ge.lat, lon: ge.lon, prec: ge.prec, raio_km: u.raio_km, rodovia: u.rodovia || null, concorrentes: lista.length, rede_no_raio: rede, por_bandeira: resumo, postos: lista };
-  contagem[cod] = lista.length;
-  console.log(`unidade ${cod}: coordenada por ${ge.prec} · ${lista.length} concorrentes (${lista.filter(p => p.rodovia).length} pela rodovia) · precisão: ${['osm', 'endereco', 'cep', 'rua', 'bairro', 'aprox'].map(k => k + ' ' + lista.filter(p => p.prec === k).length).join(', ')}`);
+  const ativos = lista.filter(p => !p.fora_do_cadastro);
+  [lista, revisar, corredor].forEach(l => l.sort((a, b) => (a.km ?? 99) - (b.km ?? 99)));
+  const resumo = {}; ativos.forEach(p => { resumo[p.bandeira] = (resumo[p.bandeira] || 0) + 1; });
+  out.unidades[cod] = { nome: eu.nome, endereco: `${eu.end} · ${eu.bairro} · ${eu.mun}`, bandeira: eu.bandeira, lat: ge.lat, lon: ge.lon, prec: ge.prec, raio_km: u.raio_km, rodovia: u.rodovia || null, corredor: u.corredor || null, concorrentes: ativos.length, fora_do_cadastro: lista.length - ativos.length, por_bandeira: resumo, postos: lista, a_revisar: revisar, rede_no_raio: rede, ...(u.corredor ? { corredor_candidatos: corredor } : {}) };
+  contagem[cod] = ativos.length;
+  console.log(`unidade ${cod}: ${ativos.length} concorrentes da lista (${lista.length - ativos.length} fora do cadastro) · ${revisar.length} a revisar${u.corredor ? ` · ${corredor.length} no corredor` : ''}`);
 }
 const ultimo = Object.keys(out.historico).sort().pop();
 if (!ultimo || JSON.stringify(out.historico[ultimo]) !== JSON.stringify(contagem)) out.historico[hoje] = contagem;

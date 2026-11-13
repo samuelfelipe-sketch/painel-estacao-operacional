@@ -438,7 +438,7 @@
       var mesS = us.filter(function (u) { return vS(okS.map(anoAnt), [u]) > 0 && vS(okS, [u]) > 0; });
       var gSo = okS.length && mesS.length ? cresc(vS(okS.map(anoAnt), mesS), vS(okS, mesS)) : null;
       el('mVer').innerHTML = '<div class="frase">' + (gSo != null ? 'O ' + quem + ' (mesmas unidades) fez <b class="' + cls(gSo) + '">' + (gSo > 0 ? '+' : '') + num(gSo, 1) + '%</b> contra ' + baseTxt + '. ' : '') + '<span class="falta">' + (!anpMes(st.mes, st.esc) ? 'O mercado de ' + perTxt + ' entra quando a ANP publicar o mês.' : 'Faltam compras do Sapatão no período ou no ano anterior.') + '</span></div>';
-      el('mBar').innerHTML = ''; t.querySelector('tbody').innerHTML = ''; av.hidden = true; momentoMes(); regiao(); return;
+      el('mBar').innerHTML = ''; t.querySelector('tbody').innerHTML = ''; av.hidden = true; momentoMes(); regiao(); concorrentes(); return;
     }
     function ritmo(g) { return g == null ? '—' : g > MOM_FAIXA ? 'em expansão' : g < -MOM_FAIXA ? 'em retração' : 'estável'; }
     function lado(d) { return d == null ? null : d > MOM_FAIXA ? 'acima' : d < -MOM_FAIXA ? 'abaixo' : 'em linha'; }
@@ -471,7 +471,7 @@
     if (!mesmas.length) avisos.push(quem + ' não comprava em ' + baseTxt + ': não há crescimento para comparar.');
     else if (mesmas.length < us.length) avisos.push('A rede inclui unidade que não comprava em ' + baseTxt + '; por isso o veredito usa as mesmas unidades.');
     av.hidden = !avisos.length; av.textContent = avisos.join(' ');
-    momentoMes(); regiao();
+    momentoMes(); regiao(); concorrentes();
   }
   /* ---------- nossa região: SAM (mercado da área de atuação) e SOM (nossa fatia) ----------
      A ANP só publica vendas por município por ano e com atraso (mercado/regiao.json,
@@ -528,6 +528,42 @@
       var ar = volArea(area, a, ps), r = volRS(a, ps), pa = String(+a - 1);
       var gA = cresc(volArea(area, pa, ps), ar), gR = cresc(volRS(pa, ps), r);
       return '<tr' + (a === ano ? ' class="dest"' : '') + '><td>' + a + '</td><td class="num">' + num(ar, 0) + '</td><td class="num">' + fmtVar(gA) + '</td><td class="num">' + fmtVar(gR) + '</td><td class="num">' + fmtDif(gA != null && gR != null ? gA - gR : null) + '</td><td class="num mo">' + (r ? pct(ar / r * 100, 2) : '—') + '</td></tr>';
+    }).join('');
+  }
+  /* ---------- concorrentes de cada unidade (mercado/postos-raio.json) ----------
+     Lista escolhida pelo Samuel (revisão de 13/11/2026, em mercado/regiao-raio.json);
+     o cadastro público da ANP é relido toda semana: posto da lista que sumiu do
+     cadastro aparece como "saiu do cadastro" e posto novo na área entra em "a classificar". */
+  function nomePosto(n) { return nomeCidade(String(n || '').replace(/\s+EM RECUPERACAO JUDICIAL/i, '').replace(/\s+(LTDA\.?|EIRELI|S\.?A\.?|ME|EPP)\s*$/i, '').trim()); }
+  function nomeBand(b) { return !b ? '—' : /BRANCA/i.test(b) ? 'Bandeira branca' : /RAIZEN/i.test(b) ? 'Raízen' : nomeCidade(b); }
+  function concorrentes() {
+    var box = el('conBloco'), R = D.raio; if (!box) return;
+    var us = R && R.unidades ? unSel().filter(function (u) { return R.unidades[u]; }) : [];
+    if (!us.length) { box.hidden = true; return; }
+    box.hidden = false;
+    function area(x) { return x.corredor ? x.corredor.rodovia + ', ' + x.corredor.km + ' km para cada lado' : x.raio_km + ' km' + (x.rodovia ? ' + ' + x.rodovia.nome + ' (km ' + x.rodovia.km_ini + ' a ' + x.rodovia.km_fim + ')' : ''); }
+    function nomeUn(u) { return UNID()[u] ? UNID()[u].nome : u; }
+    var g = R.gerado_em || '', dt = g ? g.slice(8, 10) + '/' + g.slice(5, 7) + '/' + g.slice(0, 4) : '';
+    el('n-con').textContent = 'Postos que disputam o mesmo cliente de cada unidade, escolhidos um a um na revisão de 13/11/2026. Bandeira e situação vêm do cadastro público da ANP, conferido toda semana' + (dt ? ' (último em ' + dt + ')' : '') + '; posto novo na área entra em "a classificar". Distância em linha reta até a unidade.';
+    var t = el('tCon');
+    t.querySelector('thead').innerHTML = '<tr><th>Unidade · área</th><th class="num">Concorrentes</th><th class="mo">Bandeiras</th><th class="num">A classificar</th></tr>';
+    t.querySelector('tbody').innerHTML = us.map(function (u) {
+      var x = R.unidades[u], pb = x.por_bandeira || {}, bs = Object.keys(pb).sort(function (a, b) { return pb[b] - pb[a]; });
+      var fora = x.fora_do_cadastro ? '<br><small class="falta">' + x.fora_do_cadastro + ' saiu do cadastro</small>' : '';
+      var nov = (x.a_revisar || []).length;
+      var bandTxt = esc(bs.map(function (b) { return nomeBand(b) + ' ' + pb[b]; }).join(' · '));
+      return '<tr><td><b>' + esc(nomeUn(u)) + '</b><br><small class="falta">' + esc(area(x)) + '</small><br><small class="falta so-cel">' + bandTxt + '</small></td><td class="num"><b>' + x.concorrentes + '</b>' + fora + '</td><td class="mo">' + bandTxt + '</td><td class="num">' + (nov ? '<b>' + nov + '</b>' : '<span class="falta">0</span>') + '</td></tr>';
+    }).join('');
+    function tab(lista) {
+      return '<div class="tabela"><table><thead><tr><th class="num">km</th><th>Posto</th><th class="mo">Bandeira</th><th>Bairro · cidade</th></tr></thead><tbody>' + lista.map(function (p) {
+        var onde = [p.bairro, p.municipio].filter(Boolean).map(nomeCidade).join(' · ');
+        return '<tr><td class="num">' + (p.km == null ? '—' : num(p.km, 1)) + '</td><td>' + esc(nomePosto(p.nome)) + (p.fora_do_cadastro ? ' <small class="falta">(saiu do cadastro da ANP)</small>' : '') + (p.rodovia || p.corredor ? ' <small class="falta">(rodovia)</small>' : '') + '<br><small class="falta so-cel">' + esc(nomeBand(p.bandeira)) + '</small></td><td class="mo">' + esc(nomeBand(p.bandeira)) + '</td><td>' + esc(onde) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    }
+    el('conListas').innerHTML = us.map(function (u) {
+      var x = R.unidades[u], nov = x.a_revisar || [];
+      return '<details class="dobra"><summary>' + esc(nomeUn(u)) + ': ' + x.concorrentes + ' concorrentes</summary>' + tab(x.postos || []) + '</details>' +
+        (nov.length ? '<details class="dobra"><summary>' + esc(nomeUn(u)) + ': ' + nov.length + (nov.length > 1 ? ' postos' : ' posto') + ' na área a classificar</summary>' + tab(nov) + '</details>' : '');
     }).join('');
   }
   /* crescimento de cada mês contra o mesmo mês do ano anterior, últimos 12 meses */

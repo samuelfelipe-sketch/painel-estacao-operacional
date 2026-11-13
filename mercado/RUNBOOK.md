@@ -12,6 +12,8 @@ segmento (posto revendedor, só bandeirados, todos os segmentos).
 |---|---|---|---|
 | `mercado/anp-vendas.json` | mercado agregado por recorte × mês × segmento × produto × distribuidora (mil m³), desde 2025-01 | não (dado público da ANP) | workflow `mercado-anp.yml` |
 | `mercado/sapatao.enc.json` | compras do Sapatão por mês × bandeira × produto (m³) — **CIFRADO** com a chave dos dados | **sim** | `scripts/mercado-sapatao.mjs` |
+| `mercado/regiao-raio.json` | por unidade: CNPJ, coordenada (link do Google Maps), raio/trecho/corredor e a **lista de concorrentes escolhida pelo Samuel** (`concorrentes`) + `descartados` | não (dado público) | à mão, quando o Samuel reclassifica |
+| `mercado/postos-raio.json` | concorrentes da lista com bandeira/distância/situação no cadastro da ANP, `a_revisar` (posto novo na área ainda não classificado), `corredor_candidatos` (AS) e histórico | não (dado público) | workflow `mercado-postos.yml` (segunda) |
 | `mercado/postos.json` | postos revendedores por bandeira e recorte, por mês de referência | não (API de Revendedores da ANP via relatório Posto Seguro) | à mão, a cada relatório recebido |
 
 ## 1. Mercado (automático)
@@ -136,6 +138,15 @@ Revendedor. O painel usa o último mês ≤ ao mês selecionado.
   fatia do Sapatão nessa área (sem meta definida; o Samuel ainda não tem meta). Tabela da
   tendência anual da área contra o RS (a base municipal não separa segmento: inclui TRR e
   consumidor final da área).
+- **Concorrentes de cada unidade** (mesma aba, `mercado/postos-raio.json`): a lista vale
+  pela escolha do Samuel (revisão de 13/11/2026: SF 5, PS 20, AS 5; riscados viram
+  `descartados`). O workflow `mercado-postos.yml` relê toda segunda o cadastro público da
+  ANP: posto da lista que sumiu do cadastro aparece como "saiu do cadastro" (fechou ou
+  trocou de CNPJ); posto na área (SF raio 5 km; PS raio 10 km + BR-116 km 220–250; AS
+  corredor da RS-239, 5 km para cada lado e até 0,6 km do traçado do OpenStreetMap) que
+  não está nem em `concorrentes` nem em `descartados` entra em `a_revisar`. Para
+  classificar: mover o CNPJ para `concorrentes` (com nome/bairro/município) ou para
+  `descartados` em `regiao-raio.json` e dar push (o workflow roda de novo).
 - participação = compras do Sapatão (m³) ÷ vendas das distribuidoras ao segmento
   (mil m³ × 1000), no mesmo mês, recorte e produto;
 - "dentro da Raízen" = unidades 3 e 4 ÷ volume da Raízen no recorte; "dentro da

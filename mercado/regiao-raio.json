@@ -1,12 +1,57 @@
 {
-  "nota": "Raio de concorrência de cada unidade (decisão do Samuel, 12/11/2026): SF e AS 5 km; PS 10 km e o trecho da BR-116 do km 220 ao 250 (PS fica no km 234; o trecho é aproximado pelos postos da BR-116 a até 16 km do PS). CNPJ das unidades = cadastro público da ANP. Coordenadas das unidades: links do Google Maps enviados pelo Samuel (13/11/2026).",
+  "nota": "Raio de concorrência de cada unidade (decisão do Samuel, 12/11/2026): SF e AS 5 km; PS 10 km e o trecho da BR-116 do km 220 ao 250 (PS fica no km 234; o trecho é aproximado pelos postos da BR-116 a até 16 km do PS). CNPJ das unidades = cadastro público da ANP. Coordenadas das unidades: links do Google Maps enviados pelo Samuel (13/11/2026). Concorrentes = lista escolhida pelo Samuel na revisão de 13/11/2026 (riscados = descartados; SF sem EV Comércio, PS sem Carrefour); o raio só aponta posto novo para revisar. AS: corredor da RS-239, 5 km para cada lado (lista do corredor a confirmar).",
   "uf": "RS",
   "unidades": {
     "3": {
       "cnpj": "13047383000103",
       "raio_km": 5,
       "lat": -29.669056,
-      "lon": -51.196949
+      "lon": -51.196949,
+      "concorrentes": [
+        {
+          "cnpj": "62719479000178",
+          "nome": "POSTO RODA MAIS 10 LTDA",
+          "bairro": "Quintas",
+          "municipio": "Estancia Velha"
+        },
+        {
+          "cnpj": "03798177000173",
+          "nome": "QUINTINO E LEAO COMERCIO DE COMBUSTIVEIS LTDA",
+          "bairro": "Uniao",
+          "municipio": "Estancia Velha"
+        },
+        {
+          "cnpj": "07078233000156",
+          "nome": "ESTACAO BRASIL COMBUSTIVEIS LTDA",
+          "bairro": "Bela Vista",
+          "municipio": "Estancia Velha"
+        },
+        {
+          "cnpj": "05251142000145",
+          "nome": "ABASTECEDORA DE COMBUSTIVEIS ESTANCIA VELHA LTDA",
+          "bairro": "Rincao Dos Ilheus",
+          "municipio": "Estancia Velha"
+        },
+        {
+          "cnpj": "27360993000754",
+          "nome": "VPS COMERCIO DE COMBUSTIVEIS LTDA",
+          "bairro": "Floresta",
+          "municipio": "Estancia Velha"
+        }
+      ],
+      "descartados": [
+        "02992873000153",
+        "07231776000161",
+        "07852300000148",
+        "08061478000486",
+        "13597351000173",
+        "27360993000835",
+        "40051667000138",
+        "42641390000129",
+        "49454070000109",
+        "50406468000159",
+        "89719736000128"
+      ]
     },
     "4": {
       "cnpj": "43510250000184",
@@ -19,13 +64,318 @@
         "raio_km": 16
       },
       "lat": -29.650834,
-      "lon": -51.143702
+      "lon": -51.143702,
+      "concorrentes": [
+        {
+          "cnpj": "63657421000100",
+          "nome": "POSTO REDE SALVARO 37 LTDA",
+          "bairro": "Rio Branco",
+          "municipio": "Novo Hamburgo"
+        },
+        {
+          "cnpj": "02520251000122",
+          "nome": "COMERCIO DE COMBUSTIVEIS MONUMENTO DO SAPATEIRO LTDA",
+          "bairro": "Rio Branco",
+          "municipio": "Novo Hamburgo"
+        },
+        {
+          "cnpj": "33951031000187",
+          "nome": "POSTO TOPGAS COMBUSTIVEIS LTDA",
+          "bairro": "Centro",
+          "municipio": "Novo Hamburgo"
+        },
+        {
+          "cnpj": "32293523000160",
+          "nome": "POSTO DE COMBUSTIVEIS PRIMAVERA LTDA",
+          "bairro": "Primavera",
+          "municipio": "Novo Hamburgo"
+        },
+        {
+          "cnpj": "07473735004500",
+          "nome": "SIM REDE DE POSTOS LTDA",
+          "bairro": "Rincao",
+          "municipio": "Novo Hamburgo"
+        },
+        {
+          "cnpj": "89668529000191",
+          "nome": "ABASTECEDORA DE COMBUSTIVEIS SANTUARIO LTDA",
+          "bairro": "Alpes Do Vale",
+          "municipio": "Novo Hamburgo"
+        },
+        {
+          "cnpj": "05251142000145",
+          "nome": "ABASTECEDORA DE COMBUSTIVEIS ESTANCIA VELHA LTDA",
+          "bairro": "Rincao Dos Ilheus",
+          "municipio": "Estancia Velha"
+        },
+        {
+          "cnpj": "27360993000754",
+          "nome": "VPS COMERCIO DE COMBUSTIVEIS LTDA",
+          "bairro": "Floresta",
+          "municipio": "Estancia Velha"
+        },
+        {
+          "cnpj": "64107562000111",
+          "nome": "VALE AUTO POSTO LTDA",
+          "bairro": "Scharlau",
+          "municipio": "Sao Leopoldo"
+        },
+        {
+          "cnpj": "13597351000173",
+          "nome": "POSTO DE COMBUSTIVEIS RINCAO GAUCHO LTDA",
+          "bairro": "Rincao Gaucho",
+          "municipio": "Estancia Velha"
+        },
+        {
+          "cnpj": "03798177000173",
+          "nome": "QUINTINO E LEAO COMERCIO DE COMBUSTIVEIS LTDA",
+          "bairro": "Uniao",
+          "municipio": "Estancia Velha"
+        },
+        {
+          "cnpj": "62681779000105",
+          "nome": "AUTO POSTO CAMPO BOM LTDA",
+          "bairro": "Industrial Norte",
+          "municipio": "Campo Bom"
+        },
+        {
+          "cnpj": "02992873000153",
+          "nome": "POSTO BOM JARDIM-COMERCIO DE COMBUSTIVEIS LTDA.",
+          "bairro": "Cidade Nova",
+          "municipio": "Ivoti"
+        },
+        {
+          "cnpj": "42641390000129",
+          "nome": "POSTO DE COMBUSTIVEIS MULLER LTDA",
+          "bairro": "Bom Jardim",
+          "municipio": "Ivoti"
+        },
+        {
+          "cnpj": "03613556000141",
+          "nome": "POSTO MONTREAL LTDA.",
+          "bairro": "Centro",
+          "municipio": "Sao Leopoldo"
+        },
+        {
+          "cnpj": "21024975000200",
+          "nome": "POSTO RS 239 DERIVADOS DE PETROLEO LTDA",
+          "bairro": "Zona Industrial Norte",
+          "municipio": "Campo Bom"
+        },
+        {
+          "cnpj": "07069926000182",
+          "nome": "POSTO ROTA 116 DERIVADOS DE PETROLEO LTDA",
+          "bairro": "Primavera",
+          "municipio": "Dois Irmaos"
+        },
+        {
+          "cnpj": "45439125000150",
+          "nome": "WENDLING COMERCIO DE COMBUSTIVEIS LTDA",
+          "bairro": "Primavera",
+          "municipio": "Dois Irmaos"
+        },
+        {
+          "cnpj": "19588456000142",
+          "nome": "POSTO ZOOLOGICO LTDA",
+          "bairro": "Tres Portos",
+          "municipio": "Sapucaia Do Sul"
+        },
+        {
+          "cnpj": "88181615000102",
+          "nome": "COMERCIAL SULINA DE DERIVADOS DE PETROLEO LTDA",
+          "bairro": "",
+          "municipio": "Sapucaia Do Sul"
+        }
+      ],
+      "descartados": [
+        "00959052000190",
+        "01731418000131",
+        "03179047000152",
+        "03711378000191",
+        "04357437000561",
+        "04846896000185",
+        "04925872000111",
+        "05013500000181",
+        "05238312000151",
+        "06057193000101",
+        "06354412000106",
+        "07078233000156",
+        "07231776000161",
+        "07378914000130",
+        "07473735004411",
+        "07473735017661",
+        "07473735020107",
+        "07704140000190",
+        "07779520000193",
+        "07779562000124",
+        "07852300000148",
+        "08061478000486",
+        "08210696000192",
+        "09273885002706",
+        "09472367000182",
+        "10518532000179",
+        "10688186000177",
+        "11272674000161",
+        "11392415000174",
+        "11393320000507",
+        "11393320001228",
+        "12165865000197",
+        "13047383000103",
+        "13132529000100",
+        "13132529000291",
+        "13132529000372",
+        "13132529000453",
+        "13586691000107",
+        "13589412000150",
+        "16980388000174",
+        "20248646000108",
+        "21775558000119",
+        "22435951000126",
+        "23981809000147",
+        "25137101000130",
+        "26254757002300",
+        "26312818000133",
+        "26313183000199",
+        "27003598000129",
+        "27360993000592",
+        "27360993000835",
+        "27360993001050",
+        "28027203000271",
+        "28046566000173",
+        "28583942000169",
+        "28648631000130",
+        "30064681000112",
+        "30247776000171",
+        "30623059000105",
+        "31959496000159",
+        "32140269000160",
+        "36505382000152",
+        "38824625000493",
+        "38824625002607",
+        "38824625002780",
+        "40051667000138",
+        "40386573000110",
+        "41115175000121",
+        "41855072000106",
+        "42715155000154",
+        "43436097000192",
+        "44610485001000",
+        "45317522000150",
+        "45317522000230",
+        "45317522000311",
+        "45543915054273",
+        "45543915089654",
+        "45569436000134",
+        "46898718000148",
+        "47857489000186",
+        "49423194000127",
+        "49453495000101",
+        "49454070000109",
+        "49459312000157",
+        "50406468000159",
+        "51490919000141",
+        "52796932000196",
+        "56323195000165",
+        "57468945000150",
+        "57712486000108",
+        "57861618000163",
+        "62719479000178",
+        "63647904000123",
+        "63649137000191",
+        "63649809000169",
+        "63657406000161",
+        "63657467000129",
+        "63674900000134",
+        "65498026000157",
+        "65955201000198",
+        "88720560000161",
+        "89296214000160",
+        "89297238000134",
+        "89470462002715",
+        "89719736000128",
+        "93489243001600",
+        "93489243005770",
+        "94214368000104",
+        "94779899000136",
+        "96735022000411"
+      ]
     },
     "5": {
       "cnpj": "47857489000186",
       "raio_km": 5,
       "lat": -29.650764,
-      "lon": -51.057844
+      "lon": -51.057844,
+      "concorrentes": [
+        {
+          "cnpj": "62681779000105",
+          "nome": "AUTO POSTO CAMPO BOM LTDA",
+          "bairro": "Industrial Norte",
+          "municipio": "Campo Bom"
+        },
+        {
+          "cnpj": "41115175000121",
+          "nome": "G C D TOLEDO COMBUSTIVEIS LTDA",
+          "bairro": "Industrial Norte",
+          "municipio": "Campo Bom"
+        },
+        {
+          "cnpj": "63649137000191",
+          "nome": "POSTO REDE SALVARO 40 LTDA",
+          "bairro": "Dona Augusta",
+          "municipio": "Campo Bom"
+        },
+        {
+          "cnpj": "89668529000191",
+          "nome": "ABASTECEDORA DE COMBUSTIVEIS SANTUARIO LTDA",
+          "bairro": "Alpes Do Vale",
+          "municipio": "Novo Hamburgo"
+        },
+        {
+          "cnpj": "21024975000200",
+          "nome": "POSTO RS 239 DERIVADOS DE PETROLEO LTDA",
+          "bairro": "Zona Industrial Norte",
+          "municipio": "Campo Bom"
+        }
+      ],
+      "descartados": [
+        "05013500000181",
+        "07378914000130",
+        "07779520000193",
+        "07779562000124",
+        "10688186000177",
+        "13132529000100",
+        "13132529000291",
+        "13132529000372",
+        "13132529000453",
+        "13589412000150",
+        "21775558000119",
+        "26312818000133",
+        "26313183000199",
+        "28046566000173",
+        "30064681000112",
+        "30623059000105",
+        "31959496000159",
+        "32140269000160",
+        "33951031000187",
+        "36505382000152",
+        "38824625000493",
+        "40386573000110",
+        "45317522000150",
+        "45569436000134",
+        "46898718000148",
+        "49459312000157",
+        "52796932000196",
+        "57468945000150",
+        "57861618000163",
+        "63647904000123",
+        "63657467000129",
+        "96735022000411"
+      ],
+      "corredor": {
+        "rodovia": "RS-239",
+        "km": 5,
+        "lateral_km": 0.6
+      }
     }
   },
   "municipios_candidatos": [
