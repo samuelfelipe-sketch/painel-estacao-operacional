@@ -1,0 +1,26 @@
+name: Market Share — coordenadas das unidades (links do Google Maps)
+
+# Resolve os links curtos do Google Maps das unidades (enviados pelo Samuel)
+# e imprime as coordenadas no log. Só lê; não grava nada.
+on:
+  push:
+    paths:
+      - '.github/workflows/mercado-coord.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: |
+          for par in 'SF https://maps.app.goo.gl/sP9XcunMSzUfcM438' 'PS https://maps.app.goo.gl/4Fkugw1bPjHNHfuE9' 'AS https://maps.app.goo.gl/eZMTHCHNygutuiXJ9'; do
+            set -- $par
+            final=$(curl -sIL --max-time 30 -A 'Mozilla/5.0' "$2" | grep -i '^location:' | tail -1 | tr -d '\r')
+            echo "$1 => $final"
+            echo "$final" | grep -oE '@-?[0-9]+\.[0-9]+,-?[0-9]+\.[0-9]+' | head -1 | sed "s/^/$1 centro do mapa: /"
+            echo "$final" | grep -oE '!3d-?[0-9]+\.[0-9]+!4d-?[0-9]+\.[0-9]+' | head -1 | sed "s/^/$1 ponto marcado: /"
+          done
