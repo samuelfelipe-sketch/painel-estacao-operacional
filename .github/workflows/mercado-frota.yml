@@ -1,41 +1,59 @@
-name: Market Share — frota por município (descoberta)
+name: Market Share — frota por município (Senatran)
 
-# Etapa 1: descobrir onde a Senatran publica a frota mensal por município e
-# tipo de veículo (portal dados.transportes.gov.br e páginas do gov.br).
-# Só lê e imprime no log; não grava nada.
+# Baixa as planilhas mensais "Frota por município e tipo" da Senatran e grava
+# mercado/frota.json com o RS e os municípios da região (leves, motos, pesados,
+# total). Dados públicos. Roda no GitHub porque o ambiente da nuvem não alcança
+# o gov.br. Todo dia 15 (a Senatran publica o mês com ~1 mês de atraso).
 on:
+  schedule:
+    - cron: '30 8 15 * *'
   push:
     paths:
       - '.github/workflows/mercado-frota.yml'
+      - 'scripts/mercado-frota.py'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: mercado-frota-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  descobrir:
+  atualizar:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
-      - name: Portal de dados abertos dos Transportes (CKAN)
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet openpyxl==3.1.5
+      - name: Baixar as planilhas de frota por município e tipo
         run: |
+          mkdir -p /tmp/fr && cd /tmp/fr
           UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
-          for q in 'frota%20munic%C3%ADpio' 'frota%20de%20ve%C3%ADculos' 'quantidade%20de%20ve%C3%ADculos%20registrados'; do
-            echo "### busca: $q"
-            curl -sL --max-time 60 -A "$UA" "https://dados.transportes.gov.br/api/3/action/package_search?q=$q&rows=8" > /tmp/b.json || true
-            node -e '
-              const j=JSON.parse(require("fs").readFileSync("/tmp/b.json","utf8")||"{}");
-              for(const p of (j.result&&j.result.results)||[]){ console.log("PACOTE",p.name,"|",p.title,"|",p.metadata_modified);
-                for(const r of (p.resources||[]).slice(-6)) console.log("   ",r.format,"|",r.name,"|",r.url,"|",r.last_modified||r.created); }' || head -c 500 /tmp/b.json
+          B='https://www.gov.br/transportes/pt-br/assuntos/transito/conteudo-Senatran'
+          for pg in frota-de-veiculos-2025 frota-de-veiculos-2026 frota-de-veiculos-2026/frota-de-veiculos-2026-2 frota-de-veiculos-2026-2; do
+            curl -sL --max-time 90 -A "$UA" "$B/$pg" >> paginas.html || true
           done
-      - name: Páginas da Senatran (links com "frota")
+          grep -oiE 'href="[^"]*"' paginas.html | sed -E 's/^href="//; s/"$//' | grep -iE 'munic[a-z]*[_ e]*_?(e_)?tipo|municipioetipo|municpioetipo|municipio_tipo|municipio_e_tipo' | grep -viE 'uf_e_tipo|ufetipo|restric|cep|cor|combust|potenc|ano_fab|especie' | sort -u | tee links.txt
+          while read -r u; do
+            case "$u" in http*) ;; *) u="https://www.gov.br$u";; esac
+            f=$(echo "$u" | sed -E 's#/@@download/file##; s#.*/##')
+            curl -sL --fail --retry 3 --max-time 300 -A "$UA" -o "$f" "$u" && echo "ok $f $(wc -c < "$f")" || echo "falhou $u"
+          done < links.txt
+      - name: Agregar a região
         run: |
-          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
-          for pg in \
-            'https://www.gov.br/transportes/pt-br/assuntos/transito/conteudo-Senatran/frota-de-veiculos-2026' \
-            'https://www.gov.br/transportes/pt-br/assuntos/transito/conteudo-Senatran/frota-de-veiculos-2025'; do
-            echo "### $pg"
-            curl -sL --max-time 90 -A "$UA" "$pg" > /tmp/f.html || true
-            echo "tamanho: $(wc -c < /tmp/f.html)"
-            grep -oiE 'href="[^"]*"' /tmp/f.html | grep -iE 'frota|munic|xls|csv|zip|download' | sort -u | head -40
-          done
+          python3 -c "import json;a=json.load(open('mercado/regiao-municipios.json'));b=json.load(open('mercado/regiao-raio.json'));s=sorted(set([m for v in a['unidades'].values() for m in v]+b['municipios_candidatos']));json.dump(s,open('/tmp/fr/municipios.json','w'))"
+          python3 scripts/mercado-frota.py /tmp/fr /tmp/fr/municipios.json mercado/frota.json
+      - name: Publicar se mudou
+        run: |
+          git add mercado/frota.json
+          if git diff --cached --quiet; then echo "sem mudança"; exit 0; fi
+          git config user.name 'Rotina Market Share'
+          git config user.email 'noreply@estacaosapatao.com.br'
+          git commit -m 'chore: atualiza a frota por município no Market Share (automático)'
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
