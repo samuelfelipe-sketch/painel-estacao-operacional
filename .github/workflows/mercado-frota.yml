@@ -1,0 +1,41 @@
+name: Market Share — frota por município (descoberta)
+
+# Etapa 1: descobrir onde a Senatran publica a frota mensal por município e
+# tipo de veículo (portal dados.transportes.gov.br e páginas do gov.br).
+# Só lê e imprime no log; não grava nada.
+on:
+  push:
+    paths:
+      - '.github/workflows/mercado-frota.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  descobrir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Portal de dados abertos dos Transportes (CKAN)
+        run: |
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          for q in 'frota%20munic%C3%ADpio' 'frota%20de%20ve%C3%ADculos' 'quantidade%20de%20ve%C3%ADculos%20registrados'; do
+            echo "### busca: $q"
+            curl -sL --max-time 60 -A "$UA" "https://dados.transportes.gov.br/api/3/action/package_search?q=$q&rows=8" > /tmp/b.json || true
+            node -e '
+              const j=JSON.parse(require("fs").readFileSync("/tmp/b.json","utf8")||"{}");
+              for(const p of (j.result&&j.result.results)||[]){ console.log("PACOTE",p.name,"|",p.title,"|",p.metadata_modified);
+                for(const r of (p.resources||[]).slice(-6)) console.log("   ",r.format,"|",r.name,"|",r.url,"|",r.last_modified||r.created); }' || head -c 500 /tmp/b.json
+          done
+      - name: Páginas da Senatran (links com "frota")
+        run: |
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          for pg in \
+            'https://www.gov.br/transportes/pt-br/assuntos/transito/conteudo-Senatran/frota-de-veiculos-2026' \
+            'https://www.gov.br/transportes/pt-br/assuntos/transito/conteudo-Senatran/frota-de-veiculos-2025'; do
+            echo "### $pg"
+            curl -sL --max-time 90 -A "$UA" "$pg" > /tmp/f.html || true
+            echo "tamanho: $(wc -c < /tmp/f.html)"
+            grep -oiE 'href="[^"]*"' /tmp/f.html | grep -iE 'frota|munic|xls|csv|zip|download' | sort -u | head -40
+          done
