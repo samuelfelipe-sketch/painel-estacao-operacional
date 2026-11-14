@@ -1,5 +1,5 @@
 {
-  "nota": "Raio de concorrência de cada unidade (decisão do Samuel, 12/11/2026): SF e AS 5 km; PS 10 km e o trecho da BR-116 do km 220 ao 250 (PS fica no km 234; o trecho é aproximado pelos postos da BR-116 a até 16 km do PS). CNPJ das unidades = cadastro público da ANP. Coordenadas das unidades: links do Google Maps enviados pelo Samuel (13/11/2026). Concorrentes = lista escolhida pelo Samuel na revisão de 13/11/2026 (riscados = descartados; SF sem EV Comércio, PS sem Carrefour); o raio só aponta posto novo para revisar. AS: corredor da RS-239, 5 km para cada lado (lista do corredor a confirmar).",
+  "nota": "Raio de concorrência de cada unidade (decisão do Samuel, 12/11/2026): SF e AS 5 km; PS 10 km e o trecho da BR-116 do km 220 ao 250 (PS fica no km 234; o trecho é aproximado pelos postos da BR-116 a até 16 km do PS). CNPJ das unidades = cadastro público da ANP. Coordenadas das unidades: links do Google Maps enviados pelo Samuel (13/11/2026). Concorrentes = lista escolhida pelo Samuel na revisão de 13/11/2026 (riscados = descartados; SF sem EV Comércio, PS sem Carrefour); o raio só aponta posto novo para revisar. AS: corredor da RS-239, 5 km para cada lado. 14/11/2026: AS ganha Posto Rota 239 e Posto Ferrabraz (Sapiranga); PS perde a Comercial Sulina; novos do PS descartados; SF/Portão em revisão.",
   "uf": "RS",
   "unidades": {
     "3": {
@@ -179,12 +179,6 @@
           "nome": "POSTO ZOOLOGICO LTDA",
           "bairro": "Tres Portos",
           "municipio": "Sapucaia Do Sul"
-        },
-        {
-          "cnpj": "88181615000102",
-          "nome": "COMERCIAL SULINA DE DERIVADOS DE PETROLEO LTDA",
-          "bairro": "",
-          "municipio": "Sapucaia Do Sul"
         }
       ],
       "descartados": [
@@ -193,6 +187,8 @@
         "03179047000152",
         "03711378000191",
         "04357437000561",
+        "04521165000160",
+        "04761322000104",
         "04846896000185",
         "04925872000111",
         "05013500000181",
@@ -229,6 +225,7 @@
         "13589412000150",
         "16980388000174",
         "20248646000108",
+        "20511463000397",
         "21775558000119",
         "22435951000126",
         "23981809000147",
@@ -275,11 +272,14 @@
         "50406468000159",
         "51490919000141",
         "52796932000196",
+        "54379166000190",
         "56323195000165",
         "57468945000150",
         "57712486000108",
         "57861618000163",
+        "61927915000131",
         "62719479000178",
+        "63231034000107",
         "63647904000123",
         "63649137000191",
         "63649809000169",
@@ -288,6 +288,7 @@
         "63674900000134",
         "65498026000157",
         "65955201000198",
+        "88181615000102",
         "88720560000161",
         "89296214000160",
         "89297238000134",
@@ -335,6 +336,18 @@
           "nome": "POSTO RS 239 DERIVADOS DE PETROLEO LTDA",
           "bairro": "Zona Industrial Norte",
           "municipio": "Campo Bom"
+        },
+        {
+          "cnpj": "04060196000160",
+          "nome": "POSTO ROTA 239 ABASTECEDORA DE COMBUSTIVEIS E SERVICOS LTDA",
+          "bairro": "Centro",
+          "municipio": "Sapiranga"
+        },
+        {
+          "cnpj": "04750332000144",
+          "nome": "POSTO FERRABRAZ LTDA",
+          "bairro": "Voo Livre",
+          "municipio": "Sapiranga"
         }
       ],
       "descartados": [
@@ -354,6 +367,7 @@
         "28046566000173",
         "30064681000112",
         "30623059000105",
+        "31365145000209",
         "31959496000159",
         "32140269000160",
         "33951031000187",
@@ -369,6 +383,8 @@
         "57861618000163",
         "63647904000123",
         "63657467000129",
+        "96735022000179",
+        "96735022000330",
         "96735022000411"
       ],
       "corredor": {
