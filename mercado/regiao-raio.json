@@ -1,5 +1,5 @@
 {
-  "nota": "Raio de concorrência de cada unidade (decisão do Samuel, 12/11/2026): SF e AS 5 km; PS 10 km e o trecho da BR-116 do km 220 ao 250 (PS fica no km 234; o trecho é aproximado pelos postos da BR-116 a até 16 km do PS). CNPJ das unidades = cadastro público da ANP. Coordenadas das unidades: links do Google Maps enviados pelo Samuel (13/11/2026). Concorrentes = lista escolhida pelo Samuel na revisão de 13/11/2026 (riscados = descartados; SF sem EV Comércio, PS sem Carrefour); o raio só aponta posto novo para revisar. AS: corredor da RS-239, 5 km para cada lado. 14/11/2026: AS ganha Posto Rota 239 e Posto Ferrabraz (Sapiranga); PS perde a Comercial Sulina; novos do PS descartados; SF/Portão em revisão.",
+  "nota": "Raio de concorrência de cada unidade (decisão do Samuel, 12/11/2026): SF e AS 5 km; PS 10 km e o trecho da BR-116 do km 220 ao 250 (PS fica no km 234; o trecho é aproximado pelos postos da BR-116 a até 16 km do PS). CNPJ das unidades = cadastro público da ANP. Coordenadas das unidades: links do Google Maps enviados pelo Samuel (13/11/2026). Concorrentes = lista escolhida pelo Samuel na revisão de 13/11/2026 (riscados = descartados; SF sem EV Comércio, PS sem Carrefour); o raio só aponta posto novo para revisar. AS: corredor da RS-239, 5 km para cada lado. 14/11/2026: AS ganha Posto Rota 239 e Posto Ferrabraz (Sapiranga); PS perde a Comercial Sulina; novos do PS descartados; SF: postos de Portão descartados.",
   "uf": "RS",
   "unidades": {
     "3": {
@@ -41,16 +41,26 @@
       ],
       "descartados": [
         "02992873000153",
+        "04925872000111",
         "07231776000161",
+        "07473735017661",
         "07852300000148",
         "08061478000486",
+        "11393320001228",
         "13597351000173",
+        "16980388000174",
+        "23981809000147",
+        "26254757002300",
         "27360993000835",
+        "38824625002607",
         "40051667000138",
         "42641390000129",
+        "49423194000127",
         "49454070000109",
         "50406468000159",
-        "89719736000128"
+        "65955201000198",
+        "89719736000128",
+        "93489243001600"
       ]
     },
     "4": {
