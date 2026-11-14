@@ -473,6 +473,58 @@
     av.hidden = !avisos.length; av.textContent = avisos.join(' ');
     momentoMes(); regiao(); concorrentes();
   }
+  /* ---------- TAM, SAM e SOM pelos concorrentes (decisão de 14/11/2026) ----------
+     TAM = vendas das distribuidoras aos postos revendedores do RS (ANP, mensal).
+     SAM de cada unidade = nossas compras + volume estimado de cada concorrente da
+     lista (mercado/postos-raio.json): média por posto da bandeira dele no RS no mês =
+     vendas da distribuidora aos postos da bandeira (segmento "bandeirados") ÷ postos
+     dessa bandeira no cadastro da ANP; bandeira branca = segmento "bandeira branca" ÷
+     postos de bandeira branca; bandeira sem dado = média de todos os postos do RS.
+     SOM = nossas compras ÷ SAM. Tudo em m³ por mês (média do período). */
+  var BAND_ANP = { VIBRA: 'Vibra', RAIZEN: 'Raízen', IPIRANGA: 'Ipiranga', RODOIL: 'Rodoil', CHARRUA: 'Charrua', POTENCIAL: 'Potencial', 'SANTA LUCIA': 'Santa Lucia', STANG: 'Stang', CIAPETRO: 'Ciapetro' };
+  function mediaPosto(ym, b) {
+    var R = D.raio, cad = R.rs_bandeiras || {};
+    if (/BRANCA/i.test(b || '')) { var bb = mkt(ym, 'RS', 'bb'); if (bb && cad['BANDEIRA BRANCA']) return bb.Total * 1000 / cad['BANDEIRA BRANCA']; }
+    else if (BAND_ANP[b] && cad[b]) { var bd = mkt(ym, 'RS', 'band'); if (bd && bd[BAND_ANP[b]] > 0) return bd[BAND_ANP[b]] * 1000 / cad[b]; }
+    var rv = mkt(ym, 'RS', 'rev'); return rv && R.rs_postos ? rv.Total * 1000 / R.rs_postos : null;
+  }
+  function samCon() {
+    var R = D.raio; if (!R || !R.unidades || !R.rs_postos) return false;
+    var us = unSel().filter(function (u) { return R.unidades[u]; }); if (!us.length) return false;
+    function lista(u) { return (R.unidades[u].postos || []).filter(function (p) { return !p.fora_do_cadastro; }); }
+    function vU(m, u) { var x = sap(m, st.prod, [u]); return x ? x.total : null; }
+    function conc(ms, ps) { var s = 0; for (var i = 0; i < ms.length; i++) for (var j = 0; j < ps.length; j++) { var a = mediaPosto(ms[i], ps[j].bandeira); if (a == null) return null; s += a; } return s; }
+    /* {sam, nos, som} por mês médio; só meses em que as unidades compraram */
+    function calc(ms, uu, ps) {
+      ms = ms.filter(function (m) { return anpMes(m, 'RS') && uu.some(function (u) { return vU(m, u) > 0; }); });
+      if (!ms.length) return null;
+      var nos = 0; for (var i = 0; i < ms.length; i++) for (var k = 0; k < uu.length; k++) nos += vU(ms[i], uu[k]) || 0;
+      var c = conc(ms, ps); if (c == null) return null;
+      return { n: ms.length, ms: ms, sam: (c + nos) / ms.length, nos: nos / ms.length, conc: c / ms.length / (ps.length || 1), som: nos / (c + nos) * 100 };
+    }
+    var meses = mesesPeriodo(st.mes).filter(function (m) { return anpMes(m, 'RS'); });
+    var tam = 0; meses.forEach(function (m) { tam += mkt(m, 'RS', 'rev').Total * 1000; });
+    var nosRede = 0; meses.forEach(function (m) { us.forEach(function (u) { nosRede += vU(m, u) || 0; }); });
+    var g = R.gerado_em || '';
+    el('n-reg').innerHTML = esc('TAM = postos revendedores do RS: ' + (meses.length ? num(tam / meses.length, 0) + ' m³/mês' : '—') + (meses.length && nosRede ? ' (o Sapatão' + (todasUn() ? '' : ' selecionado') + ' tem ' + pct(nosRede / tam * 100, 2) + ')' : '') + '. SAM = nossas compras + volume estimado dos concorrentes escolhidos de cada unidade (cada concorrente vale a média por posto da bandeira dele no RS no mês, pela ANP). SOM = nossa fatia do SAM, sem meta definida. Média por mês, ' + PROD_NOME[st.prod] + ' · ' + perLbl(st.mes) + '; unidade nova conta só os meses em que já comprava; a variação da rede usa só as unidades que já compravam no ano anterior.');
+    var t = el('tReg');
+    t.querySelector('thead').innerHTML = '<tr><th>Unidade · concorrentes</th><th class="num">SAM (m³/mês)</th><th class="num mo">Nossas compras (m³/mês)</th><th class="num mo">Concorrente médio (m³/mês)</th><th class="num">SOM</th><th class="num mo">SOM ano anterior</th><th class="num">Var.</th></tr>';
+    function uniao(uu) { var vis = {}, r = []; uu.forEach(function (u) { lista(u).forEach(function (p) { if (!vis[p.cnpj]) { vis[p.cnpj] = 1; r.push(p); } }); }); return r; }
+    function linha(nome, uu, ps, dest) {
+      var a = calc(meses, uu, ps), b = a ? calc(a.ms.map(anoAnt), uu, ps) : null, aV = a, mesmas = '';
+      if (b && b.n !== a.n) b = null;
+      if (dest && a) { /* rede: compara só as unidades que já compravam no ano anterior */
+        var uB = uu.filter(function (u) { var x = calc(meses, [u], lista(u)); return x && calc(x.ms.map(anoAnt), [u], lista(u)); });
+        if (uB.length && uB.length < uu.length) { aV = calc(meses, uB, uniao(uB)); b = aV ? calc(aV.ms.map(anoAnt), uB, uniao(uB)) : null; mesmas = uB.map(function (u) { return UNID()[u].nome; }).join(' + '); }
+      }
+      var sub = ps.length + ' concorrentes' + (a && a.n < meses.length ? ' · ' + a.n + (a.n > 1 ? ' meses' : ' mês') + ' com compra' : '');
+      return '<tr' + (dest ? ' class="total"' : '') + '><td><b>' + esc(nome) + '</b><br><small class="falta">' + esc(sub) + '</small></td><td class="num">' + (a ? num(a.sam, 0) : '<span class="falta">—</span>') + '</td><td class="num mo">' + (a ? num(a.nos, 0) : '<span class="falta">—</span>') + '</td><td class="num mo">' + (a ? num(a.conc, 0) : '<span class="falta">—</span>') + '</td><td class="num"><b>' + (a ? pct(a.som, 1) : '—') + '</b></td><td class="num mo">' + (b ? pct(b.som, 1) + (mesmas ? '<br><small class="falta">só ' + esc(mesmas) + '</small>' : '') : '<span class="falta">' + (a ? 'nova' : '—') + '</span>') + '</td><td class="num">' + (aV && b ? fmtDif(aV.som - b.som) : '<span class="falta">—</span>') + '</td></tr>';
+    }
+    var linhas = us.map(function (u) { return linha(UNID()[u].nome, [u], lista(u)); });
+    if (us.length > 1) linhas.push(linha(todasUn() ? 'Rede' : 'Seleção', us, uniao(us), true));
+    t.querySelector('tbody').innerHTML = meses.length ? linhas.join('') : '<tr><td colspan="7" class="falta">A ANP ainda não publicou ' + perLbl(st.mes) + ' para o RS.</td></tr>';
+    return true;
+  }
   /* ---------- nossa região: SAM (mercado da área de atuação) e SOM (nossa fatia) ----------
      A ANP só publica vendas por município por ano e com atraso (mercado/regiao.json,
      último ano publicado). O mercado da área no período é ESTIMADO: peso da área no RS
@@ -517,6 +569,7 @@
     var todos = []; us.forEach(function (u) { todos = todos.concat(R.unidades[u]); });
     if (us.length > 1) linhas.push(linha(todasUn() ? 'Rede' : 'Seleção', todos, us, true));
     t.querySelector('tbody').innerHTML = meses.length ? linhas.join('') : '<tr><td colspan="6" class="falta">A ANP ainda não publicou ' + perLbl(st.mes) + ' para o RS.</td></tr>';
+    samCon(); /* com a lista de concorrentes, o SAM/SOM vem dela (substitui a estimativa municipal) */
     /* tendência da área na base anual: a região cresce mais ou menos que o RS? */
     var anos = (R.anos || []).filter(function (a) { return +a >= +ano - 4; });
     var ps = []; grupos().forEach(function (g) { ps = ps.concat(g[1]); });

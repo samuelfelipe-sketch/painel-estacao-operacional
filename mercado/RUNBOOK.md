@@ -138,6 +138,15 @@ Revendedor. O painel usa o último mês ≤ ao mês selecionado.
   fatia do Sapatão nessa área (sem meta definida; o Samuel ainda não tem meta). Tabela da
   tendência anual da área contra o RS (a base municipal não separa segmento: inclui TRR e
   consumidor final da área).
+- **TAM, SAM e SOM pelos concorrentes** (14/11/2026, substitui a estimativa municipal na
+  tabela do bloco "Nossa região"): TAM = vendas aos postos revendedores do RS no mês.
+  SAM da unidade = nossas compras + cada concorrente da lista ativa valendo a média por
+  posto da bandeira dele no RS no mês (segmento `band` da distribuidora ÷ postos da
+  bandeira em `rs_bandeiras` do `postos-raio.json`; bandeira branca = segmento `bb` ÷
+  postos de bandeira branca; sem dado = `rev` ÷ `rs_postos`). SOM = nossas compras ÷ SAM.
+  Média por mês; unidade nova só nos meses em que já comprava; a variação da Rede usa só
+  as unidades que já compravam no ano anterior. Limite: concorrente de rodovia tende a
+  vender acima da média da bandeira (o SAM do PS pode estar subestimado).
 - **Concorrentes de cada unidade** (mesma aba, `mercado/postos-raio.json`): a lista vale
   pela escolha do Samuel (revisão de 13/11/2026: SF 5, PS 20, AS 5; riscados viram
   `descartados`). O workflow `mercado-postos.yml` relê toda segunda o cadastro público da

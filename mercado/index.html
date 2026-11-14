@@ -136,7 +136,7 @@ td .parc{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var
 .mb .tr b{position:absolute;top:0;bottom:0;background:var(--mercado);border-radius:3px}
 .mb.sap .tr b{background:var(--sapatao)}
 .mb .v{font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
-#tCon,#conListas table{min-width:0}.so-cel{display:none}
+#tCon,#conListas table,#tReg{min-width:0}.so-cel{display:none}
 @media (max-width:640px){#conBloco .mo{display:none}#conBloco .so-cel{display:inline}#tCon,#conListas table{font-size:12.5px}}
 @media (max-width:480px){.mb{grid-template-columns:128px 1fr 54px;gap:8px}#tMom,#tMomMes,#tReg,#tRegTend{min-width:0;font-size:12.5px}#tMom .mo,#tMomMes .mo,#tReg .mo,#tRegTend .mo{display:none}#tMom td,#tMom th{padding-left:6px;padding-right:6px}}
 .duplo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -224,7 +224,7 @@ body.so-leitura .so-edita{display:none}
     <div class="tabela" style="margin-top:14px"><table id="tMom"><thead></thead><tbody></tbody></table></div>
     <div class="aviso" id="a-mom" hidden></div>
     <div id="regBloco" hidden>
-      <h2 style="margin-top:26px">Nossa região: SAM e SOM</h2>
+      <h2 style="margin-top:26px">Nossa região: TAM, SAM e SOM</h2>
       <p class="nota" id="n-reg"></p>
       <div class="tabela"><table id="tReg"><thead></thead><tbody></tbody></table></div>
       <p class="nota" id="n-regTend" style="margin-top:12px"></p>
@@ -297,7 +297,7 @@ function mostra(){
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=4';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=5';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){
