@@ -119,6 +119,36 @@ for (const { p, o } of pares) {
   casou.add(p.cnpj); usado.add(o.id);
   cache[p.cnpj] = { ...cache[p.cnpj], lat: +o.lat.toFixed(6), lon: +o.lon.toFixed(6), prec: 'osm', osm: o.id };
 }
+/* ---- API de Revendedores da ANP (revendedoresapi.anp.gov.br, pública) ----
+   Uma consulta traz todos os postos do RS com bicos e tancagem por produto e a
+   coordenada levantada pela ANP (agente de fiscalização ou preposto). A coordenada
+   da ANP vale mais que a do endereço/OSM (prec 'anp'); bicos e tancagem viram a
+   régua de tamanho do posto (infra: bo/bd = bicos otto/diesel, to/td = tancagem m³). */
+const INFRA = {}, porBandInfra = {};
+const grupo = prod => /GASOLINA|ETANOL/i.test(prod) ? 'o' : /DIESEL/i.test(prod) ? 'd' : null;
+try {
+  let pag = 1, tot = 1, lidos = 0;
+  while (pag <= tot) {
+    let j = null;
+    for (let t = 0; t < 3 && !j; t++) { try { const r = await fetch(`https://revendedoresapi.anp.gov.br/v1/combustivel?uf=${CFG.uf}&numeropagina=${pag}`, { headers: { 'User-Agent': UA } }); if (r.ok) j = await r.json(); } catch (e) {} if (!j) await dorme(5000); }
+    if (!j || !Array.isArray(j.data)) break;
+    tot = (j.searchPageFilter && j.searchPageFilter.totalPagina) || 1;
+    for (const d of j.data) {
+      const cn = String(d.cnpj || '').replace(/\D/g, ''); if (!cn) continue;
+      const f = { bo: 0, bd: 0, to: 0, td: 0 };
+      for (const pr of d.produtos || []) { const g = grupo(pr.produto || ''); if (!g) continue; f['b' + g] += +pr.qtdeBicos || 0; f['t' + g] += +pr.tancagem || 0; }
+      const la = parseFloat(d.latitude), lo = parseFloat(d.longitude);
+      if (isFinite(la) && isFinite(lo) && la < -27 && la > -34 && lo < -49 && lo > -58) { f.lat = la; f.lon = lo; }
+      INFRA[cn] = f; lidos++;
+      const b = norm(d.distribuidora || '') || 'SEM';
+      const s = porBandInfra[b] || (porBandInfra[b] = { n: 0, bo: 0, bd: 0, to: 0, td: 0 });
+      s.n++; s.bo += f.bo; s.bd += f.bd; s.to += f.to; s.td += f.td;
+    }
+    pag++;
+  }
+  console.log(`API de revendedores: ${lidos} postos com bicos/tancagem`);
+} catch (e) { console.log('API de revendedores indisponível: ' + e.message); }
+for (const p of alvo) { const f = INFRA[p.cnpj]; if (f && f.lat != null) cache[p.cnpj] = { ...(cache[p.cnpj] || { chave: chave(p) }), lat: +f.lat.toFixed(6), lon: +f.lon.toFixed(6), prec: 'anp' }; }
 /* unidades da rede: coordenada informada (link do Google Maps) vale mais que tudo */
 for (const u of Object.values(CFG.unidades)) if (u.lat != null && u.lon != null) cache[u.cnpj] = { ...(cache[u.cnpj] || {}), lat: u.lat, lon: u.lon, prec: 'manual' };
 /* quem não casou fica com a coordenada do endereço (aproximada) */
@@ -155,10 +185,14 @@ function lateral(pt, linhas) { /* km do ponto ao traçado (projeção local plan
    `descartados` vai para `a_revisar`. Posto da lista que sumiu do cadastro da ANP
    fica marcado `fora_do_cadastro` (fechou ou trocou de CNPJ). */
 const ant = existsSync(SAIDA) ? JSON.parse(readFileSync(SAIDA, 'utf8')) : null;
-const out = { v: 2, gerado_em: new Date().toISOString().slice(0, 16), fonte: 'ANP — dados cadastrais dos revendedores varejistas; coordenadas: OpenStreetMap', uf: CFG.uf, rs_postos: rs.length, rs_bandeiras: porBand, unidades: {}, historico: (ant && ant.historico) || {} };
+/* sem a API nesta semana: fica a infraestrutura da última leitura */
+const antInfra = {}; if (ant && ant.unidades) for (const x of Object.values(ant.unidades)) { if (x.cnpj && x.infra) antInfra[x.cnpj] = x.infra; for (const p of [...(x.postos || []), ...(x.a_revisar || [])]) if (p.infra) antInfra[p.cnpj] = p.infra; }
+const temApi = Object.keys(INFRA).length > 0;
+const out = { v: 2, gerado_em: new Date().toISOString().slice(0, 16), fonte: 'ANP — dados cadastrais dos revendedores varejistas e API de Revendedores (bicos, tancagem e coordenadas); demais coordenadas: OpenStreetMap', uf: CFG.uf, rs_postos: rs.length, rs_bandeiras: porBand, rs_infra: temApi ? porBandInfra : ((ant && ant.rs_infra) || null), unidades: {}, historico: (ant && ant.historico) || {} };
 const hoje = out.gerado_em.slice(0, 10), contagem = {};
 const porCnpj = new Map(rs.map(p => [p.cnpj, p]));
-const linha = (p, ge, extra) => { const g = cache[p.cnpj]; return { cnpj: p.cnpj, nome: p.nome, bandeira: p.bandeira, municipio: p.mun, bairro: p.bairro, km: g ? +dist(ge, g).toFixed(2) : null, prec: g ? g.prec : null, ...extra }; };
+const infra = cn => { const f = INFRA[cn]; return f ? { bo: f.bo, bd: f.bd, to: f.to, td: f.td } : (antInfra[cn] || null); };
+const linha = (p, ge, extra) => { const g = cache[p.cnpj]; return { cnpj: p.cnpj, nome: p.nome, bandeira: p.bandeira, municipio: p.mun, bairro: p.bairro, km: g ? +dist(ge, g).toFixed(2) : null, prec: g ? g.prec : null, infra: infra(p.cnpj), ...extra }; };
 for (const [cod, u] of Object.entries(CFG.unidades)) {
   const eu = porCnpj.get(u.cnpj), ge = cache[eu.cnpj];
   if (!ge) falha(`sem coordenada para a unidade ${cod}`);
@@ -183,7 +217,7 @@ for (const [cod, u] of Object.entries(CFG.unidades)) {
   const ativos = lista.filter(p => !p.fora_do_cadastro);
   [lista, revisar, corredor].forEach(l => l.sort((a, b) => (a.km ?? 99) - (b.km ?? 99)));
   const resumo = {}; ativos.forEach(p => { resumo[p.bandeira] = (resumo[p.bandeira] || 0) + 1; });
-  out.unidades[cod] = { nome: eu.nome, endereco: `${eu.end} · ${eu.bairro} · ${eu.mun}`, bandeira: eu.bandeira, lat: ge.lat, lon: ge.lon, prec: ge.prec, raio_km: u.raio_km, rodovia: u.rodovia || null, corredor: u.corredor || null, concorrentes: ativos.length, fora_do_cadastro: lista.length - ativos.length, por_bandeira: resumo, postos: lista, a_revisar: revisar, rede_no_raio: rede, ...(u.corredor ? { corredor_candidatos: corredor } : {}) };
+  out.unidades[cod] = { cnpj: eu.cnpj, infra: infra(eu.cnpj), nome: eu.nome, endereco: `${eu.end} · ${eu.bairro} · ${eu.mun}`, bandeira: eu.bandeira, lat: ge.lat, lon: ge.lon, prec: ge.prec, raio_km: u.raio_km, rodovia: u.rodovia || null, corredor: u.corredor || null, concorrentes: ativos.length, fora_do_cadastro: lista.length - ativos.length, por_bandeira: resumo, postos: lista, a_revisar: revisar, rede_no_raio: rede, ...(u.corredor ? { corredor_candidatos: corredor } : {}) };
   contagem[cod] = ativos.length;
   console.log(`unidade ${cod}: ${ativos.length} concorrentes da lista (${lista.length - ativos.length} fora do cadastro) · ${revisar.length} a revisar${u.corredor ? ` · ${corredor.length} no corredor` : ''}`);
 }
