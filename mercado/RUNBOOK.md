@@ -165,7 +165,14 @@ segmento saíram).
   a mesma área de uma unidade nossa), posição e fatia na área, efeito na rede (volume e
   fatia do TAM), efeito no SOM das unidades que hoje o têm como concorrente (a área não
   muda, o SOM soma) e o município (base anual `mercado/regiao.json`, postos do cadastro,
-  frota `mercado/frota.json`). Município fora da região: acrescentar em
+  frota `mercado/frota.json`). **Projeção na rede** (regra do Samuel, 15/11/2026): litros por
+  bico por mês = compras ÷ bicos do cadastro da ANP (gasolina/etanol + diesel; GNV fora);
+  em 6 meses o posto novo chega ao padrão da unidade nova (a que entrou depois do início da
+  série: o 6º mês fechado dela na rede — enquanto não chega lá, o último mês fechado) e em
+  12 meses ao padrão das maduras (volume somado ÷ bicos somados, média dos últimos 12 meses
+  fechados); projeção = bicos do candidato × padrão, nunca abaixo do volume de hoje
+  (`padroes()` no `mercado.js`; a tabela "Litros por bico por mês na rede" abre a aba).
+  Município fora da região: acrescentar em
   `municipios_candidatos` (`regiao-raio.json`), em `regiao-municipios.json` e rodar os
   workflows `mercado-postos`, `mercado-municipios` e `mercado-frota`.
 - Lista de concorrentes: o workflow `mercado-postos.yml` relê toda segunda o cadastro da
