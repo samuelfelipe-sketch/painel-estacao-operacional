@@ -228,7 +228,7 @@ body.so-leitura .so-edita{display:none}
   <section class="card aba" data-aba="momento" aria-labelledby="t-mom" hidden>
     <h2 id="t-mom">Momento de mercado</h2>
     <dl class="glos">
-      <div><dt>TAM</dt><dd><b>Mercado total.</b> Todo o combustível vendido no RS: postos, TRR e consumidor final (ANP).</dd></div>
+      <div><dt>TAM</dt><dd><b>Mercado dos postos.</b> Todo o combustível que as distribuidoras vendem aos postos do RS, bandeirados e bandeira branca (ANP). TRR e consumidor final ficam fora: não compram de posto.</dd></div>
       <div><dt>SAM</dt><dd><b>Mercado que disputamos.</b> O volume da área de cada unidade: as nossas compras + o volume estimado dos concorrentes escolhidos.</dd></div>
       <div><dt>SOM</dt><dd><b>Nossa fatia.</b> Quanto do SAM é nosso: nossas compras ÷ SAM.</dd></div>
     </dl>
@@ -240,7 +240,7 @@ body.so-leitura .so-edita{display:none}
     <div id="regBloco" hidden>
       <h2 style="margin-top:26px">Nossa região: SAM e SOM</h2>
       <dl class="glos">
-        <div><dt>TAM</dt><dd><b>Mercado total.</b> Todo o combustível vendido no RS: postos, TRR e consumidor final (ANP).</dd></div>
+        <div><dt>TAM</dt><dd><b>Mercado dos postos.</b> Todo o combustível que as distribuidoras vendem aos postos do RS, bandeirados e bandeira branca (ANP). TRR e consumidor final ficam fora: não compram de posto.</dd></div>
         <div><dt>SAM</dt><dd><b>Mercado que disputamos.</b> O volume da área de cada unidade: as nossas compras + o volume estimado dos concorrentes escolhidos.</dd></div>
         <div><dt>SOM</dt><dd><b>Nossa fatia.</b> Quanto do SAM é nosso: nossas compras ÷ SAM.</dd></div>
       </dl>
@@ -310,7 +310,7 @@ function mostra(){
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=8';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=9';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){

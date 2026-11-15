@@ -157,7 +157,8 @@ Revendedor. O painel usa o último mês ≤ ao mês selecionado.
   Média por mês; unidade nova só nos meses em que já comprava; a variação da Rede usa só
   as unidades que já compravam no ano anterior.
 - **Legenda e ranking** (15/11/2026): a aba Momento e o bloco "Nossa região" mostram a legenda
-  TAM (mercado total do RS, todos os segmentos) · SAM (mercado que disputamos = nossas compras +
+  TAM (postos revendedores do RS — decisão de 15/11/2026; o mercado total com TRR e consumidor
+  final fica só como linha de contexto no Momento) · SAM (mercado que disputamos = nossas compras +
   concorrentes estimados) · SOM (nossa fatia do SAM). Tocar numa unidade da tabela SAM/SOM abre o
   ranking da área (nós + concorrentes, do maior para o menor, fatia do SAM e "nós vs ele" = nosso
   volume ÷ volume do concorrente − 1), com os avisos de posto novo a classificar e de posto que
