@@ -115,7 +115,7 @@ td.num{font-family:var(--f-mono);font-size:12.5px}
 tr.dest td{background:var(--laranja-fundo);font-weight:700}
 tr.total td{font-weight:700;border-top:2px solid var(--linha)}
 #tUn tbody tr:hover td{background:#F7F9FB}
-td .parc{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var(--laranja-escuro);background:var(--aviso-fundo);border:1px solid var(--aviso-borda);border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.parc{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var(--laranja-escuro);background:var(--aviso-fundo);border:1px solid var(--aviso-borda);border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:1px}
 .ponto{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:7px}
 .ponto.r{background:var(--raizen)}.ponto.i{background:var(--ipiranga)}.ponto.s{background:var(--sapatao)}.ponto.m{background:var(--mercado)}
 .falta{color:var(--tinta-fraca);font-style:italic}
@@ -136,6 +136,15 @@ td .parc{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var
 .mb .tr b{position:absolute;top:0;bottom:0;background:var(--mercado);border-radius:3px}
 .mb.sap .tr b{background:var(--sapatao)}
 .mb .v{font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.funil{grid-template-columns:repeat(3,minmax(0,1fr))}
+.bomba.fn .lbl{letter-spacing:.06em;text-transform:none;font-size:12px;color:var(--tinta-suave)}
+.bomba.fn .lbl b{color:var(--laranja-escuro);font-size:13px;letter-spacing:.12em}
+.bomba.fn .val small.up,.bomba.fn .val small.dn{font-size:13px}
+.card.veredito{display:grid;gap:8px;margin:0;padding:14px 18px}.card.veredito:empty{display:none}
+.mini .val small.up{color:var(--bom)}.mini .val small.dn{color:var(--ruim)}
+#tEvo,#tRede,#tBand{min-width:0}
+@media (max-width:820px){.funil{grid-template-columns:1fr;gap:8px}.bomba.fn{padding:11px 14px}.bomba.fn .val{font-size:24px;margin-top:3px}.bomba.fn .sub{margin-top:3px}}
+@media (max-width:640px){#tEvo .mo,#tRede .mo,#tBand .mo{display:none}#tEvo,#tRede,#tBand{font-size:12.5px}#tEvo td,#tEvo th,#tBand td,#tBand th{padding-left:6px;padding-right:6px}}
 .glos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0 14px}
 .glos div{background:#F7F9FB;border:1px solid var(--linha);border-radius:12px;padding:10px 12px}
 .glos dt{font-family:var(--f-mono);font-weight:700;color:var(--laranja-escuro);font-size:13px;margin-bottom:2px}
@@ -177,7 +186,7 @@ body.so-leitura .so-edita{display:none}
     <div class="l1">
       <div>
         <h1>Market <span>Share</span></h1>
-        <p class="lead">Quanto o Sapatão representa do combustível vendido aos postos.</p>
+        <p class="lead">Do mercado dos postos do RS (TAM) à área que disputamos (SAM) e à fatia que é nossa (SOM).</p>
       </div>
       <div class="seg" role="group" aria-label="Produto" id="segProd">
         <button type="button" data-v="tot" aria-pressed="true">Consolidado</button>
@@ -186,11 +195,6 @@ body.so-leitura .so-edita{display:none}
       </div>
     </div>
     <div class="controles">
-      <div class="seg" role="group" aria-label="Mercado de referência" id="segEsc">
-        <button type="button" data-v="RS" aria-pressed="true">RS</button>
-        <button type="button" data-v="SUL" aria-pressed="false">Sul</button>
-        <button type="button" data-v="BR" aria-pressed="false">Brasil</button>
-      </div>
       <div class="seg" role="group" aria-label="Unidades" id="segUn" hidden></div>
       <select class="mes" id="selMes" aria-label="Mês de referência"></select>
       <div class="seg" role="group" aria-label="Período" id="segPer">
@@ -199,94 +203,57 @@ body.so-leitura .so-edita{display:none}
         <button type="button" data-v="sem" aria-pressed="false">Semestre</button>
         <button type="button" data-v="ano" aria-pressed="false">Ano</button>
       </div>
-      <select class="mes" id="selSeg" aria-label="Segmento">
-        <option value="rev">Postos (todos)</option>
-        <option value="band">Só bandeirados</option>
-        <option value="tot">Todos os segmentos</option>
-      </select>
     </div>
     <div class="chips" id="chips"></div>
   </header>
 
-  <section class="bombas" id="kpis" aria-label="Indicadores"></section>
+  <section class="bombas funil" id="funil" aria-label="TAM, SAM e SOM do período"></section>
+  <section class="card veredito" id="veredito" aria-label="Leitura do período"></section>
 
   <nav class="abas" id="abas" aria-label="Seções">
     <button type="button" data-aba="unidades" aria-selected="true">Unidades</button>
-    <button type="button" data-aba="momento" aria-selected="false">Momento</button>
-    <button type="button" data-aba="mensal" aria-selected="false">Mês a mês</button>
+    <button type="button" data-aba="evolucao" aria-selected="false">Evolução</button>
     <button type="button" data-aba="bandeiras" aria-selected="false">Bandeiras</button>
-    <button type="button" data-aba="anual" aria-selected="false">Ano a ano</button>
-    <button type="button" data-aba="fontes" aria-selected="false">Fontes</button>
+    <button type="button" data-aba="fontes" aria-selected="false">Fontes e método</button>
   </nav>
 
   <section class="card aba" data-aba="unidades" aria-labelledby="t-un">
-    <h2 id="t-un">Cada posto no mercado e na bandeira</h2>
-    <p class="nota" id="n-un">Clique numa linha para ver o painel só dela.</p>
-    <div class="tabela"><table id="tUn"><thead></thead><tbody></tbody></table></div>
+    <h2 id="t-un">Cada unidade na sua área</h2>
+    <p class="nota" id="n-reg"></p>
+    <div class="tabela"><table id="tReg"><thead></thead><tbody></tbody></table></div>
   </section>
 
-  <section class="card aba" data-aba="momento" aria-labelledby="t-mom" hidden>
-    <h2 id="t-mom">Momento de mercado</h2>
+  <section class="card aba" data-aba="evolucao" aria-labelledby="t-evo" hidden>
+    <h2 id="t-evo">SOM mês a mês</h2>
+    <p class="nota" id="n-evo"></p>
+    <div class="legenda" id="legEvo"></div>
+    <div class="chartbox"><svg id="cEvo" role="img" aria-label="SOM de cada unidade por mês"></svg><div class="tip" id="tipEvo" hidden></div></div>
+    <h2 style="margin-top:26px">Crescemos mais que o mercado?</h2>
+    <p class="nota" id="n-evoT"></p>
+    <div class="tabela"><table id="tEvo"><thead></thead><tbody></tbody></table></div>
+    <h2 style="margin-top:26px">Crescimento da rede</h2>
+    <p class="nota" id="n-rede"></p>
+    <div class="tabela"><table id="tRede"><thead></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card aba" data-aba="bandeiras" aria-labelledby="t-band" hidden>
+    <h2 id="t-band">Dentro das nossas bandeiras</h2>
+    <p class="nota" id="n-bandUn"></p>
+    <div class="duplo" id="bandMinis"></div>
+    <div class="tabela" style="margin-top:14px"><table id="tBand"><thead></thead><tbody></tbody></table></div>
+    <h2 style="margin-top:26px">Quem vende para os postos do RS</h2>
+    <p class="nota" id="n-band"></p>
+    <div class="legenda"><span><i style="background:var(--raizen)"></i>Raízen</span><span><i style="background:var(--ipiranga)"></i>Ipiranga</span><span><i style="background:var(--mercado)"></i>Demais</span><span><i style="background:var(--sapatao)"></i>Sapatão</span></div>
+    <div class="barras" id="barras"></div>
+  </section>
+
+  <section class="card aba" data-aba="fontes" aria-labelledby="t-fontes" hidden>
+    <h2 id="t-fontes">O que é cada número e de onde vem</h2>
     <dl class="glos">
       <div><dt>TAM</dt><dd><b>Mercado dos postos.</b> Todo o combustível que as distribuidoras vendem aos postos do RS, bandeirados e bandeira branca (ANP). TRR e consumidor final ficam fora: não compram de posto.</dd></div>
       <div><dt>SAM</dt><dd><b>Mercado que disputamos.</b> O volume da área de cada unidade: as nossas compras + o volume estimado dos concorrentes escolhidos.</dd></div>
       <div><dt>SOM</dt><dd><b>Nossa fatia.</b> Quanto do SAM é nosso: nossas compras ÷ SAM.</dd></div>
     </dl>
-    <p class="nota" id="n-mom"></p>
-    <div class="veredito" id="mVer"></div>
-    <div class="mbar" id="mBar"></div>
-    <div class="tabela" style="margin-top:14px"><table id="tMom"><thead></thead><tbody></tbody></table></div>
-    <div class="aviso" id="a-mom" hidden></div>
-    <div id="regBloco" hidden>
-      <h2 style="margin-top:26px">Nossa região: SAM e SOM</h2>
-      <dl class="glos">
-        <div><dt>TAM</dt><dd><b>Mercado dos postos.</b> Todo o combustível que as distribuidoras vendem aos postos do RS, bandeirados e bandeira branca (ANP). TRR e consumidor final ficam fora: não compram de posto.</dd></div>
-        <div><dt>SAM</dt><dd><b>Mercado que disputamos.</b> O volume da área de cada unidade: as nossas compras + o volume estimado dos concorrentes escolhidos.</dd></div>
-        <div><dt>SOM</dt><dd><b>Nossa fatia.</b> Quanto do SAM é nosso: nossas compras ÷ SAM.</dd></div>
-      </dl>
-      <p class="nota" id="n-reg"></p>
-      <div class="tabela"><table id="tReg"><thead></thead><tbody></tbody></table></div>
-      <p class="nota" id="n-regTend" style="margin-top:12px"></p>
-      <div class="tabela"><table id="tRegTend"><thead></thead><tbody></tbody></table></div>
-    </div>
-    <h2 style="margin-top:26px">Mês a mês contra o mesmo mês do ano anterior</h2>
-    <p class="nota" id="n-momMes"></p>
-    <div class="tabela"><table id="tMomMes"><thead></thead><tbody></tbody></table></div>
-  </section>
-
-  <section class="card aba" data-aba="mensal" aria-labelledby="t-serie" hidden>
-    <div class="l1" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:10px">
-      <div><h2 id="t-serie">Mês a mês</h2><p class="nota" id="n-serie"></p></div>
-      <div class="seg" role="group" aria-label="Vista" id="segSerie">
-        <button type="button" data-v="sap" aria-pressed="true">Sapatão</button>
-        <button type="button" data-v="mkt" aria-pressed="false">Mercado</button>
-      </div>
-    </div>
-    <div class="legenda" id="legSerie"></div>
-    <div class="chartbox"><svg id="cSerie" role="img" aria-label="Participação do Sapatão por mês"></svg><div class="tip" id="tipSerie" hidden></div></div>
-    <details class="dobra"><summary>Ver a tabela</summary><div class="tabela"><table id="tSerie"><thead></thead><tbody></tbody></table></div></details>
-  </section>
-
-  <section class="card aba" data-aba="bandeiras" aria-labelledby="t-band" hidden>
-    <h2 id="t-band">Quem vende para os postos</h2>
-    <p class="nota" id="n-band"></p>
-    <div class="legenda"><span><i style="background:var(--raizen)"></i>Raízen</span><span><i style="background:var(--ipiranga)"></i>Ipiranga</span><span><i style="background:var(--mercado)"></i>Demais</span><span><i style="background:var(--sapatao)"></i>Sapatão</span></div>
-    <div class="barras" id="barras"></div>
-    <div class="duplo" style="margin-top:14px" id="postos"></div>
-  </section>
-
-  <section class="card aba" data-aba="anual" aria-labelledby="t-anual" hidden>
-    <h2 id="t-anual">Este ano contra o anterior</h2>
-    <p class="nota" id="n-anual"></p>
-    <div class="tabela"><table id="tAnual"><thead></thead><tbody></tbody></table></div>
-    <div class="aviso" id="a-anual" hidden></div>
-    <h2 style="margin-top:26px">Crescimento: unidades × bandeiras</h2>
-    <p class="nota" id="n-cresc"></p>
-    <div class="tabela"><table id="tCresc"><thead></thead><tbody></tbody></table></div>
-  </section>
-
-  <section class="card aba" data-aba="fontes" aria-labelledby="t-fontes" hidden>
-    <h2 id="t-fontes">De onde vem cada número</h2>
     <ul class="fontes" id="fontes"></ul>
     <p class="rodape" id="rodape" style="margin-top:14px"></p>
   </section>
@@ -302,15 +269,15 @@ body.so-leitura .so-edita{display:none}
 var CACHE_S='sapatao-mercado-v1', CACHE_A='sapatao-mercado-anp-v1';
 var REPO='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/mercado/';
 var API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/mercado/';
-var abriu=false, ANP=null, SAP=null, POSTOS=null, REGIAO=null, RAIO=null, EST=null;
+var abriu=false, ANP=null, SAP=null, RAIO=null, EST=null;
 function mostra(){
   if(!ANP||!SAP)return;
-  window.DADOS_MERCADO={anp:ANP,sapatao:SAP,postos:POSTOS,regiao:REGIAO,raio:RAIO,estim:EST};
+  window.DADOS_MERCADO={anp:ANP,sapatao:SAP,raio:RAIO,estim:EST};
   if(abriu){ if(window.renderMercado)window.renderMercado(window.DADOS_MERCADO); return; }
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=9';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=10';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){
@@ -334,24 +301,20 @@ async function carrega(){
   try{
     var ca=JSON.parse(localStorage.getItem(CACHE_A)||'null'); if(ca&&ca.dados)ANP=ca;
     var cs=JSON.parse(localStorage.getItem(CACHE_S)||'null'); if(cs){var d=await decifraDoc(cs); if(d)SAP=d;}
-    POSTOS=JSON.parse(localStorage.getItem(CACHE_A+'-postos')||'null');
-    REGIAO=JSON.parse(localStorage.getItem(CACHE_A+'-regiao')||'null');
     RAIO=JSON.parse(localStorage.getItem(CACHE_A+'-raio')||'null');
     var ce=JSON.parse(localStorage.getItem(CACHE_S+'-est')||'null'); if(ce){var de=await decifraDoc(ce); if(de)EST=de;}
     mostra();
   }catch(e){}
   /* 2) rede: o que mudou manda */
   try{
-    var [anp,sap,postos,regiao,raio,est]=await Promise.all([pega('anp-vendas.json'),pega('sapatao.enc.json'),pega('postos.json'),pega('regiao.json'),pega('postos-raio.json'),pega('estimativas.enc.json')]);
+    var [anp,sap,raio,est]=await Promise.all([pega('anp-vendas.json'),pega('sapatao.enc.json'),pega('postos-raio.json'),pega('estimativas.enc.json')]);
     if(!anp&&!ANP){falha(' A base da ANP ainda não foi publicada (o workflow "Market Share — base ANP" grava mercado/anp-vendas.json).');return;}
     if(!sap&&!SAP){falha(' Os volumes do Sapatão ainda não foram publicados (scripts/mercado-sapatao.mjs).');return;}
     var mudou=false;
     if(anp&&JSON.stringify(anp)!==JSON.stringify(ANP)){ANP=anp;mudou=true;try{localStorage.setItem(CACHE_A,JSON.stringify(anp));}catch(e){}}
-    if(regiao&&JSON.stringify(regiao)!==JSON.stringify(REGIAO)){REGIAO=regiao;mudou=true;try{localStorage.setItem(CACHE_A+'-regiao',JSON.stringify(regiao));}catch(e){}}
     if(raio&&raio.v>=2&&JSON.stringify(raio)!==JSON.stringify(RAIO)){RAIO=raio;mudou=true;try{localStorage.setItem(CACHE_A+'-raio',JSON.stringify(raio));}catch(e){}}
     if(est&&est.enc===1){var ce2=null;try{ce2=JSON.parse(localStorage.getItem(CACHE_S+'-est')||'null');}catch(e){}
       if(!ce2||ce2.ct!==est.ct){var de2=await decifraDoc(est);if(de2){EST=de2;mudou=true;try{localStorage.setItem(CACHE_S+'-est',JSON.stringify(est));}catch(e){}}}}
-    if(postos&&JSON.stringify(postos)!==JSON.stringify(POSTOS)){POSTOS=postos;mudou=true;try{localStorage.setItem(CACHE_A+'-postos',JSON.stringify(postos));}catch(e){}}
     if(sap&&sap.enc===1){
       var c=null; try{c=JSON.parse(localStorage.getItem(CACHE_S)||'null');}catch(e){}
       if(!c||c.ct!==sap.ct||c.iv!==sap.iv){

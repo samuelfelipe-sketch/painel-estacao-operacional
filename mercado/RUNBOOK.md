@@ -124,65 +124,47 @@ Revendedor. O painel usa o último mês ≤ ao mês selecionado.
 
 ## 4. Como o painel calcula
 
-- **Momento de mercado** (aba Momento, revista em 12/11/2026): momento = crescimento contra
-  o mesmo período do ano anterior do **TAM** (tudo o que as distribuidoras venderam no RS,
-  segmento `tot`), dos **postos** do recorte (`rev`) e dos **postos das nossas bandeiras**
-  (`band`, comparação à parte), só nos meses com ANP e compras dos dois lados. Veredito do
-  Sapatão em **mesmas unidades** (sem unidade que não comprava no período base) contra os
-  postos: > +1 p.p. acima, < −1 p.p. abaixo, entre as duas em linha. Sem ANP do mês, só o Sapatão.
-- **Nossa região: SAM e SOM** (mesma aba): **SAM** = mercado da área de atuação de cada
-  unidade (municípios em `mercado/regiao-municipios.json`: SF = Estância Velha + Portão;
-  PS = Novo Hamburgo, Ivoti, Dois Irmãos, São Leopoldo — posto de rodovia, BR-116 km 234;
-  AS = Campo Bom + Sapiranga), ESTIMADO = peso da área no RS no último ano da base ANP por
-  município (`mercado/regiao.json`, anual e com atraso; workflow `mercado-municipios.yml`,
-  dia 10) × vendas do RS no período (todos os segmentos), por grupo otto/diesel. **SOM** = a
-  fatia do Sapatão nessa área (sem meta definida; o Samuel ainda não tem meta). Tabela da
-  tendência anual da área contra o RS (a base municipal não separa segmento: inclui TRR e
-  consumidor final da área).
-- **TAM, SAM e SOM pelos concorrentes** (14/11/2026, substitui a estimativa municipal na
-  tabela do bloco "Nossa região"): TAM = vendas aos postos revendedores do RS no mês.
-  SAM da unidade = nossas compras + cada concorrente da lista ativa valendo a média por
-  posto da bandeira dele no RS no mês (segmento `band` da distribuidora ÷ postos da
-  bandeira em `rs_bandeiras` do `postos-raio.json`; bandeira branca = segmento `bb` ÷
-  postos de bandeira branca; sem dado = `rev` ÷ `rs_postos`), **multiplicada pelo tamanho do
-  posto** (15/11/2026): bicos do posto ÷ bicos médios da bandeira no RS, separado em Otto
-  (gasolina+etanol) e Diesel — bicos, tancagem e coordenadas vêm da API de Revendedores da
-  ANP (`revendedoresapi.anp.gov.br/v1/combustivel?uf=RS`, pública, lida pelo
-  `mercado-postos.mjs`: `infra` {bo,bd,to,td} em cada posto e unidade, `rs_infra` por
-  bandeira; a coordenada da ANP vira `prec:'anp'`). Conferência nas nossas unidades (set/26):
-  erro de ±7% no total por posto (a média simples errava até −69%); a divisão Otto/Diesel
-  erra mais. Posto com volume informado (`mercado/estimativas.enc.json`, 15/11/2026: 7 postos
-  do PS) usa fator = informado ÷ régua no mês `ref`, aplicado à régua de cada mês (a
-  sazonalidade e o ano anterior seguem a ANP); na lista aparece "informada". SOM = nossas compras ÷ SAM.
-  Média por mês; unidade nova só nos meses em que já comprava; a variação da Rede usa só
-  as unidades que já compravam no ano anterior.
-- **Legenda e ranking** (15/11/2026): a aba Momento e o bloco "Nossa região" mostram a legenda
-  TAM (postos revendedores do RS — decisão de 15/11/2026; o mercado total com TRR e consumidor
-  final fica só como linha de contexto no Momento) · SAM (mercado que disputamos = nossas compras +
-  concorrentes estimados) · SOM (nossa fatia do SAM). Tocar numa unidade da tabela SAM/SOM abre o
-  ranking da área (nós + concorrentes, do maior para o menor, fatia do SAM e "nós vs ele" = nosso
-  volume ÷ volume do concorrente − 1), com os avisos de posto novo a classificar e de posto que
-  saiu do cadastro. O bloco separado "Concorrentes de cada unidade" saiu.
-- **Lista de concorrentes** (`mercado/postos-raio.json`, base do ranking): a lista vale
-  pela escolha do Samuel (revisão de 13/11/2026: SF 5, PS 20, AS 5; riscados viram
-  `descartados`). O workflow `mercado-postos.yml` relê toda segunda o cadastro público da
-  ANP: posto da lista que sumiu do cadastro aparece como "saiu do cadastro" (fechou ou
-  trocou de CNPJ); posto na área (SF raio 5 km; PS raio 10 km + BR-116 km 220–250; AS
-  corredor da RS-239, 5 km para cada lado e até 0,6 km do traçado do OpenStreetMap) que
-  não está nem em `concorrentes` nem em `descartados` entra em `a_revisar`. Para
-  classificar: mover o CNPJ para `concorrentes` (com nome/bairro/município) ou para
-  `descartados` em `regiao-raio.json` e dar push (o workflow roda de novo).
-- participação = compras do Sapatão (m³) ÷ vendas das distribuidoras ao segmento
-  (mil m³ × 1000), no mesmo mês, recorte e produto;
-- "dentro da Raízen" = unidades 3 e 4 ÷ volume da Raízen no recorte; "dentro da
-  Ipiranga" = unidade 5 ÷ Ipiranga;
-- acumulado do ano = soma dos meses do ano, até o mês escolhido, **que têm as
-  duas fontes**; o mercado é somado nos mesmos meses;
-- volume por posto = (Sapatão ÷ nº de unidades) ÷ (mercado do segmento ÷ nº de
-  postos do recorte em `postos.json`);
-- comparativo anual = mesmos meses de janeiro ao mês escolhido nos dois anos;
-  crescimento das bandeiras pela ANP (independe do Sapatão); participação do
-  Sapatão no ano anterior só quando houver compras publicadas daqueles meses.
+Painel refeito em 15/11/2026 na visão **TAM · SAM · SOM** (decisões do Samuel). Tudo em
+`mercado/mercado.js`, calculado no navegador; recorte fixo no RS (Sul/Brasil e o seletor de
+segmento saíram).
+
+- **TAM** = vendas das distribuidoras aos postos revendedores do RS (`rev`), mês a mês.
+- **SAM** = área de cada unidade: nossas compras + volume estimado de cada concorrente da
+  lista (`mercado/postos-raio.json`, escolhida pelo Samuel em `mercado/regiao-raio.json`:
+  SF 5, PS 19, AS 9). Concorrente = média por posto da bandeira no RS no mês (segmento
+  `band` da distribuidora ÷ postos da bandeira em `rs_bandeiras`; bandeira branca = `bb` ÷
+  postos de bandeira branca; sem dado = `rev` ÷ `rs_postos`) × tamanho do posto (bicos do
+  posto ÷ bicos médios da bandeira, Otto e Diesel separados; bicos da API de Revendedores
+  da ANP, lidos pelo `mercado-postos.mjs`). Posto com volume informado
+  (`mercado/estimativas.enc.json`, cifrado) usa fator = informado ÷ régua no mês `ref`.
+  Conferida nas nossas unidades, a régua erra perto de 10% no total por posto.
+- **SOM** = nossas compras ÷ SAM. Sem meta definida (o Samuel avalia o painel antes).
+- **Prévia** (o Samuel pediu em 15/11/2026): mês sem ANP = mês anterior × (mesmo mês ÷ mês
+  anterior, no ano passado), em cadeia, por segmento e por grupo de produto (`mktP`, até 6
+  meses à frente); por construção, o crescimento contra o ano anterior da prévia repete o do
+  último mês publicado. Mês em curso do Sapatão = compras até o último dia coberto ×
+  (dias do mês ÷ dias cobertos). Marcado como PRÉVIA / EM CURSO na tela; some quando a ANP
+  publica. O mês padrão ao abrir é o último com compras fechadas (publicado ou prévia).
+- **Mesmas unidades**: a variação contra o ano anterior (SOM da rede e veredito) tira a
+  unidade que não comprava no período base; o crescimento nominal da rede, com unidade
+  nova, e a fatia do TAM ficam na aba Evolução.
+- **Topo**: funil TAM → SAM → SOM do período (com variação) e o veredito — ganhando /
+  em linha / perdendo participação = crescimento das mesmas unidades menos o do TAM,
+  faixa de ±1 p.p.
+- **Abas**: *Unidades* (SAM, SOM e posição de cada unidade; tocar abre o ranking da área,
+  do maior para o menor, com "nós vs ele" e os avisos de posto novo/saiu do cadastro) ·
+  *Evolução* (SOM mês a mês por unidade; crescimento mês a mês contra o TAM; crescimento
+  nominal da rede: mesmas unidades × unidades novas × TAM e fatia do TAM) · *Bandeiras*
+  (apoio à negociação: dentro da Raízen/Ipiranga, carteira do GV, crescimento da unidade
+  contra a bandeira, quem vende para os postos do RS) · *Fontes e método* (legenda).
+- Lista de concorrentes: o workflow `mercado-postos.yml` relê toda segunda o cadastro da
+  ANP; posto novo na área (SF raio 5 km; PS 10 km + BR-116 km 220–250; AS corredor da
+  RS-239) que não está nem em `concorrentes` nem em `descartados` entra em `a_revisar`.
+  Para classificar: mover o CNPJ em `regiao-raio.json` e dar push.
+- Fora de uso desde 15/11/2026 (o painel não lê mais): `mercado/postos.json` e
+  `mercado/regiao.json` (workflow `mercado-municipios.yml`, base municipal) e
+  `mercado/frota.json` (workflow `mercado-frota.yml`). Os arquivos e workflows seguem no
+  repositório até decisão de apagar.
 
 ## Chave dos dados trocada
 
