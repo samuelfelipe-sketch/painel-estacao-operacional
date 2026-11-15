@@ -237,8 +237,8 @@
     c.push('<span class="chip">ANP até <b>' + (ultA ? mesLbl(ultA) : '—') + '</b> · compras até <b>' + (cob ? cob.slice(8) + '/' + cob.slice(5, 7) : ult ? mesLbl(ult) : '—') + '</b></span>');
     if (st.per !== 'mes') c.push('<span class="chip"><b>' + perLbl(st.mes) + '</b></span>');
     var meses = mesesValidos(), prev = meses.filter(ehPrevia), curso = meses.filter(sapParcial);
-    if (prev.length) c.push('<span class="chip alerta">Prévia: mercado de ' + prev.map(mesLbl).join(', ') + ' projetado (a ANP ainda não publicou)</span>');
-    if (curso.length) c.push('<span class="chip alerta">' + curso.map(mesLbl).join(', ') + ' em curso: compras até o dia ' + sapMes(curso[0]).cobertura.ate.slice(8) + ', projetadas para o mês</span>');
+    if (prev.length) c.push('<span class="chip alerta" title="A ANP ainda não publicou: mercado projetado pela variação do mesmo mês no ano passado">Prévia: mercado de ' + prev.map(mesLbl).join(', ') + ' projetado</span>');
+    if (curso.length) c.push('<span class="chip alerta" title="Compras até o último dia lançado, projetadas pelo ritmo para o mês inteiro">' + curso.map(mesLbl).join(', ') + ' em curso (até dia ' + sapMes(curso[0]).cobertura.ate.slice(8) + ')</span>');
     meses.filter(function (m) { return !ehPrevia(m) && anpParcial(m); }).forEach(function (m) { c.push('<span class="chip alerta">ANP ainda fechando ' + mesLbl(m) + '</span>'); });
     el('chips').innerHTML = c.join('');
     el('ref').textContent = 'ANP ' + (D.anp.gerado_em || '').slice(0, 10).split('-').reverse().join('/') + ' · Sapatão ' + (D.sapatao.atualizado_em || '').slice(0, 10).split('-').reverse().join('/');
@@ -254,38 +254,32 @@
     if (!r.n) { el('funil').innerHTML = card('TAM', 'mercado dos postos do RS', '—', 'Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.'); el('veredito').innerHTML = ''; return; }
     var h = '';
     /* TAM */
-    h += card('TAM', 'mercado dos postos do RS', num(r.tam / r.n / 1000, 1) + '<small>mil m³' + porMes + '</small>',
-      'Tudo o que as distribuidoras venderam aos postos do RS' + (r.previa ? ' <b class="dn">(prévia)</b>' : ''),
-      delta(r.gTam, sinal(r.gTam) + ' vs ' + baseTxt),
-      '<div class="sub cart">' + esc(quem()) + ': <b>' + pct(r.fat, 2) + '</b> do TAM' + (r.fatA != null ? ' <small>(era ' + pct(r.fatA, 2) + ')</small>' : '') + '</div>');
+    h += card('TAM', 'postos do RS', num(r.tam / r.n / 1000, 1) + '<small>mil m³' + porMes + '</small>',
+      esc(quem()) + ': <b>' + pct(r.fat, 2) + '</b>' + (r.fatA != null ? ' <small>(era ' + pct(r.fatA, 2) + ')</small>' : ''),
+      delta(r.gTam, sinal(r.gTam) + ' vs ' + baseTxt));
     /* SAM e SOM */
     var S = temRaio() ? somSel(r.meses, us) : null;
     if (!S) {
-      h += card('SAM', 'mercado que disputamos', '—', temRaio() ? 'Sem compras no período.' : 'Lista de concorrentes ainda não publicada.');
+      h += card('SAM', 'nossas áreas', '—', temRaio() ? 'Sem compras no período.' : 'Sem lista de concorrentes.');
       h += card('SOM', 'nossa fatia', '—', '');
     } else {
       var nConc = uniao(us).length, samA = r.temBase ? calc(r.base, us, uniao(us)) : null, gSam = samA && samA.n === S.a.n ? cresc(samA.sam, S.a.sam) : null;
-      h += card('SAM', 'mercado que disputamos', num(S.a.sam, 0) + '<small>m³/mês</small>',
-        (us.length > 1 ? 'As ' + us.length + ' áreas' : 'A área do ' + esc(nomes(us))) + ': nós + ' + nConc + ' concorrentes · ' + pct(S.a.sam * S.a.n / (tamDe(S.a.ms) || 1) * 100, 1) + ' do TAM',
+      h += card('SAM', us.length > 1 ? 'nossas áreas' : 'área do ' + esc(nomes(us)), num(S.a.sam, 0) + '<small>m³/mês</small>',
+        'Nós + ' + nConc + ' concorrentes',
         delta(gSam, sinal(gSam) + ' vs ' + baseTxt));
       var soMesmas = S.uB.length && S.uB.length < us.length;
-      h += card('SOM', 'nossa fatia do SAM', pct(S.a.som, 1), num(S.a.nos, 0) + ' m³ de ' + num(S.a.sam, 0) + ' m³/mês' + (S.a.n < r.n ? ' · ' + S.a.n + ' de ' + r.n + ' meses' : ''),
-        S.dif != null ? delta(S.dif, pp(S.dif, 1) + ' vs ' + baseTxt + (soMesmas ? ' · mesmas unidades (' + esc(nomes(S.uB)) + ')' : '')) : '<span class="delta">sem base em ' + baseTxt + '</span>');
+      h += card('SOM', 'nossa fatia', pct(S.a.som, 1), num(S.a.nos, 0) + ' de ' + num(S.a.sam, 0) + ' m³/mês',
+        S.dif != null ? delta(S.dif, pp(S.dif, 1) + ' vs ' + baseTxt + (soMesmas ? ' (' + esc(nomes(S.uB)) + ')' : '')) : '');
     }
     el('funil').innerHTML = h;
     /* veredito: o Sapatão cresce mais ou menos que o mercado dos postos? */
     var v = el('veredito');
-    if (!r.temBase || r.gTam == null) { v.innerHTML = '<div class="frase">Sem ' + esc(baseTxt) + ' para comparar o crescimento.' + seloPrevia(r) + '</div>'; return; }
+    if (!r.temBase || r.gTam == null) { v.innerHTML = ''; return; }
     var gRef = r.gMesmas != null ? r.gMesmas : r.gNos, d = gRef != null ? gRef - r.gTam : null;
     var titulo = d == null ? 'Sem base de comparação' : d > FAIXA ? 'Ganhando participação' : d < -FAIXA ? 'Perdendo participação' : 'Em linha com o mercado';
-    var frase = '<b class="' + (d > FAIXA ? 'up' : d < -FAIXA ? 'dn' : '') + '">' + titulo + '.</b>' + seloPrevia(r) + ' Em ' + esc(perLbl(st.mes)) + ' os postos do RS (TAM) ' + (r.gTam >= 0 ? 'cresceram' : 'caíram') + ' <b>' + sinal(r.gTam) + '</b> e o ' + esc(quem()) + ' ' + (r.gNos >= 0 ? 'cresceu' : 'caiu') + ' <b class="' + cls(r.gNos) + '">' + sinal(r.gNos) + '</b>';
-    if (r.novas.length && r.gMesmas != null) frase += ' (<b class="' + cls(r.gMesmas) + '">' + sinal(r.gMesmas) + '</b> nas mesmas unidades, sem ' + esc(nomes(r.novas)) + ')';
-    frase += ', contra ' + esc(baseTxt) + '.';
-    var selos = '';
-    if (d != null) selos += '<span class="selo ' + (d > FAIXA ? 'up' : d < -FAIXA ? 'dn' : '') + '">mesmas unidades vs TAM: ' + pp(d, 1) + '</span>';
-    if (r.fat != null && r.fatA != null) selos += '<span class="selo ' + cls(r.fat - r.fatA) + '">fatia do TAM: ' + pct(r.fatA, 2) + ' → ' + pct(r.fat, 2) + '</span>';
-    if (S && S.dif != null) selos += '<span class="selo ' + cls(S.dif) + '">SOM: ' + pp(S.dif, 1) + '</span>';
-    v.innerHTML = '<div class="frase">' + frase + '</div><div class="selos">' + selos + '</div>';
+    var frase = '<b class="' + (d > FAIXA ? 'up' : d < -FAIXA ? 'dn' : '') + '">' + titulo + '.</b>' + seloPrevia(r) + ' ' + esc(quem()) + ' <b class="' + cls(r.gNos) + '">' + sinal(r.gNos) + '</b>' +
+      (r.novas.length && r.gMesmas != null ? ' (' + sinal(r.gMesmas) + ' sem ' + esc(nomes(r.novas)) + ')' : '') + ' contra <b>' + sinal(r.gTam) + '</b> do TAM, vs ' + esc(baseTxt) + '.';
+    v.innerHTML = '<div class="frase">' + frase + '</div>';
   }
 
   /* ---------- aba Unidades: SAM e SOM de cada unidade, com o ranking da área ao tocar ---------- */
@@ -302,7 +296,7 @@
     var t = el('tReg'), meses = mesesValidos(), us = unSel();
     if (!temRaio()) { el('n-reg').textContent = 'A lista de concorrentes ainda não foi publicada (mercado/postos-raio.json).'; t.querySelector('thead').innerHTML = ''; t.querySelector('tbody').innerHTML = ''; return; }
     var R = D.raio;
-    el('n-reg').innerHTML = esc(PROD_NOME[st.prod] + ' · ' + perLbl(st.mes) + ' · média por mês. ') + '<b>Toque numa unidade</b> para ver os concorrentes da área, do maior para o menor.';
+    el('n-reg').textContent = 'Toque numa unidade para ver os concorrentes da área.';
     t.querySelector('thead').innerHTML = '<tr><th>Unidade</th><th class="num">SAM (m³/mês)</th><th class="num mo">Nossas compras (m³/mês)</th><th class="num">SOM</th><th class="num mo">SOM ano anterior</th><th class="num">Var.</th></tr>';
     function linha(u) {
       var rk = rankDe(u, meses), a = rk && rk.a, b = a ? calc(a.ms.map(anoAnt), [u], lista(u)) : null;
@@ -317,15 +311,15 @@
     function ranking(u, rk) {
       if (!rk) return '<p class="falta">Sem compras desta unidade no período.</p>';
       var a = rk.a, x = R.unidades[u];
-      var cab = '<p class="rk-res"><b>' + esc(UNID()[u].nome) + ' é o ' + rk.pos + 'º de ' + rk.ls.length + '</b> postos da área' + (rk.pos > 1 ? ' · o maior é ' + esc(nomePosto(rk.ls[0].p.nome)) : '') + '.</p>';
+      var cab = '';
       var avisos = [];
       if ((x.a_revisar || []).length) avisos.push(x.a_revisar.length + (x.a_revisar.length > 1 ? ' postos novos' : ' posto novo') + ' na área a classificar: ' + x.a_revisar.map(function (p) { return nomePosto(p.nome); }).join(', ') + '.');
       if (x.fora_do_cadastro) avisos.push(x.fora_do_cadastro + ' concorrente saiu do cadastro da ANP (fechou ou trocou de CNPJ).');
-      return cab + '<div class="tabela"><table class="rk"><thead><tr><th class="num">#</th><th>Posto</th><th class="num">m³/mês</th><th class="num mo">Fatia do SAM</th><th class="num">Nós vs ele</th></tr></thead><tbody>' + rk.ls.map(function (q, i) {
+      return cab + '<div class="tabela"><table class="rk"><thead><tr><th class="num">#</th><th>Posto</th><th class="num">m³/mês</th><th class="num mo">Fatia do SAM</th><th class="num" title="Nosso volume comparado ao do concorrente: +50% = vendemos 50% a mais">Nós vs ele</th></tr></thead><tbody>' + rk.ls.map(function (q, i) {
         if (q.nos) return '<tr class="dest"><td class="num">' + (i + 1) + '</td><td><span class="ponto s"></span>' + esc(UNID()[u].nome) + ' (nós)</td><td class="num">' + num(q.v, 0) + '</td><td class="num mo">' + pct(q.v / a.sam * 100, 1) + '</td><td class="num">—</td></tr>';
         var p = q.p, onde = [p.bairro, p.municipio].filter(Boolean).map(nomeCidade).join(' · '), d = q.v ? (a.nos / q.v - 1) * 100 : null;
         return '<tr><td class="num">' + (i + 1) + '</td><td>' + esc(nomePosto(p.nome)) + (informada(p) ? ' <small class="selo">informada</small>' : '') + '<br><small class="falta">' + esc(nomeBand(p.bandeira)) + ' · ' + esc(onde) + (p.km != null ? ' · ' + num(p.km, 1) + ' km' : '') + '</small></td><td class="num">' + num(q.v, 0) + '</td><td class="num mo">' + pct(q.v / a.sam * 100, 1) + '</td><td class="num"><b class="' + cls(d) + '">' + (d == null ? '—' : (d > 0 ? '+' : '') + num(d, 0) + '%') + '</b></td></tr>';
-      }).join('') + '</tbody></table></div><p class="nota">"Nós vs ele" = nosso volume comparado ao do concorrente: +50% = vendemos 50% a mais; −20% = vendemos 20% a menos.</p>' + (avisos.length ? '<div class="aviso">' + esc(avisos.join(' ')) + '</div>' : '');
+      }).join('') + '</tbody></table></div>' + (avisos.length ? '<div class="aviso">' + esc(avisos.join(' ')) + '</div>' : '');
     }
     var linhas = us.filter(function (u) { return R.unidades[u]; }).map(linha);
     if (us.length > 1) {
@@ -385,11 +379,11 @@
         return { m: m, v: v, previa: ehPrevia(m) || sapParcial(m) };
       }).filter(function (p) { return series.some(function (s) { return p.v[s.k] != null; }); });
     }
-    el('n-evo').textContent = 'SOM = nossa fatia da área de cada unidade, mês a mês · ' + PROD_NOME[st.prod] + '. Ponto vazado = prévia (mercado projetado ou mês em curso).';
+    el('n-evo').textContent = '';
     el('legEvo').innerHTML = series.map(function (s) { return '<span><i class="linha" style="background:' + s.cor + '"></i>' + esc(s.nome) + '</span>'; }).join('') + '<span><i style="background:#fff;border:2px solid var(--tinta-fraca);width:8px;height:8px;border-radius:50%"></i>Prévia</span>';
     grafico(el('cEvo'), el('tipEvo'), pts, series, function (p) { return '<b>' + mesLbl(p.m) + (p.previa ? ' · prévia' : '') + '</b><br>' + series.map(function (s) { return esc(s.nome) + ' ' + (p.v[s.k] == null ? '—' : pct(p.v[s.k], 1)); }).join('<br>'); });
     /* 2) crescimento contra o mesmo mês do ano anterior */
-    el('n-evoT').textContent = 'Cada mês contra o mesmo mês do ano anterior · ' + PROD_NOME[st.prod] + '. Diferença = mesmas unidades menos TAM: positiva = ganhamos participação.';
+    el('n-evoT').textContent = 'Contra o mesmo mês do ano anterior. Dif. = mesmas unidades menos TAM.';
     var t = el('tEvo');
     t.querySelector('thead').innerHTML = '<tr><th>Mês</th><th class="num">TAM</th><th class="num">' + esc(quem()) + '</th><th class="num mo">Mesmas unidades</th><th class="num">Dif. vs TAM</th><th class="num">Fatia do TAM</th><th class="num mo">SOM</th></tr>';
     var linhas = todos.slice(-13).reverse().map(function (m) {
@@ -402,7 +396,7 @@
     t.querySelector('tbody').innerHTML = linhas.join('') || '<tr><td colspan="7" class="falta">Sem meses.</td></tr>';
     /* 3) crescimento nominal da rede no período: mesmas unidades × unidades novas × TAM */
     var r = resumo(), tr = el('tRede'), baseTxt = perLbl(anoAnt(st.mes));
-    el('n-rede').textContent = 'Volume do período em m³ · ' + perLbl(st.mes) + ' contra ' + baseTxt + ' · ' + PROD_NOME[st.prod] + '. Mostra quanto do crescimento vem das unidades que já existiam e quanto vem de unidade nova, e se a fatia do TAM subiu.' + (r.previa || r.curso ? ' Inclui prévia.' : '');
+    el('n-rede').textContent = perLbl(st.mes) + ' contra ' + baseTxt + ', em m³.' + (r.previa || r.curso ? ' Inclui prévia.' : '');
     tr.querySelector('thead').innerHTML = '<tr><th>Linha</th><th class="num">' + esc(baseTxt) + '</th><th class="num">' + esc(perLbl(st.mes)) + '</th><th class="num mo">Dif. (m³)</th><th class="num">Var.</th></tr>';
     if (!r.n || !r.temBase) { tr.querySelector('tbody').innerHTML = '<tr><td colspan="5" class="falta">Sem ' + esc(baseTxt) + ' para comparar.</td></tr>'; return; }
     function lr(nome, a, b, clsTr, fmt, novo) {
@@ -423,7 +417,7 @@
     var meses = mesesValidos(), base = meses.map(anoAnt), us = unSel(), baseTxt = perLbl(anoAnt(st.mes));
     var temBase = meses.length > 0 && base.every(function (m) { return mktReal(m, 'rev') && sapMes(m); });
     var M = mktSoma(meses, 'rev'), MA = temBase ? mktSoma(base, 'rev') : null;
-    el('n-bandUn').textContent = PROD_NOME[st.prod] + ' · ' + perLbl(st.mes) + ' · quanto representamos dentro de cada distribuidora no RS e se crescemos mais do que ela (contra ' + baseTxt + ').';
+    el('n-bandUn').textContent = perLbl(st.mes) + ' contra ' + baseTxt + '.';
     function daBand(b) { return us.filter(function (u) { return UNID()[u].bandeira === b; }); }
     /* cartões: dentro da Raízen / dentro da Ipiranga */
     el('bandMinis').innerHTML = BANDS.map(function (b) {
@@ -431,7 +425,7 @@
       var n = nosDe(meses, uu), sh = M[b] > 0 && n != null ? n / (M[b] * 1000) * 100 : null;
       var nA = MA ? nosDe(base, uu) : null, shA = MA && MA[b] > 0 && nA > 0 ? nA / (MA[b] * 1000) * 100 : null;
       var gv = naCarteira(b, sh), c = carteira(b);
-      return '<div class="mini"><div class="lbl"><span class="ponto ' + (b === 'Raízen' ? 'r' : 'i') + '"></span>Dentro da ' + b + '</div><div class="val">' + pct(sh) + (shA != null ? ' <small class="' + cls(sh - shA) + '">' + pp(sh - shA) + '</small>' : '') + '</div><div class="sub">' + esc(nomes(uu)) + ': ' + num(n, 0) + ' m³ de ' + num(M[b], 1) + ' mil m³ da ' + b + ' no RS' + (gv != null ? ' · ≈ <b>' + pct(gv) + '</b> da carteira do GV (' + num(c.fracao * 100, 0) + '% da ' + b + ')' : '') + '</div></div>';
+      return '<div class="mini"><div class="lbl"><span class="ponto ' + (b === 'Raízen' ? 'r' : 'i') + '"></span>Dentro da ' + b + '</div><div class="val">' + pct(sh) + (shA != null ? ' <small class="' + cls(sh - shA) + '">' + pp(sh - shA) + '</small>' : '') + '</div><div class="sub">' + esc(nomes(uu)) + ' · ' + num(n, 0) + ' m³' + (gv != null ? ' · ≈ <b>' + pct(gv) + '</b> da carteira do GV' : '') + '</div></div>';
     }).join('');
     /* tabela: unidade × bandeira */
     var t = el('tBand');
@@ -442,7 +436,7 @@
       return '<tr><td><span class="ponto ' + (b === 'Raízen' ? 'r' : 'i') + '"></span>' + esc(UNID()[u].nome) + ' <small class="falta">' + esc(b) + '</small></td><td class="num">' + num(n, 0) + '</td><td class="num">' + pct(sh) + '</td><td class="num mo">' + (gv != null ? pct(gv) : traco()) + '</td><td class="num">' + (gU == null && MA && n > 0 ? '<span class="falta">nova</span>' : fmtVar(gU)) + '</td><td class="num">' + fmtVar(gB) + '</td><td class="num">' + fmtDif(gU != null && gB != null ? gU - gB : null) + '</td></tr>';
     }).join('');
     /* quem vende para os postos do RS */
-    el('n-band').textContent = 'Mil m³ vendidos aos postos do RS em ' + perLbl(st.mes) + ' (o TAM, por distribuidora). O traço laranja é o Sapatão dentro da bandeira.';
+    el('n-band').textContent = 'Mil m³ em ' + perLbl(st.mes) + '. Traço laranja = Sapatão na bandeira.';
     var box = el('barras');
     if (!M) { box.innerHTML = '<p class="falta">Sem mercado para este período.</p>'; return; }
     var itens = Object.keys(M).filter(function (k) { return k !== 'Total' && k !== 'Outras'; }).map(function (k) { return { k: k, v: M[k] }; }).sort(function (a, b) { return b.v - a.v; });
@@ -500,15 +494,16 @@
     if (!box) return;
     if (!temExp()) { box.innerHTML = ''; if (st.aba === 'expansao') st.aba = 'unidades'; return; }
     var meses = mesesValidos(), R = D.raio, todas = codigosUn();
-    el('n-exp').innerHTML = esc('Postos em avaliação para entrar na rede · ' + PROD_NOME[st.prod] + ' · ' + perLbl(st.mes) + ' · média por mês. ') + 'O volume é <b>estimado</b> pelo tamanho do posto (bicos) e pela média da bandeira; num posto específico a régua pode errar bastante. O volume real só vem dos números do vendedor.';
+    el('n-exp').textContent = 'Volumes estimados; o número real só vem do vendedor.';
     if (!meses.length) { box.innerHTML = '<p class="falta">Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.</p>'; return; }
-    var tam = tamDe(meses) / meses.length, nosRede = nosDe(meses, todas) / meses.length;
+    var nosRede = nosDe(meses, todas) / meses.length;
     var P = padroes(), mil = function (v) { return v == null ? '—' : num(v, 1) + ' mil L'; };
-    var rot6 = P.novas.length ? 'padrão do ' + nomes(P.novas.map(function (x) { return x.u; })) : '', rot12 = P.maduras.length ? 'padrão de ' + nomes(P.maduras.map(function (x) { return x.u; })).replace(/ \+ /g, ' e ') : '';
-    el('expPadrao').innerHTML = '<h3>Litros por bico por mês na rede</h3><p class="nota">É a régua da projeção: um posto novo chega, em <b>6 meses</b>, à produtividade por bico da nossa unidade nova e, em <b>12 meses</b>, à média das unidades maduras. ' + esc(PROD_NOME[st.prod]) + ' · bicos de ' + (st.prod === 'otto' ? 'gasolina/etanol' : st.prod === 'diesel' ? 'diesel' : 'gasolina/etanol e diesel') + ' do cadastro da ANP (GNV fora).</p>' +
-      '<div class="tabela"><table class="rk"><thead><tr><th>Unidade</th><th class="num">Bicos</th><th class="num">Último mês fechado</th><th class="num mo">Média de 12 meses</th><th>Papel na projeção</th></tr></thead><tbody>' + P.uns.map(function (x) {
-        return '<tr><td><span class="ponto s"></span><b>' + esc(UNID()[x.u].nome) + '</b></td><td class="num">' + x.b + '</td><td class="num">' + mil(x.lUlt) + ' <small class="falta">' + mesLbl(x.ult) + '</small></td><td class="num mo">' + (x.n12 >= 12 ? mil(x.l12) : '<span class="falta">' + x.n12 + ' meses na rede</span>') + '</td><td>' + (x.nova && !x.madura ? 'Padrão de 6 meses: ' + mil(x.l6) + ' <small class="falta">(' + (x.mes6 < 6 ? 'está no ' + x.mes6 + 'º mês; trava no 6º' : '6º mês, ' + mesLbl(x.m6)) + ')</small>' : 'Entra no padrão de 12 meses') + '</td></tr>';
-      }).join('') + '<tr class="total"><td colspan="2">Padrões usados</td><td class="num" colspan="3" style="text-align:left">6 meses: <b>' + mil(P.p6) + '</b> por bico · 12 meses: <b>' + mil(P.p12) + '</b> por bico</td></tr></tbody></table></div>';
+    /* padrão de 6 meses: o valor fixado pela diretoria no arquivo cifrado (padrao6, mil L por bico); sem ele, a unidade nova */
+    var p6 = D.exp.padrao6 > 0 ? D.exp.padrao6 : P.p6;
+    el('expPadrao').innerHTML = '<p class="exp-pad">Projeção por bico: <b>' + mil(p6) + '</b> em 6 meses · <b>' + mil(P.p12) + '</b> em 12 meses</p>' +
+      '<details class="dobra"><summary>Litros por bico da rede</summary><div class="tabela"><table class="rk"><thead><tr><th>Unidade</th><th class="num">Bicos</th><th class="num">Último mês</th><th class="num">Média 12 meses</th></tr></thead><tbody>' + P.uns.map(function (x) {
+        return '<tr><td><span class="ponto s"></span><b>' + esc(UNID()[x.u].nome) + '</b></td><td class="num">' + x.b + '</td><td class="num">' + mil(x.lUlt) + '</td><td class="num">' + (x.n12 >= 12 ? mil(x.l12) : '<span class="falta">' + x.n12 + ' meses</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div></details>';
     box.innerHTML = D.exp.candidatos.map(function (c, idx) {
       var p = postoArea(c.cnpj);
       if (!p) return '<div class="ficha"><h3>' + esc(c.apelido) + '</h3><p class="falta">Posto não encontrado no cadastro da ANP da região.</p></div>';
@@ -517,11 +512,11 @@
       if (c.area.tipo === 'unidade' && R.unidades[c.area.u]) {
         viz = lista(c.area.u).filter(function (q) { return q.cnpj !== c.cnpj; }).map(function (q) { return { p: q }; });
         viz.push({ nosso: c.area.u });
-        rot = 'a mesma área do ' + UNID()[c.area.u].nome;
+        rot = 'área do ' + UNID()[c.area.u].nome;
       } else {
         var fora = {}; (c.descartados || []).forEach(function (x) { fora[x] = 1; });
         (R.area || []).forEach(function (q) { if (q.cnpj === c.cnpj || fora[q.cnpj] || q.lat == null || p.lat == null) return; var d = distKm(p, q); if (d > c.area.km) return; var u = nossaDe(q.cnpj); viz.push(u ? { nosso: u, km: d } : { p: q, km: d }); });
-        rot = 'raio de ' + num(c.area.km, 0) + ' km (lista automática)';
+        rot = 'raio de ' + num(c.area.km, 0) + ' km';
       }
       viz.forEach(function (v) { v.v = v.nosso ? nosDe(meses, [v.nosso]) / meses.length : mediaEst(meses, v.p); if (v.km == null && p.lat != null) { var q = v.nosso ? R.unidades[v.nosso] : postoArea(v.p.cnpj); if (q && q.lat != null) v.km = distKm(p, q); } });
       viz = viz.filter(function (v) { return v.v != null; });
@@ -530,39 +525,31 @@
       var pos = 0; linhas.forEach(function (l, i) { if (l.cand) pos = i + 1; });
       /* unidades nossas que hoje têm o candidato na lista de concorrentes */
       var conc = todas.filter(function (u) { return lista(u).some(function (q) { return q.cnpj === c.cnpj; }); });
-      var efeitos = conc.map(function (u) { var a = calc(meses, [u], lista(u)); if (!a) return null; var v = mediaEst(a.ms, p); return v == null ? null : UNID()[u].nome + ' de ' + pct(a.som, 1) + ' para <b>' + pct((a.nos + v) / a.sam * 100, 1) + '</b>'; }).filter(Boolean);
+      var efeitos = conc.map(function (u) { var a = calc(meses, [u], lista(u)); if (!a) return null; var v = mediaEst(a.ms, p); return v == null ? null : UNID()[u].nome + ' ' + pct(a.som, 1) + ' → <b>' + pct((a.nos + v) / a.sam * 100, 1) + '</b>'; }).filter(Boolean);
       var dists = todas.map(function (u) { var x = R.unidades[u]; return x && x.lat != null && p.lat != null ? UNID()[u].nome + ' ' + num(distKm(p, x), 1) + ' km' : null; }).filter(Boolean).join(' · ');
       /* município: mercado anual (ANP), postos do cadastro e frota (Senatran) */
-      var mun = p.municipio, G = D.regiao, ps = st.prod === 'otto' ? ['gasolina', 'etanol'] : st.prod === 'diesel' ? ['diesel'] : ['gasolina', 'etanol', 'diesel'], munTxt = '', munVal = '—';
+      var mun = p.municipio, G = D.regiao, ps = st.prod === 'otto' ? ['gasolina', 'etanol'] : st.prod === 'diesel' ? ['diesel'] : ['gasolina', 'etanol', 'diesel'], munTxt = '';
       function volAno(base, a) { var x = base && base[a]; if (!x) return null; var s = 0; ps.forEach(function (k) { s += x[k] || 0; }); return s; }
       if (G && G.municipios && G.municipios[mun]) {
         var ano = G.ultimo_ano, ant = String(+ano - 1), vM = volAno(G.municipios[mun], ano), vMa = volAno(G.municipios[mun], ant), vR = volAno(G.rs, ano), vRa = volAno(G.rs, ant);
         var nPostos = (R.area || []).filter(function (q) { return q.municipio === mun; }).length;
-        munVal = num(vM / 12, 0) + '<small>m³/mês</small>';
-        munTxt = 'Base ' + ano + ' da ANP (inclui TRR e consumidor final)' + (nPostos ? ' · ' + nPostos + ' postos → média de ' + num(vM / 12 / nPostos, 0) + ' m³ por posto' : '') + ' · ' + ano + ' vs ' + ant + ': <b class="' + cls(cresc(vMa, vM)) + '">' + sinal(cresc(vMa, vM)) + '</b> (RS ' + sinal(cresc(vRa, vR)) + ')';
-      } else munTxt = 'Sem a base anual da ANP para este município.';
+        munTxt = nomeCidade(mun) + ': ' + num(vM / 12, 0) + ' m³/mês' + (nPostos ? ' · ' + num(vM / 12 / nPostos, 0) + ' por posto' : '') + ' · ' + ano + ' <b class="' + cls(cresc(vMa, vM)) + '">' + sinal(cresc(vMa, vM)) + '</b> (RS ' + sinal(cresc(vRa, vR)) + ')';
+      }
       var F = D.frota, frTxt = '';
       if (F && F.meses) {
         var fm = F.ultimo_mes, fa = anoAnt(fm), x1 = F.meses[fm] && F.meses[fm].municipios[mun], x0 = F.meses[fa] && F.meses[fa].municipios[mun];
-        if (x1 && x0) frTxt = ' · frota em ' + mesLbl(fm) + ': ' + num(x1.total, 0) + ' veículos, <b class="' + cls(cresc(x0.total, x1.total)) + '">' + sinal(cresc(x0.total, x1.total)) + '</b> em 12 meses (RS ' + sinal(cresc(F.meses[fa].rs.total, F.meses[fm].rs.total)) + ')';
+        if (x1 && x0) frTxt = ' · frota <b class="' + cls(cresc(x0.total, x1.total)) + '">' + sinal(cresc(x0.total, x1.total)) + '</b>';
       }
       /* projeção: bicos do posto × litros por bico da rede (nunca abaixo do volume de hoje) */
-      var bc = bicosDe(p.infra, st.prod), v6 = bc && P.p6 != null ? Math.max(vol, bc * P.p6) : null, v12 = bc && P.p12 != null ? Math.max(v6 || vol, bc * P.p12) : null;
+      var bc = bicosDe(p.infra, st.prod), v6 = bc && p6 != null ? Math.max(vol, bc * p6) : null, v12 = bc && P.p12 != null ? Math.max(v6 || vol, bc * P.p12) : null;
       var aberto = !!EXP_ABERTOS[idx];
-      var h = '<div class="ficha"><h3>' + esc(c.apelido) + '</h3><p class="nota">' + esc(nomePosto(p.nome)) + ' · ' + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(p.end || '')) + (p.end ? ', ' : '') + esc([p.bairro, p.municipio].filter(Boolean).map(nomeCidade).join(' · ')) + (dists ? ' · distância: ' + esc(dists) : '') + '</p>';
-      h += '<div class="quad">';
-      h += '<div class="mini"><div class="lbl">Volume estimado</div><div class="val">' + num(vol, 0) + '<small>m³/mês</small></div><div class="sub">' + (inf ? 'Volume informado pela diretoria' : 'Pela régua dos bicos') + (p.infra ? ' · ' + p.infra.bo + ' bicos de gasolina/etanol e ' + p.infra.bd + ' de diesel · tanques ' + num(p.infra.to + p.infra.td, 0) + ' m³' : '') + '</div></div>';
-      h += '<div class="mini"><div class="lbl">Na área dele</div><div class="val">' + pos + 'º<small>de ' + linhas.length + '</small></div><div class="sub">' + esc(rot) + ' · fatia de <b>' + pct(vol / sam * 100, 1) + '</b> de ' + num(sam, 0) + ' m³/mês</div></div>';
-      h += '<div class="mini"><div class="lbl">Efeito na rede</div><div class="val"><span class="up">+' + num(vol / nosRede * 100, 0) + '%</span><small>de volume</small></div><div class="sub">Rede de ' + num(nosRede, 0) + ' para ' + num(nosRede + vol, 0) + ' m³/mês · fatia do TAM de ' + pct(nosRede / tam * 100, 2) + ' para <b>' + pct((nosRede + vol) / tam * 100, 2) + '</b></div></div>';
-      h += '<div class="mini"><div class="lbl">Município · ' + esc(nomeCidade(mun)) + '</div><div class="val">' + munVal + '</div><div class="sub">' + munTxt + frTxt + '</div></div>';
-      h += '</div>';
-      if (v6 != null || v12 != null) {
-        var passo = function (rot, v, sub) { return '<div class="mini"><div class="lbl">' + rot + '</div><div class="val">' + num(v, 0) + '<small>m³/mês</small>' + (v > vol * 1.005 ? ' <small class="up">' + sinal((v / vol - 1) * 100, 0) + '</small>' : '') + '</div><div class="sub">' + sub + '</div></div>'; };
-        h += '<h4 class="exp-t">Projeção na rede</h4><div class="quad tres">' + passo('Hoje', vol, bc + ' bicos · ' + mil(vol / bc) + ' por bico') +
-          (v6 != null ? passo('Em 6 meses', v6, esc(rot6) + ': ' + mil(P.p6) + ' por bico' + (bc * P.p6 < vol ? ' (já vende acima)' : '')) : '') +
-          (v12 != null ? passo('Em 12 meses', v12, esc(rot12) + ': ' + mil(P.p12) + ' por bico · rede de ' + num(nosRede, 0) + ' para <b>' + num(nosRede + v12, 0) + '</b> m³/mês (' + sinal(v12 / nosRede * 100, 0) + ')') : '') + '</div>';
-      }
-      h += '<p class="exp-ef">' + (efeitos.length ? '<b>Hoje é concorrente direto de ' + esc(nomes(conc)) + '.</b> Com ele na rede, a área não muda e o SOM soma: ' + efeitos.join('; ') + '.' : '<b>Não está na lista de concorrentes de nenhuma unidade:</b> seria uma área nova para a rede, com SOM próprio de ' + pct(vol / sam * 100, 1) + ' no começo.') + '</p>';
+      var h = '<div class="ficha"><h3>' + esc(c.apelido) + '</h3><p class="nota">' + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(mun)) + (dists ? ' · ' + esc(dists) : '') + '</p>';
+      var passo = function (rt, v, sub) { return '<div class="mini"><div class="lbl">' + rt + '</div><div class="val">' + num(v, 0) + '<small>m³/mês</small>' + (v > vol * 1.005 ? ' <small class="up">' + sinal((v / vol - 1) * 100, 0) + '</small>' : '') + '</div><div class="sub">' + sub + '</div></div>'; };
+      h += '<div class="quad">' + passo('Hoje' + (inf ? ' · informado' : ' · estimado'), vol, bc ? bc + ' bicos · ' + mil(vol / bc) + ' por bico' : '') +
+        (v6 != null ? passo('Em 6 meses', v6, mil(p6) + ' por bico') : '') +
+        (v12 != null ? passo('Em 12 meses', v12, mil(P.p12) + ' por bico · rede ' + sinal(v12 / nosRede * 100, 0)) : '') +
+        '<div class="mini"><div class="lbl">Na área</div><div class="val">' + pos + 'º<small>de ' + linhas.length + '</small></div><div class="sub">' + pct(vol / sam * 100, 1) + ' de ' + num(sam, 0) + ' m³/mês · ' + esc(rot) + '</div></div></div>';
+      h += '<p class="exp-ef">' + (efeitos.length ? '<b>SOM com ele:</b> ' + efeitos.join(' · ') : '<b>Área nova</b> para a rede') + (munTxt ? '<br><span class="falta">' + munTxt + frTxt + '</span>' : '') + '</p>';
       h += '<details class="dobra" data-exp="' + idx + '"' + (aberto ? ' open' : '') + '><summary>Ver os ' + linhas.length + ' postos da área</summary><div class="tabela"><table class="rk"><thead><tr><th class="num">#</th><th>Posto</th><th class="num mo">km</th><th class="num">m³/mês</th><th class="num">Fatia</th></tr></thead><tbody>' + linhas.map(function (l, i) {
         if (l.cand) return '<tr class="dest"><td class="num">' + (i + 1) + '</td><td>' + esc(c.apelido) + ' (em avaliação)</td><td class="num mo">—</td><td class="num">' + num(l.v, 0) + '</td><td class="num">' + pct(l.v / sam * 100, 1) + '</td></tr>';
         if (l.nosso) return '<tr><td class="num">' + (i + 1) + '</td><td><span class="ponto s"></span><b>' + esc(UNID()[l.nosso].nome) + '</b> (nosso)</td><td class="num mo">' + (l.km != null ? num(l.km, 1) : '—') + '</td><td class="num">' + num(l.v, 0) + '</td><td class="num">' + pct(l.v / sam * 100, 1) + '</td></tr>';
@@ -575,14 +562,14 @@
   /* ---------- aba Fontes e método ---------- */
   function fontes() {
     var A = D.anp, S = D.sapatao, R = D.raio, ms = mesesSap(), ma = mesesAnp(), li = [];
-    li.push('<li><b>Mercado (TAM):</b> ' + esc(A.fonte || 'ANP') + '. Usamos o segmento posto revendedor do RS (bandeirados + bandeira branca). Série de ' + mesLbl(ma[0]) + ' a ' + mesLbl(ma[ma.length - 1]) + (ma.filter(anpParcial).length ? '; ainda fechando: ' + ma.filter(anpParcial).map(mesLbl).join(', ') : '') + '. Base gerada em ' + esc(A.gerado_em || '?') + '. A ANP publica com cerca de dois meses de atraso.</li>');
-    li.push('<li><b>Sapatão:</b> ' + esc(S.fonte || 'compras') + '. O volume do Sapatão é a compra às distribuidoras (é o que a ANP mede do outro lado). Meses ' + (ms.length ? mesLbl(ms[0]) + ' a ' + mesLbl(ms[ms.length - 1]) : '—') + '; atualizado em ' + esc(S.atualizado_em || '?') + '.</li>');
-    li.push('<li><b>Prévia:</b> mês que a ANP ainda não publicou é projetado: volume do mês anterior × a variação que o mercado teve entre esses mesmos dois meses no ano passado (em cadeia, mês a mês; gasolina/etanol e diesel separados). O mês em curso do Sapatão usa as compras até o último dia lançado, projetadas pelo ritmo para o mês inteiro. A prévia é trocada pelo número real quando a ANP publica.</li>');
-    if (R) li.push('<li><b>Concorrentes (SAM):</b> lista escolhida pela diretoria, posto a posto. O cadastro público da ANP é conferido toda semana (último em ' + esc((R.gerado_em || '').slice(0, 10).split('-').reverse().join('/')) + '): posto novo na área aparece como "a classificar" e posto que saiu do cadastro é avisado. Não existe dado público de venda por posto: cada concorrente vale a média por posto da bandeira dele no RS no mês (ANP), ajustada pelo tamanho do posto medido pelos bicos de gasolina/etanol e de diesel (API de Revendedores da ANP). Conferida nas nossas três unidades, essa régua erra perto de 10% no total por posto. Posto marcado "informada" usa o volume informado pela diretoria.</li>');
-    li.push('<li><b>Mesmas unidades:</b> a comparação com o ano anterior tira a unidade que ainda não comprava no período base, para a abertura de posto novo não parecer ganho de participação. O crescimento nominal da rede (com as unidades novas) e a fatia do TAM aparecem na aba Evolução.</li>');
-    if (S.carteiras) li.push('<li><b>Carteira do Gerente de Vendas (GV):</b> ' + Object.keys(S.carteiras).map(function (b) { var c = S.carteiras[b]; return 'GV ' + b + (c.fracao ? ' ≈ ' + num(c.fracao * 100, 0) + '% da bandeira no RS' : ' (fração a definir)'); }).join('; ') + '. Participação na carteira = participação na bandeira ÷ fração do GV.</li>');
-    (A.notas || []).forEach(function (n) { li.push('<li>' + esc(n) + '</li>'); });
-    li.push('<li>Otto = gasolina C + etanol hidratado; Diesel = óleo diesel B; Consolidado = os dois. Arla e GNV ficam fora.</li>');
+    li.push('<li><b>TAM:</b> vendas das distribuidoras aos postos do RS (ANP), de ' + mesLbl(ma[0]) + ' a ' + mesLbl(ma[ma.length - 1]) + '. A ANP publica com cerca de dois meses de atraso.</li>');
+    li.push('<li><b>Sapatão:</b> compras às distribuidoras (Argo), até ' + (ms.length ? mesLbl(ms[ms.length - 1]) : '—') + '.</li>');
+    li.push('<li><b>Prévia:</b> mês sem ANP = mês anterior × a variação do mesmo mês no ano passado. Mês em curso = compras projetadas pelo ritmo.</li>');
+    if (R) li.push('<li><b>Concorrentes:</b> lista escolhida pela diretoria; cada um vale a média da bandeira no RS ajustada pelos bicos do posto, ou o volume informado. Cadastro da ANP conferido toda semana.</li>');
+    li.push('<li><b>Mesmas unidades:</b> a comparação com o ano anterior deixa de fora a unidade que ainda não existia.</li>');
+    if (S.carteiras) li.push('<li><b>Carteira do GV:</b> participação na bandeira ÷ fração da carteira (' + Object.keys(S.carteiras).map(function (b) { var c = S.carteiras[b]; return b + ' ' + (c.fracao ? num(c.fracao * 100, 0) + '%' : 'a definir'); }).join(', ') + ').</li>');
+    if (temExp()) li.push('<li><b>Projeção da Expansão:</b> bicos do posto × litros por bico; 6 meses pelo padrão definido pela diretoria, 12 meses pela média das unidades maduras.</li>');
+    li.push('<li>Otto = gasolina + etanol. Arla e GNV ficam fora.</li>');
     el('fontes').innerHTML = li.join('');
     el('rodape').textContent = 'Dados do Sapatão cifrados no navegador · mercado em dados públicos da ANP';
   }

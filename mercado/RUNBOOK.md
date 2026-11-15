@@ -158,6 +158,8 @@ segmento saíram).
   nominal da rede: mesmas unidades × unidades novas × TAM e fatia do TAM) · *Bandeiras*
   (apoio à negociação: dentro da Raízen/Ipiranga, carteira do GV, crescimento da unidade
   contra a bandeira, quem vende para os postos do RS) · *Fontes e método* (legenda).
+- **Pouco texto na tela** (pedido do Samuel, 15/11/2026): notas de uma linha, explicação longa
+  só em `title` ou na aba Fontes e método; não voltar a encher os cartões de texto.
 - **Aba Expansão** (15/11/2026; só aparece quando `expansao.enc.json` tem candidatos): uma
   ficha por posto em avaliação — volume estimado (régua dos bicos ou volume informado), a
   área dele (vizinhança automática por raio, montada no navegador a partir de `area` do
@@ -167,8 +169,9 @@ segmento saíram).
   muda, o SOM soma) e o município (base anual `mercado/regiao.json`, postos do cadastro,
   frota `mercado/frota.json`). **Projeção na rede** (regra do Samuel, 15/11/2026): litros por
   bico por mês = compras ÷ bicos do cadastro da ANP (gasolina/etanol + diesel; GNV fora);
-  em 6 meses o posto novo chega ao padrão da unidade nova (a que entrou depois do início da
-  série: o 6º mês fechado dela na rede — enquanto não chega lá, o último mês fechado) e em
+  em 6 meses o posto novo chega ao padrão fixado pelo Samuel (campo `padrao6` do
+  `expansao.enc.json`, mil litros por bico por mês; valor só no cifrado — sem ele, vale a
+  unidade nova: o 6º mês fechado dela na rede) e em
   12 meses ao padrão das maduras (volume somado ÷ bicos somados, média dos últimos 12 meses
   fechados); projeção = bicos do candidato × padrão, nunca abaixo do volume de hoje
   (`padroes()` no `mercado.js`; a tabela "Litros por bico por mês na rede" abre a aba).

@@ -4,7 +4,7 @@
    estratégica: nunca em claro no repositório, nem em mensagem de commit ou log.
 
    Conteúdo (em claro só dentro do cifrado):
-     { v:1, atualizado_em,
+     { v:1, atualizado_em, padrao6?: <mil litros por bico por mês que um posto novo alcança em 6 meses>,
        candidatos:[ { cnpj, apelido, area:{tipo:'raio', km} | {tipo:'unidade', u:'<código da nossa unidade>'},
                       descartados?:[cnpj…], nota? } ] }
    area 'raio' = vizinhança automática: postos de mercado/postos-raio.json (`area`) a até km
@@ -40,7 +40,8 @@ if (cmd === 'abre') {
     const a = c.area || {};
     if (!(a.tipo === 'raio' && a.km > 0) && !(a.tipo === 'unidade' && a.u)) falha('candidato sem área (raio em km ou unidade).');
   }
-  const doc0 = { v: 1, atualizado_em: new Date().toISOString().slice(0, 16), candidatos: novo.candidatos };
+  if (novo.padrao6 != null && !(novo.padrao6 > 0)) falha('padrao6 inválido.');
+  const doc0 = { v: 1, atualizado_em: new Date().toISOString().slice(0, 16), ...(novo.padrao6 ? { padrao6: novo.padrao6 } : {}), candidatos: novo.candidatos };
   const doc = cifra(doc0, k);
   if (JSON.stringify(decifra(doc, k)) !== JSON.stringify(doc0)) falha('a conferência da cifra falhou.');
   writeFileSync(ARQ, JSON.stringify(doc) + '\n');
