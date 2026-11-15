@@ -1,0 +1,26 @@
+name: Market Share — exploração (temporário)
+
+# Baixa documentação pública da ANP para descobrir onde estão tancagem e bicos
+# dos postos. Só imprime no log; não grava nada no repositório. Apagar depois.
+on:
+  push:
+    paths:
+      - '.github/workflows/mercado-explora.yml'
+  workflow_dispatch:
+
+jobs:
+  explora:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Manual da API de revendedores
+        run: |
+          sudo apt-get install -y -q poppler-utils >/dev/null 2>&1 || true
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          curl -sL --max-time 120 -A "$UA" -o /tmp/manual.pdf 'https://www.gov.br/anp/pt-br/centrais-de-conteudo/paineis-dinamicos-da-anp/paineis-dinamicos-do-abastecimento/api-revendedores-manual-usuario.pdf'
+          file /tmp/manual.pdf; pdftotext -layout /tmp/manual.pdf - | head -400
+      - name: Links da página de dados cadastrais
+        run: |
+          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
+          for pg in 'https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/dados-cadastrais-dos-revendedores-varejistas-de-combustiveis-automotivos' 'https://www.gov.br/anp/pt-br/centrais-de-conteudo/paineis-dinamicos-da-anp/paineis-dinamicos-do-abastecimento'; do
+            echo "== $pg"; curl -sL --max-time 120 -A "$UA" "$pg" | grep -oiE 'href="[^"]+"' | grep -iE 'csv|zip|xls|api|revend|tanq|bico|json|pdf' | sort -u | head -80
+          done
