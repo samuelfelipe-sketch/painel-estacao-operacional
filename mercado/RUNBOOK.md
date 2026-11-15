@@ -156,7 +156,13 @@ Revendedor. O painel usa o último mês ≤ ao mês selecionado.
   sazonalidade e o ano anterior seguem a ANP); na lista aparece "informada". SOM = nossas compras ÷ SAM.
   Média por mês; unidade nova só nos meses em que já comprava; a variação da Rede usa só
   as unidades que já compravam no ano anterior.
-- **Concorrentes de cada unidade** (mesma aba, `mercado/postos-raio.json`): a lista vale
+- **Legenda e ranking** (15/11/2026): a aba Momento e o bloco "Nossa região" mostram a legenda
+  TAM (mercado total do RS, todos os segmentos) · SAM (mercado que disputamos = nossas compras +
+  concorrentes estimados) · SOM (nossa fatia do SAM). Tocar numa unidade da tabela SAM/SOM abre o
+  ranking da área (nós + concorrentes, do maior para o menor, fatia do SAM e "nós vs ele" = nosso
+  volume ÷ volume do concorrente − 1), com os avisos de posto novo a classificar e de posto que
+  saiu do cadastro. O bloco separado "Concorrentes de cada unidade" saiu.
+- **Lista de concorrentes** (`mercado/postos-raio.json`, base do ranking): a lista vale
   pela escolha do Samuel (revisão de 13/11/2026: SF 5, PS 20, AS 5; riscados viram
   `descartados`). O workflow `mercado-postos.yml` relê toda segunda o cadastro público da
   ANP: posto da lista que sumiu do cadastro aparece como "saiu do cadastro" (fechou ou

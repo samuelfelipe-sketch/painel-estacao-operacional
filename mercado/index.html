@@ -136,8 +136,17 @@ td .parc{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var
 .mb .tr b{position:absolute;top:0;bottom:0;background:var(--mercado);border-radius:3px}
 .mb.sap .tr b{background:var(--sapatao)}
 .mb .v{font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
-#tCon,#conListas table,#tReg{min-width:0}.so-cel{display:none}
-@media (max-width:640px){#conBloco .mo{display:none}#conBloco .so-cel{display:inline}#tCon,#conListas table{font-size:12.5px}}
+.glos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0 14px}
+.glos div{background:#F7F9FB;border:1px solid var(--linha);border-radius:12px;padding:10px 12px}
+.glos dt{font-family:var(--f-mono);font-weight:700;color:var(--laranja-escuro);font-size:13px;margin-bottom:2px}
+.glos dd{margin:0;font-size:13px;line-height:1.45;color:var(--tinta-suave)}.glos dd b{color:var(--tinta)}
+#tReg,table.rk{min-width:0}
+#tReg tr.un-abre{cursor:pointer}#tReg tr.un-abre:hover td{background:#F7F9FB}#tReg tr.un-abre:focus-visible{outline:2px solid var(--laranja);outline-offset:-2px}
+#tReg .seta{display:inline-block;width:1em;color:var(--laranja-escuro)}
+#tReg tr.rk-det>td{background:#FBFCFD;padding:6px 10px 14px}
+.rk-res{margin:6px 0 4px;font-size:13.5px}.rk .selo{font-size:10.5px;padding:2px 7px;margin-left:4px}
+details.como{margin-top:6px}details.como p{margin:6px 0 0}
+@media (max-width:640px){.glos{grid-template-columns:1fr;gap:6px}#tReg tr.rk-det>td{padding:4px 2px 12px}table.rk{font-size:12.5px}table.rk .mo{display:none}}
 @media (max-width:480px){.mb{grid-template-columns:128px 1fr 54px;gap:8px}#tMom,#tMomMes,#tReg,#tRegTend{min-width:0;font-size:12.5px}#tMom .mo,#tMomMes .mo,#tReg .mo,#tRegTend .mo{display:none}#tMom td,#tMom th{padding-left:6px;padding-right:6px}}
 .duplo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:560px){.duplo{grid-template-columns:1fr}}
@@ -218,23 +227,27 @@ body.so-leitura .so-edita{display:none}
 
   <section class="card aba" data-aba="momento" aria-labelledby="t-mom" hidden>
     <h2 id="t-mom">Momento de mercado</h2>
+    <dl class="glos">
+      <div><dt>TAM</dt><dd><b>Mercado total.</b> Todo o combustível vendido no RS: postos, TRR e consumidor final (ANP).</dd></div>
+      <div><dt>SAM</dt><dd><b>Mercado que disputamos.</b> O volume da área de cada unidade: as nossas compras + o volume estimado dos concorrentes escolhidos.</dd></div>
+      <div><dt>SOM</dt><dd><b>Nossa fatia.</b> Quanto do SAM é nosso: nossas compras ÷ SAM.</dd></div>
+    </dl>
     <p class="nota" id="n-mom"></p>
     <div class="veredito" id="mVer"></div>
     <div class="mbar" id="mBar"></div>
     <div class="tabela" style="margin-top:14px"><table id="tMom"><thead></thead><tbody></tbody></table></div>
     <div class="aviso" id="a-mom" hidden></div>
     <div id="regBloco" hidden>
-      <h2 style="margin-top:26px">Nossa região: TAM, SAM e SOM</h2>
+      <h2 style="margin-top:26px">Nossa região: SAM e SOM</h2>
+      <dl class="glos">
+        <div><dt>TAM</dt><dd><b>Mercado total.</b> Todo o combustível vendido no RS: postos, TRR e consumidor final (ANP).</dd></div>
+        <div><dt>SAM</dt><dd><b>Mercado que disputamos.</b> O volume da área de cada unidade: as nossas compras + o volume estimado dos concorrentes escolhidos.</dd></div>
+        <div><dt>SOM</dt><dd><b>Nossa fatia.</b> Quanto do SAM é nosso: nossas compras ÷ SAM.</dd></div>
+      </dl>
       <p class="nota" id="n-reg"></p>
       <div class="tabela"><table id="tReg"><thead></thead><tbody></tbody></table></div>
       <p class="nota" id="n-regTend" style="margin-top:12px"></p>
       <div class="tabela"><table id="tRegTend"><thead></thead><tbody></tbody></table></div>
-    </div>
-    <div id="conBloco" hidden>
-      <h2 style="margin-top:26px">Concorrentes de cada unidade</h2>
-      <p class="nota" id="n-con"></p>
-      <div class="tabela"><table id="tCon"><thead></thead><tbody></tbody></table></div>
-      <div id="conListas"></div>
     </div>
     <h2 style="margin-top:26px">Mês a mês contra o mesmo mês do ano anterior</h2>
     <p class="nota" id="n-momMes"></p>
@@ -297,7 +310,7 @@ function mostra(){
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=7';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=8';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){
