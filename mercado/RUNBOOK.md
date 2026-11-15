@@ -13,6 +13,7 @@ segmento (posto revendedor, só bandeirados, todos os segmentos).
 | `mercado/anp-vendas.json` | mercado agregado por recorte × mês × segmento × produto × distribuidora (mil m³), desde 2025-01 | não (dado público da ANP) | workflow `mercado-anp.yml` |
 | `mercado/sapatao.enc.json` | compras do Sapatão por mês × bandeira × produto (m³) — **CIFRADO** com a chave dos dados | **sim** | `scripts/mercado-sapatao.mjs` |
 | `mercado/regiao-raio.json` | por unidade: CNPJ, coordenada (link do Google Maps), raio/trecho/corredor e a **lista de concorrentes escolhida pelo Samuel** (`concorrentes`) + `descartados` | não (dado público) | à mão, quando o Samuel reclassifica |
+| `mercado/expansao.enc.json` | postos em avaliação para entrar na rede (CNPJ, apelido, área por raio ou a área de uma unidade nossa) — **CIFRADO**; a lista de alvos é estratégica e nunca aparece em claro, nem em commit ou log | **sim** | `scripts/mercado-expansao.mjs grava --json <arquivo fora do repo>` |
 | `mercado/estimativas.enc.json` | volume de concorrentes informado pela diretoria (m³/mês, por CNPJ, mês de referência) — **CIFRADO** | **sim** | `scripts/mercado-estimativas.mjs grava --json <arquivo fora do repo>` |
 | `mercado/postos-raio.json` | concorrentes da lista com bandeira/distância/situação no cadastro da ANP, `a_revisar` (posto novo na área ainda não classificado), `corredor_candidatos` (AS) e histórico | não (dado público) | workflow `mercado-postos.yml` (segunda) |
 | `mercado/postos.json` | postos revendedores por bandeira e recorte, por mês de referência | não (API de Revendedores da ANP via relatório Posto Seguro) | à mão, a cada relatório recebido |
@@ -157,14 +158,23 @@ segmento saíram).
   nominal da rede: mesmas unidades × unidades novas × TAM e fatia do TAM) · *Bandeiras*
   (apoio à negociação: dentro da Raízen/Ipiranga, carteira do GV, crescimento da unidade
   contra a bandeira, quem vende para os postos do RS) · *Fontes e método* (legenda).
+- **Aba Expansão** (15/11/2026; só aparece quando `expansao.enc.json` tem candidatos): uma
+  ficha por posto em avaliação — volume estimado (régua dos bicos ou volume informado), a
+  área dele (vizinhança automática por raio, montada no navegador a partir de `area` do
+  `postos-raio.json` = todos os postos dos municípios candidatos com coordenada e bicos; ou
+  a mesma área de uma unidade nossa), posição e fatia na área, efeito na rede (volume e
+  fatia do TAM), efeito no SOM das unidades que hoje o têm como concorrente (a área não
+  muda, o SOM soma) e o município (base anual `mercado/regiao.json`, postos do cadastro,
+  frota `mercado/frota.json`). Município fora da região: acrescentar em
+  `municipios_candidatos` (`regiao-raio.json`), em `regiao-municipios.json` e rodar os
+  workflows `mercado-postos`, `mercado-municipios` e `mercado-frota`.
 - Lista de concorrentes: o workflow `mercado-postos.yml` relê toda segunda o cadastro da
   ANP; posto novo na área (SF raio 5 km; PS 10 km + BR-116 km 220–250; AS corredor da
   RS-239) que não está nem em `concorrentes` nem em `descartados` entra em `a_revisar`.
   Para classificar: mover o CNPJ em `regiao-raio.json` e dar push.
-- Fora de uso desde 15/11/2026 (o painel não lê mais): `mercado/postos.json` e
-  `mercado/regiao.json` (workflow `mercado-municipios.yml`, base municipal) e
-  `mercado/frota.json` (workflow `mercado-frota.yml`). Os arquivos e workflows seguem no
-  repositório até decisão de apagar.
+- `mercado/regiao.json` (workflow `mercado-municipios.yml`, base municipal anual) e
+  `mercado/frota.json` (workflow `mercado-frota.yml`) servem só à aba Expansão.
+  `mercado/postos.json` ficou fora de uso em 15/11/2026.
 
 ## Chave dos dados trocada
 

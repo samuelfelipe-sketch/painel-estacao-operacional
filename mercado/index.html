@@ -76,6 +76,7 @@ select.mes{font-family:var(--f-titulo);font-size:13px;font-weight:600;border:1px
 .abas{display:flex;flex-wrap:wrap;gap:4px;background:#fff;border:1px solid var(--linha);border-radius:14px;padding:5px;box-shadow:var(--sombra)}
 .abas button{flex:1 1 auto;font-family:var(--f-titulo);font-size:14px;font-weight:600;border:0;background:transparent;color:var(--tinta-suave);padding:10px 14px;border-radius:10px;cursor:pointer}
 .abas button[aria-selected="true"]{background:var(--laranja-fundo);color:var(--laranja-escuro)}
+.abas button[hidden]{display:none}
 .abas button:focus-visible{outline:2px solid var(--laranja);outline-offset:2px}
 .aba[hidden]{display:none}
 .dobra{margin-top:12px}.dobra summary{cursor:pointer;font-size:13px;color:var(--tinta-suave);font-weight:600}
@@ -143,6 +144,10 @@ tr.total td{font-weight:700;border-top:2px solid var(--linha)}
 .card.veredito{display:grid;gap:8px;margin:0;padding:14px 18px}.card.veredito:empty{display:none}
 .mini .val small.up{color:var(--bom)}.mini .val small.dn{color:var(--ruim)}
 #tEvo,#tRede,#tBand{min-width:0}
+.ficha{border:1px solid var(--linha);border-radius:14px;padding:14px 16px;margin-top:14px}.ficha h3{font-size:17px}.ficha>.nota{margin-bottom:10px;max-width:none}
+.ficha .quad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.ficha .exp-ef{margin:12px 0 0;font-size:13.5px}
+@media (max-width:1000px){.ficha .quad{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.ficha .quad{grid-template-columns:1fr}.ficha{padding:12px}}
 @media (max-width:820px){.funil{grid-template-columns:1fr;gap:8px}.bomba.fn{padding:11px 14px}.bomba.fn .val{font-size:24px;margin-top:3px}.bomba.fn .sub{margin-top:3px}}
 @media (max-width:640px){#tEvo .mo,#tRede .mo,#tBand .mo{display:none}#tEvo,#tRede,#tBand{font-size:12.5px}#tEvo td,#tEvo th,#tBand td,#tBand th{padding-left:6px;padding-right:6px}}
 .glos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0 14px}
@@ -214,6 +219,7 @@ body.so-leitura .so-edita{display:none}
     <button type="button" data-aba="unidades" aria-selected="true">Unidades</button>
     <button type="button" data-aba="evolucao" aria-selected="false">Evolução</button>
     <button type="button" data-aba="bandeiras" aria-selected="false">Bandeiras</button>
+    <button type="button" data-aba="expansao" aria-selected="false" hidden>Expansão</button>
     <button type="button" data-aba="fontes" aria-selected="false">Fontes e método</button>
   </nav>
 
@@ -247,6 +253,12 @@ body.so-leitura .so-edita{display:none}
     <div class="barras" id="barras"></div>
   </section>
 
+  <section class="card aba" data-aba="expansao" aria-labelledby="t-exp" hidden>
+    <h2 id="t-exp">Expansão: postos em avaliação</h2>
+    <p class="nota" id="n-exp"></p>
+    <div id="expFichas"></div>
+  </section>
+
   <section class="card aba" data-aba="fontes" aria-labelledby="t-fontes" hidden>
     <h2 id="t-fontes">O que é cada número e de onde vem</h2>
     <dl class="glos">
@@ -269,15 +281,15 @@ body.so-leitura .so-edita{display:none}
 var CACHE_S='sapatao-mercado-v1', CACHE_A='sapatao-mercado-anp-v1';
 var REPO='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/mercado/';
 var API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/mercado/';
-var abriu=false, ANP=null, SAP=null, RAIO=null, EST=null;
+var abriu=false, ANP=null, SAP=null, RAIO=null, EST=null, EXP=null, REGIAO=null, FROTA=null;
 function mostra(){
   if(!ANP||!SAP)return;
-  window.DADOS_MERCADO={anp:ANP,sapatao:SAP,raio:RAIO,estim:EST};
+  window.DADOS_MERCADO={anp:ANP,sapatao:SAP,raio:RAIO,estim:EST,exp:EXP,regiao:REGIAO,frota:FROTA};
   if(abriu){ if(window.renderMercado)window.renderMercado(window.DADOS_MERCADO); return; }
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=10';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=11';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){
@@ -302,17 +314,23 @@ async function carrega(){
     var ca=JSON.parse(localStorage.getItem(CACHE_A)||'null'); if(ca&&ca.dados)ANP=ca;
     var cs=JSON.parse(localStorage.getItem(CACHE_S)||'null'); if(cs){var d=await decifraDoc(cs); if(d)SAP=d;}
     RAIO=JSON.parse(localStorage.getItem(CACHE_A+'-raio')||'null');
+    REGIAO=JSON.parse(localStorage.getItem(CACHE_A+'-regiao')||'null'); FROTA=JSON.parse(localStorage.getItem(CACHE_A+'-frota')||'null');
+    var cx=JSON.parse(localStorage.getItem(CACHE_S+'-exp')||'null'); if(cx){var dx=await decifraDoc(cx); if(dx)EXP=dx;}
     var ce=JSON.parse(localStorage.getItem(CACHE_S+'-est')||'null'); if(ce){var de=await decifraDoc(ce); if(de)EST=de;}
     mostra();
   }catch(e){}
   /* 2) rede: o que mudou manda */
   try{
-    var [anp,sap,raio,est]=await Promise.all([pega('anp-vendas.json'),pega('sapatao.enc.json'),pega('postos-raio.json'),pega('estimativas.enc.json')]);
+    var [anp,sap,raio,est,exp,regiao,frota]=await Promise.all([pega('anp-vendas.json'),pega('sapatao.enc.json'),pega('postos-raio.json'),pega('estimativas.enc.json'),pega('expansao.enc.json'),pega('regiao.json'),pega('frota.json')]);
     if(!anp&&!ANP){falha(' A base da ANP ainda não foi publicada (o workflow "Market Share — base ANP" grava mercado/anp-vendas.json).');return;}
     if(!sap&&!SAP){falha(' Os volumes do Sapatão ainda não foram publicados (scripts/mercado-sapatao.mjs).');return;}
     var mudou=false;
     if(anp&&JSON.stringify(anp)!==JSON.stringify(ANP)){ANP=anp;mudou=true;try{localStorage.setItem(CACHE_A,JSON.stringify(anp));}catch(e){}}
     if(raio&&raio.v>=2&&JSON.stringify(raio)!==JSON.stringify(RAIO)){RAIO=raio;mudou=true;try{localStorage.setItem(CACHE_A+'-raio',JSON.stringify(raio));}catch(e){}}
+    if(regiao&&JSON.stringify(regiao)!==JSON.stringify(REGIAO)){REGIAO=regiao;mudou=true;try{localStorage.setItem(CACHE_A+'-regiao',JSON.stringify(regiao));}catch(e){}}
+    if(frota&&JSON.stringify(frota)!==JSON.stringify(FROTA)){FROTA=frota;mudou=true;try{localStorage.setItem(CACHE_A+'-frota',JSON.stringify(frota));}catch(e){}}
+    if(exp&&exp.enc===1){var cx2=null;try{cx2=JSON.parse(localStorage.getItem(CACHE_S+'-exp')||'null');}catch(e){}
+      if(!cx2||cx2.ct!==exp.ct){var dx2=await decifraDoc(exp);if(dx2){EXP=dx2;mudou=true;try{localStorage.setItem(CACHE_S+'-exp',JSON.stringify(exp));}catch(e){}}}}
     if(est&&est.enc===1){var ce2=null;try{ce2=JSON.parse(localStorage.getItem(CACHE_S+'-est')||'null');}catch(e){}
       if(!ce2||ce2.ct!==est.ct){var de2=await decifraDoc(est);if(de2){EST=de2;mudou=true;try{localStorage.setItem(CACHE_S+'-est',JSON.stringify(est));}catch(e){}}}}
     if(sap&&sap.enc===1){

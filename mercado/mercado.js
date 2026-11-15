@@ -1,5 +1,5 @@
 /* Market Share — lógica do painel na visão TAM · SAM · SOM (refeito em 15/11/2026).
-   Recebe window.DADOS_MERCADO = {anp, sapatao, raio, estim} (ver index.html) e desenha
+   Recebe window.DADOS_MERCADO = {anp, sapatao, raio, estim, exp, regiao, frota} (ver index.html) e desenha
    tudo na tela; window.renderMercado(D) redesenha quando um arquivo publicado muda.
    Nenhum número fica escrito aqui: tudo vem dos arquivos.
 
@@ -26,8 +26,8 @@
   /* ---------- estado (lembrado por aparelho) ---------- */
   var st = { prod: 'tot', per: 'mes', mes: null, un: null, aba: 'unidades' }; /* un: null = todas as unidades */
   try { var g = JSON.parse(localStorage.getItem('sapatao-mercado-estado-v2') || 'null'); if (g) ['prod', 'per', 'un', 'aba'].forEach(function (k) { if (g[k]) st[k] = g[k]; }); } catch (e) {}
-  try { var hb = (location.hash || '').replace('#', ''); if (/^(unidades|evolucao|bandeiras|fontes)$/.test(hb)) st.aba = hb; } catch (e) {}
-  if (!/^(unidades|evolucao|bandeiras|fontes)$/.test(st.aba)) st.aba = 'unidades';
+  try { var hb = (location.hash || '').replace('#', ''); if (/^(unidades|evolucao|bandeiras|expansao|fontes)$/.test(hb)) st.aba = hb; } catch (e) {}
+  if (!/^(unidades|evolucao|bandeiras|expansao|fontes)$/.test(st.aba)) st.aba = 'unidades';
   function guarda() { try { localStorage.setItem('sapatao-mercado-estado-v2', JSON.stringify({ prod: st.prod, per: st.per, un: st.un, aba: st.aba })); } catch (e) {} }
 
   /* ---------- formatação ---------- */
@@ -457,6 +457,84 @@
     box.innerHTML = h;
   }
 
+  /* ---------- aba Expansão: postos em avaliação (mercado/expansao.enc.json, cifrado) ----------
+     Para cada candidato: volume estimado, a área dele (vizinhança por raio ou a área de uma
+     unidade nossa), o efeito na rede e no SOM das unidades que hoje concorrem com ele, e o
+     município (base anual da ANP e frota do Senatran). A lista de alvos é estratégica e só
+     existe cifrada; a vizinhança é montada aqui a partir do cadastro público (raio.area). */
+  function distKm(a, b) { var R = 6371, r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lon - a.lon) * r; var h = Math.pow(Math.sin(dLa / 2), 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.pow(Math.sin(dLo / 2), 2); return 2 * R * Math.asin(Math.sqrt(h)); }
+  function temExp() { return !!(D.exp && D.exp.candidatos && D.exp.candidatos.length && temRaio()); }
+  function nossaDe(cnpj) { var r = null; codigosUn().forEach(function (u) { if ((D.raio.unidades[u] || {}).cnpj === cnpj) r = u; }); return r; }
+  function postoArea(cnpj) {
+    var a = (D.raio.area || []).filter(function (p) { return p.cnpj === cnpj; })[0]; if (a) return a;
+    var r = null; codigosUn().forEach(function (u) { ((D.raio.unidades[u] || {}).postos || []).forEach(function (p) { if (p.cnpj === cnpj) r = p; }); }); return r;
+  }
+  function mediaEst(ms, p) { var s = 0; for (var i = 0; i < ms.length; i++) { var e = estPosto(ms[i], p); if (e == null) return null; s += e; } return ms.length ? s / ms.length : null; }
+  var EXP_ABERTOS = {};
+  function expansao() {
+    var bt = document.querySelector('#abas button[data-aba="expansao"]'), box = el('expFichas');
+    if (bt) bt.hidden = !temExp();
+    if (!box) return;
+    if (!temExp()) { box.innerHTML = ''; if (st.aba === 'expansao') st.aba = 'unidades'; return; }
+    var meses = mesesValidos(), R = D.raio, todas = codigosUn();
+    el('n-exp').innerHTML = esc('Postos em avaliação para entrar na rede · ' + PROD_NOME[st.prod] + ' · ' + perLbl(st.mes) + ' · média por mês. ') + 'O volume é <b>estimado</b> pelo tamanho do posto (bicos) e pela média da bandeira; num posto específico a régua pode errar bastante. O volume real só vem dos números do vendedor.';
+    if (!meses.length) { box.innerHTML = '<p class="falta">Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.</p>'; return; }
+    var tam = tamDe(meses) / meses.length, nosRede = nosDe(meses, todas) / meses.length;
+    box.innerHTML = D.exp.candidatos.map(function (c, idx) {
+      var p = postoArea(c.cnpj);
+      if (!p) return '<div class="ficha"><h3>' + esc(c.apelido) + '</h3><p class="falta">Posto não encontrado no cadastro da ANP da região.</p></div>';
+      var vol = mediaEst(meses, p), inf = informada(p), viz = [], rot = '';
+      /* a área do candidato */
+      if (c.area.tipo === 'unidade' && R.unidades[c.area.u]) {
+        viz = lista(c.area.u).filter(function (q) { return q.cnpj !== c.cnpj; }).map(function (q) { return { p: q }; });
+        viz.push({ nosso: c.area.u });
+        rot = 'a mesma área do ' + UNID()[c.area.u].nome;
+      } else {
+        var fora = {}; (c.descartados || []).forEach(function (x) { fora[x] = 1; });
+        (R.area || []).forEach(function (q) { if (q.cnpj === c.cnpj || fora[q.cnpj] || q.lat == null || p.lat == null) return; var d = distKm(p, q); if (d > c.area.km) return; var u = nossaDe(q.cnpj); viz.push(u ? { nosso: u, km: d } : { p: q, km: d }); });
+        rot = 'raio de ' + num(c.area.km, 0) + ' km (lista automática)';
+      }
+      viz.forEach(function (v) { v.v = v.nosso ? nosDe(meses, [v.nosso]) / meses.length : mediaEst(meses, v.p); if (v.km == null && p.lat != null) { var q = v.nosso ? R.unidades[v.nosso] : postoArea(v.p.cnpj); if (q && q.lat != null) v.km = distKm(p, q); } });
+      viz = viz.filter(function (v) { return v.v != null; });
+      var linhas = viz.concat([{ cand: true, v: vol }]).sort(function (a, b) { return b.v - a.v; });
+      var sam = 0; linhas.forEach(function (l) { sam += l.v; });
+      var pos = 0; linhas.forEach(function (l, i) { if (l.cand) pos = i + 1; });
+      /* unidades nossas que hoje têm o candidato na lista de concorrentes */
+      var conc = todas.filter(function (u) { return lista(u).some(function (q) { return q.cnpj === c.cnpj; }); });
+      var efeitos = conc.map(function (u) { var a = calc(meses, [u], lista(u)); if (!a) return null; var v = mediaEst(a.ms, p); return v == null ? null : UNID()[u].nome + ' de ' + pct(a.som, 1) + ' para <b>' + pct((a.nos + v) / a.sam * 100, 1) + '</b>'; }).filter(Boolean);
+      var dists = todas.map(function (u) { var x = R.unidades[u]; return x && x.lat != null && p.lat != null ? UNID()[u].nome + ' ' + num(distKm(p, x), 1) + ' km' : null; }).filter(Boolean).join(' · ');
+      /* município: mercado anual (ANP), postos do cadastro e frota (Senatran) */
+      var mun = p.municipio, G = D.regiao, ps = st.prod === 'otto' ? ['gasolina', 'etanol'] : st.prod === 'diesel' ? ['diesel'] : ['gasolina', 'etanol', 'diesel'], munTxt = '', munVal = '—';
+      function volAno(base, a) { var x = base && base[a]; if (!x) return null; var s = 0; ps.forEach(function (k) { s += x[k] || 0; }); return s; }
+      if (G && G.municipios && G.municipios[mun]) {
+        var ano = G.ultimo_ano, ant = String(+ano - 1), vM = volAno(G.municipios[mun], ano), vMa = volAno(G.municipios[mun], ant), vR = volAno(G.rs, ano), vRa = volAno(G.rs, ant);
+        var nPostos = (R.area || []).filter(function (q) { return q.municipio === mun; }).length;
+        munVal = num(vM / 12, 0) + '<small>m³/mês</small>';
+        munTxt = 'Base ' + ano + ' da ANP (inclui TRR e consumidor final)' + (nPostos ? ' · ' + nPostos + ' postos → média de ' + num(vM / 12 / nPostos, 0) + ' m³ por posto' : '') + ' · ' + ano + ' vs ' + ant + ': <b class="' + cls(cresc(vMa, vM)) + '">' + sinal(cresc(vMa, vM)) + '</b> (RS ' + sinal(cresc(vRa, vR)) + ')';
+      } else munTxt = 'Sem a base anual da ANP para este município.';
+      var F = D.frota, frTxt = '';
+      if (F && F.meses) {
+        var fm = F.ultimo_mes, fa = anoAnt(fm), x1 = F.meses[fm] && F.meses[fm].municipios[mun], x0 = F.meses[fa] && F.meses[fa].municipios[mun];
+        if (x1 && x0) frTxt = ' · frota em ' + mesLbl(fm) + ': ' + num(x1.total, 0) + ' veículos, <b class="' + cls(cresc(x0.total, x1.total)) + '">' + sinal(cresc(x0.total, x1.total)) + '</b> em 12 meses (RS ' + sinal(cresc(F.meses[fa].rs.total, F.meses[fm].rs.total)) + ')';
+      }
+      var aberto = !!EXP_ABERTOS[idx];
+      var h = '<div class="ficha"><h3>' + esc(c.apelido) + '</h3><p class="nota">' + esc(nomePosto(p.nome)) + ' · ' + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(p.end || '')) + (p.end ? ', ' : '') + esc([p.bairro, p.municipio].filter(Boolean).map(nomeCidade).join(' · ')) + (dists ? ' · distância: ' + esc(dists) : '') + '</p>';
+      h += '<div class="quad">';
+      h += '<div class="mini"><div class="lbl">Volume estimado</div><div class="val">' + num(vol, 0) + '<small>m³/mês</small></div><div class="sub">' + (inf ? 'Volume informado pela diretoria' : 'Pela régua dos bicos') + (p.infra ? ' · ' + p.infra.bo + ' bicos de gasolina/etanol e ' + p.infra.bd + ' de diesel · tanques ' + num(p.infra.to + p.infra.td, 0) + ' m³' : '') + '</div></div>';
+      h += '<div class="mini"><div class="lbl">Na área dele</div><div class="val">' + pos + 'º<small>de ' + linhas.length + '</small></div><div class="sub">' + esc(rot) + ' · fatia de <b>' + pct(vol / sam * 100, 1) + '</b> de ' + num(sam, 0) + ' m³/mês</div></div>';
+      h += '<div class="mini"><div class="lbl">Efeito na rede</div><div class="val"><span class="up">+' + num(vol / nosRede * 100, 0) + '%</span><small>de volume</small></div><div class="sub">Rede de ' + num(nosRede, 0) + ' para ' + num(nosRede + vol, 0) + ' m³/mês · fatia do TAM de ' + pct(nosRede / tam * 100, 2) + ' para <b>' + pct((nosRede + vol) / tam * 100, 2) + '</b></div></div>';
+      h += '<div class="mini"><div class="lbl">Município · ' + esc(nomeCidade(mun)) + '</div><div class="val">' + munVal + '</div><div class="sub">' + munTxt + frTxt + '</div></div>';
+      h += '</div>';
+      h += '<p class="exp-ef">' + (efeitos.length ? '<b>Hoje é concorrente direto de ' + esc(nomes(conc)) + '.</b> Com ele na rede, a área não muda e o SOM soma: ' + efeitos.join('; ') + '.' : '<b>Não está na lista de concorrentes de nenhuma unidade:</b> seria uma área nova para a rede, com SOM próprio de ' + pct(vol / sam * 100, 1) + ' no começo.') + '</p>';
+      h += '<details class="dobra" data-exp="' + idx + '"' + (aberto ? ' open' : '') + '><summary>Ver os ' + linhas.length + ' postos da área</summary><div class="tabela"><table class="rk"><thead><tr><th class="num">#</th><th>Posto</th><th class="num mo">km</th><th class="num">m³/mês</th><th class="num">Fatia</th></tr></thead><tbody>' + linhas.map(function (l, i) {
+        if (l.cand) return '<tr class="dest"><td class="num">' + (i + 1) + '</td><td>' + esc(c.apelido) + ' (em avaliação)</td><td class="num mo">—</td><td class="num">' + num(l.v, 0) + '</td><td class="num">' + pct(l.v / sam * 100, 1) + '</td></tr>';
+        if (l.nosso) return '<tr><td class="num">' + (i + 1) + '</td><td><span class="ponto s"></span><b>' + esc(UNID()[l.nosso].nome) + '</b> (nosso)</td><td class="num mo">' + (l.km != null ? num(l.km, 1) : '—') + '</td><td class="num">' + num(l.v, 0) + '</td><td class="num">' + pct(l.v / sam * 100, 1) + '</td></tr>';
+        var q = l.p; return '<tr><td class="num">' + (i + 1) + '</td><td>' + esc(nomePosto(q.nome)) + (informada(q) ? ' <small class="selo">informada</small>' : '') + '<br><small class="falta">' + esc(nomeBand(q.bandeira)) + ' · ' + esc([q.bairro, q.municipio].filter(Boolean).map(nomeCidade).join(' · ')) + '</small></td><td class="num mo">' + (l.km != null ? num(l.km, 1) : '—') + '</td><td class="num">' + num(l.v, 0) + '</td><td class="num">' + pct(l.v / sam * 100, 1) + '</td></tr>';
+      }).join('') + '</tbody></table></div></details></div>';
+      return h;
+    }).join('');
+  }
+
   /* ---------- aba Fontes e método ---------- */
   function fontes() {
     var A = D.anp, S = D.sapatao, R = D.raio, ms = mesesSap(), ma = mesesAnp(), li = [];
@@ -499,7 +577,7 @@
     memo = {};
     montaMeses();
     marca('segProd', st.prod); marca('segPer', st.per);
-    montaUnidades(); chips(); funil(); unidades(); evolucao(); bandeiras(); fontes(); mostraAba();
+    montaUnidades(); chips(); funil(); unidades(); evolucao(); bandeiras(); expansao(); fontes(); mostraAba();
   }
   window.renderMercado = function (dados) { D = dados || D; desenha(); };
   liga('segProd', 'prod'); liga('segPer', 'per');
@@ -511,6 +589,7 @@
     if (ev.type === 'keydown') { if (ev.key !== 'Enter' && ev.key !== ' ') return; ev.preventDefault(); }
     var u = tr.getAttribute('data-u'); ABERTOS[u] = !ABERTOS[u]; unidades();
   }
+  el('expFichas').addEventListener('toggle', function (ev) { var d = ev.target; if (d && d.dataset && d.dataset.exp != null) EXP_ABERTOS[d.dataset.exp] = d.open; }, true);
   el('tReg').addEventListener('click', abreUn); el('tReg').addEventListener('keydown', abreUn);
   desenha();
 })();
