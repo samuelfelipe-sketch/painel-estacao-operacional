@@ -495,14 +495,29 @@
     var s = I[b]; if (s && s.n >= 5 && s['b' + g] > 0) return s['b' + g] / s.n;
     var n = 0, t = 0; Object.keys(I).forEach(function (k) { n += I[k].n; t += I[k]['b' + g]; }); return n ? t / n : null;
   }
-  /* volume estimado do posto no mês (m³): média da bandeira × (bicos do posto ÷ bicos médios da bandeira),
-     por grupo de produto; sem bicos conhecidos, vale a média da bandeira */
+  /* régua automática por grupo: média da bandeira × (bicos do posto ÷ bicos médios da bandeira); sem bicos, a média */
+  function autoPosto(ym, p, prod) {
+    var g = prod === 'otto' ? 'o' : 'd', m = mediaPosto(ym, p.bandeira, prod); if (m == null) return null;
+    var bm = p.infra ? bicosMedios(p.bandeira, g) : null;
+    return m * (p.infra && bm ? p.infra['b' + g] / bm : 1);
+  }
+  /* estimativa informada (mercado/estimativas.enc.json): fator = informado ÷ régua no mês de referência,
+     aplicado à régua de cada mês (a sazonalidade segue a ANP) */
+  function informada(p) { var E = D.estim && D.estim.postos; return E && E[p.cnpj] || null; }
+  function fatores(p) {
+    var e = informada(p); if (!e) return null;
+    var ref = anpMes(e.ref, 'RS') ? e.ref : D.anp.ultimo_fechado;
+    var o = autoPosto(ref, p, 'otto') || 0, d = autoPosto(ref, p, 'diesel') || 0;
+    if (e.otto != null && e.diesel != null) return { otto: o ? e.otto / o : null, diesel: d ? e.diesel / d : null, fixo: { otto: o ? null : e.otto, diesel: d ? null : e.diesel } };
+    var f = o + d ? e.total / (o + d) : null; return { otto: f, diesel: f, fixo: { otto: f == null ? e.total * 0.5 : null, diesel: f == null ? e.total * 0.5 : null } };
+  }
+  /* volume estimado do posto no mês (m³), no produto escolhido */
   function estPosto(ym, p) {
-    var gs = st.prod === 'tot' ? ['otto', 'diesel'] : [st.prod], t = 0;
+    var gs = st.prod === 'tot' ? ['otto', 'diesel'] : [st.prod], t = 0, F = fatores(p);
     for (var i = 0; i < gs.length; i++) {
-      var g = gs[i] === 'otto' ? 'o' : 'd', m = mediaPosto(ym, p.bandeira, gs[i]); if (m == null) return null;
-      var bm = p.infra ? bicosMedios(p.bandeira, g) : null;
-      t += m * (p.infra && bm ? p.infra['b' + g] / bm : 1);
+      if (F && F.fixo[gs[i]] != null) { t += F.fixo[gs[i]]; continue; }
+      var a = autoPosto(ym, p, gs[i]); if (a == null) return null;
+      t += a * (F && F[gs[i]] != null ? F[gs[i]] : 1);
     }
     return t;
   }
@@ -524,7 +539,7 @@
     var tam = 0; meses.forEach(function (m) { tam += mkt(m, 'RS', 'rev').Total * 1000; });
     var nosRede = 0; meses.forEach(function (m) { us.forEach(function (u) { nosRede += vU(m, u) || 0; }); });
     var g = R.gerado_em || '';
-    el('n-reg').innerHTML = esc('TAM = postos revendedores do RS: ' + (meses.length ? num(tam / meses.length, 0) + ' m³/mês' : '—') + (meses.length && nosRede ? ' (o Sapatão' + (todasUn() ? '' : ' selecionado') + ' tem ' + pct(nosRede / tam * 100, 2) + ')' : '') + '. SAM = nossas compras + volume estimado dos concorrentes escolhidos de cada unidade: média por posto da bandeira dele no RS no mês (ANP) × o tamanho do posto medido pelos bicos (gasolina/etanol e diesel, API de Revendedores da ANP). Conferida nas nossas unidades, a régua erra perto de 10% no total por posto, mais na divisão Otto/Diesel. SOM = nossa fatia do SAM, sem meta definida. Média por mês, ' + PROD_NOME[st.prod] + ' · ' + perLbl(st.mes) + '; unidade nova conta só os meses em que já comprava; a variação da rede usa só as unidades que já compravam no ano anterior.');
+    el('n-reg').innerHTML = esc('TAM = postos revendedores do RS: ' + (meses.length ? num(tam / meses.length, 0) + ' m³/mês' : '—') + (meses.length && nosRede ? ' (o Sapatão' + (todasUn() ? '' : ' selecionado') + ' tem ' + pct(nosRede / tam * 100, 2) + ')' : '') + '. SAM = nossas compras + volume estimado dos concorrentes escolhidos de cada unidade: média por posto da bandeira dele no RS no mês (ANP) × o tamanho do posto medido pelos bicos (gasolina/etanol e diesel, API de Revendedores da ANP). Posto com volume informado pela diretoria usa esse volume. Conferida nas nossas unidades, a régua erra perto de 10% no total por posto, mais na divisão Otto/Diesel. SOM = nossa fatia do SAM, sem meta definida. Média por mês, ' + PROD_NOME[st.prod] + ' · ' + perLbl(st.mes) + '; unidade nova conta só os meses em que já comprava; a variação da rede usa só as unidades que já compravam no ano anterior.');
     var t = el('tReg');
     t.querySelector('thead').innerHTML = '<tr><th>Unidade · concorrentes</th><th class="num">SAM (m³/mês)</th><th class="num mo">Nossas compras (m³/mês)</th><th class="num mo">Concorrente médio (m³/mês)</th><th class="num">SOM</th><th class="num mo">SOM ano anterior</th><th class="num">Var.</th></tr>';
     function uniao(uu) { var vis = {}, r = []; uu.forEach(function (u) { lista(u).forEach(function (p) { if (!vis[p.cnpj]) { vis[p.cnpj] = 1; r.push(p); } }); }); return r; }
@@ -615,7 +630,7 @@
     function area(x) { return x.corredor ? x.corredor.rodovia + ', ' + x.corredor.km + ' km para cada lado' : x.raio_km + ' km' + (x.rodovia ? ' + ' + x.rodovia.nome + ' (km ' + x.rodovia.km_ini + ' a ' + x.rodovia.km_fim + ')' : ''); }
     function nomeUn(u) { return UNID()[u] ? UNID()[u].nome : u; }
     var g = R.gerado_em || '', dt = g ? g.slice(8, 10) + '/' + g.slice(5, 7) + '/' + g.slice(0, 4) : '';
-    el('n-con').textContent = 'Postos que disputam o mesmo cliente de cada unidade, escolhidos um a um na revisão de 13/11/2026. Bandeira e situação vêm do cadastro público da ANP, conferido toda semana' + (dt ? ' (último em ' + dt + ')' : '') + '; posto novo na área entra em "a classificar". Distância em linha reta até a unidade; estimativa = média da bandeira no RS × tamanho do posto pelos bicos (O = gasolina/etanol, D = diesel).';
+    el('n-con').textContent = 'Postos que disputam o mesmo cliente de cada unidade, escolhidos um a um na revisão de 13/11/2026. Bandeira e situação vêm do cadastro público da ANP, conferido toda semana' + (dt ? ' (último em ' + dt + ')' : '') + '; posto novo na área entra em "a classificar". Distância em linha reta até a unidade; estimativa = média da bandeira no RS × tamanho do posto pelos bicos (O = gasolina/etanol, D = diesel); "informada" = volume informado pela diretoria para o posto, que substitui a régua (a variação mês a mês segue a ANP).';
     var t = el('tCon');
     t.querySelector('thead').innerHTML = '<tr><th>Unidade · área</th><th class="num">Concorrentes</th><th class="mo">Bandeiras</th><th class="num">A classificar</th></tr>';
     t.querySelector('tbody').innerHTML = us.map(function (u) {
@@ -631,7 +646,7 @@
       return '<div class="tabela"><table><thead><tr><th class="num">km</th><th>Posto</th><th class="mo">Bandeira</th><th class="mo">Bairro · cidade</th><th class="num mo">Bicos O/D</th><th class="num">Estim. ' + (mEst ? mesLbl(mEst) : '') + ' (m³)</th></tr></thead><tbody>' + lista.map(function (p) {
         var onde = [p.bairro, p.municipio].filter(Boolean).map(nomeCidade).join(' · ');
         var e = mEst && !p.fora_do_cadastro ? estPosto(mEst, p) : null;
-        return '<tr><td class="num">' + (p.km == null ? '—' : num(p.km, 1)) + '</td><td>' + esc(nomePosto(p.nome)) + (p.fora_do_cadastro ? ' <small class="falta">(saiu do cadastro da ANP)</small>' : '') + (p.rodovia || p.corredor ? ' <small class="falta">(rodovia)</small>' : '') + '<br><small class="falta so-cel">' + esc(nomeBand(p.bandeira)) + ' · ' + esc(onde) + '</small></td><td class="mo">' + esc(nomeBand(p.bandeira)) + '</td><td class="mo">' + esc(onde) + '</td><td class="num mo">' + (p.infra ? p.infra.bo + '/' + p.infra.bd : '—') + '</td><td class="num">' + (e == null ? '<span class="falta">—</span>' : num(e, 0)) + '</td></tr>';
+        return '<tr><td class="num">' + (p.km == null ? '—' : num(p.km, 1)) + '</td><td>' + esc(nomePosto(p.nome)) + (p.fora_do_cadastro ? ' <small class="falta">(saiu do cadastro da ANP)</small>' : '') + (p.rodovia || p.corredor ? ' <small class="falta">(rodovia)</small>' : '') + '<br><small class="falta so-cel">' + esc(nomeBand(p.bandeira)) + ' · ' + esc(onde) + '</small></td><td class="mo">' + esc(nomeBand(p.bandeira)) + '</td><td class="mo">' + esc(onde) + '</td><td class="num mo">' + (p.infra ? p.infra.bo + '/' + p.infra.bd : '—') + '</td><td class="num">' + (e == null ? '<span class="falta">—</span>' : num(e, 0) + (informada(p) ? '<br><small class="falta">informada</small>' : '')) + '</td></tr>';
       }).join('') + '</tbody></table></div>';
     }
     el('conListas').innerHTML = us.map(function (u) {

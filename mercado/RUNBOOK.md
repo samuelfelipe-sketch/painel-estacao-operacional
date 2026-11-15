@@ -13,6 +13,7 @@ segmento (posto revendedor, só bandeirados, todos os segmentos).
 | `mercado/anp-vendas.json` | mercado agregado por recorte × mês × segmento × produto × distribuidora (mil m³), desde 2025-01 | não (dado público da ANP) | workflow `mercado-anp.yml` |
 | `mercado/sapatao.enc.json` | compras do Sapatão por mês × bandeira × produto (m³) — **CIFRADO** com a chave dos dados | **sim** | `scripts/mercado-sapatao.mjs` |
 | `mercado/regiao-raio.json` | por unidade: CNPJ, coordenada (link do Google Maps), raio/trecho/corredor e a **lista de concorrentes escolhida pelo Samuel** (`concorrentes`) + `descartados` | não (dado público) | à mão, quando o Samuel reclassifica |
+| `mercado/estimativas.enc.json` | volume de concorrentes informado pela diretoria (m³/mês, por CNPJ, mês de referência) — **CIFRADO** | **sim** | `scripts/mercado-estimativas.mjs grava --json <arquivo fora do repo>` |
 | `mercado/postos-raio.json` | concorrentes da lista com bandeira/distância/situação no cadastro da ANP, `a_revisar` (posto novo na área ainda não classificado), `corredor_candidatos` (AS) e histórico | não (dado público) | workflow `mercado-postos.yml` (segunda) |
 | `mercado/postos.json` | postos revendedores por bandeira e recorte, por mês de referência | não (API de Revendedores da ANP via relatório Posto Seguro) | à mão, a cada relatório recebido |
 
@@ -150,7 +151,9 @@ Revendedor. O painel usa o último mês ≤ ao mês selecionado.
   `mercado-postos.mjs`: `infra` {bo,bd,to,td} em cada posto e unidade, `rs_infra` por
   bandeira; a coordenada da ANP vira `prec:'anp'`). Conferência nas nossas unidades (set/26):
   erro de ±7% no total por posto (a média simples errava até −69%); a divisão Otto/Diesel
-  erra mais. SOM = nossas compras ÷ SAM.
+  erra mais. Posto com volume informado (`mercado/estimativas.enc.json`, 15/11/2026: 7 postos
+  do PS) usa fator = informado ÷ régua no mês `ref`, aplicado à régua de cada mês (a
+  sazonalidade e o ano anterior seguem a ANP); na lista aparece "informada". SOM = nossas compras ÷ SAM.
   Média por mês; unidade nova só nos meses em que já comprava; a variação da Rede usa só
   as unidades que já compravam no ano anterior.
 - **Concorrentes de cada unidade** (mesma aba, `mercado/postos-raio.json`): a lista vale
