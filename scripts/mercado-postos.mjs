@@ -10,7 +10,8 @@
    Saída: mercado/postos-raio.json — total de postos do RS (e por bandeira) e,
    por unidade, os concorrentes ESCOLHIDOS pelo Samuel (lista em regiao-raio.json)
    com bandeira, distância e precisão da coordenada; `a_revisar` = posto novo no
-   raio/trecho/corredor que ainda não foi classificado; histórico das contagens.
+   raio/trecho/corredor que ainda não foi classificado; histórico das contagens;
+   `area` = todos os postos dos municípios candidatos (coordenada, bicos, tancagem).
 
    Uso: node scripts/mercado-postos.mjs --cadastro <csv> --config mercado/regiao-raio.json \
           --cache mercado/postos-geo.json --saida mercado/postos-raio.json [--max-geo 600] */
@@ -187,6 +188,7 @@ function lateral(pt, linhas) { /* km do ponto ao traçado (projeção local plan
 const ant = existsSync(SAIDA) ? JSON.parse(readFileSync(SAIDA, 'utf8')) : null;
 /* sem a API nesta semana: fica a infraestrutura da última leitura */
 const antInfra = {}; if (ant && ant.unidades) for (const x of Object.values(ant.unidades)) { if (x.cnpj && x.infra) antInfra[x.cnpj] = x.infra; for (const p of [...(x.postos || []), ...(x.a_revisar || [])]) if (p.infra) antInfra[p.cnpj] = p.infra; }
+if (ant && ant.area) for (const p of ant.area) if (p.infra) antInfra[p.cnpj] = p.infra;
 const temApi = Object.keys(INFRA).length > 0;
 const out = { v: 2, gerado_em: new Date().toISOString().slice(0, 16), fonte: 'ANP — dados cadastrais dos revendedores varejistas e API de Revendedores (bicos, tancagem e coordenadas); demais coordenadas: OpenStreetMap', uf: CFG.uf, rs_postos: rs.length, rs_bandeiras: porBand, rs_infra: temApi ? porBandInfra : ((ant && ant.rs_infra) || null), unidades: {}, historico: (ant && ant.historico) || {} };
 const hoje = out.gerado_em.slice(0, 10), contagem = {};
@@ -221,6 +223,9 @@ for (const [cod, u] of Object.entries(CFG.unidades)) {
   contagem[cod] = ativos.length;
   console.log(`unidade ${cod}: ${ativos.length} concorrentes da lista (${lista.length - ativos.length} fora do cadastro) · ${revisar.length} a revisar${u.corredor ? ` · ${corredor.length} no corredor` : ''}`);
 }
+/* todos os postos dos municípios candidatos, com coordenada e infraestrutura (dado público):
+   base da aba Expansão do painel, que monta no navegador a vizinhança de qualquer posto */
+out.area = alvo.filter(p => cache[p.cnpj]).map(p => ({ cnpj: p.cnpj, nome: p.nome, bandeira: p.bandeira, municipio: p.mun, bairro: p.bairro, end: p.end, lat: cache[p.cnpj].lat, lon: cache[p.cnpj].lon, prec: cache[p.cnpj].prec, infra: infra(p.cnpj) }));
 const ultimo = Object.keys(out.historico).sort().pop();
 if (!ultimo || JSON.stringify(out.historico[ultimo]) !== JSON.stringify(contagem)) out.historico[hoje] = contagem;
 if (ant) { const s = o => JSON.stringify({ ...o, gerado_em: null }); if (s(ant) === s(out)) { console.log('sem mudança'); process.exit(0); } }
