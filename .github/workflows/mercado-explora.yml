@@ -12,15 +12,10 @@ jobs:
   explora:
     runs-on: ubuntu-latest
     steps:
-      - name: Manual da API de revendedores
-        run: |
-          sudo apt-get install -y -q poppler-utils >/dev/null 2>&1 || true
-          UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
-          curl -sL --max-time 120 -A "$UA" -o /tmp/manual.pdf 'https://www.gov.br/anp/pt-br/centrais-de-conteudo/paineis-dinamicos-da-anp/paineis-dinamicos-do-abastecimento/api-revendedores-manual-usuario.pdf'
-          file /tmp/manual.pdf; pdftotext -layout /tmp/manual.pdf - | head -400
-      - name: Links da página de dados cadastrais
+      - name: API de revendedores (formato da resposta)
         run: |
           UA='Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)'
-          for pg in 'https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/dados-cadastrais-dos-revendedores-varejistas-de-combustiveis-automotivos' 'https://www.gov.br/anp/pt-br/centrais-de-conteudo/paineis-dinamicos-da-anp/paineis-dinamicos-do-abastecimento'; do
-            echo "== $pg"; curl -sL --max-time 120 -A "$UA" "$pg" | grep -oiE 'href="[^"]+"' | grep -iE 'csv|zip|xls|api|revend|tanq|bico|json|pdf' | sort -u | head -80
+          for q in 'cnpj=13047383000103' 'cnpj=43510250000184' 'cnpj=47857489000186' 'cnpj=63657421000100'; do
+            echo "== $q"; curl -sS --max-time 120 -A "$UA" "https://revendedoresapi.anp.gov.br/v1/combustivel?$q" | head -c 6000; echo
           done
+          echo "== municipio"; curl -sS --max-time 180 -A "$UA" "https://revendedoresapi.anp.gov.br/v1/combustivel?municipio=ESTANCIA%20VELHA&uf=RS" | head -c 1500; echo
