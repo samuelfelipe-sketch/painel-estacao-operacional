@@ -169,11 +169,10 @@ segmento saíram).
   muda, o SOM soma) e o município (base anual `mercado/regiao.json`, postos do cadastro,
   frota `mercado/frota.json`). **Projeção na rede** (regra do Samuel, 15/11/2026): litros por
   bico por mês = compras ÷ bicos do cadastro da ANP (gasolina/etanol + diesel; GNV fora);
-  em 6 meses o posto novo chega ao padrão fixado pelo Samuel (campo `padrao6` do
-  `expansao.enc.json`, mil litros por bico por mês; valor só no cifrado — sem ele, vale a
-  unidade nova: o 6º mês fechado dela na rede) e em
-  12 meses ao padrão das maduras (volume somado ÷ bicos somados, média dos últimos 12 meses
-  fechados); projeção = bicos do candidato × padrão, nunca abaixo do volume de hoje
+  três degraus (16/11/2026) — 6 e 12 meses pelos padrões fixados pelo Samuel (campos
+  `padrao6` e `padrao12` do `expansao.enc.json`, mil litros por bico por mês; valores só no
+  cifrado) e 24 meses pelo padrão das maduras (volume somado ÷ bicos somados, média dos
+  últimos 12 meses fechados); projeção = bicos do candidato × padrão, nunca abaixo do volume de hoje
   (`padroes()` no `mercado.js`; a tabela "Litros por bico por mês na rede" abre a aba).
   Município fora da região: acrescentar em
   `municipios_candidatos` (`regiao-raio.json`), em `regiao-municipios.json` e rodar os
