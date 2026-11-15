@@ -4,8 +4,12 @@
    estratégica: nunca em claro no repositório, nem em mensagem de commit ou log.
 
    Conteúdo (em claro só dentro do cifrado):
-     { v:1, atualizado_em, padrao6?, padrao12?: <mil litros por bico por mês que um posto novo alcança em 6 e em 12 meses>,
-       candidatos:[ { cnpj, apelido, area:{tipo:'raio', km} | {tipo:'unidade', u:'<código da nossa unidade>'},
+     { v:1, atualizado_em,
+       perfis:{ urbano:{nome:'Urbano', ref:['<código da unidade de referência>']}, rodovia:{…} },
+       rampa:{ m6:<fração do padrão em 6 meses>, m12:<fração em 12 meses> },   (24 meses = 100%)
+       teto:true|false,   (posto novo limitado ao volume da unidade de referência, por produto)
+       candidatos:[ { cnpj, apelido, perfil:'urbano'|'rodovia',
+                      area:{tipo:'raio', km} | {tipo:'unidade', u:'<código da nossa unidade>'},
                       descartados?:[cnpj…], nota? } ] }
    area 'raio' = vizinhança automática: postos de mercado/postos-raio.json (`area`) a até km
    do candidato; area 'unidade' = a mesma área (lista de concorrentes escolhida) de uma unidade
@@ -34,14 +38,17 @@ if (cmd === 'abre') {
   const js = opt('json'); if (!js || !foraDoRepo(js)) falha('--json precisa apontar para um arquivo fora do repositório.');
   const k = chave(), novo = JSON.parse(readFileSync(js, 'utf8'));
   if (!novo || !Array.isArray(novo.candidatos)) falha('o arquivo precisa ter { candidatos: [...] }.');
+  const perfis = novo.perfis || {};
+  for (const [nome, pf] of Object.entries(perfis)) if (!Array.isArray(pf.ref) || !pf.ref.length) falha(`perfil ${nome} sem unidade de referência.`);
+  if (novo.rampa) for (const kk of ['m6', 'm12']) if (!(novo.rampa[kk] > 0 && novo.rampa[kk] <= 1)) falha('rampa inválida (frações entre 0 e 1).');
   for (const c of novo.candidatos) {
     if (!/^\d{14}$/.test(c.cnpj || '')) falha('CNPJ inválido na lista.');
     if (!c.apelido) falha('candidato sem apelido.');
+    if (Object.keys(perfis).length && !perfis[c.perfil]) falha('candidato sem perfil (urbano ou rodovia).');
     const a = c.area || {};
     if (!(a.tipo === 'raio' && a.km > 0) && !(a.tipo === 'unidade' && a.u)) falha('candidato sem área (raio em km ou unidade).');
   }
-  for (const k of ['padrao6', 'padrao12']) if (novo[k] != null && !(novo[k] > 0)) falha(k + ' inválido.');
-  const doc0 = { v: 1, atualizado_em: new Date().toISOString().slice(0, 16), ...(novo.padrao6 ? { padrao6: novo.padrao6 } : {}), ...(novo.padrao12 ? { padrao12: novo.padrao12 } : {}), candidatos: novo.candidatos };
+  const doc0 = { v: 1, atualizado_em: new Date().toISOString().slice(0, 16), perfis, ...(novo.rampa ? { rampa: novo.rampa } : {}), teto: novo.teto !== false, candidatos: novo.candidatos };
   const doc = cifra(doc0, k);
   if (JSON.stringify(decifra(doc, k)) !== JSON.stringify(doc0)) falha('a conferência da cifra falhou.');
   writeFileSync(ARQ, JSON.stringify(doc) + '\n');

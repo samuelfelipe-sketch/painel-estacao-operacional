@@ -167,13 +167,20 @@ segmento saíram).
   a mesma área de uma unidade nossa), posição e fatia na área, efeito na rede (volume e
   fatia do TAM), efeito no SOM das unidades que hoje o têm como concorrente (a área não
   muda, o SOM soma) e o município (base anual `mercado/regiao.json`, postos do cadastro,
-  frota `mercado/frota.json`). **Projeção na rede** (regra do Samuel, 15/11/2026): litros por
-  bico por mês = compras ÷ bicos do cadastro da ANP (gasolina/etanol + diesel; GNV fora);
-  três degraus (16/11/2026) — 6 e 12 meses pelos padrões fixados pelo Samuel (campos
-  `padrao6` e `padrao12` do `expansao.enc.json`, mil litros por bico por mês; valores só no
-  cifrado) e 24 meses pelo padrão das maduras (volume somado ÷ bicos somados, média dos
-  últimos 12 meses fechados); projeção = bicos do candidato × padrão, nunca abaixo do volume de hoje
-  (`padroes()` no `mercado.js`; a tabela "Litros por bico por mês na rede" abre a aba).
+  frota `mercado/frota.json`). **Projeção na rede** (regra do Samuel, 16/11/2026) por
+  PERFIL — urbano (referência SF) ou rodovia (referência PS), campo `perfis` do cifrado — e
+  por produto (gasolina/etanol e diesel): padrão de 24 meses = litros por bico por mês da
+  unidade de referência (compras ÷ bicos do cadastro da ANP, média dos últimos 12 meses
+  fechados; GNV fora); 6 e 12 meses = `rampa` (frações do padrão, no cifrado); `teto` = o
+  posto novo chega, no máximo, ao volume médio da referência em cada produto (mais bicos
+  não trazem mais clientes na mesma proporção); nunca abaixo do volume de hoje
+  (`perfis()` e `projeta()` no `mercado.js`). Quando o AS amadurecer (12 meses), entra em
+  `ref` do perfil rodovia.
+  **Incluir um posto em avaliação** (o Samuel pede no chat: nome ou endereço, perfil e, se
+  souber, o volume): 1) achar o CNPJ em `area` do `postos-raio.json` (nome/endereço); 2)
+  `mercado-expansao.mjs abre`, acrescentar `{cnpj, apelido, perfil, area}` (raio 3 km para
+  urbano; `{tipo:'unidade',u}` quando fica no corredor de uma unidade nossa) e `grava`; 3)
+  volume informado → `mercado-estimativas.mjs grava`; 4) commit sem citar o posto.
   Município fora da região: acrescentar em
   `municipios_candidatos` (`regiao-raio.json`), em `regiao-municipios.json` e rodar os
   workflows `mercado-postos`, `mercado-municipios` e `mercado-frota`.
