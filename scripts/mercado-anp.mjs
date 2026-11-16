@@ -14,7 +14,7 @@
      UF Destino; Mercado Destinatario; Quantidade de Produto (mil m3)
 
    Uso:
-     node scripts/mercado-anp.mjs --pasta <dir com os CSVs> [--saida mercado/anp-vendas.json] [--desde 2025-01]
+     node scripts/mercado-anp.mjs --pasta <dir com os CSVs> [--saida mercado/anp-vendas.json] [--desde 2024-01]
      node scripts/mercado-anp.mjs --pasta <dir> --inspeciona      → só descreve os arquivos (cabeçalho, valores distintos, linhas por ano)
 
    Saída: por escopo (RS, SUL, BR) × mês × segmento (rev = posto revendedor,
@@ -33,7 +33,7 @@ function falha(m) { console.error('ERRO: ' + m); process.exit(1); }
 
 const pasta = opt('pasta'); if (!pasta) falha('informe --pasta <diretório com os CSVs da ANP>.');
 const saida = resolve(opt('saida', 'mercado/anp-vendas.json'));
-const desde = opt('desde', '2025-01');
+const desde = opt('desde', '2024-01');
 const inspeciona = flag('inspeciona');
 const TOP = 12; /* distribuidoras nomeadas por escopo; o resto vira "Outras" */
 
