@@ -32,7 +32,7 @@ body{background:var(--fundo);color:var(--tinta);font-family:var(--f-titulo);font
 .topbar .t{font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;flex:1;color:#16211C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .ref{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;color:#5F6C7B;white-space:nowrap;text-align:right}
 @media(max-width:640px){.topbar .ref{display:none}}
-.wrap{max-width:1180px;margin:0 auto;padding:18px 18px 56px;display:grid;gap:18px}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 18px 56px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
 @media (min-width:1600px){.wrap{max-width:1320px}}
 #carregando{padding:60px 18px;text-align:center;color:var(--tinta-suave)}
 #carregando b{display:block;color:var(--tinta);font-size:18px;margin-bottom:6px}
@@ -173,6 +173,19 @@ ul.fontes b{font-weight:700}
 .rodape{font-family:var(--f-mono);font-size:11.5px;color:var(--tinta-suave);letter-spacing:.04em;text-align:center}
 body.so-leitura .so-edita{display:none}
 @media (prefers-reduced-motion:no-preference){.barra .tr b{transition:width .4s ease}}
+/* opções e abas fixas ao rolar (16/11/2026): --tb-h e --ctl-h são medidos pelo mercado.js */
+html,body{overflow-anchor:none} /* quem segura a tela no lugar ao trocar uma opção é o desenha() do mercado.js */
+.fixo{position:sticky;top:var(--tb-h,58px);z-index:60;background:var(--fundo);margin:-8px -18px;padding:8px 18px}
+.fixo .seg{flex-wrap:nowrap;flex:0 0 auto}.fixo select.mes{flex:0 0 auto}
+.abas{position:sticky;top:calc(var(--tb-h,58px) + var(--ctl-h,60px) - 8px);z-index:59;box-shadow:0 0 0 8px var(--fundo),var(--sombra)}
+.abas::-webkit-scrollbar{display:none}
+@media (max-width:640px){
+  .fixo{padding:6px 18px}.fixo .controles{gap:6px}
+  .fixo .seg button{padding:6px 7px;font-size:13px}.fixo select.mes{padding:6px 8px;font-size:13px;flex:1 1 110px;min-width:0}
+  .fixo .lg{display:none}
+  #segProd{order:1}#selMes{order:2}#segUn{order:3}#segPer{order:4}
+  .abas{top:calc(var(--tb-h,58px) + var(--ctl-h,96px) - 6px);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.abas button{flex:0 0 auto;padding:8px 12px;font-size:13.5px}
+}
 </style>
 <link rel="stylesheet" href="../tema.css">
 </head>
@@ -192,24 +205,28 @@ body.so-leitura .so-edita{display:none}
         <h1>Market <span>Share</span></h1>
         <p class="lead">Do mercado dos postos do RS à nossa fatia.</p>
       </div>
+    </div>
+  </header>
+
+  <div class="fixo" id="fixo">
+    <div class="controles">
       <div class="seg" role="group" aria-label="Produto" id="segProd">
         <button type="button" data-v="tot" aria-pressed="true">Consolidado</button>
         <button type="button" data-v="otto" aria-pressed="false">Otto</button>
         <button type="button" data-v="diesel" aria-pressed="false">Diesel</button>
       </div>
-    </div>
-    <div class="controles">
       <div class="seg" role="group" aria-label="Unidades" id="segUn" hidden></div>
       <select class="mes" id="selMes" aria-label="Mês de referência"></select>
       <div class="seg" role="group" aria-label="Período" id="segPer">
         <button type="button" data-v="mes" aria-pressed="true">Mês</button>
-        <button type="button" data-v="tri" aria-pressed="false">Trimestre</button>
-        <button type="button" data-v="sem" aria-pressed="false">Semestre</button>
+        <button type="button" data-v="tri" aria-pressed="false" title="Trimestre">Tri<span class="lg">mestre</span></button>
+        <button type="button" data-v="sem" aria-pressed="false" title="Semestre">Sem<span class="lg">estre</span></button>
         <button type="button" data-v="ano" aria-pressed="false">Ano</button>
       </div>
     </div>
-    <div class="chips" id="chips"></div>
-  </header>
+  </div>
+
+  <div class="chips" id="chips"></div>
 
   <section class="bombas funil" id="funil" aria-label="TAM, SAM e SOM do período"></section>
   <section class="card veredito" id="veredito" aria-label="Leitura do período"></section>
@@ -269,6 +286,7 @@ body.so-leitura .so-edita{display:none}
     <ul class="fontes" id="fontes"></ul>
     <p class="rodape" id="rodape" style="margin-top:14px"></p>
   </section>
+  <div id="folga" hidden></div>
 </div>
 
 <script>
@@ -289,7 +307,7 @@ function mostra(){
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=15';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=16';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){

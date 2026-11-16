@@ -160,6 +160,13 @@ segmento saíram).
   contra a bandeira, quem vende para os postos do RS) · *Fontes e método* (legenda).
 - **Pouco texto na tela** (pedido do Samuel, 15/11/2026): notas de uma linha, explicação longa
   só em `title` ou na aba Fontes e método; não voltar a encher os cartões de texto.
+- **Opções fixas no topo** (pedido do Samuel, 16/11/2026): a barra de opções (`#fixo`: produto,
+  unidades, mês, período) e as abas ficam presas abaixo da barra do site ao rolar, em todas as abas;
+  no celular as opções ocupam duas linhas (Tri/Sem abreviados) e as abas rolam para o lado. Trocar
+  uma opção não tira a tela do lugar: o `desenha()` mede onde a seção aberta estava e compensa a
+  rolagem (se a página encurtar, `#folga` dá a altura que falta); trocar de aba com a página rolada
+  põe a aba nova logo abaixo da barra. Alturas vêm de `medeFixos()` (`--tb-h`, `--ctl-h`), por causa
+  do zoom do tema.
 - **Aba Expansão** (15/11/2026; só aparece quando `expansao.enc.json` tem candidatos): uma
   ficha por posto em avaliação — volume estimado (régua dos bicos ou volume informado), a
   área dele (vizinhança automática por raio, montada no navegador a partir de `area` do

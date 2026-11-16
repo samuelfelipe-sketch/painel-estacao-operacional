@@ -615,15 +615,47 @@
   }
   function marca(id, v) { el(id).querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === v)); }); }
   function liga(id, chave) { el(id).addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b || b.disabled) return; st[chave] = b.dataset.v; guarda(); desenha(); }); }
+  /* barra de opções e abas ficam fixas ao rolar: mede a topbar e a barra para o CSS (--tb-h, --ctl-h) */
+  function medeFixos() {
+    var tb = document.querySelector('.topbar'), fx = el('fixo'), r = document.documentElement.style;
+    if (tb) r.setProperty('--tb-h', tb.offsetHeight + 'px');
+    if (fx) r.setProperty('--ctl-h', fx.offsetHeight + 'px');
+  }
+  function secAtiva() { return document.querySelector('.aba[data-aba="' + st.aba + '"]'); }
+  var desenhou = false;
   function desenha() {
+    /* trocar uma opção não tira a tela do lugar: a seção aberta fica onde estava, mesmo que o que vem acima mude de altura */
+    var sec = desenhou ? secAtiva() : null, t0 = sec ? sec.getBoundingClientRect().top : 0, app = el('app');
+    var fg = el('folga'); if (fg) { fg.hidden = true; fg.style.height = ''; }
     memo = {};
     montaMeses();
     marca('segProd', st.prod); marca('segPer', st.per);
     montaUnidades(); chips(); funil(); unidades(); evolucao(); bandeiras(); expansao(); fontes(); mostraAba();
+    medeFixos();
+    if (sec && sec === secAtiva()) {
+      var dif = sec.getBoundingClientRect().top - t0, de = document.documentElement;
+      /* se o conteúdo novo ficou curto demais para a tela continuar onde estava, a página ganha altura até lá */
+      var alvo = window.scrollY + dif, z = app && app.offsetHeight ? app.getBoundingClientRect().height / app.offsetHeight : 1, h = 0;
+      for (var k = 0; fg && k < 3; k++) {   /* scrollHeight não desce abaixo da altura da tela: confere de novo depois de dar a folga */
+        var falta = alvo - (de.scrollHeight - window.innerHeight); if (falta < 1) break;
+        h += falta / (z || 1); fg.hidden = false; fg.style.height = Math.ceil(h) + 'px';
+      }
+      if (Math.abs(dif) > 1) window.scrollBy(0, dif);
+    }
+    desenhou = true;
+  }
+  /* trocar de aba com a página rolada: a aba nova começa logo abaixo da barra fixa, em vez de cair no meio */
+  function alinhaAba() {
+    var sec = secAtiva(), ab = el('abas'); if (!sec || !ab) return;
+    var lim = ab.getBoundingClientRect().bottom + 14, top = sec.getBoundingClientRect().top;
+    if (top < lim - 1) window.scrollBy(0, top - lim);
   }
   window.renderMercado = function (dados) { D = dados || D; desenha(); };
   liga('segProd', 'prod'); liga('segPer', 'per');
-  el('abas').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; st.aba = b.dataset.aba; guarda(); try { history.replaceState(null, '', '#' + st.aba); } catch (e) {} mostraAba(); });
+  el('abas').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; st.aba = b.dataset.aba; guarda(); try { history.replaceState(null, '', '#' + st.aba); } catch (e) {} mostraAba(); alinhaAba(); });
+  window.addEventListener('resize', medeFixos);
+  /* a altura da barra muda quando a fonte carrega ou as opções quebram de linha */
+  try { if (window.ResizeObserver) { var ro = new ResizeObserver(medeFixos); ro.observe(el('fixo')); var tbE = document.querySelector('.topbar'); if (tbE) ro.observe(tbE); } } catch (e) {}
   el('selMes').addEventListener('change', function () { st.mes = this.value; desenha(); });
   el('segUn').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; alternaUn(b.dataset.v); });
   function abreUn(ev) {
