@@ -643,9 +643,9 @@
   }
   var expSel = null;
   function expMsg(t) { el('expMsg').textContent = t || ''; }
-  function expAchados() {
+  function expAchados(pedido) {
     var q = semAcento(el('expBusca').value).split(/\s+/).filter(Boolean), box = el('expAchados');
-    if (!q.length || q.join('').length < 3) { box.innerHTML = ''; return; }
+    if (!q.length || q.join('').length < 3) { box.innerHTML = pedido === true ? '<small class="falta">Digite pelo menos 3 letras.</small>' : ''; return; }
     var ja = {}; (D.exp.candidatos || []).forEach(function (c) { ja[c.cnpj] = 1; });
     var ls = (D.raio.area || []).filter(function (p) {
       if (ja[p.cnpj] || nossaDe(p.cnpj)) return false;
@@ -669,7 +669,8 @@
   }
   function expFecha() { expSel = null; el('expForm').hidden = true; el('expCampos').hidden = true; el('expAchados').innerHTML = ''; el('expBusca').value = ''; expMsg(''); }
   async function expSalva(ev) {
-    ev.preventDefault(); if (!expSel || !podeGerir()) return;
+    ev.preventDefault(); if (!podeGerir()) return;
+    if (!expSel) { expAchados(true); return; }   /* Enter no campo de busca: procura, não grava */
     var p = expSel, apelido = el('expApelido').value.trim(), ar = el('expArea').value.split(':'), vol = +el('expVol').value || 0, bt = el('expSalva');
     if (!apelido) { expMsg('Dê um apelido ao posto.'); return; }
     var cand = { cnpj: p.cnpj, apelido: apelido, perfil: el('expPerfil').value, area: ar[0] === 'un' ? { tipo: 'unidade', u: ar[1] } : { tipo: 'raio', km: +ar[1] } };
@@ -793,6 +794,7 @@
   el('expFichas').addEventListener('toggle', function (ev) { var d = ev.target; if (d && d.dataset && d.dataset.exp != null) EXP_ABERTOS[d.dataset.exp] = d.open; }, true);
   el('expAdd').addEventListener('click', function () { var f = el('expForm'); if (f.hidden) { f.hidden = false; el('expBusca').focus(); } else expFecha(); });
   el('expBusca').addEventListener('input', expAchados);
+  el('expBuscar').addEventListener('click', function () { expAchados(true); el('expBusca').blur(); });
   el('expAchados').addEventListener('click', function (ev) { var b = ev.target.closest('button[data-cnpj]'); if (b) expEscolhe(b.dataset.cnpj); });
   el('expCancela').addEventListener('click', expFecha);
   el('expForm').addEventListener('submit', expSalva);
