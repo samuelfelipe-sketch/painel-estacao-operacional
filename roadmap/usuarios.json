@@ -50,9 +50,10 @@
    "kdf": {
     "alg": "pbkdf2-sha256",
     "i": 600000,
-    "s": "U2qfHfZh+nK9ZIx6GMtjZA==",
-    "h": "0wP9vt8B9mVchOA8sK1HYl+DnXm6dTxaztUMhw1y7NM="
-   }
+    "s": "eEUlBh1LYFj2QLV2FL+6rQ==",
+    "h": "LE84sJeWikWiSwGu8l0bOGdYl6qPNxFNjyE2UPsUnB4="
+   },
+   "trocar": true
   },
   {
    "id": "davi",
@@ -125,9 +126,10 @@
    "kdf": {
     "alg": "pbkdf2-sha256",
     "i": 600000,
-    "s": "/M+rDnSE0ao33ypwZMKXWg==",
-    "h": "w1mQ+DAut9CngeCIdv3qkN+o58QQXqhRfcK4GBf6j1Q="
-   }
+    "s": "qquB5soY0xSIHBqfu7/euA==",
+    "h": "3EzR5F3OrC+IuGYnhwTxyvfk7UEIzpnGnqqgQNlIIF0="
+   },
+   "trocar": true
   }
  ]
 }
