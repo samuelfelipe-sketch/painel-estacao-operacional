@@ -149,6 +149,11 @@ segmento saíram).
   já publicados a regra nova errou menos que a antiga. Mês em curso = compras até o dia coberto
   × dias do mês ÷ dias cobertos. Tudo o que é prévia leva o selo PRÉVIA e some quando a ANP
   publica. O mês padrão ao abrir é o último com compras fechadas (publicado ou prévia).
+- **Período = total do período** (pedido do Samuel, 16/11/2026): em Trimestre, Semestre e Ano os
+  cartões (TAM, SAM, SOM), a tabela de unidades e o ranking da área mostram a SOMA do período,
+  não a média por mês (`uniVol()`/`noPer()` no `mercado.js`; o `calc()` segue devolvendo médias).
+  Unidade nova soma só os meses em que já comprava. A aba Expansão continua em m³ por mês, porque
+  volume de posto e projeção são ritmo mensal.
 - **Mês a mês com todos os anos** (16/11/2026): a tabela da aba Evolução lista todos os meses
   desde o primeiro mês de compras, com a linha de total de cada ano (`tr.ano`) e volumes
   absolutos (TAM e compras) além das variações; no celular ficam só as variações e a fatia.

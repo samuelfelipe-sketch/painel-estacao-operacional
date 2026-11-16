@@ -231,6 +231,11 @@
     r.previa = meses.some(ehPrevia); r.curso = meses.some(sapParcial);
     return r;
   }
+  /* Período maior que um mês mostra o TOTAL do período (pedido do Samuel, 16/11/2026), não a média
+     por mês: calc() devolve médias (o SOM e as contas da Expansão dependem delas) e a tela
+     multiplica pelos meses contados (a.n). */
+  function uniVol() { return st.per === 'mes' ? 'm³/mês' : 'm³'; }
+  function noPer(a, v) { return st.per === 'mes' ? v : v * a.n; }
   function seloPrevia(r) { return r.previa || r.curso ? ' <span class="parc">PRÉVIA</span>' : ''; }
 
   /* ---------- seletor de mês ---------- */
@@ -263,7 +268,7 @@
 
   /* ---------- funil do período: TAM → SAM → SOM e o veredito ---------- */
   function funil() {
-    var r = resumo(), us = r.us, baseTxt = perLbl(anoAnt(st.mes)), porMes = r.n > 1 ? '/mês' : '';
+    var r = resumo(), us = r.us, baseTxt = perLbl(anoAnt(st.mes));
     function delta(v, txt) { return v == null ? '' : '<span class="delta ' + cls(v) + '">' + txt + '</span>'; }
     function card(sig, nome, val, sub, deltas, extra) {
       return '<div class="bomba fn"><div class="lbl"><b>' + sig + '</b> · ' + nome + '</div><div class="val">' + val + '</div><div class="sub">' + sub + '</div>' + (deltas ? '<div class="deltas">' + deltas + '</div>' : '') + (extra || '') + '</div>';
@@ -271,7 +276,7 @@
     if (!r.n) { el('funil').innerHTML = card('TAM', 'mercado dos postos do RS', '—', 'Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.'); el('veredito').innerHTML = ''; return; }
     var h = '';
     /* TAM */
-    h += card('TAM', 'postos do RS', num(r.tam / r.n / 1000, 1) + '<small>mil m³' + porMes + '</small>',
+    h += card('TAM', 'postos do RS', num(r.tam / 1000, 1) + '<small>mil m³</small>',
       esc(quem()) + ': <b>' + pct(r.fat, 2) + '</b>' + (r.fatA != null ? ' <small>(era ' + pct(r.fatA, 2) + ')</small>' : ''),
       delta(r.gTam, sinal(r.gTam) + ' vs ' + baseTxt));
     /* SAM e SOM */
@@ -281,11 +286,11 @@
       h += card('SOM', 'nossa fatia', '—', '');
     } else {
       var nConc = uniao(us).length, samA = r.temBase ? calc(r.base, us, uniao(us)) : null, gSam = samA && samA.n === S.a.n ? cresc(samA.sam, S.a.sam) : null;
-      h += card('SAM', us.length > 1 ? 'nossas áreas' : 'área do ' + esc(nomes(us)), num(S.a.sam, 0) + '<small>m³/mês</small>',
+      h += card('SAM', us.length > 1 ? 'nossas áreas' : 'área do ' + esc(nomes(us)), num(noPer(S.a, S.a.sam), 0) + '<small>' + uniVol() + '</small>',
         'Nós + ' + nConc + ' concorrentes',
         delta(gSam, sinal(gSam) + ' vs ' + baseTxt));
       var soMesmas = S.uB.length && S.uB.length < us.length;
-      h += card('SOM', 'nossa fatia', pct(S.a.som, 1), num(S.a.nos, 0) + ' de ' + num(S.a.sam, 0) + ' m³/mês',
+      h += card('SOM', 'nossa fatia', pct(S.a.som, 1), num(noPer(S.a, S.a.nos), 0) + ' de ' + num(noPer(S.a, S.a.sam), 0) + ' ' + uniVol(),
         S.dif != null ? delta(S.dif, pp(S.dif, 1) + ' vs ' + baseTxt + (soMesmas ? ' (' + esc(nomes(S.uB)) + ')' : '')) : '');
     }
     el('funil').innerHTML = h;
@@ -314,7 +319,7 @@
     if (!temRaio()) { el('n-reg').textContent = 'A lista de concorrentes ainda não foi publicada (mercado/postos-raio.json).'; t.querySelector('thead').innerHTML = ''; t.querySelector('tbody').innerHTML = ''; return; }
     var R = D.raio;
     el('n-reg').textContent = 'Toque numa unidade para ver os concorrentes da área.';
-    t.querySelector('thead').innerHTML = '<tr><th>Unidade</th><th class="num">SAM (m³/mês)</th><th class="num mo">Nossas compras (m³/mês)</th><th class="num">SOM</th><th class="num mo">SOM ano anterior</th><th class="num">Var.</th></tr>';
+    t.querySelector('thead').innerHTML = '<tr><th>Unidade</th><th class="num">SAM (' + uniVol() + ')</th><th class="num mo">Nossas compras (' + uniVol() + ')</th><th class="num">SOM</th><th class="num mo">SOM ano anterior</th><th class="num">Var.</th></tr>';
     function linha(u) {
       var rk = rankDe(u, meses), a = rk && rk.a, b = a ? calc(a.ms.map(anoAnt), [u], lista(u)) : null;
       if (b && b.n !== a.n) b = null;
@@ -322,7 +327,7 @@
       var sub = rk ? rk.pos + 'º de ' + rk.ls.length + ' na área' : lista(u).length + ' concorrentes';
       if (a && a.n < meses.length) sub += ' · ' + a.n + (a.n > 1 ? ' meses' : ' mês') + ' com compra';
       if (nov) sub += ' · ' + nov + (nov > 1 ? ' postos novos' : ' posto novo') + ' a classificar';
-      return '<tr class="un-abre" data-u="' + esc(u) + '" tabindex="0" role="button" aria-expanded="' + aberto + '"><td><b><span class="seta">' + (aberto ? '▾' : '▸') + '</span> ' + esc(UNID()[u].nome) + '</b><br><small class="falta">' + esc(sub) + '</small></td><td class="num">' + (a ? num(a.sam, 0) : traco()) + '</td><td class="num mo">' + (a ? num(a.nos, 0) : traco()) + '</td><td class="num"><b>' + (a ? pct(a.som, 1) : '—') + '</b></td><td class="num mo">' + (b ? pct(b.som, 1) : '<span class="falta">' + (a ? 'nova' : '—') + '</span>') + '</td><td class="num">' + (a && b ? fmtDif(a.som - b.som) : traco()) + '</td></tr>' +
+      return '<tr class="un-abre" data-u="' + esc(u) + '" tabindex="0" role="button" aria-expanded="' + aberto + '"><td><b><span class="seta">' + (aberto ? '▾' : '▸') + '</span> ' + esc(UNID()[u].nome) + '</b><br><small class="falta">' + esc(sub) + '</small></td><td class="num">' + (a ? num(noPer(a, a.sam), 0) : traco()) + '</td><td class="num mo">' + (a ? num(noPer(a, a.nos), 0) : traco()) + '</td><td class="num"><b>' + (a ? pct(a.som, 1) : '—') + '</b></td><td class="num mo">' + (b ? pct(b.som, 1) : '<span class="falta">' + (a ? 'nova' : '—') + '</span>') + '</td><td class="num">' + (a && b ? fmtDif(a.som - b.som) : traco()) + '</td></tr>' +
         (aberto ? '<tr class="rk-det"><td colspan="6">' + ranking(u, rk) + '</td></tr>' : '');
     }
     function ranking(u, rk) {
@@ -332,16 +337,16 @@
       var avisos = [];
       if ((x.a_revisar || []).length) avisos.push(x.a_revisar.length + (x.a_revisar.length > 1 ? ' postos novos' : ' posto novo') + ' na área a classificar: ' + x.a_revisar.map(function (p) { return nomePosto(p.nome); }).join(', ') + '.');
       if (x.fora_do_cadastro) avisos.push(x.fora_do_cadastro + ' concorrente saiu do cadastro da ANP (fechou ou trocou de CNPJ).');
-      return cab + '<div class="tabela"><table class="rk"><thead><tr><th class="num">#</th><th>Posto</th><th class="num">m³/mês</th><th class="num mo">Fatia do SAM</th><th class="num" title="Nosso volume comparado ao do concorrente: +50% = vendemos 50% a mais">Nós vs ele</th></tr></thead><tbody>' + rk.ls.map(function (q, i) {
-        if (q.nos) return '<tr class="dest"><td class="num">' + (i + 1) + '</td><td><span class="ponto s"></span>' + esc(UNID()[u].nome) + ' (nós)</td><td class="num">' + num(q.v, 0) + '</td><td class="num mo">' + pct(q.v / a.sam * 100, 1) + '</td><td class="num">—</td></tr>';
+      return cab + '<div class="tabela"><table class="rk"><thead><tr><th class="num">#</th><th>Posto</th><th class="num">' + uniVol() + '</th><th class="num mo">Fatia do SAM</th><th class="num" title="Nosso volume comparado ao do concorrente: +50% = vendemos 50% a mais">Nós vs ele</th></tr></thead><tbody>' + rk.ls.map(function (q, i) {
+        if (q.nos) return '<tr class="dest"><td class="num">' + (i + 1) + '</td><td><span class="ponto s"></span>' + esc(UNID()[u].nome) + ' (nós)</td><td class="num">' + num(noPer(a, q.v), 0) + '</td><td class="num mo">' + pct(q.v / a.sam * 100, 1) + '</td><td class="num">—</td></tr>';
         var p = q.p, onde = [p.bairro, p.municipio].filter(Boolean).map(nomeCidade).join(' · '), d = q.v ? (a.nos / q.v - 1) * 100 : null;
-        return '<tr><td class="num">' + (i + 1) + '</td><td>' + esc(nomePosto(p.nome)) + (informada(p) ? ' <small class="selo">informada</small>' : '') + '<br><small class="falta">' + esc(nomeBand(p.bandeira)) + ' · ' + esc(onde) + (p.km != null ? ' · ' + num(p.km, 1) + ' km' : '') + '</small></td><td class="num">' + num(q.v, 0) + '</td><td class="num mo">' + pct(q.v / a.sam * 100, 1) + '</td><td class="num"><b class="' + cls(d) + '">' + (d == null ? '—' : (d > 0 ? '+' : '') + num(d, 0) + '%') + '</b></td></tr>';
+        return '<tr><td class="num">' + (i + 1) + '</td><td>' + esc(nomePosto(p.nome)) + (informada(p) ? ' <small class="selo">informada</small>' : '') + '<br><small class="falta">' + esc(nomeBand(p.bandeira)) + ' · ' + esc(onde) + (p.km != null ? ' · ' + num(p.km, 1) + ' km' : '') + '</small></td><td class="num">' + num(noPer(a, q.v), 0) + '</td><td class="num mo">' + pct(q.v / a.sam * 100, 1) + '</td><td class="num"><b class="' + cls(d) + '">' + (d == null ? '—' : (d > 0 ? '+' : '') + num(d, 0) + '%') + '</b></td></tr>';
       }).join('') + '</tbody></table></div>' + (avisos.length ? '<div class="aviso">' + esc(avisos.join(' ')) + '</div>' : '');
     }
     var linhas = us.filter(function (u) { return R.unidades[u]; }).map(linha);
     if (us.length > 1) {
       var S = somSel(meses, us), so = S && S.uB.length && S.uB.length < us.length;
-      linhas.push('<tr class="total"><td><b>' + (todasUn() ? 'Rede' : 'Seleção') + '</b><br><small class="falta">' + uniao(us).length + ' concorrentes</small></td><td class="num">' + (S ? num(S.a.sam, 0) : traco()) + '</td><td class="num mo">' + (S ? num(S.a.nos, 0) : traco()) + '</td><td class="num"><b>' + (S ? pct(S.a.som, 1) : '—') + '</b></td><td class="num mo">' + (S && S.b ? pct(S.b.som, 1) + (so ? '<br><small class="falta">só ' + esc(nomes(S.uB)) + '</small>' : '') : traco()) + '</td><td class="num">' + (S ? fmtDif(S.dif) : traco()) + '</td></tr>');
+      linhas.push('<tr class="total"><td><b>' + (todasUn() ? 'Rede' : 'Seleção') + '</b><br><small class="falta">' + uniao(us).length + ' concorrentes</small></td><td class="num">' + (S ? num(noPer(S.a, S.a.sam), 0) : traco()) + '</td><td class="num mo">' + (S ? num(noPer(S.a, S.a.nos), 0) : traco()) + '</td><td class="num"><b>' + (S ? pct(S.a.som, 1) : '—') + '</b></td><td class="num mo">' + (S && S.b ? pct(S.b.som, 1) + (so ? '<br><small class="falta">só ' + esc(nomes(S.uB)) + '</small>' : '') : traco()) + '</td><td class="num">' + (S ? fmtDif(S.dif) : traco()) + '</td></tr>');
     }
     t.querySelector('tbody').innerHTML = meses.length ? linhas.join('') : '<tr><td colspan="6" class="falta">Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.</td></tr>';
   }
@@ -540,7 +545,7 @@
     if (!box) return;
     if (!temExp()) { box.innerHTML = ''; el('expPadrao').innerHTML = ''; el('n-exp').textContent = gere ? 'Nenhum posto em avaliação.' : ''; if (!gere && st.aba === 'expansao') st.aba = 'unidades'; return; }
     var meses = mesesValidos(), R = D.raio, todas = codigosUn();
-    el('n-exp').textContent = 'Volumes estimados; o número real só vem do vendedor.';
+    el('n-exp').textContent = 'Volumes estimados' + (st.per === 'mes' ? '' : ', em média por mês') + '; o número real só vem do vendedor.';
     if (!meses.length) { box.innerHTML = '<p class="falta">Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.</p>'; return; }
     var nosRede = nosDe(meses, todas) / meses.length;
     var PF = perfis(), mil = function (v) { return v == null ? '—' : num(v, 1); }, RA = D.exp.rampa || {}, f6 = RA.m6 || null, f12 = RA.m12 || null, comTeto = D.exp.teto !== false;
