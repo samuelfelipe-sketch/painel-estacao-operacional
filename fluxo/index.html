@@ -106,7 +106,7 @@ table.fxc{border-collapse:collapse;width:100%;min-width:620px}
 <div id="fx-conf">
   <div class="wrap">
     <h1>Conferência <span>do Argo</span></h1>
-    <div class="fxde-sub">Contas a pagar em observação: toda semana o que o Argo dizia é comparado com o que saiu do banco. Nada daqui entra na ferramenta até passar no critério.</div>
+    <div class="fxde-sub" title="Contas a pagar em observação: nada daqui entra na ferramenta até passar no critério.">O que o Argo dizia &times; o que saiu do banco, semana a semana.</div>
     <div id="fxc-corpo"><div class="card"><p class="lead">Carregando&hellip;</p></div></div>
   </div>
 </div>
@@ -498,7 +498,7 @@ async function montaConf(){
   const lNao=(p.naoPagos||[]).map(t=>'<tr><td>'+escH(EMPN[t.emp]||t.emp)+'</td><td>'+escH(t.forn)+'<br><small>doc '+escH(t.doc)+' &middot; '+escH(t.conta)+'</small></td><td>'+dBR(t.venc)+'</td><td class="n">'+fmtBR(t.valor)+'</td></tr>').join('');
   const lVenc=((s.vencidosAbertos||{}).itens||[]).map(t=>'<tr><td>'+escH(EMPN[t.emp]||t.emp)+'</td><td>'+escH(t.forn)+'<br><small>doc '+escH(t.doc)+'</small></td><td>'+dBR(t.venc)+'</td><td class="n">'+fmtBR(t.valor)+'</td></tr>').join('');
   corpo.innerHTML='<div class="card"><h2>Situação: '+(P.liberado?'liberado para entrar na ferramenta':'em conferência')+'</h2>'
-    +'<p class="fxc-acao">Critério: duas semanas seguidas com acerto da previsão e cobertura de pelo menos '+Math.round(meta*100)+'% e baixas em dia (no máximo '+Math.round((1-meta)*100)+'% do que foi pago ainda em aberto no Argo). Semanas seguidas no critério: '+(P.seguidas||0)+'. Atualizado em '+escH((a=>a?a.slice(8,10)+'/'+a.slice(5,7)+'/'+a.slice(0,4)+' '+a.slice(11,16):'')(fxcDados.atualizadoEm||''))+'.</p>'
+    +'<p class="fxc-acao" title="Baixas pendentes = o que foi pago no banco e ainda está em aberto no Argo.">Critério: 2 semanas seguidas com previsão e cobertura ≥ '+Math.round(meta*100)+'% e baixas pendentes ≤ '+Math.round((1-meta)*100)+'%. Seguidas: '+(P.seguidas||0)+'. Atualizado em '+escH((a=>a?a.slice(8,10)+'/'+a.slice(5,7)+'/'+a.slice(0,4)+' '+a.slice(11,16):'')(fxcDados.atualizadoEm||''))+'.</p>'
     +tab([['Semana'],['Previsão',1],['Cobertura',1],['Baixas pendentes',1],['Resultado']],linhas)+'</div>'
     +'<div class="card" style="margin-top:16px"><h2>Semana de '+dBR(s.semana)+' a '+dBR(s.ate)+'</h2>'
     +'<div class="fxc-kpis">'
@@ -507,10 +507,10 @@ async function montaConf(){
     +'<div class="bomba"><div class="k-r">Visível na segunda</div><div class="k-v">'+pct(c.visivelSegunda)+'</div><div class="k-s">do que saiu já estava no arquivo de segunda</div></div>'
     +'<div class="bomba"><div class="k-r">Baixas pendentes</div><div class="k-v '+(s.baixaPendente&&s.baixaPendente.pctPago<=1-meta?'fxc-ok':'fxc-nok')+'">'+(s.baixaPendente?pct(s.baixaPendente.pctPago):'—')+'</div><div class="k-s">'+bp.n+' títulos pagos ainda em aberto &middot; R$ '+fmtBR(bp.valor||0)+'</div></div>'
     +'</div>'
-    +bloco('Pagos no banco e ainda em aberto no Argo',(bp.itens||[]).length+' · R$ '+fmtBR(soma(bp.itens||[])),'O que fazer: dar baixa no Argo com a data do pagamento.',tab([['Empresa'],['Fornecedor'],['Pago em'],['Valor',1]],lPend),true)
-    +bloco('Saíram do banco sem título no Argo',(c.semTitulo||[]).length+' · R$ '+fmtBR(soma(c.semTitulo||[])),'O que fazer: lançar no contas a pagar (folha, tarifas e débitos automáticos também contam).',tab([['Empresa'],['Lançamento no extrato'],['Data'],['Valor',1]],lSem),false)
-    +bloco('Previstos e não pagos',(p.naoPagos||[]).length+' · R$ '+fmtBR(soma(p.naoPagos||[])),'O que fazer: conferir se o título ainda vale (renegociado, cancelado ou pago por outra conta).',tab([['Empresa'],['Fornecedor'],['Vencimento'],['Valor',1]],lNao),false)
-    +bloco('Vencidos e em aberto no arquivo de segunda',((s.vencidosAbertos||{}).n||0)+' · R$ '+fmtBR((s.vencidosAbertos||{}).valor||0),'O que fazer: dar baixa nos que já foram pagos ou atualizar o vencimento (mostra os 40 maiores).',tab([['Empresa'],['Fornecedor'],['Vencimento'],['Valor',1]],lVenc),false)
+    +bloco('Pagos no banco e ainda em aberto no Argo',(bp.itens||[]).length+' · R$ '+fmtBR(soma(bp.itens||[])),'Dar baixa no Argo com a data do pagamento.',tab([['Empresa'],['Fornecedor'],['Pago em'],['Valor',1]],lPend),true)
+    +bloco('Saíram do banco sem título no Argo',(c.semTitulo||[]).length+' · R$ '+fmtBR(soma(c.semTitulo||[])),'Lançar no contas a pagar (folha, tarifas e débitos automáticos contam).',tab([['Empresa'],['Lançamento no extrato'],['Data'],['Valor',1]],lSem),false)
+    +bloco('Previstos e não pagos',(p.naoPagos||[]).length+' · R$ '+fmtBR(soma(p.naoPagos||[])),'Conferir se o título ainda vale.',tab([['Empresa'],['Fornecedor'],['Vencimento'],['Valor',1]],lNao),false)
+    +bloco('Vencidos e em aberto no arquivo de segunda',((s.vencidosAbertos||{}).n||0)+' · R$ '+fmtBR((s.vencidosAbertos||{}).valor||0),'Dar baixa nos pagos ou atualizar o vencimento (40 maiores).',tab([['Empresa'],['Fornecedor'],['Vencimento'],['Valor',1]],lVenc),false)
     +'</div>';
   corpo.querySelectorAll('tr.clic').forEach(tr=>tr.addEventListener('click',()=>{fxcSem=tr.dataset.s;montaConf();}));
 }

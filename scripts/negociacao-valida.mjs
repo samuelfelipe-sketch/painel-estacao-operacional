@@ -40,7 +40,7 @@ item('todo link do menu aponta para uma seção que existe', alvos.length >= 6 &
 item('seções 01 a 06 presentes', ['resumo', 'mapa', 'impacto', 'consolidado', 'compras2026', 'margens'].every(id => ids.has(id)));
 item('tema claro fixo (color-scheme:light)', /color-scheme\s*:\s*light/.test(html));
 /* concisão: só a leitura vigente fica na página; histórico de leituras vai para o diário */
-const LIMITE_TOTAL = 9000, LIMITE_BLOCO = 220;
+const LIMITE_TOTAL = 8000, LIMITE_BLOCO = 140; /* apertados em 16/11/2026 (eram 9.000 e 220): revisão de texto de todos os painéis */
 const corpoTexto = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '');
 item('sem histórico de leituras na página ("leitura anterior", "revisão anterior")', !/(leitura|revisão) anterior/i.test(corpoTexto));
 

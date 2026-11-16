@@ -154,13 +154,16 @@ var VS_ANT='vs '+R.ant, VS_ANO='vs '+R.ano;
 Array.prototype.forEach.call(document.querySelectorAll('[data-r]'), function(el){ var v=R[el.getAttribute('data-r')]; if(v!=null) el.textContent=v; });
 byId('fAno').textContent='Δ '+VS_ANO; byId('fMes').textContent='Δ '+VS_ANT;
 byId('fatEyebrow').textContent='Faturamento total · projeção '+R.curN+'/'+R.curAno+(F.FGRUPO?' · grupo':'');
-byId('railNota').textContent='A barra mostra o acumulado do mês; o traço vertical marca onde a meta deveria estar no '+D.meta.dias_dec+'º dia ('+Math.round(D.meta.dias_dec/D.meta.dias_mes*100)+'% do mês). O percentual compara os dois.';
-byId('volNota').textContent='Projeção linear do mês (acumulado ÷ '+D.meta.dias_dec+' × '+D.meta.dias_mes+') contra '+R.antL+' e '+R.anoL+' fechados.';
+byId('railNota').textContent='Traço = onde a meta deveria estar no '+D.meta.dias_dec+'º dia ('+Math.round(D.meta.dias_dec/D.meta.dias_mes*100)+'% do mês).';
+byId('railNota').title='A barra mostra o acumulado do mês; o percentual compara o acumulado com a meta proporcional ao dia.';
+byId('volNota').textContent='Projeção do mês contra '+R.antL+' e '+R.anoL+' fechados.';
+byId('volNota').title='Projeção linear: acumulado ÷ '+D.meta.dias_dec+' × '+D.meta.dias_mes+'.';
 byId('lgNota').textContent = D.meta.dias_ant!==D.meta.dias_mes
-  ? '— '+R.antN+' tem '+D.meta.dias_ant+' dias; '+R.curN+', '+D.meta.dias_mes+'. O ritmo diário neutraliza isso.'
-  : '— os dois meses têm '+D.meta.dias_mes+' dias.';
-byId('deltaNota').textContent='Diferença entre a margem bruta projetada para '+R.curN+' e a margem realizada em '+R.antN+', linha a linha. É o efeito líquido de volume e preço juntos.';
-byId('quadNota').textContent='Eixo horizontal: variação do volume no ritmo diário contra '+R.antN+'. Eixo vertical: variação da margem unitária. O que cai no quadrante inferior direito cresce vendendo mais barato.';
+  ? '— ritmo/dia corrige '+D.meta.dias_ant+' × '+D.meta.dias_mes+' dias'
+  : '';
+byId('deltaNota').textContent='Margem bruta projetada de '+R.curN+' menos a de '+R.antN+', linha a linha.';
+byId('deltaNota').title='É o efeito líquido de volume e preço juntos.';
+byId('quadNota').textContent='Horizontal: volume no ritmo diário vs '+R.antN+'. Vertical: margem unitária. Inferior direito = cresce vendendo mais barato.';
 
 /* ---------- KPIs ---------- */
 var totComb=byCod.TOTCOMB, totMerc=byCod.TOTMERC;
@@ -249,8 +252,8 @@ function fQ(f){ return UI.fatBase==='ano'? f.qAno : f.qAnt; }
 (function heroFat(){
   var t=F.FTOT;
   byId('fatBig').innerHTML = brlCurto(t.recA)+'<small> · '+brl(t.recA)+'</small>';
-  byId('fatSub').textContent =
-    'Combustíveis a preço médio de venda de '+R.curN+' aplicado ao volume projetado, somados a mercadorias e serviços.';
+  byId('fatSub').textContent = 'Combustíveis + mercadorias e serviços';
+  byId('fatSub').title = 'Combustíveis a preço médio de venda de '+R.curN+' aplicado ao volume projetado, somados a mercadorias e serviços.';
   var boxes=[
     {k:VS_ANT, v:pct(t.vAnt), b:brlCurto(t.recB), c:t.vAnt>=0},
     {k:VS_ANO, v:pct(t.vAno), b:brlCurto(t.recC), c:t.vAno>=0},
@@ -708,15 +711,16 @@ if(byId('reads')) byId('reads').innerHTML=reads.map(function(r){ /* seção Leit
 
 /* ---------- cabeçalho e rodapé ---------- */
 byId('hdPeriodo').textContent=D.meta.mes_rotulo||R.curL;
-byId('hdMeta').textContent='Unidades '+D.meta.unidades+' · fechamento '+D.meta.data+' · '+D.meta.dias_dec+' de '+D.meta.dias_mes+' dias';
-byId('foot').innerHTML =
+byId('hdMeta').textContent='até '+D.meta.data+' · '+D.meta.dias_dec+' de '+D.meta.dias_mes+' dias';
+byId('hdMeta').title='Unidades '+D.meta.unidades+' · fechamento '+D.meta.data;
+byId('foot').innerHTML = '<details class="metodo"><summary>Fontes e método</summary>'+
  'Relatório de origem: <b>Acompanhamento de Metas e Margens de Vendas</b> — Argo Gerenciador'+(D.meta.argo_versao?' v.'+esc(D.meta.argo_versao):'')+', gerado em '+esc(D.meta.gerado)+', unidades '+esc(D.meta.unidades)+', 1º nível de classificação.<br>'+
  'Projeção linear: acumulado até '+esc(D.meta.data)+' ÷ '+D.meta.dias_dec+' × '+D.meta.dias_mes+' dias, como o próprio Argo calcula. A comparação com o mês anterior usa o mês fechado ('+D.meta.dias_ant+' dias); a coluna "ritmo/dia" corrige a diferença de calendário.<br>'+
  'A tabela de margens do Argo acumula um volume de combustíveis ligeiramente diferente do da tabela de projeção (corte de data distinto no sistema). As margens usam a primeira; volumes e projeções, a segunda.<br>'+
  'Faturamento: volume projetado × preço médio de venda do mês para combustíveis; para mercadorias, o valor do próprio relatório. Quantidades de mercadorias = faturamento ÷ preço médio unitário.<br>'+
  'O Arla aparece em duas linhas, como no Argo: ARL em litros dentro do ciclo diesel e ARLA em R$ dentro das mercadorias (SKUs distintos: pista e loja).<br>'+
  (F.LAV&&F.LAV.qtdB==null?'O preço médio da lavagem no histórico do Argo está inconsistente (uma ordem de grandeza abaixo do valor atual), então a quantidade histórica de lavagens não é comparável e fica fora do crescimento de unidades das mercadorias.<br>':'')+
- 'Visão consolidada da rede — o relatório de origem não traz quebra por unidade.';
+ 'Visão consolidada da rede — o relatório de origem não traz quebra por unidade.</details>';
 
 /* ---------- redesenho ---------- */
 function redraw(){
@@ -807,12 +811,13 @@ window.renderHistorico=function(H){
   var pMes=ultimo?ultimo.nome:'';
   /* cards */
   var cards=[
-    {lbl:'Total '+ant+' · mesmo período', big:temPer?brlCurto(sPrev):'—', sub: temPer?(ROWS.filter(function(r){return r.cur&&r.prev;}).map(function(r){return r.abr.toLowerCase();}).join(', ')+(ultimo&&ultimo.parcial&&ultimo.prev?' · '+ultimo.nome.slice(0,3)+' no ritmo de '+ultimo.cur.dias_dec+' dia'+(ultimo.cur.dias_dec>1?'s':''):'')):'sem meses com os dois anos'},
+    {lbl:'Total '+ant+' · mesmo período', big:temPer?brlCurto(sPrev):'—', sub: temPer?((function(){ var ms=ROWS.filter(function(r){return r.cur&&r.prev;}).map(function(r){return r.abr.toLowerCase();}); return ms.length>2?ms[0]+'–'+ms[ms.length-1]:ms.join(', '); })()+(ultimo&&ultimo.parcial&&ultimo.prev?' · '+ultimo.nome.slice(0,3)+' no ritmo de '+ultimo.cur.dias_dec+' dia'+(ultimo.cur.dias_dec>1?'s':''):'')):'sem meses com os dois anos'},
     {lbl:'Total '+ano+' até '+(corte?corte.slice(0,5):'hoje'), big:temPer?brlCurto(sCur):'—', sub: ultimo?('01/01 a '+(corte?corte.slice(0,5):'')+' · '+(ultimo.parcial?pMes.toLowerCase()+' parcial':'meses fechados')):''},
     {lbl:'Crescimento no período', big:temPer?pct(cresc):'—', cls:'cresc'+(temPer?(cresc>=0?' pos':' neg'):''), sub: temPer?(brlCurto(Math.abs(sCur-sPrev))+' '+(sCur>=sPrev?'a mais':'a menos')+' que '+ant):''}
   ];
   byId('aaCards').innerHTML=cards.map(function(k){ return '<div class="kpi '+(k.cls||'')+'"><div class="lbl">'+esc(k.lbl)+'</div><div class="big'+(k.cls&&k.cls.indexOf('pos')>=0?' pos':(k.cls&&k.cls.indexOf('neg')>=0?' neg':''))+'">'+esc(k.big)+'</div><div class="sub">'+esc(k.sub)+'</div></div>'; }).join('');
-  byId('aaNota').textContent=(GRUPO?'Faturamento do grupo — postos (combustíveis + mercadorias e serviços) mais '+EMPK.map(function(e){return EMP[e].nome;}).join(' e ')+' — de ':'Faturamento total dos postos (combustíveis + mercadorias e serviços) de ')+ano+' contra '+ant+', mês a mês. Mês corrente parcial comparado no ritmo proporcional.';
+  byId('aaNota').textContent=(GRUPO?'Grupo: ':'Postos: ')+ano+' contra '+ant+', mês a mês.';
+  byId('aaNota').title=(GRUPO?'Faturamento do grupo — postos (combustíveis + mercadorias e serviços) mais '+EMPK.map(function(e){return EMP[e].nome;}).join(' e '):'Faturamento total dos postos (combustíveis + mercadorias e serviços)')+'. Mês corrente parcial comparado no ritmo proporcional.';
   /* tabela */
   var cel=function(v,cls){ return '<td class="n '+(cls||'')+'">'+(isFinite(v)?brl(v):'—')+'</td>'; };
   var celP=function(v){ return '<td class="n '+(isFinite(v)?(v>=0?'pos':'neg'):'')+'">'+(isFinite(v)?pct(v):'—')+'</td>'; };
@@ -836,7 +841,7 @@ window.renderHistorico=function(H){
   /* rodapé */
   var foot=[];
   if(semBase.length) foot.push('Sem os dois anos no histórico: '+semBase.join(', ')+' — ficam fora dos totais até a semeadura dos relatórios antigos.');
-  if(ultimo&&ultimo.parcial) foot.push(pMes+' tem '+ultimo.cur.dias_dec+' de '+ultimo.cur.dias_mes+' dias: a barra clara é o projetado do mês; o crescimento compara com '+ant+' no ritmo proporcional.');
+  if(ultimo&&ultimo.parcial) foot.push(pMes+' com '+ultimo.cur.dias_dec+' de '+ultimo.cur.dias_mes+' dias: barra clara = projetado.');
   if(!prevOk) foot.push('"Ano inteiro" aparece quando '+ant+' tiver os 12 meses no histórico.');
   if(GRUPO){
     var per=ROWS.filter(function(r){return r.cur&&r.prev;}).map(function(r){return r.cur.ref;});
@@ -847,7 +852,7 @@ window.renderHistorico=function(H){
     var dataBR=function(p){ return p.length>7?p.slice(8,10)+'/'+p.slice(5,7)+'/'+p.slice(0,4):p.slice(5,7)+'/'+p.slice(0,4); };
     var incs=[]; EMPK.forEach(function(e){ var inf=infoEmpresa(e,EMP[e]); Object.keys(EMP[e].meses).forEach(function(ref){ var x=EMP[e].meses[ref]; if(x.incompleto&&(ref.slice(0,4)==String(ano)||ref.slice(0,4)==String(ant))) incs.push(inf.sig+' '+ref.slice(5,7)+'/'+ref.slice(2,4)+' só dias '+x.diasDe+' a '+x.diasAte); }); });
     var lanc=EMPK.map(function(e){ var p=EMP[e].periodo, inf=infoEmpresa(e,EMP[e]); return p&&p.ate?inf.sig+' até '+dataBR(p.ate):null; }).filter(Boolean);
-    foot.push('Grupo em '+ano+': '+partes.join(' · ')+(intra>0?' — '+brlCurto(intra)+' disso foi faturado a empresas do próprio grupo (aluguéis, energia e fretes internos), somado no bruto.':'.')+' Cada empresa só entra no mês em que tem os dois anos lançados'+(lanc.length?' ('+lanc.join(', ')+')':'')+'.'+(incs.length?' Meses parciais (entram com o que está lançado): '+incs.join(', ')+'.':''));
+    foot.push('Grupo em '+ano+': '+partes.join(' · ')+(intra>0?' — '+brlCurto(intra)+' faturado dentro do grupo, somado no bruto.':'.')+' Cada empresa só entra no mês em que tem os dois anos lançados'+(lanc.length?' ('+lanc.join(', ')+')':'')+'.'+(incs.length?' Meses parciais (entram com o que está lançado): '+incs.join(', ')+'.':''));
   }
   byId('aaFoot').textContent=foot.join(' ');
   byId('aaEyebrow').textContent='Evolução mês a mês · faturamento '+(GRUPO?'do grupo':'dos postos');

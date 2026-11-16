@@ -62,7 +62,7 @@ tr:last-child td{border-bottom:none}
 <div class="wrap">
   <div class="eyebrow">Estação Sapatão · Ajustes</div>
   <h1>Configurações</h1>
-  <p class="sub">Conta, sincronização e usuários — num lugar só, para todos os painéis.</p>
+  <p class="sub">Conta, sincronização e usuários.</p>
 
   <h3>Minha conta</h3>
   <div class="card">
@@ -71,7 +71,7 @@ tr:last-child td{border-bottom:none}
   </div>
   <div class="card" style="max-width:430px" id="minha-senha">
     <p class="lead" id="sn-aviso-trocar" hidden style="margin-bottom:10px;color:#C2531A"><b>Crie a sua senha para liberar os painéis.</b> A atual foi definida pelo administrador.</p>
-    <p class="lead" style="margin-bottom:8px"><b style="color:var(--verde)">Trocar a minha senha.</b> Vale para todos os painéis. Precisa da chave de publicação neste aparelho.</p>
+    <p class="lead" style="margin-bottom:8px" title="Precisa da chave de publicação neste aparelho."><b style="color:var(--verde)">Trocar a minha senha.</b> Vale para todos os painéis.</p>
     <input type="password" class="campo" id="sn-atual" placeholder="Senha atual" autocomplete="off">
     <input type="password" class="campo" id="sn-nova" placeholder="Senha nova (mínimo 12 caracteres)" autocomplete="off">
     <input type="password" class="campo" id="sn-conf" placeholder="Repetir a senha nova" autocomplete="off">
@@ -81,7 +81,7 @@ tr:last-child td{border-bottom:none}
 
   <h3>Tamanho na tela</h3>
   <div class="card" style="max-width:520px">
-    <p class="lead" style="margin-bottom:10px">Escolha o tamanho dos painéis <b>neste aparelho</b> — fica salvo só neste navegador e vale para todos os painéis. Em telas largas o site já reduz um pouco sozinho; aqui você ajusta por cima.</p>
+    <p class="lead" style="margin-bottom:10px" title="Fica salvo só neste navegador e vale para todos os painéis. Em telas largas o site já reduz um pouco sozinho; aqui você ajusta por cima.">Tamanho dos painéis <b>neste aparelho</b>.</p>
     <div class="zm-seg" id="zm-seg" role="group" aria-label="Tamanho na tela">
       <button type="button" data-z="0.8">Menor</button>
       <button type="button" data-z="0.9">Compacto</button>
@@ -93,7 +93,7 @@ tr:last-child td{border-bottom:none}
 
   <h3 id="notificacoes">Notificações no celular</h3>
   <div class="card" style="max-width:520px">
-    <p class="lead" style="margin-bottom:8px">Receba a notificação oficial do aparelho quando acontecer algo nos painéis: follow-ups, ações concluídas ou reabertas, prazos renegociados e lembretes de prazo. <b>No iPhone:</b> primeiro adicione o site à Tela de Início (Compartilhar &rarr; Adicionar à Tela de Início) e abra por lá.</p>
+    <p class="lead" style="margin-bottom:8px">Avisos de follow-ups, ações e prazos. <b>No iPhone:</b> adicione o site à Tela de Início e abra por lá.</p>
     <p style="margin-bottom:10px">Neste aparelho: <span class="pill" id="np-status">verificando&hellip;</span></p>
     <button type="button" class="btn" id="np-ativar" hidden>Ativar notificações neste aparelho</button>
     <button type="button" class="btn sec" id="np-desativar" hidden>Desativar neste aparelho</button>
@@ -120,7 +120,7 @@ tr:last-child td{border-bottom:none}
         <button type="button" class="btn sec" style="margin-top:0" id="cs-remover">Remover a chave de publicação deste aparelho</button>
       </div>
       <div id="cs-sem" hidden>
-        <p class="lead">Cole a chave de publicação (fine-grained token do GitHub, Contents Read/Write só neste repositório):</p>
+        <p class="lead" title="Fine-grained token do GitHub, Contents Read/Write só neste repositório.">Cole a chave de publicação:</p>
         <input type="password" class="campo campo-mono" id="cs-campo" placeholder="Chave de publicação" autocomplete="off">
         <button type="button" class="btn" id="cs-salvar">Salvar chave neste aparelho</button>
       </div>
@@ -129,7 +129,7 @@ tr:last-child td{border-bottom:none}
 
     <h3>Fluxo de Caixa</h3>
     <div class="card" style="max-width:520px">
-      <p class="lead" style="margin-bottom:8px">Publique a versão mais nova da ferramenta — escolha o arquivo <b>fluxo_caixa_rede.html</b>. Ele é comprimido e cifrado aqui no navegador antes de subir; só quem tem a chave dos dados consegue abrir.</p>
+      <p class="lead" style="margin-bottom:8px">Escolha o arquivo <b>fluxo_caixa_rede.html</b>. É cifrado aqui antes de subir.</p>
       <input type="file" id="fx-arq" accept=".html,text/html" style="margin:6px 0 10px;max-width:100%">
       <button type="button" class="btn" id="fx-publicar" style="margin-top:0">Cifrar e publicar</button>
       <p class="lead" id="fx-msg" style="margin-top:8px;margin-bottom:0"></p>
@@ -137,7 +137,7 @@ tr:last-child td{border-bottom:none}
 
     <h3>Negociação de Preços</h3>
     <div class="card" style="max-width:520px">
-      <p class="lead" style="margin-bottom:8px">Publique a versão mais nova da ferramenta de negociação — escolha o arquivo <b>HTML</b> exportado do Claude (Cowork). Ele é comprimido e cifrado aqui no navegador antes de subir; só quem tem a chave dos dados consegue abrir.</p>
+      <p class="lead" style="margin-bottom:8px">Escolha o <b>HTML</b> exportado do Claude (Cowork). É cifrado aqui antes de subir.</p>
       <input type="file" id="ng-arq" accept=".html,text/html" style="margin:6px 0 10px;max-width:100%">
       <button type="button" class="btn" id="ng-publicar" style="margin-top:0">Cifrar e publicar</button>
       <p class="lead" id="ng-msg" style="margin-top:8px;margin-bottom:0"></p>
@@ -145,7 +145,7 @@ tr:last-child td{border-bottom:none}
 
     <h3>Vendas</h3>
     <div class="card" style="max-width:520px">
-      <p class="lead" style="margin-bottom:8px">Publique os dados do mês — cole aqui o conteúdo do <b>dados-metas-margens.json</b> gerado a partir do relatório do Argo (ou escolha o arquivo). Ele é cifrado aqui no navegador antes de subir; só quem tem a chave dos dados consegue abrir. As regras de preparação estão em <b>painel-operacional-regras.md</b>.</p>
+      <p class="lead" style="margin-bottom:8px" title="Gerado a partir do relatório do Argo; regras de preparação em painel-operacional-regras.md.">Cole o <b>dados-metas-margens.json</b> ou escolha o arquivo. É cifrado aqui antes de subir.</p>
       <textarea id="op-txt" rows="6" spellcheck="false" placeholder='Cole o JSON aqui — começa com {"meta": …' style="width:100%;box-sizing:border-box;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.4;padding:10px 12px;border:1px solid #E4E9F0;border-radius:12px;background:#fff;color:#16211C;resize:vertical;margin:6px 0 8px"></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
         <button type="button" class="btn" id="op-colar" style="margin-top:0;background:#fff;color:#16211C;border:1px solid #E4E9F0">Colar da área de transferência</button>
@@ -157,7 +157,7 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <h3>Usuários e permissões</h3>
-    <p class="lead">Cada pessoa entra com o próprio usuário e senha. Permissão por painel: em Vendas, no Fluxo de Caixa e na Negociação de Preços é <b>Acessa</b> ou <b>Sem acesso</b>; nos Planejamentos é <b>Edita</b>, <b>Só follow-ups</b> (só no Estratégico), <b>Só lê</b> ou <b>Sem acesso</b>. Admin acessa e edita tudo.</p>
+    <p class="lead">Permissão por painel. <b>Só follow-ups</b> vale só no Estratégico. Admin acessa e edita tudo.</p>
     <div class="card">
       <div class="tbl"><table class="us-tbl" id="us-tbl"></table></div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
@@ -169,11 +169,11 @@ tr:last-child td{border-bottom:none}
 
     <h3>Troca da chave dos dados</h3>
     <div class="card" style="max-width:640px" id="troca-chave">
-      <p class="lead" style="margin-bottom:8px">Gera uma <b>chave nova</b> para todos os dados cifrados do site, recifra cada arquivo num único commit e apaga do cofre a chave antiga. Use quando alguém sair da empresa ou se houver suspeita de vazamento.</p>
-      <p class="lead" style="margin-bottom:8px"><b>O que acontece:</b> só você continua com acesso. Cada pessoa volta a entrar depois que você redefinir a senha dela em "Usuários e permissões" e salvar. As rotinas automáticas param até a chave nova entrar no ambiente do Claude.</p>
+      <p class="lead" style="margin-bottom:8px">Gera uma <b>chave nova</b> e recifra todos os dados. Use quando alguém sair da empresa ou houver suspeita de vazamento.</p>
+      <p class="lead" style="margin-bottom:8px"><b>Depois:</b> só você entra. Redefina a senha de cada pessoa e ponha a chave nova no ambiente do Claude — as rotinas param até lá.</p>
       <input type="password" class="campo campo-mono" id="tc-token" placeholder="Chave de publicação NOVA (token do GitHub recém-criado)" autocomplete="off">
       <input type="password" class="campo" id="tc-senha" placeholder="A sua senha" autocomplete="off">
-      <label class="lead" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="tc-ok"> Combinei o horário com a equipe e sei que todos vão precisar de senha nova</label>
+      <label class="lead" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="tc-ok"> Combinei com a equipe: todos vão precisar de senha nova</label>
       <button type="button" class="btn destaque" id="tc-trocar">Trocar a chave dos dados agora</button>
       <p class="lead" id="tc-msg" style="margin-top:8px;margin-bottom:0"></p>
       <div id="tc-resultado" hidden style="margin-top:12px">
