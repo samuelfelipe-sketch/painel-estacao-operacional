@@ -368,7 +368,17 @@ export function sicrediCnab(txt) {
   }
   const ant = dataCnab(sI[1]), d = new Date(ant + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 1);
   const de = d.toISOString().slice(0, 10), ate = dataCnab(sF[1]);
-  const o = fecha({ banco: 'sicredi', saldoAnterior: valCnab(sI[2], sI[3]), saldoFinal: valCnab(sF[2], sF[3]), mov, periodo: { de, ate } });
+  let o = fecha({ banco: 'sicredi', saldoAnterior: valCnab(sI[2], sI[3]), saldoFinal: valCnab(sF[2], sF[3]), mov, periodo: { de, ate } });
+  /* o trailer traz, logo antes da data do saldo final, o "bloqueado até 24h" (depósito ainda
+     não liberado). Às vezes o saldo final declarado já vem SEM ele (16/11/2026: PS 1.500,00 e SF
+     2.100,00 na semana 02–08/11 — o header do arquivo seguinte confirmou o saldo pela soma).
+     Só nesse caso exato (diferença = bloqueado, no centavo) o saldo final passa a ser o da soma. */
+  const bl = tr.match(/(\d{18})\d{8}\d{18}[CD][PF]/);
+  const bloq = bl ? parseInt(bl[1], 10) / 100 : 0;
+  if (!o.ok && bloq > 0 && Math.abs(round2(o.saldoAnterior + mov.reduce((a, x) => a + x.valor, 0) - o.saldoFinal) - bloq) < 0.005) {
+    o = fecha({ banco: 'sicredi', saldoAnterior: o.saldoAnterior, saldoFinal: round2(o.saldoFinal + bloq), mov, periodo: { de, ate } });
+    o.bloqueado24h = bloq;
+  }
   const c = sicrediCnabConta(txt);
   o.formato = 'cnab'; o.empresa = c.empresa; o.conta = c.conta; o.saldoAnteriorEm = ant;
   return o;
