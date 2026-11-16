@@ -408,14 +408,14 @@
           2025 também na página). Variações contra o mesmo período do ano anterior. */
     el('n-evoT').textContent = 'Var. contra o mesmo período do ano anterior. Dif. = mesmas unidades menos TAM.';
     var t = el('tEvo');
-    t.querySelector('thead').innerHTML = '<tr><th>Período</th><th class="num mo">TAM (mil m³)</th><th class="num">TAM var.</th><th class="num mo">' + esc(quem()) + ' (m³)</th><th class="num">' + esc(quem()) + ' var.</th><th class="num mo">Mesmas unidades</th><th class="num">Dif. vs TAM</th><th class="num">Fatia do TAM</th><th class="num mo">SOM</th></tr>';
+    t.querySelector('thead').innerHTML = '<tr><th>Período</th><th class="num mo">TAM (mil m³)</th><th class="num">TAM var.</th><th class="num">' + esc(quem()) + ' (m³)</th><th class="num">Var.</th><th class="num mo">Mesmas unidades</th><th class="num">Dif. vs TAM</th><th class="num">Fatia do TAM</th><th class="num mo">SOM</th></tr>';
     function linhaEvo(rot, ms, clsTr) {
       var base = ms.map(anoAnt), tam = tamDe(ms), n = nosDe(ms, us);
       var tamA = base.every(function (b) { return mktReal(b, 'rev'); }) ? tamDe(base) : null, nA = base.every(sapMes) ? nosDe(base, us) : null;
       var mesmas = nA != null ? us.filter(function (u) { return nosDe(base, [u]) > 0 && nosDe(ms, [u]) > 0; }) : [];
       var gT = cresc(tamA, tam), gN = cresc(nA, n), gM = mesmas.length ? cresc(nosDe(base, mesmas), nosDe(ms, mesmas)) : null;
       var som = temRaio() ? calc(ms, us, uniao(us)) : null;
-      return '<tr' + (clsTr ? ' class="' + clsTr + '"' : '') + '><td>' + rot + '</td><td class="num mo">' + (tam ? num(tam / 1000, 1) : traco()) + '</td><td class="num">' + fmtVar(gT) + '</td><td class="num mo">' + (n != null ? num(n, 0) : traco()) + '</td><td class="num">' + fmtVar(gN) + '</td><td class="num mo">' + fmtVar(gM) + '</td><td class="num">' + fmtDif(gM != null && gT != null ? gM - gT : null) + '</td><td class="num">' + (tam && n != null ? pct(n / tam * 100, 2) : traco()) + '</td><td class="num mo">' + (som ? pct(som.som, 1) : traco()) + '</td></tr>';
+      return '<tr' + (clsTr ? ' class="' + clsTr + '"' : '') + '><td>' + rot + '</td><td class="num mo">' + (tam ? num(tam / 1000, 1) : traco()) + '</td><td class="num">' + fmtVar(gT) + '</td><td class="num">' + (n != null ? num(n, 0) : traco()) + '</td><td class="num">' + fmtVar(gN) + '</td><td class="num mo">' + fmtVar(gM) + '</td><td class="num">' + fmtDif(gM != null && gT != null ? gM - gT : null) + '</td><td class="num">' + (tam && n != null ? pct(n / tam * 100, 2) : traco()) + '</td><td class="num mo">' + (som ? pct(som.som, 1) : traco()) + '</td></tr>';
     }
     var anos = {}, linhas = [];
     todos.forEach(function (m) { (anos[m.slice(0, 4)] = anos[m.slice(0, 4)] || []).push(m); });
