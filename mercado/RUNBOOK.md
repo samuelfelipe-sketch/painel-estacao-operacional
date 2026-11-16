@@ -10,7 +10,7 @@ segmento (posto revendedor, só bandeirados, todos os segmentos).
 
 | Arquivo | Conteúdo | Sensível? | Quem grava |
 |---|---|---|---|
-| `mercado/anp-vendas.json` | mercado agregado por recorte × mês × segmento × produto × distribuidora (mil m³), desde 2025-01 | não (dado público da ANP) | workflow `mercado-anp.yml` |
+| `mercado/anp-vendas.json` | mercado agregado por recorte × mês × segmento × produto × distribuidora (mil m³), desde 2024-01 | não (dado público da ANP) | workflow `mercado-anp.yml` |
 | `mercado/sapatao.enc.json` | compras do Sapatão por mês × bandeira × produto (m³) — **CIFRADO** com a chave dos dados | **sim** | `scripts/mercado-sapatao.mjs` |
 | `mercado/regiao-raio.json` | por unidade: CNPJ, coordenada (link do Google Maps), raio/trecho/corredor e a **lista de concorrentes escolhida pelo Samuel** (`concorrentes`) + `descartados` | não (dado público) | à mão, quando o Samuel reclassifica |
 | `mercado/expansao.enc.json` | postos em avaliação para entrar na rede (CNPJ, apelido, área por raio ou a área de uma unidade nossa) — **CIFRADO**; a lista de alvos é estratégica e nunca aparece em claro, nem em commit ou log | **sim** | `scripts/mercado-expansao.mjs grava --json <arquivo fora do repo>` |
@@ -140,12 +140,18 @@ segmento saíram).
   (`mercado/estimativas.enc.json`, cifrado) usa fator = informado ÷ régua no mês `ref`.
   Conferida nas nossas unidades, a régua erra perto de 10% no total por posto.
 - **SOM** = nossas compras ÷ SAM. Sem meta definida (o Samuel avalia o painel antes).
-- **Prévia** (o Samuel pediu em 15/11/2026): mês sem ANP = mês anterior × (mesmo mês ÷ mês
-  anterior, no ano passado), em cadeia, por segmento e por grupo de produto (`mktP`, até 6
-  meses à frente); por construção, o crescimento contra o ano anterior da prévia repete o do
-  último mês publicado. Mês em curso do Sapatão = compras até o último dia coberto ×
-  (dias do mês ÷ dias cobertos). Marcado como PRÉVIA / EM CURSO na tela; some quando a ANP
+- **Prévia** (regra de 16/11/2026, substitui a de 15/11): mês sem ANP = o MESMO MÊS DO ANO
+  PASSADO × o crescimento médio dos últimos 12 meses fechados (soma dos 12 ÷ soma dos mesmos 12
+  um ano antes), por segmento e grupo de produto (`tendencia()` e `mktP` no `mercado.js`, até 6
+  meses à frente; mínimo de 3 meses comparáveis). Não parte mais do último mês fechado, que
+  sozinho pode ser atípico. A repartição entre distribuidoras segue o último mês fechado. Por
+  isso a base da ANP começa em 2024-01 (`--desde` do `mercado-anp.mjs`). No teste contra os meses
+  já publicados a regra nova errou menos que a antiga. Mês em curso = compras até o dia coberto
+  × dias do mês ÷ dias cobertos. Tudo o que é prévia leva o selo PRÉVIA e some quando a ANP
   publica. O mês padrão ao abrir é o último com compras fechadas (publicado ou prévia).
+- **Mês a mês com todos os anos** (16/11/2026): a tabela da aba Evolução lista todos os meses
+  desde o primeiro mês de compras, com a linha de total de cada ano (`tr.ano`) e volumes
+  absolutos (TAM e compras) além das variações; no celular ficam só as variações e a fatia.
 - **Mesmas unidades**: a variação contra o ano anterior (SOM da rede e veredito) tira a
   unidade que não comprava no período base; o crescimento nominal da rede, com unidade
   nova, e a fatia do TAM ficam na aba Evolução.
@@ -183,7 +189,15 @@ segmento saíram).
   não trazem mais clientes na mesma proporção); nunca abaixo do volume de hoje
   (`perfis()` e `projeta()` no `mercado.js`). Quando o AS amadurecer (12 meses), entra em
   `ref` do perfil rodovia.
-  **Incluir um posto em avaliação** (o Samuel pede no chat: nome ou endereço, perfil e, se
+  **Botão "+ Adicionar posto"** (16/11/2026, só admin): na própria aba, busca o posto no cadastro
+  público da região (`area`), pede apelido, perfil, área (raio de 2/3/5 km ou a área de uma
+  unidade nossa) e, se souber, o volume de hoje; o navegador relê o arquivo da nuvem, cifra e
+  grava `expansao.enc.json` (e `estimativas.enc.json` quando há volume) pela API do GitHub, com
+  commits `chore: atualiza os postos em avaliação do Market Share (manual)` e `chore: atualiza
+  as estimativas de concorrentes do Market Share (manual)`. Cada ficha tem "Remover". Perfis,
+  rampa e teto não são editados pela tela. Posto de município fora da região não aparece na
+  busca: segue o caminho abaixo.
+  **Incluir um posto em avaliação pelo chat** (alternativa ao botão; o Samuel informa nome ou endereço, perfil e, se
   souber, o volume): 1) achar o CNPJ em `area` do `postos-raio.json` (nome/endereço); 2)
   `mercado-expansao.mjs abre`, acrescentar `{cnpj, apelido, perfil, area}` (raio 3 km para
   urbano; `{tipo:'unidade',u}` quando fica no corredor de uma unidade nossa) e `grava`; 3)

@@ -67,8 +67,22 @@
     Object.keys(o).forEach(function (k) { r[k] = (o[k] || 0) + (d[k] || 0); });
     return r;
   }
-  /* mercado publicado ou, depois do último mês da ANP, projetado: mês anterior × sazonalidade do ano passado */
+  /* Prévia (regra de 16/11/2026, pedido do Samuel): mês que a ANP ainda não publicou = o MESMO MÊS
+     DO ANO PASSADO × o crescimento médio dos últimos 12 meses fechados (soma dos 12 ÷ soma dos
+     mesmos 12 um ano antes), por segmento e por grupo de produto. Não parte mais do último mês
+     fechado, que sozinho pode ser um mês atípico. A repartição entre distribuidoras segue o último
+     mês fechado (a fatia de cada bandeira muda ao longo do ano). Vale até 6 meses à frente. */
   var memo = {};
+  function fechadosAnp() { return mesesAnp().filter(function (m) { return !anpParcial(m); }); }
+  function tendencia(seg, prod) {
+    var k = 'tend|' + seg + '|' + prod; if (k in memo) return memo[k];
+    var ms = fechadosAnp(), a = 0, b = 0, n = 0;
+    for (var i = ms.length - 1; i >= 0 && n < 12; i--) {
+      var x = mktReal(ms[i], seg, prod), y = mktReal(anoAnt(ms[i]), seg, prod);
+      if (x && y && y.Total > 0) { a += x.Total; b += y.Total; n++; }
+    }
+    return (memo[k] = n >= 3 && b > 0 ? { f: a / b, n: n } : null);
+  }
   function mktP(ym, seg, prod) {
     seg = seg || 'rev'; prod = prod || st.prod;
     var k = ym + '|' + seg + '|' + prod; if (k in memo) return memo[k];
@@ -80,8 +94,11 @@
           var o = mktP(ym, seg, 'otto'), d = mktP(ym, seg, 'diesel');
           if (o && d) { r = { _prev: true }; Object.keys(o).forEach(function (kk) { if (kk !== '_prev') r[kk] = (o[kk] || 0) + (d[kk] || 0); }); }
         } else {
-          var p = shiftMes(ym, -1), base = mktP(p, seg, prod), a = mktReal(anoAnt(ym), seg, prod), b = mktReal(anoAnt(p), seg, prod);
-          if (base && a && b && b.Total > 0) { var f = a.Total / b.Total; r = { _prev: true }; Object.keys(base).forEach(function (kk) { if (kk !== '_prev') r[kk] = base[kk] * f; }); }
+          var a = mktReal(anoAnt(ym), seg, prod), t = tendencia(seg, prod), fs = fechadosAnp(), mix = mktReal(fs[fs.length - 1], seg, prod);
+          if (a && t && a.Total > 0) {
+            var total = a.Total * t.f, base = mix && mix.Total > 0 ? mix : a, fx = total / base.Total;
+            r = { _prev: true }; Object.keys(base).forEach(function (kk) { r[kk] = base[kk] * fx; });
+          }
         }
       }
     }
@@ -237,7 +254,7 @@
     c.push('<span class="chip">ANP até <b>' + (ultA ? mesLbl(ultA) : '—') + '</b> · compras até <b>' + (cob ? cob.slice(8) + '/' + cob.slice(5, 7) : ult ? mesLbl(ult) : '—') + '</b></span>');
     if (st.per !== 'mes') c.push('<span class="chip"><b>' + perLbl(st.mes) + '</b></span>');
     var meses = mesesValidos(), prev = meses.filter(ehPrevia), curso = meses.filter(sapParcial);
-    if (prev.length) c.push('<span class="chip alerta" title="A ANP ainda não publicou: mercado projetado pela variação do mesmo mês no ano passado">Prévia: mercado de ' + prev.map(mesLbl).join(', ') + ' projetado</span>');
+    if (prev.length) c.push('<span class="chip alerta" title="A ANP ainda não publicou: mesmo mês do ano passado × crescimento médio dos últimos 12 meses">Prévia: mercado de ' + prev.map(mesLbl).join(', ') + ' projetado</span>');
     if (curso.length) c.push('<span class="chip alerta" title="Compras até o último dia lançado, projetadas pelo ritmo para o mês inteiro">' + curso.map(mesLbl).join(', ') + ' em curso (até dia ' + sapMes(curso[0]).cobertura.ate.slice(8) + ')</span>');
     meses.filter(function (m) { return !ehPrevia(m) && anpParcial(m); }).forEach(function (m) { c.push('<span class="chip alerta">ANP ainda fechando ' + mesLbl(m) + '</span>'); });
     el('chips').innerHTML = c.join('');
@@ -382,18 +399,30 @@
     el('n-evo').textContent = '';
     el('legEvo').innerHTML = series.map(function (s) { return '<span><i class="linha" style="background:' + s.cor + '"></i>' + esc(s.nome) + '</span>'; }).join('') + '<span><i style="background:#fff;border:2px solid var(--tinta-fraca);width:8px;height:8px;border-radius:50%"></i>Prévia</span>';
     grafico(el('cEvo'), el('tipEvo'), pts, series, function (p) { return '<b>' + mesLbl(p.m) + (p.previa ? ' · prévia' : '') + '</b><br>' + series.map(function (s) { return esc(s.nome) + ' ' + (p.v[s.k] == null ? '—' : pct(p.v[s.k], 1)); }).join('<br>'); });
-    /* 2) crescimento contra o mesmo mês do ano anterior */
-    el('n-evoT').textContent = 'Contra o mesmo mês do ano anterior. Dif. = mesmas unidades menos TAM.';
+    /* 2) mês a mês desde o primeiro mês de compras, com o total de cada ano (pedido de 16/11/2026:
+          2025 também na página). Variações contra o mesmo período do ano anterior. */
+    el('n-evoT').textContent = 'Var. contra o mesmo período do ano anterior. Dif. = mesmas unidades menos TAM.';
     var t = el('tEvo');
-    t.querySelector('thead').innerHTML = '<tr><th>Mês</th><th class="num">TAM</th><th class="num">' + esc(quem()) + '</th><th class="num mo">Mesmas unidades</th><th class="num">Dif. vs TAM</th><th class="num">Fatia do TAM</th><th class="num mo">SOM</th></tr>';
-    var linhas = todos.slice(-13).reverse().map(function (m) {
-      var b = anoAnt(m), tam = tamDe([m]), tamA = mktReal(b, 'rev') ? tamDe([b]) : null, n = nosDe([m], us), nA = sapMes(b) ? nosDe([b], us) : null;
-      var mesmas = nA != null ? us.filter(function (u) { return nos(b, [u]) > 0 && nos(m, [u]) > 0; }) : [];
-      var gT = cresc(tamA, tam), gN = cresc(nA, n), gM = mesmas.length ? cresc(nosDe([b], mesmas), nosDe([m], mesmas)) : null;
-      var som = temRaio() ? calc([m], us, uniao(us)) : null, pv = ehPrevia(m) || sapParcial(m);
-      return '<tr' + (m === st.mes ? ' class="dest"' : '') + '><td>' + mesLbl(m) + (pv ? '<span class="parc">' + (sapParcial(m) ? 'EM CURSO' : 'PRÉVIA') + '</span>' : '') + '</td><td class="num">' + fmtVar(gT) + '</td><td class="num">' + fmtVar(gN) + '</td><td class="num mo">' + fmtVar(gM) + '</td><td class="num">' + fmtDif(gM != null && gT != null ? gM - gT : null) + '</td><td class="num">' + (tam && n != null ? pct(n / tam * 100, 2) : traco()) + '</td><td class="num mo">' + (som ? pct(som.som, 1) : traco()) + '</td></tr>';
+    t.querySelector('thead').innerHTML = '<tr><th>Período</th><th class="num mo">TAM (mil m³)</th><th class="num">TAM var.</th><th class="num mo">' + esc(quem()) + ' (m³)</th><th class="num">' + esc(quem()) + ' var.</th><th class="num mo">Mesmas unidades</th><th class="num">Dif. vs TAM</th><th class="num">Fatia do TAM</th><th class="num mo">SOM</th></tr>';
+    function linhaEvo(rot, ms, clsTr) {
+      var base = ms.map(anoAnt), tam = tamDe(ms), n = nosDe(ms, us);
+      var tamA = base.every(function (b) { return mktReal(b, 'rev'); }) ? tamDe(base) : null, nA = base.every(sapMes) ? nosDe(base, us) : null;
+      var mesmas = nA != null ? us.filter(function (u) { return nosDe(base, [u]) > 0 && nosDe(ms, [u]) > 0; }) : [];
+      var gT = cresc(tamA, tam), gN = cresc(nA, n), gM = mesmas.length ? cresc(nosDe(base, mesmas), nosDe(ms, mesmas)) : null;
+      var som = temRaio() ? calc(ms, us, uniao(us)) : null;
+      return '<tr' + (clsTr ? ' class="' + clsTr + '"' : '') + '><td>' + rot + '</td><td class="num mo">' + (tam ? num(tam / 1000, 1) : traco()) + '</td><td class="num">' + fmtVar(gT) + '</td><td class="num mo">' + (n != null ? num(n, 0) : traco()) + '</td><td class="num">' + fmtVar(gN) + '</td><td class="num mo">' + fmtVar(gM) + '</td><td class="num">' + fmtDif(gM != null && gT != null ? gM - gT : null) + '</td><td class="num">' + (tam && n != null ? pct(n / tam * 100, 2) : traco()) + '</td><td class="num mo">' + (som ? pct(som.som, 1) : traco()) + '</td></tr>';
+    }
+    var anos = {}, linhas = [];
+    todos.forEach(function (m) { (anos[m.slice(0, 4)] = anos[m.slice(0, 4)] || []).push(m); });
+    Object.keys(anos).sort().reverse().forEach(function (a) {
+      var ms = anos[a], pv = ms.some(function (m) { return ehPrevia(m) || sapParcial(m); });
+      linhas.push(linhaEvo('<b>' + a + '</b> <small class="falta">' + mesLbl(ms[0]).slice(0, 3) + (ms.length > 1 ? '–' + mesLbl(ms[ms.length - 1]).slice(0, 3) : '') + '</small>' + (pv ? '<span class="parc">PRÉVIA</span>' : ''), ms, 'total ano'));
+      ms.slice().reverse().forEach(function (m) {
+        var p1 = ehPrevia(m) || sapParcial(m);
+        linhas.push(linhaEvo(mesLbl(m) + (p1 ? '<span class="parc">' + (sapParcial(m) ? 'EM CURSO' : 'PRÉVIA') + '</span>' : ''), [m], m === st.mes ? 'dest' : ''));
+      });
     });
-    t.querySelector('tbody').innerHTML = linhas.join('') || '<tr><td colspan="7" class="falta">Sem meses.</td></tr>';
+    t.querySelector('tbody').innerHTML = linhas.join('') || '<tr><td colspan="9" class="falta">Sem meses.</td></tr>';
     /* 3) crescimento nominal da rede no período: mesmas unidades × unidades novas × TAM */
     var r = resumo(), tr = el('tRede'), baseTxt = perLbl(anoAnt(st.mes));
     el('n-rede').textContent = perLbl(st.mes) + ' contra ' + baseTxt + ', em m³.' + (r.previa || r.curso ? ' Inclui prévia.' : '');
@@ -505,9 +534,11 @@
   var EXP_ABERTOS = {};
   function expansao() {
     var bt = document.querySelector('#abas button[data-aba="expansao"]'), box = el('expFichas');
-    if (bt) bt.hidden = !temExp();
+    var gere = podeGerir();
+    if (bt) bt.hidden = !(temExp() || gere);
+    if (el('expAdd')) el('expAdd').hidden = !gere;
     if (!box) return;
-    if (!temExp()) { box.innerHTML = ''; if (st.aba === 'expansao') st.aba = 'unidades'; return; }
+    if (!temExp()) { box.innerHTML = ''; el('expPadrao').innerHTML = ''; el('n-exp').textContent = gere ? 'Nenhum posto em avaliação.' : ''; if (!gere && st.aba === 'expansao') st.aba = 'unidades'; return; }
     var meses = mesesValidos(), R = D.raio, todas = codigosUn();
     el('n-exp').textContent = 'Volumes estimados; o número real só vem do vendedor.';
     if (!meses.length) { box.innerHTML = '<p class="falta">Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.</p>'; return; }
@@ -521,7 +552,7 @@
       }).join('') + '</tbody></table></div><p class="nota">Mil litros por bico por mês.</p></details>';
     box.innerHTML = D.exp.candidatos.map(function (c, idx) {
       var p = postoArea(c.cnpj);
-      if (!p) return '<div class="ficha"><h3>' + esc(c.apelido) + '</h3><p class="falta">Posto não encontrado no cadastro da ANP da região.</p></div>';
+      if (!p) return '<div class="ficha"><div class="ficha-topo"><h3>' + esc(c.apelido) + '</h3>' + (gere ? '<button type="button" class="exp-rem" data-rem="' + esc(c.cnpj) + '">Remover</button>' : '') + '</div><p class="falta">Posto não encontrado no cadastro da ANP da região.</p></div>';
       var vol = mediaEst(meses, p), inf = informada(p), viz = [], rot = '';
       /* a área do candidato */
       if (c.area.tipo === 'unidade' && R.unidades[c.area.u]) {
@@ -560,7 +591,7 @@
       var passoV = function (f, ant) { var x = f && bc ? projeta(p.infra, pf, f, comTeto) : null; return x ? { v: Math.max(ant, x.v), teto: x.teto } : null; };
       var s6 = passoV(f6, vol), s12 = passoV(f12, s6 ? s6.v : vol), s24 = passoV(1, s12 ? s12.v : s6 ? s6.v : vol);
       var aberto = !!EXP_ABERTOS[idx];
-      var h = '<div class="ficha"><h3>' + esc(c.apelido) + '</h3><p class="nota">' + (pf ? '<b>' + esc(pf.nome) + '</b> · ' : '') + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(mun)) + (dists ? ' · ' + esc(dists) : '') + '</p>';
+      var h = '<div class="ficha"><div class="ficha-topo"><h3>' + esc(c.apelido) + '</h3>' + (gere ? '<button type="button" class="exp-rem" data-rem="' + esc(c.cnpj) + '">Remover</button>' : '') + '</div><p class="nota">' + (pf ? '<b>' + esc(pf.nome) + '</b> · ' : '') + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(mun)) + (dists ? ' · ' + esc(dists) : '') + '</p>';
       var passo = function (rt, v, sub) { return '<div class="mini"><div class="lbl">' + rt + '</div><div class="val">' + num(v, 0) + '<small>m³/mês</small>' + (v > vol * 1.005 ? ' <small class="up">' + sinal((v / vol - 1) * 100, 0) + '</small>' : '') + '</div><div class="sub">' + sub + '</div></div>'; };
       h += '<div class="quad">' + passo('Hoje' + (inf ? ' · informado' : ' · estimado'), vol, p.infra ? p.infra.bo + ' + ' + p.infra.bd + ' bicos' : '') +
         (s6 ? passo('Em 6 meses', s6.v, num(f6 * 100, 0) + '% do padrão') : '') +
@@ -577,12 +608,103 @@
     }).join('');
   }
 
+  /* ---------- Expansão: adicionar e remover posto em avaliação (só admin, 16/11/2026) ----------
+     O posto é escolhido no cadastro público da região (raio.area); o que é estratégico — quem está
+     em avaliação, apelido, perfil, área e volume informado — é cifrado no navegador e gravado em
+     expansao.enc.json / estimativas.enc.json pela API do GitHub (mesmo caminho das Configurações).
+     Antes de gravar, o arquivo é relido da nuvem: nada de outro aparelho é sobrescrito. */
+  var GH_MERC = 'https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/mercado/';
+  function podeGerir() { var A = window.sapataoAuth, K = window.sapataoCofre; return !!(A && A.user && A.user.admin && D.exp && D.exp.perfis && temRaio() && K && K.cifra); }
+  function semAcento(x) { return String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function hojeIso() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  async function gravaCifrado(arq, cache, msg, muda) {
+    var K = window.sapataoCofre, tok = window.sapataoChave && window.sapataoChave.token();
+    if (!tok) throw new Error('este aparelho não tem a chave de publicação — saia e entre com a senha');
+    if (!K.dek()) throw new Error('este aparelho não tem a chave dos dados — saia e entre com a senha');
+    var h = { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' };
+    var g = await fetch(GH_MERC + arq + '?ref=main&t=' + Date.now(), { headers: h, cache: 'no-store' }), sha = null, atual = null;
+    if (g.ok) {
+      var j = await g.json(); sha = j.sha;
+      atual = await K.decifra(JSON.parse(atob(String(j.content || '').replace(/\s/g, ''))));
+      if (!atual) throw new Error('não consegui abrir o arquivo atual');
+    } else if (g.status !== 404) throw new Error('HTTP ' + g.status);
+    var novo = muda(atual); novo.atualizado_em = new Date().toISOString().slice(0, 16);
+    var doc = await K.cifra(novo), body = { message: msg, branch: 'main', content: btoa(JSON.stringify(doc)) };
+    if (sha) body.sha = sha;
+    var r = await fetch(GH_MERC + arq, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    try { localStorage.setItem(cache, JSON.stringify(doc)); } catch (e) {}
+    return novo;
+  }
+  var expSel = null;
+  function expMsg(t) { el('expMsg').textContent = t || ''; }
+  function expAchados() {
+    var q = semAcento(el('expBusca').value).split(/\s+/).filter(Boolean), box = el('expAchados');
+    if (!q.length || q.join('').length < 3) { box.innerHTML = ''; return; }
+    var ja = {}; (D.exp.candidatos || []).forEach(function (c) { ja[c.cnpj] = 1; });
+    var ls = (D.raio.area || []).filter(function (p) {
+      if (ja[p.cnpj] || nossaDe(p.cnpj)) return false;
+      var t = semAcento([p.nome, p.bairro, p.municipio, p.end, p.bandeira, p.cnpj].join(' '));
+      return q.every(function (w) { return t.indexOf(w) >= 0; });
+    }).slice(0, 8);
+    box.innerHTML = ls.map(function (p) {
+      return '<button type="button" data-cnpj="' + esc(p.cnpj) + '"><b>' + esc(nomePosto(p.nome)) + '</b><br><small>' + esc(nomeBand(p.bandeira)) + ' · ' + esc([p.end, p.bairro, p.municipio].filter(Boolean).map(nomeCidade).join(' · ')) + '</small></button>';
+    }).join('') || '<small class="falta">Nada encontrado nos municípios mapeados.</small>';
+  }
+  function expEscolhe(cnpj) {
+    var p = postoArea(cnpj); if (!p) return;
+    expSel = p; el('expAchados').innerHTML = ''; el('expBusca').value = '';
+    el('expEsc').innerHTML = '<b>' + esc(nomePosto(p.nome)) + '</b> <small>' + esc(nomeBand(p.bandeira)) + ' · ' + esc([p.bairro, p.municipio].filter(Boolean).map(nomeCidade).join(' · ')) + (p.infra ? ' · ' + p.infra.bo + ' + ' + p.infra.bd + ' bicos' : ' · sem bicos no cadastro') + '</small>';
+    el('expApelido').value = nomePosto(p.nome).slice(0, 40);
+    el('expPerfil').innerHTML = Object.keys(D.exp.perfis).map(function (k) { return '<option value="' + esc(k) + '">' + esc(D.exp.perfis[k].nome || k) + '</option>'; }).join('');
+    el('expArea').innerHTML = [2, 3, 5].map(function (k) { return '<option value="raio:' + k + '"' + (k === 3 ? ' selected' : '') + '>Raio de ' + k + ' km</option>'; }).join('') +
+      codigosUn().filter(function (u) { return D.raio.unidades[u]; }).map(function (u) { return '<option value="un:' + esc(u) + '">Área do ' + esc(UNID()[u].nome) + '</option>'; }).join('');
+    var inf = informada(p); el('expVol').value = inf ? inf.total : '';
+    el('expCampos').hidden = false; expMsg(''); el('expApelido').focus();
+  }
+  function expFecha() { expSel = null; el('expForm').hidden = true; el('expCampos').hidden = true; el('expAchados').innerHTML = ''; el('expBusca').value = ''; expMsg(''); }
+  async function expSalva(ev) {
+    ev.preventDefault(); if (!expSel || !podeGerir()) return;
+    var p = expSel, apelido = el('expApelido').value.trim(), ar = el('expArea').value.split(':'), vol = +el('expVol').value || 0, bt = el('expSalva');
+    if (!apelido) { expMsg('Dê um apelido ao posto.'); return; }
+    var cand = { cnpj: p.cnpj, apelido: apelido, perfil: el('expPerfil').value, area: ar[0] === 'un' ? { tipo: 'unidade', u: ar[1] } : { tipo: 'raio', km: +ar[1] } };
+    bt.disabled = true; expMsg('Cifrando e gravando…');
+    try {
+      var ex = await gravaCifrado('expansao.enc.json', 'sapatao-mercado-v1-exp', 'chore: atualiza os postos em avaliação do Market Share (manual)', function (x) {
+        if (!x || !x.perfis) throw new Error('o arquivo de avaliação não abriu');
+        x.candidatos = (x.candidatos || []).filter(function (c) { return c.cnpj !== cand.cnpj; }); x.candidatos.push(cand); return x;
+      });
+      D.exp = ex;
+      var inf = informada(p);
+      if (vol > 0 && (!inf || inf.total !== vol)) {
+        D.estim = await gravaCifrado('estimativas.enc.json', 'sapatao-mercado-v1-est', 'chore: atualiza as estimativas de concorrentes do Market Share (manual)', function (x) {
+          x = x || { v: 1, unidade: 'm3/mês', postos: {} }; x.postos = x.postos || {};
+          x.postos[p.cnpj] = { nome: nomePosto(p.nome), total: vol, ref: D.anp.ultimo_fechado, fonte: window.sapataoAuth.user.nome, em: hojeIso() }; return x;
+        });
+      }
+      expFecha(); desenha(); el('n-exp').textContent = 'Posto incluído. Nos outros aparelhos aparece em 1–2 minutos.';
+    } catch (e) { expMsg('Não consegui gravar (' + e.message + ').'); }
+    bt.disabled = false;
+  }
+  async function expRemove(cnpj) {
+    var c = (D.exp.candidatos || []).filter(function (x) { return x.cnpj === cnpj; })[0];
+    if (!c || !podeGerir() || !window.confirm('Tirar "' + c.apelido + '" dos postos em avaliação?')) return;
+    el('n-exp').textContent = 'Gravando…';
+    try {
+      D.exp = await gravaCifrado('expansao.enc.json', 'sapatao-mercado-v1-exp', 'chore: atualiza os postos em avaliação do Market Share (manual)', function (x) {
+        if (!x || !x.perfis) throw new Error('o arquivo de avaliação não abriu');
+        x.candidatos = (x.candidatos || []).filter(function (o) { return o.cnpj !== cnpj; }); return x;
+      });
+      desenha(); el('n-exp').textContent = 'Posto retirado da avaliação.';
+    } catch (e) { el('n-exp').textContent = 'Não consegui gravar (' + e.message + ').'; }
+  }
+
   /* ---------- aba Fontes e método ---------- */
   function fontes() {
     var A = D.anp, S = D.sapatao, R = D.raio, ms = mesesSap(), ma = mesesAnp(), li = [];
     li.push('<li><b>TAM:</b> vendas das distribuidoras aos postos do RS (ANP), de ' + mesLbl(ma[0]) + ' a ' + mesLbl(ma[ma.length - 1]) + '. A ANP publica com cerca de dois meses de atraso.</li>');
     li.push('<li><b>Sapatão:</b> compras às distribuidoras (Argo), até ' + (ms.length ? mesLbl(ms[ms.length - 1]) : '—') + '.</li>');
-    li.push('<li><b>Prévia:</b> mês sem ANP = mês anterior × a variação do mesmo mês no ano passado. Mês em curso = compras projetadas pelo ritmo.</li>');
+    li.push('<li><b>Prévia:</b> mês sem ANP = mesmo mês do ano passado × crescimento médio dos últimos 12 meses. Mês em curso = compras projetadas pelo ritmo.</li>');
     if (R) li.push('<li><b>Concorrentes:</b> lista escolhida pela diretoria; cada um vale a média da bandeira no RS ajustada pelos bicos do posto, ou o volume informado. Cadastro da ANP conferido toda semana.</li>');
     li.push('<li><b>Mesmas unidades:</b> a comparação com o ano anterior deixa de fora a unidade que ainda não existia.</li>');
     if (S.carteiras) li.push('<li><b>Carteira do GV:</b> participação na bandeira ÷ fração da carteira (' + Object.keys(S.carteiras).map(function (b) { var c = S.carteiras[b]; return b + ' ' + (c.fracao ? num(c.fracao * 100, 0) + '%' : 'a definir'); }).join(', ') + ').</li>');
@@ -664,6 +786,12 @@
     var u = tr.getAttribute('data-u'); ABERTOS[u] = !ABERTOS[u]; unidades();
   }
   el('expFichas').addEventListener('toggle', function (ev) { var d = ev.target; if (d && d.dataset && d.dataset.exp != null) EXP_ABERTOS[d.dataset.exp] = d.open; }, true);
+  el('expAdd').addEventListener('click', function () { var f = el('expForm'); if (f.hidden) { f.hidden = false; el('expBusca').focus(); } else expFecha(); });
+  el('expBusca').addEventListener('input', expAchados);
+  el('expAchados').addEventListener('click', function (ev) { var b = ev.target.closest('button[data-cnpj]'); if (b) expEscolhe(b.dataset.cnpj); });
+  el('expCancela').addEventListener('click', expFecha);
+  el('expForm').addEventListener('submit', expSalva);
+  el('expFichas').addEventListener('click', function (ev) { var b = ev.target.closest('button[data-rem]'); if (b) expRemove(b.dataset.rem); });
   el('tReg').addEventListener('click', abreUn); el('tReg').addEventListener('keydown', abreUn);
   desenha();
 })();
