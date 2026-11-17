@@ -50,10 +50,9 @@
    "kdf": {
     "alg": "pbkdf2-sha256",
     "i": 600000,
-    "s": "3hMz6FR4BvRIOB3/lGjwfA==",
-    "h": "D6pXCjcm+RsA/RgDpezai1SQhxfwEXFgRRa0csnVrLE="
-   },
-   "trocar": true
+    "s": "az8pb8oswHjgTHhOx5X92Q==",
+    "h": "8UtLfEI5rdvpyUM0cr6k/hHbpUt76NP9AdfXLpSubC0="
+   }
   },
   {
    "id": "davi",
