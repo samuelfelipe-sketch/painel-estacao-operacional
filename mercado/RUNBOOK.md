@@ -154,6 +154,13 @@ segmento saíram).
   não a média por mês (`uniVol()`/`noPer()` no `mercado.js`; o `calc()` segue devolvendo médias).
   Unidade nova soma só os meses em que já comprava. A aba Expansão continua em m³ por mês, porque
   volume de posto e projeção são ritmo mensal.
+- **Litros por bico por mês** (18/11/2026, aba Unidades): nossas compras ÷ bicos da unidade no
+  cadastro da ANP (`infra` do `postos-raio.json`), no produto do filtro (Otto = bicos de
+  gasolina/etanol; Diesel = bicos de diesel; consolidado = todos), em mil litros. Referência =
+  mercado dos postos do RS ÷ bicos de todos os postos do RS (`rs_infra`), na nota da tabela e no
+  "vs RS" de cada unidade. Sempre média por mês, mesmo em trimestre/semestre/ano (é ritmo). A
+  linha Rede pondera pelos meses em que cada unidade comprou. No celular aparece abaixo do nome
+  da unidade. Funções `lbicoUn`, `lbicoRS`, `bicosRS`.
 - **Mês a mês com todos os anos** (16/11/2026): a tabela da aba Evolução lista todos os meses
   desde o primeiro mês de compras, com a linha de total de cada ano (`tr.ano`) e volumes
   absolutos (TAM e compras) além das variações; no celular ficam só as variações e a fatia.

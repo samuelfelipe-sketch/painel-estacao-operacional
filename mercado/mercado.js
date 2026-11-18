@@ -304,6 +304,14 @@
     v.innerHTML = '<div class="frase">' + frase + '</div>';
   }
 
+  /* Litros por bico por mês (18/11/2026): nossas compras ÷ bicos da unidade no cadastro da ANP, no
+     produto do filtro (Otto = bicos de gasolina/etanol; Diesel = bicos de diesel; consolidado = todos).
+     Referência: o mercado dos postos do RS ÷ os bicos de todos os postos do RS (rs_infra). Sempre em
+     média por mês — é ritmo, não total do período. Em m³ por bico = mil litros por bico. */
+  function bicosRS() { var I = D.raio.rs_infra || {}, b = 0; Object.keys(I).forEach(function (k) { b += bicosDe(I[k], st.prod); }); return b; }
+  function lbicoRS(ms) { var tm = tamDe(ms), b = bicosRS(); return tm && b && ms.length ? tm / ms.length / b : null; }
+  function lbicoUn(u, a) { var b = bicosDe((D.raio.unidades[u] || {}).infra, st.prod); return a && b ? a.nos / b : null; }
+  function vsRS(x, rs) { if (x == null || !rs) return ''; var d = (x / rs - 1) * 100; return '<span class="' + cls(d) + '">' + (d > 0 ? '+' : '') + num(d, 0) + '% vs RS</span>'; }
   /* ---------- aba Unidades: SAM e SOM de cada unidade, com o ranking da área ao tocar ---------- */
   var ABERTOS = {};
   function rankDe(u, meses) {
@@ -318,8 +326,10 @@
     var t = el('tReg'), meses = mesesValidos(), us = unSel();
     if (!temRaio()) { el('n-reg').textContent = 'A lista de concorrentes ainda não foi publicada (mercado/postos-raio.json).'; t.querySelector('thead').innerHTML = ''; t.querySelector('tbody').innerHTML = ''; return; }
     var R = D.raio;
-    el('n-reg').textContent = 'Toque numa unidade para ver os concorrentes da área.';
-    t.querySelector('thead').innerHTML = '<tr><th>Unidade</th><th class="num">SAM (' + uniVol() + ')</th><th class="num mo">Nossas compras (' + uniVol() + ')</th><th class="num">SOM</th><th class="num mo">SOM ano anterior</th><th class="num">Var.</th></tr>';
+    var rsG = lbicoRS(meses);
+    el('n-reg').textContent = 'Toque numa unidade para ver os concorrentes da área.' + (rsG ? ' Postos do RS: ' + num(rsG, 1) + ' mil L/bico/mês.' : '');
+    t.querySelector('thead').innerHTML = '<tr><th>Unidade</th><th class="num">SAM (' + uniVol() + ')</th><th class="num mo">Nossas compras (' + uniVol() + ')</th><th class="num">SOM</th><th class="num mo">SOM ano anterior</th><th class="num">Var.</th><th class="num mo" title="Mil litros por bico por mês: nossas compras ÷ bicos da unidade no cadastro da ANP, no produto escolhido. RS = mercado dos postos ÷ bicos de todos os postos do RS.">Mil L/bico</th></tr>';
+    var redeV = 0, redeB = 0;
     function linha(u) {
       var rk = rankDe(u, meses), a = rk && rk.a, b = a ? calc(a.ms.map(anoAnt), [u], lista(u)) : null;
       if (b && b.n !== a.n) b = null;
@@ -327,8 +337,12 @@
       var sub = rk ? rk.pos + 'º de ' + rk.ls.length + ' na área' : lista(u).length + ' concorrentes';
       if (a && a.n < meses.length) sub += ' · ' + a.n + (a.n > 1 ? ' meses' : ' mês') + ' com compra';
       if (nov) sub += ' · ' + nov + (nov > 1 ? ' postos novos' : ' posto novo') + ' a classificar';
-      return '<tr class="un-abre" data-u="' + esc(u) + '" tabindex="0" role="button" aria-expanded="' + aberto + '"><td><b><span class="seta">' + (aberto ? '▾' : '▸') + '</span> ' + esc(UNID()[u].nome) + '</b><br><small class="falta">' + esc(sub) + '</small></td><td class="num">' + (a ? num(noPer(a, a.sam), 0) : traco()) + '</td><td class="num mo">' + (a ? num(noPer(a, a.nos), 0) : traco()) + '</td><td class="num"><b>' + (a ? pct(a.som, 1) : '—') + '</b></td><td class="num mo">' + (b ? pct(b.som, 1) : '<span class="falta">' + (a ? 'nova' : '—') + '</span>') + '</td><td class="num">' + (a && b ? fmtDif(a.som - b.som) : traco()) + '</td></tr>' +
-        (aberto ? '<tr class="rk-det"><td colspan="6">' + ranking(u, rk) + '</td></tr>' : '');
+      var lb = lbicoUn(u, a), rs = a ? lbicoRS(a.ms) : null;
+      if (lb != null) { redeV += a.nos * a.n; redeB += bicosDe(x.infra, st.prod) * a.n; }
+      var lbCel = '<td class="num mo">' + (lb != null ? '<b>' + num(lb, 1) + '</b><br><small>' + vsRS(lb, rs) + '</small>' : traco()) + '</td>';
+      var lbSub = lb != null ? '<small class="so-cel lb"><br><b>' + num(lb, 1) + '</b> mil L/bico · ' + vsRS(lb, rs) + '</small>' : '';
+      return '<tr class="un-abre" data-u="' + esc(u) + '" tabindex="0" role="button" aria-expanded="' + aberto + '"><td><b><span class="seta">' + (aberto ? '▾' : '▸') + '</span> ' + esc(UNID()[u].nome) + '</b><br><small class="falta">' + esc(sub) + '</small>' + lbSub + '</td><td class="num">' + (a ? num(noPer(a, a.sam), 0) : traco()) + '</td><td class="num mo">' + (a ? num(noPer(a, a.nos), 0) : traco()) + '</td><td class="num"><b>' + (a ? pct(a.som, 1) : '—') + '</b></td><td class="num mo">' + (b ? pct(b.som, 1) : '<span class="falta">' + (a ? 'nova' : '—') + '</span>') + '</td><td class="num">' + (a && b ? fmtDif(a.som - b.som) : traco()) + '</td>' + lbCel + '</tr>' +
+        (aberto ? '<tr class="rk-det"><td colspan="7">' + ranking(u, rk) + '</td></tr>' : '');
     }
     function ranking(u, rk) {
       if (!rk) return '<p class="falta">Sem compras desta unidade no período.</p>';
@@ -346,9 +360,10 @@
     var linhas = us.filter(function (u) { return R.unidades[u]; }).map(linha);
     if (us.length > 1) {
       var S = somSel(meses, us), so = S && S.uB.length && S.uB.length < us.length;
-      linhas.push('<tr class="total"><td><b>' + (todasUn() ? 'Rede' : 'Seleção') + '</b><br><small class="falta">' + uniao(us).length + ' concorrentes</small></td><td class="num">' + (S ? num(noPer(S.a, S.a.sam), 0) : traco()) + '</td><td class="num mo">' + (S ? num(noPer(S.a, S.a.nos), 0) : traco()) + '</td><td class="num"><b>' + (S ? pct(S.a.som, 1) : '—') + '</b></td><td class="num mo">' + (S && S.b ? pct(S.b.som, 1) + (so ? '<br><small class="falta">só ' + esc(nomes(S.uB)) + '</small>' : '') : traco()) + '</td><td class="num">' + (S ? fmtDif(S.dif) : traco()) + '</td></tr>');
+      linhas.push('<tr class="total"><td><b>' + (todasUn() ? 'Rede' : 'Seleção') + '</b><br><small class="falta">' + uniao(us).length + ' concorrentes</small></td><td class="num">' + (S ? num(noPer(S.a, S.a.sam), 0) : traco()) + '</td><td class="num mo">' + (S ? num(noPer(S.a, S.a.nos), 0) : traco()) + '</td><td class="num"><b>' + (S ? pct(S.a.som, 1) : '—') + '</b></td><td class="num mo">' + (S && S.b ? pct(S.b.som, 1) + (so ? '<br><small class="falta">só ' + esc(nomes(S.uB)) + '</small>' : '') : traco()) + '</td><td class="num">' + (S ? fmtDif(S.dif) : traco()) + '</td><td class="num mo">' + (redeB ? '<b>' + num(redeV / redeB, 1) + '</b><br><small>' + vsRS(redeV / redeB, rsG) + '</small>' : traco()) + '</td></tr>');
+      if (redeB) linhas[linhas.length - 1] = linhas[linhas.length - 1].replace('</small></td>', '</small><small class="so-cel lb"><br><b>' + num(redeV / redeB, 1) + '</b> mil L/bico · ' + vsRS(redeV / redeB, rsG) + '</small></td>');
     }
-    t.querySelector('tbody').innerHTML = meses.length ? linhas.join('') : '<tr><td colspan="6" class="falta">Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.</td></tr>';
+    t.querySelector('tbody').innerHTML = meses.length ? linhas.join('') : '<tr><td colspan="7" class="falta">Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.</td></tr>';
   }
 
   /* ---------- aba Evolução ---------- */
@@ -712,6 +727,7 @@
     li.push('<li><b>Sapatão:</b> compras às distribuidoras (Argo), até ' + (ms.length ? mesLbl(ms[ms.length - 1]) : '—') + '.</li>');
     li.push('<li><b>Prévia:</b> mês sem ANP = mesmo mês do ano passado × crescimento médio dos últimos 12 meses. Mês em curso = compras projetadas pelo ritmo.</li>');
     if (R) li.push('<li><b>Concorrentes:</b> lista escolhida pela diretoria; cada um vale a média da bandeira no RS ajustada pelos bicos do posto, ou o volume informado. Cadastro da ANP conferido toda semana.</li>');
+    if (R && R.rs_infra) li.push('<li><b>Litros por bico:</b> nossas compras ÷ bicos da unidade no cadastro da ANP, por mês e no produto escolhido. RS = mercado dos postos ÷ bicos de todos os postos do RS.</li>');
     li.push('<li><b>Mesmas unidades:</b> a comparação com o ano anterior deixa de fora a unidade que ainda não existia.</li>');
     if (S.carteiras) li.push('<li><b>Carteira do GV:</b> participação na bandeira ÷ fração da carteira (' + Object.keys(S.carteiras).map(function (b) { var c = S.carteiras[b]; return b + ' ' + (c.fracao ? num(c.fracao * 100, 0) + '%' : 'a definir'); }).join(', ') + ').</li>');
     if (temExp()) li.push('<li><b>Projeção da Expansão:</b> bicos do posto × litros por bico da unidade de referência do perfil (urbano ou rodovia), por produto, com rampa em 6, 12 e 24 meses e teto no volume da referência.</li>');

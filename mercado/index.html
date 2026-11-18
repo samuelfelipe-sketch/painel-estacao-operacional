@@ -157,6 +157,8 @@ tr.ano td{background:#F1F4F8}
 #tReg,table.rk{min-width:0}
 #tReg tr.un-abre{cursor:pointer}#tReg tr.un-abre:hover td{background:#F7F9FB}#tReg tr.un-abre:focus-visible{outline:2px solid var(--laranja);outline-offset:-2px}
 #tReg .seta{display:inline-block;width:1em;color:var(--laranja-escuro)}
+#tReg .so-cel{display:none}#tReg small.lb{color:var(--tinta-suave);font-style:normal;font-weight:500}#tReg small.lb b{color:var(--tinta);font-weight:700}#tReg td small .up{color:var(--bom)}#tReg td small .dn{color:var(--ruim)}
+@media (max-width:480px){#tReg .so-cel{display:inline}}
 #tReg tr.rk-det>td{background:#FBFCFD;padding:6px 10px 14px}
 .rk-res{margin:6px 0 4px;font-size:13.5px}.rk .selo{font-size:10.5px;padding:2px 7px;margin-left:4px}
 details.como{margin-top:6px}details.como p{margin:6px 0 0}
@@ -346,7 +348,7 @@ function mostra(){
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=20';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=21';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){
