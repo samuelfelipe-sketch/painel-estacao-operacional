@@ -161,6 +161,10 @@ segmento saíram).
   "vs RS" de cada unidade. Sempre média por mês, mesmo em trimestre/semestre/ano (é ritmo). A
   linha Rede pondera pelos meses em que cada unidade comprou. No celular aparece abaixo do nome
   da unidade. Funções `lbicoUn`, `lbicoRS`, `bicosRS`.
+- **Botão "?" da Expansão** (18/11/2026): ao lado da linha "Rampa"; ao passar o mouse, focar ou
+  tocar mostra o racional de cada conta (hoje, padrão, projeção, teto, rede, na área, SOM com ele,
+  município). Texto gerado em `ajudaExp()` com a rampa e as referências do cifrado; se mudar uma
+  regra de cálculo da aba, atualize esse texto junto.
 - **Mês a mês com todos os anos** (16/11/2026): a tabela da aba Evolução lista todos os meses
   desde o primeiro mês de compras, com a linha de total de cada ano (`tr.ano`) e volumes
   absolutos (TAM e compras) além das variações; no celular ficam só as variações e a fatia.

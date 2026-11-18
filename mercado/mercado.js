@@ -559,6 +559,21 @@
     else { [[6, R.m6], [12, R.m12]].forEach(function (x) { if (x[1]) a.push({ m: x[0], f: x[1] }); }); a.push({ m: 24, f: 1 }); }
     return a;
   }
+  /* botão "?" da Expansão (18/11/2026): o racional de cada conta, ao passar o mouse, focar ou tocar */
+  function ajudaExp(PF, RP, comTeto) {
+    var refs = Object.keys(PF).map(function (k) { return PF[k].nome + ' = ' + nomes(PF[k].us); }).join('; ');
+    var li = [
+      ['Hoje', 'Volume informado por você, quando há. Sem ele, estimativa: média por posto da bandeira dele no RS (ANP) × bicos do posto ÷ bicos médios da bandeira.'],
+      ['Padrão', 'Litros por bico por mês da unidade de referência do perfil (' + refs + '): compras dos últimos 12 meses fechados ÷ bicos do cadastro da ANP, separado em gasolina/etanol e diesel.'],
+      ['Projeção', 'Bicos do posto × padrão × fração da rampa (' + RP.map(function (r) { return num(r.f * 100, 0) + '% em ' + r.m; }).join(', ') + ' meses). Nunca abaixo do marco anterior nem do volume de hoje.'],
+      comTeto ? ['Teto', 'O posto novo não passa do volume médio da unidade de referência em cada produto: mais bicos não trazem mais clientes na mesma proporção.'] : null,
+      ['Rede', 'Volume projetado no último marco ÷ compras médias da rede no período escolhido.'],
+      ['Na área', 'Posição do posto pelo volume entre os postos da área (raio ou área de uma unidade nossa); fatia = volume dele ÷ soma da área.'],
+      ['SOM com ele', 'SOM da unidade se o volume dele passasse a ser nosso: (nossas compras + volume dele) ÷ SAM da área.'],
+      ['Município', 'Mercado anual da ANP, por posto cadastrado, crescimento do último ano e frota de veículos (Senatran).']
+    ].filter(Boolean);
+    return '<span class="ajuda"><button type="button" class="aj-bt" aria-label="Como as contas são feitas" aria-expanded="false">?</button><span class="aj-box" role="tooltip">' + li.map(function (x) { return '<b>' + x[0] + '</b> ' + esc(x[1]); }).join('<br>') + '</span></span>';
+  }
   var EXP_ABERTOS = {};
   function expansao() {
     var bt = document.querySelector('#abas button[data-aba="expansao"]'), box = el('expFichas');
@@ -573,7 +588,7 @@
     var nosRede = nosDe(meses, todas) / meses.length;
     var PF = perfis(), mil = function (v) { return v == null ? '—' : num(v, 1); }, RP = rampaExp(), comTeto = D.exp.teto !== false;
     var gs = GRUPOS.filter(function (G) { return st.prod === 'tot' || st.prod === G[0]; });
-    el('expPadrao').innerHTML = '<p class="exp-pad">Rampa: ' + RP.map(function (r) { return '<b>' + num(r.f * 100, 0) + '%</b> em ' + r.m; }).join(' · ') + ' meses</p>' +
+    el('expPadrao').innerHTML = '<p class="exp-pad">' + ajudaExp(PF, RP, comTeto) + 'Rampa: ' + RP.map(function (r) { return '<b>' + num(r.f * 100, 0) + '%</b> em ' + r.m; }).join(' · ') + ' meses</p>' +
       '<details class="dobra"><summary>Padrões por perfil</summary><div class="tabela"><table class="rk"><thead><tr><th>Perfil</th><th>Produto</th>' + RP.map(function (r) { return '<th class="num"' + (r === RP[0] ? ' title="Mil litros por bico por mês"' : '') + '>' + r.m + ' meses</th>'; }).join('') + '<th class="num" title="Volume máximo do posto novo: o da unidade de referência">Teto (m³)</th></tr></thead><tbody>' + Object.keys(PF).map(function (k) {
         var pf = PF[k];
         return gs.map(function (G, i) { var x = pf.g[G[0]]; return '<tr><td>' + (i ? '' : '<b>' + esc(pf.nome) + '</b> <small class="falta">' + esc(nomes(pf.us)) + '</small>') + '</td><td>' + G[2] + '</td>' + RP.map(function (r) { return '<td class="num">' + (x ? mil(x.l * r.f) : '—') + '</td>'; }).join('') + '<td class="num">' + (x && comTeto ? num(x.teto, 0) : '—') + '</td></tr>'; }).join('');
@@ -814,6 +829,12 @@
     var u = tr.getAttribute('data-u'); ABERTOS[u] = !ABERTOS[u]; unidades();
   }
   el('expFichas').addEventListener('toggle', function (ev) { var d = ev.target; if (d && d.dataset && d.dataset.exp != null) EXP_ABERTOS[d.dataset.exp] = d.open; }, true);
+  /* "?" no toque: abre e fecha (no mouse, o hover e o foco já mostram) */
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest && ev.target.closest('.aj-bt'), abertos = document.querySelectorAll('.ajuda.aberto');
+    abertos.forEach(function (a) { if (!b || a !== b.parentNode) { a.classList.remove('aberto'); a.firstChild.setAttribute('aria-expanded', 'false'); } });
+    if (b) { var on = b.parentNode.classList.toggle('aberto'); b.setAttribute('aria-expanded', String(on)); }
+  });
   el('expAdd').addEventListener('click', function () { var f = el('expForm'); if (f.hidden) { f.hidden = false; el('expBusca').focus(); } else expFecha(); });
   el('expBusca').addEventListener('input', expAchados);
   el('expBuscar').addEventListener('click', function () { expAchados(true); el('expBusca').blur(); });
