@@ -515,8 +515,8 @@
   function mediaEst(ms, p) { var s = 0; for (var i = 0; i < ms.length; i++) { var e = estPosto(ms[i], p); if (e == null) return null; s += e; } return ms.length ? s / ms.length : null; }
   /* Projeção de um posto novo por PERFIL (decisão de 16/11/2026): urbano e rodovia, cada um com as
      unidades de referência dele (perfis do arquivo cifrado). Por grupo de produto (gasolina/etanol e
-     diesel): padrão de 24 meses = litros por bico por mês da referência (volume ÷ bicos do cadastro
-     da ANP, média dos últimos 12 meses fechados; GNV fora); 6 e 12 meses = a rampa (frações do
+     diesel): padrão cheio (36 meses) = litros por bico por mês da referência (volume ÷ bicos do cadastro
+     da ANP, média dos últimos 12 meses fechados; GNV fora); 6, 12 e 24 meses = a rampa (frações do
      padrão, também no cifrado). Teto: o posto novo chega, no máximo, ao volume médio da unidade de
      referência em cada produto — mais bicos não trazem mais clientes na mesma proporção.
      Volumes em m³ = mil litros. */
@@ -551,6 +551,14 @@
     });
     return ok ? { v: t, teto: noTeto } : null;
   }
+  /* rampa da Expansão (18/11/2026): marcos em meses e fração do padrão; o último marco é sempre 100%.
+     Arquivo cifrado: {m6,m12,m24} = frações e o padrão cheio em 36 meses; formato antigo {m6,m12} = 100% em 24. */
+  function rampaExp() {
+    var R = (D.exp && D.exp.rampa) || {}, a = [];
+    if (R.m24 != null) { [[6, R.m6], [12, R.m12], [24, R.m24]].forEach(function (x) { if (x[1]) a.push({ m: x[0], f: x[1] }); }); a.push({ m: 36, f: 1 }); }
+    else { [[6, R.m6], [12, R.m12]].forEach(function (x) { if (x[1]) a.push({ m: x[0], f: x[1] }); }); a.push({ m: 24, f: 1 }); }
+    return a;
+  }
   var EXP_ABERTOS = {};
   function expansao() {
     var bt = document.querySelector('#abas button[data-aba="expansao"]'), box = el('expFichas');
@@ -563,12 +571,12 @@
     el('n-exp').textContent = 'Volumes estimados' + (st.per === 'mes' ? '' : ', em média por mês') + '; o número real só vem do vendedor.';
     if (!meses.length) { box.innerHTML = '<p class="falta">Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.</p>'; return; }
     var nosRede = nosDe(meses, todas) / meses.length;
-    var PF = perfis(), mil = function (v) { return v == null ? '—' : num(v, 1); }, RA = D.exp.rampa || {}, f6 = RA.m6 || null, f12 = RA.m12 || null, comTeto = D.exp.teto !== false;
+    var PF = perfis(), mil = function (v) { return v == null ? '—' : num(v, 1); }, RP = rampaExp(), comTeto = D.exp.teto !== false;
     var gs = GRUPOS.filter(function (G) { return st.prod === 'tot' || st.prod === G[0]; });
-    el('expPadrao').innerHTML = '<p class="exp-pad">Rampa: <b>' + (f6 ? num(f6 * 100, 0) + '%</b> do padrão em 6 meses · <b>' : '') + (f12 ? num(f12 * 100, 0) + '%</b> em 12 · <b>' : '') + '100%</b> em 24</p>' +
-      '<details class="dobra"><summary>Padrões por perfil</summary><div class="tabela"><table class="rk"><thead><tr><th>Perfil</th><th>Produto</th><th class="num" title="Mil litros por bico por mês">6 meses</th><th class="num">12 meses</th><th class="num">24 meses</th><th class="num" title="Volume máximo do posto novo: o da unidade de referência">Teto (m³)</th></tr></thead><tbody>' + Object.keys(PF).map(function (k) {
+    el('expPadrao').innerHTML = '<p class="exp-pad">Rampa: ' + RP.map(function (r) { return '<b>' + num(r.f * 100, 0) + '%</b> em ' + r.m; }).join(' · ') + ' meses</p>' +
+      '<details class="dobra"><summary>Padrões por perfil</summary><div class="tabela"><table class="rk"><thead><tr><th>Perfil</th><th>Produto</th>' + RP.map(function (r) { return '<th class="num"' + (r === RP[0] ? ' title="Mil litros por bico por mês"' : '') + '>' + r.m + ' meses</th>'; }).join('') + '<th class="num" title="Volume máximo do posto novo: o da unidade de referência">Teto (m³)</th></tr></thead><tbody>' + Object.keys(PF).map(function (k) {
         var pf = PF[k];
-        return gs.map(function (G, i) { var x = pf.g[G[0]]; return '<tr><td>' + (i ? '' : '<b>' + esc(pf.nome) + '</b> <small class="falta">' + esc(nomes(pf.us)) + '</small>') + '</td><td>' + G[2] + '</td><td class="num">' + (x && f6 ? mil(x.l * f6) : '—') + '</td><td class="num">' + (x && f12 ? mil(x.l * f12) : '—') + '</td><td class="num">' + (x ? mil(x.l) : '—') + '</td><td class="num">' + (x && comTeto ? num(x.teto, 0) : '—') + '</td></tr>'; }).join('');
+        return gs.map(function (G, i) { var x = pf.g[G[0]]; return '<tr><td>' + (i ? '' : '<b>' + esc(pf.nome) + '</b> <small class="falta">' + esc(nomes(pf.us)) + '</small>') + '</td><td>' + G[2] + '</td>' + RP.map(function (r) { return '<td class="num">' + (x ? mil(x.l * r.f) : '—') + '</td>'; }).join('') + '<td class="num">' + (x && comTeto ? num(x.teto, 0) : '—') + '</td></tr>'; }).join('');
       }).join('') + '</tbody></table></div><p class="nota">Mil litros por bico por mês.</p></details>';
     box.innerHTML = D.exp.candidatos.map(function (c, idx) {
       var p = postoArea(c.cnpj);
@@ -609,14 +617,12 @@
       /* projeção: bicos do posto × litros por bico da rede (nunca abaixo do volume de hoje) */
       var bc = bicosDe(p.infra, st.prod), pf = PF[c.perfil] || null;
       var passoV = function (f, ant) { var x = f && bc ? projeta(p.infra, pf, f, comTeto) : null; return x ? { v: Math.max(ant, x.v), teto: x.teto } : null; };
-      var s6 = passoV(f6, vol), s12 = passoV(f12, s6 ? s6.v : vol), s24 = passoV(1, s12 ? s12.v : s6 ? s6.v : vol);
+      var sp = [], ant = vol; RP.forEach(function (r) { var x = passoV(r.f, ant); sp.push(x); if (x) ant = x.v; });
       var aberto = !!EXP_ABERTOS[idx];
       var h = '<div class="ficha"><div class="ficha-topo"><h3>' + esc(c.apelido) + '</h3>' + (gere ? '<button type="button" class="exp-rem" data-rem="' + esc(c.cnpj) + '">Remover</button>' : '') + '</div><p class="nota">' + (pf ? '<b>' + esc(pf.nome) + '</b> · ' : '') + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(mun)) + (dists ? ' · ' + esc(dists) : '') + '</p>';
       var passo = function (rt, v, sub) { return '<div class="mini"><div class="lbl">' + rt + '</div><div class="val">' + num(v, 0) + '<small>m³/mês</small>' + (v > vol * 1.005 ? ' <small class="up">' + sinal((v / vol - 1) * 100, 0) + '</small>' : '') + '</div><div class="sub">' + sub + '</div></div>'; };
       h += '<div class="quad">' + passo('Hoje' + (inf ? ' · informado' : ' · estimado'), vol, p.infra ? p.infra.bo + ' + ' + p.infra.bd + ' bicos' : '') +
-        (s6 ? passo('Em 6 meses', s6.v, num(f6 * 100, 0) + '% do padrão') : '') +
-        (s12 ? passo('Em 12 meses', s12.v, num(f12 * 100, 0) + '% do padrão') : '') +
-        (s24 ? passo('Em 24 meses', s24.v, (s24.teto ? 'no teto · ' : '') + 'rede ' + sinal(s24.v / nosRede * 100, 0)) : '') +
+        RP.map(function (r, k) { var x = sp[k], ult = k === RP.length - 1; return x ? passo('Em ' + r.m + ' meses', x.v, ult ? (x.teto ? 'no teto · ' : '') + 'rede ' + sinal(x.v / nosRede * 100, 0) : num(r.f * 100, 0) + '% do padrão') : ''; }).join('') +
         '<div class="mini"><div class="lbl">Na área</div><div class="val">' + pos + 'º<small>de ' + linhas.length + '</small></div><div class="sub">' + pct(vol / sam * 100, 1) + ' de ' + num(sam, 0) + ' m³/mês · ' + esc(rot) + '</div></div></div>';
       h += '<p class="exp-ef">' + (efeitos.length ? '<b>SOM com ele:</b> ' + efeitos.join(' · ') : '<b>Área nova</b> para a rede') + (munTxt ? '<br><span class="falta">' + munTxt + frTxt + '</span>' : '') + '</p>';
       h += '<details class="dobra" data-exp="' + idx + '"' + (aberto ? ' open' : '') + '><summary>Ver os ' + linhas.length + ' postos da área</summary><div class="tabela"><table class="rk"><thead><tr><th class="num">#</th><th>Posto</th><th class="num mo">km</th><th class="num">m³/mês</th><th class="num">Fatia</th></tr></thead><tbody>' + linhas.map(function (l, i) {
@@ -730,7 +736,7 @@
     if (R && R.rs_infra) li.push('<li><b>Litros por bico:</b> nossas compras ÷ bicos da unidade no cadastro da ANP, por mês e no produto escolhido. RS = mercado dos postos ÷ bicos de todos os postos do RS.</li>');
     li.push('<li><b>Mesmas unidades:</b> a comparação com o ano anterior deixa de fora a unidade que ainda não existia.</li>');
     if (S.carteiras) li.push('<li><b>Carteira do GV:</b> participação na bandeira ÷ fração da carteira (' + Object.keys(S.carteiras).map(function (b) { var c = S.carteiras[b]; return b + ' ' + (c.fracao ? num(c.fracao * 100, 0) + '%' : 'a definir'); }).join(', ') + ').</li>');
-    if (temExp()) li.push('<li><b>Projeção da Expansão:</b> bicos do posto × litros por bico da unidade de referência do perfil (urbano ou rodovia), por produto, com rampa em 6, 12 e 24 meses e teto no volume da referência.</li>');
+    if (temExp()) li.push('<li><b>Projeção da Expansão:</b> bicos do posto × litros por bico da unidade de referência do perfil (urbano ou rodovia), por produto, com rampa em 6, 12, 24 e 36 meses e teto no volume da referência.</li>');
     li.push('<li>Otto = gasolina + etanol. Arla e GNV ficam fora.</li>');
     el('fontes').innerHTML = li.join('');
     el('rodape').textContent = 'Dados do Sapatão cifrados no navegador · mercado em dados públicos da ANP';

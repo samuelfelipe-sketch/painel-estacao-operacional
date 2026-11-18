@@ -6,7 +6,7 @@
    Conteúdo (em claro só dentro do cifrado):
      { v:1, atualizado_em,
        perfis:{ urbano:{nome:'Urbano', ref:['<código da unidade de referência>']}, rodovia:{…} },
-       rampa:{ m6:<fração do padrão em 6 meses>, m12:<fração em 12 meses> },   (24 meses = 100%)
+       rampa:{ m6:<fração do padrão em 6 meses>, m12:<em 12>, m24:<em 24> },   (36 meses = 100%; sem m24 = formato antigo, 100% em 24)
        teto:true|false,   (posto novo limitado ao volume da unidade de referência, por produto)
        candidatos:[ { cnpj, apelido, perfil:'urbano'|'rodovia',
                       area:{tipo:'raio', km} | {tipo:'unidade', u:'<código da nossa unidade>'},
@@ -40,7 +40,7 @@ if (cmd === 'abre') {
   if (!novo || !Array.isArray(novo.candidatos)) falha('o arquivo precisa ter { candidatos: [...] }.');
   const perfis = novo.perfis || {};
   for (const [nome, pf] of Object.entries(perfis)) if (!Array.isArray(pf.ref) || !pf.ref.length) falha(`perfil ${nome} sem unidade de referência.`);
-  if (novo.rampa) for (const kk of ['m6', 'm12']) if (!(novo.rampa[kk] > 0 && novo.rampa[kk] <= 1)) falha('rampa inválida (frações entre 0 e 1).');
+  if (novo.rampa) for (const kk of ['m6', 'm12', ...(novo.rampa.m24 != null ? ['m24'] : [])]) if (!(novo.rampa[kk] > 0 && novo.rampa[kk] <= 1)) falha('rampa inválida (frações entre 0 e 1).');
   for (const c of novo.candidatos) {
     if (!/^\d{14}$/.test(c.cnpj || '')) falha('CNPJ inválido na lista.');
     if (!c.apelido) falha('candidato sem apelido.');

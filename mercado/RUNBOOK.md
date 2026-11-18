@@ -194,9 +194,9 @@ segmento saíram).
   muda, o SOM soma) e o município (base anual `mercado/regiao.json`, postos do cadastro,
   frota `mercado/frota.json`). **Projeção na rede** (regra do Samuel, 16/11/2026) por
   PERFIL — urbano (referência SF) ou rodovia (referência PS), campo `perfis` do cifrado — e
-  por produto (gasolina/etanol e diesel): padrão de 24 meses = litros por bico por mês da
+  por produto (gasolina/etanol e diesel): padrão cheio (36 meses) = litros por bico por mês da
   unidade de referência (compras ÷ bicos do cadastro da ANP, média dos últimos 12 meses
-  fechados; GNV fora); 6 e 12 meses = `rampa` (frações do padrão, no cifrado); `teto` = o
+  fechados; GNV fora); 6, 12 e 24 meses = `rampa` (50%, 75% e 87% do padrão desde 18/11/2026; 100% em 36 meses; no cifrado); `teto` = o
   posto novo chega, no máximo, ao volume médio da referência em cada produto (mais bicos
   não trazem mais clientes na mesma proporção); nunca abaixo do volume de hoje
   (`perfis()` e `projeta()` no `mercado.js`). Quando o AS amadurecer (12 meses), entra em
