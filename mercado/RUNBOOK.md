@@ -165,6 +165,9 @@ segmento saíram).
   tocar mostra o racional de cada conta (hoje, padrão, projeção, teto, rede, na área, SOM com ele,
   município). Texto gerado em `ajudaExp()` com a rampa e as referências do cifrado; se mudar uma
   regra de cálculo da aba, atualize esse texto junto.
+  Cada ficha tem também o seu "?" (`ajudaPosto()`), com a conta DAQUELE posto e os números dele
+  (bicos × padrão, teto, marcos da rampa, posição na área, SOM, município); segue o filtro de produto
+  e período.
 - **Mês a mês com todos os anos** (16/11/2026): a tabela da aba Evolução lista todos os meses
   desde o primeiro mês de compras, com a linha de total de cada ano (`tr.ano`) e volumes
   absolutos (TAM e compras) além das variações; no celular ficam só as variações e a fatia.

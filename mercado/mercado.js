@@ -572,7 +572,25 @@
       ['SOM com ele', 'SOM da unidade se o volume dele passasse a ser nosso: (nossas compras + volume dele) ÷ SAM da área.'],
       ['Município', 'Mercado anual da ANP, por posto cadastrado, crescimento do último ano e frota de veículos (Senatran).']
     ].filter(Boolean);
-    return '<span class="ajuda"><button type="button" class="aj-bt" aria-label="Como as contas são feitas" aria-expanded="false">?</button><span class="aj-box" role="tooltip">' + li.map(function (x) { return '<b>' + x[0] + '</b> ' + esc(x[1]); }).join('<br>') + '</span></span>';
+    return ajudaBox(li, 'Como as contas são feitas');
+  }
+  function ajudaBox(li, rotulo) {
+    return '<span class="ajuda"><button type="button" class="aj-bt" aria-label="' + esc(rotulo) + '" aria-expanded="false">?</button><span class="aj-box" role="tooltip">' + li.map(function (x) { return '<b>' + esc(x[0]) + '</b> ' + esc(x[1]); }).join('<br>') + '</span></span>';
+  }
+  /* "?" de cada ficha: o racional do cálculo DESTE posto, com os números dele */
+  function ajudaPosto(o) {
+    var semHtml = function (x) { return String(x || '').replace(/<[^>]+>/g, ''); }, li = [];
+    li.push(['Hoje', num(o.vol, 0) + ' m³/mês (' + PROD_NOME[st.prod] + ', ' + perLbl(st.mes) + '). ' + (o.inf ? 'Volume informado por você (' + num(o.inf.total, 0) + ' m³/mês por mês típico), ajustado mês a mês pela ANP.' : 'Estimado: média por posto da bandeira ' + nomeBand(o.p.bandeira) + ' no RS × bicos dele ÷ bicos médios da bandeira.')]);
+    if (!o.bc || !o.pf) li.push(['Projeção', 'Sem projeção: ' + (!o.pf ? 'o perfil do posto não tem unidade de referência.' : 'o cadastro da ANP não traz os bicos deste posto.')]);
+    else {
+      li.push(['Padrão', o.pf.nome + ' (referência ' + nomes(o.pf.us) + ')' + (o.gs.length ? ': ' + o.gs.map(function (g) { return g.nome + ' ' + g.b + ' bicos × ' + num(g.l, 1) + ' mil L = ' + num(g.bruto, 0) + ' m³' + (g.cortou ? ', limitado ao teto de ' + num(g.teto, 0) : ''); }).join('; ') : '') + '. Padrão cheio do posto: ' + num(o.cheio, 0) + ' m³/mês.']);
+      li.push(['Projeção', o.passos.map(function (q) { return q.m + ' meses: ' + num(q.f * 100, 0) + '% × ' + num(o.cheio, 0) + ' = ' + num(q.v, 0) + (q.piso ? ' (mantido no piso anterior)' : ''); }).join(' · ') + '. Nunca abaixo do marco anterior nem do volume de hoje.']);
+      li.push(['Rede', 'Último marco ' + num(o.fim, 0) + ' ÷ compras médias da rede ' + num(o.nosRede, 0) + ' m³/mês = ' + sinal(o.fim / o.nosRede * 100, 0) + '.']);
+    }
+    li.push(['Na área', 'Entre ' + o.n + ' postos (' + o.rot + '): ' + o.pos + 'º, ' + pct(o.vol / o.sam * 100, 1) + ' de ' + num(o.sam, 0) + ' m³/mês (soma da área).']);
+    li.push(['SOM com ele', o.efeitos.length ? o.efeitos.map(semHtml).join(' · ') + ' — (compras + volume dele) ÷ SAM da área.' : 'Nenhuma unidade nossa o tem hoje como concorrente: área nova para a rede.']);
+    if (o.munTxt) li.push(['Município', semHtml(o.munTxt + o.frTxt) + '. ANP anual e frota do Senatran.']);
+    return ajudaBox(li, 'Como as contas deste posto são feitas');
   }
   var EXP_ABERTOS = {};
   function expansao() {
@@ -633,8 +651,16 @@
       var bc = bicosDe(p.infra, st.prod), pf = PF[c.perfil] || null;
       var passoV = function (f, ant) { var x = f && bc ? projeta(p.infra, pf, f, comTeto) : null; return x ? { v: Math.max(ant, x.v), teto: x.teto } : null; };
       var sp = [], ant = vol; RP.forEach(function (r) { var x = passoV(r.f, ant); sp.push(x); if (x) ant = x.v; });
+      var gsP = [], cheioX = bc && pf ? projeta(p.infra, pf, 1, comTeto) : null, pas = [], fimV = vol;
+      GRUPOS.forEach(function (G) {
+        if (st.prod !== 'tot' && st.prod !== G[0]) return;
+        var x = pf && pf.g[G[0]], b = p.infra ? p.infra['b' + G[1]] : 0; if (!x || !b) return;
+        gsP.push({ nome: G[2], b: b, l: x.l, bruto: b * x.l, teto: x.teto, cortou: comTeto && b * x.l > x.teto });
+      });
+      RP.forEach(function (r, k) { var x = sp[k]; if (x && cheioX) { pas.push({ m: r.m, f: r.f, v: x.v, piso: x.v > cheioX.v * r.f + 0.5 }); fimV = x.v; } });
       var aberto = !!EXP_ABERTOS[idx];
-      var h = '<div class="ficha"><div class="ficha-topo"><h3>' + esc(c.apelido) + '</h3>' + (gere ? '<button type="button" class="exp-rem" data-rem="' + esc(c.cnpj) + '">Remover</button>' : '') + '</div><p class="nota">' + (pf ? '<b>' + esc(pf.nome) + '</b> · ' : '') + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(mun)) + (dists ? ' · ' + esc(dists) : '') + '</p>';
+      var ajP = ajudaPosto({ vol: vol, inf: inf, p: p, bc: bc, pf: pf, gs: gsP, cheio: cheioX ? cheioX.v : 0, passos: pas, fim: fimV, nosRede: nosRede, n: linhas.length, rot: rot, pos: pos, sam: sam, efeitos: efeitos, munTxt: munTxt, frTxt: frTxt });
+      var h = '<div class="ficha"><div class="ficha-topo"><div class="ficha-tt">' + ajP + '<h3>' + esc(c.apelido) + '</h3></div>' + (gere ? '<button type="button" class="exp-rem" data-rem="' + esc(c.cnpj) + '">Remover</button>' : '') + '</div><p class="nota">' + (pf ? '<b>' + esc(pf.nome) + '</b> · ' : '') + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(mun)) + (dists ? ' · ' + esc(dists) : '') + '</p>';
       var passo = function (rt, v, sub) { return '<div class="mini"><div class="lbl">' + rt + '</div><div class="val">' + num(v, 0) + '<small>m³/mês</small>' + (v > vol * 1.005 ? ' <small class="up">' + sinal((v / vol - 1) * 100, 0) + '</small>' : '') + '</div><div class="sub">' + sub + '</div></div>'; };
       h += '<div class="quad">' + passo('Hoje' + (inf ? ' · informado' : ' · estimado'), vol, p.infra ? p.infra.bo + ' + ' + p.infra.bd + ' bicos' : '') +
         RP.map(function (r, k) { var x = sp[k], ult = k === RP.length - 1; return x ? passo('Em ' + r.m + ' meses', x.v, ult ? (x.teto ? 'no teto · ' : '') + 'rede ' + sinal(x.v / nosRede * 100, 0) : num(r.f * 100, 0) + '% do padrão') : ''; }).join('') +
