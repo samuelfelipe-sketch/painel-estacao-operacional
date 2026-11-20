@@ -575,21 +575,21 @@
     return ajudaBox(li, 'Como as contas são feitas');
   }
   function ajudaBox(li, rotulo) {
-    return '<span class="ajuda"><button type="button" class="aj-bt" aria-label="' + esc(rotulo) + '" aria-expanded="false">?</button><span class="aj-box" role="tooltip">' + li.map(function (x) { return '<b>' + esc(x[0]) + '</b> ' + esc(x[1]); }).join('<br>') + '</span></span>';
+    return '<span class="ajuda"><button type="button" class="aj-bt" aria-label="' + esc(rotulo) + '" aria-expanded="false">?</button><span class="aj-box" role="tooltip">' + li.map(function (x) { return '<span class="aj-i"><b>' + esc(x[0]) + '</b>' + esc(x[1]).replace(/\n/g, '<br>') + '</span>'; }).join('') + '</span></span>';
   }
   /* "?" de cada ficha: o racional do cálculo DESTE posto, com os números dele */
   function ajudaPosto(o) {
     var semHtml = function (x) { return String(x || '').replace(/<[^>]+>/g, ''); }, li = [];
-    li.push(['Hoje', num(o.vol, 0) + ' m³/mês (' + PROD_NOME[st.prod] + ', ' + perLbl(st.mes) + '). ' + (o.inf ? 'Volume informado por você (' + num(o.inf.total, 0) + ' m³/mês por mês típico), ajustado mês a mês pela ANP.' : 'Estimado: média por posto da bandeira ' + nomeBand(o.p.bandeira) + ' no RS × bicos dele ÷ bicos médios da bandeira.')]);
+    li.push(['Hoje', num(o.vol, 0) + ' m³/mês (' + PROD_NOME[st.prod] + ', ' + perLbl(st.mes) + '). ' + '\n' + (o.inf ? 'Volume informado por você (' + num(o.inf.total, 0) + ' m³/mês por mês típico), ajustado mês a mês pela ANP.' : 'Estimado: média por posto da bandeira ' + nomeBand(o.p.bandeira) + ' no RS × bicos dele ÷ bicos médios da bandeira.')]);
     if (!o.bc || !o.pf) li.push(['Projeção', 'Sem projeção: ' + (!o.pf ? 'o perfil do posto não tem unidade de referência.' : 'o cadastro da ANP não traz os bicos deste posto.')]);
     else {
-      li.push(['Padrão', o.pf.nome + ' (referência ' + nomes(o.pf.us) + ')' + (o.gs.length ? ': ' + o.gs.map(function (g) { return g.nome + ' ' + g.b + ' bicos × ' + num(g.l, 1) + ' mil L = ' + num(g.bruto, 0) + ' m³' + (g.cortou ? ', limitado ao teto de ' + num(g.teto, 0) : ''); }).join('; ') : '') + '. Padrão cheio do posto: ' + num(o.cheio, 0) + ' m³/mês.']);
-      li.push(['Projeção', o.passos.map(function (q) { return q.m + ' meses: ' + num(q.f * 100, 0) + '% × ' + num(o.cheio, 0) + ' = ' + num(q.v, 0) + (q.piso ? ' (mantido no piso anterior)' : ''); }).join(' · ') + '. Nunca abaixo do marco anterior nem do volume de hoje.']);
-      li.push(['Rede', 'Último marco ' + num(o.fim, 0) + ' ÷ compras médias da rede ' + num(o.nosRede, 0) + ' m³/mês = ' + sinal(o.fim / o.nosRede * 100, 0) + '.']);
+      li.push(['Padrão', o.pf.nome + ' (referência ' + nomes(o.pf.us) + ')' + (o.gs.length ? ':\n' + o.gs.map(function (g) { return g.nome + ': ' + g.b + ' bicos × ' + num(g.l, 1) + ' mil L = ' + num(g.bruto, 0) + ' m³' + (g.cortou ? ' → teto de ' + num(g.teto, 0) : ''); }).join('\n') : '') + '\nPadrão cheio do posto: ' + num(o.cheio, 0) + ' m³/mês.']);
+      li.push(['Projeção', o.passos.map(function (q) { return q.m + ' meses: ' + num(q.f * 100, 0) + '% × ' + num(o.cheio, 0) + ' = ' + num(q.v, 0) + (q.piso ? ' (piso anterior)' : ''); }).join('\n') + '\nNunca abaixo do marco anterior nem do volume de hoje.']);
+      li.push(['Rede', 'Último marco ' + num(o.fim, 0) + ' ÷ compras médias da rede ' + num(o.nosRede, 0) + ' m³/mês\n= ' + sinal(o.fim / o.nosRede * 100, 0) + ' sobre a rede.']);
     }
-    li.push(['Na área', 'Entre ' + o.n + ' postos (' + o.rot + '): ' + o.pos + 'º, ' + pct(o.vol / o.sam * 100, 1) + ' de ' + num(o.sam, 0) + ' m³/mês (soma da área).']);
-    li.push(['SOM com ele', o.efeitos.length ? o.efeitos.map(semHtml).join(' · ') + ' — (compras + volume dele) ÷ SAM da área.' : 'Nenhuma unidade nossa o tem hoje como concorrente: área nova para a rede.']);
-    if (o.munTxt) li.push(['Município', semHtml(o.munTxt + o.frTxt) + '. ANP anual e frota do Senatran.']);
+    li.push(['Na área', o.pos + 'º entre ' + o.n + ' postos (' + o.rot + ')\n' + pct(o.vol / o.sam * 100, 1) + ' de ' + num(o.sam, 0) + ' m³/mês, a soma da área.']);
+    li.push(['SOM com ele', o.efeitos.length ? o.efeitos.map(semHtml).join('\n') + '\n(compras + volume dele) ÷ SAM da área.' : 'Nenhuma unidade nossa o tem hoje como concorrente: área nova para a rede.']);
+    if (o.munTxt) li.push(['Município', semHtml(o.munTxt + o.frTxt).replace(/ · /g, '\n') + '\nFontes: ANP anual e frota do Senatran.']);
     return ajudaBox(li, 'Como as contas deste posto são feitas');
   }
   var EXP_ABERTOS = {};

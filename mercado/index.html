@@ -181,7 +181,7 @@ body.so-leitura .so-edita{display:none}
 .aj-bt{width:22px;height:22px;border-radius:50%;border:1px solid var(--linha);background:#fff;color:var(--tinta-suave);font:700 13px/1 var(--f-titulo);cursor:help;padding:0}
 .aj-bt:hover,.aj-bt:focus-visible,.ajuda.aberto .aj-bt{background:var(--verde);color:#fff;border-color:var(--verde);outline:none}
 .aj-box{display:none;position:absolute;left:0;top:28px;z-index:80;width:min(440px,calc(100vw - 64px));background:#16211C;color:#fff;border-radius:12px;padding:12px 14px;font:500 12.5px/1.5 var(--f-titulo);box-shadow:0 8px 24px rgba(0,0,0,.25);text-align:left}
-.aj-box b{color:#FFD9BE}
+.aj-box .aj-i{display:block;margin:0 0 10px}.aj-box .aj-i:last-child{margin-bottom:0}.aj-box b{display:block;color:#FFD9BE;margin-bottom:1px}
 .ajuda:hover .aj-box,.ajuda:focus-within .aj-box,.ajuda.aberto .aj-box{display:block}
 .exp-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .bt-pri,.bt-sec{font-family:var(--f-titulo);font-size:13.5px;font-weight:700;border-radius:12px;padding:9px 14px;cursor:pointer;border:1px solid var(--verde);background:var(--verde);color:#fff}
@@ -354,7 +354,7 @@ function mostra(){
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=24';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=25';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){
