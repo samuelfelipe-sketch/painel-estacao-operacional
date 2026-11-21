@@ -583,6 +583,27 @@
   function ajudaBox(li, rotulo) {
     return '<span class="ajuda"><button type="button" class="aj-bt" aria-label="' + esc(rotulo) + '" aria-expanded="false">?</button><span class="aj-box" role="tooltip">' + li.map(function (x) { return '<span class="aj-i"><b>' + esc(x[0]) + '</b>' + esc(x[1]).replace(/\n/g, '<br>') + '</span>'; }).join('') + '</span></span>';
   }
+  /* "?" ao lado do campo Perfil (21/11/2026): mil litros por bico por mês de cada perfil, por produto,
+     com a média da rede e a dos postos do RS nos mesmos 12 meses fechados */
+  function ajudaPerfis() {
+    var PF = perfis(), R = D.raio, mil = function (x) { return x == null ? '—' : num(x, 1); };
+    var lin = function (g) { return GRUPOS.map(function (G) { return G[2].toLowerCase() + ' ' + mil(g[G[0]]); }).join(' · '); };
+    var li = Object.keys(PF).map(function (k) { var g = {}; GRUPOS.forEach(function (G) { var x = PF[k].g[G[0]]; g[G[0]] = x ? x.l : null; }); return [PF[k].nome + ' (' + PF[k].rot + ')', lin(g)]; });
+    var fs = mesesSap().filter(function (m) { return !sapParcial(m); }).slice(-12), rede = {}, rs = {};
+    GRUPOS.forEach(function (G) {
+      var v = 0, b = 0;
+      codigosUn().forEach(function (u) { var inf = R.unidades[u] && R.unidades[u].infra; if (!inf) return; var ms = fs.filter(function (m) { return brutoUn(m, u, 'tot') > 0; }); if (!ms.length) return; var t = 0; ms.forEach(function (m) { t += brutoUn(m, u, G[0]); }); v += t / ms.length; b += inf['b' + G[1]]; });
+      rede[G[0]] = b ? v / b : null;
+      var t = 0, n = 0, bb = 0, I = R.rs_infra || {};
+      fs.forEach(function (m) { var x = mktP(m, 'rev', G[0]); if (x) { t += x.Total * 1000; n++; } });
+      Object.keys(I).forEach(function (k) { bb += I[k]['b' + G[1]] || 0; });
+      rs[G[0]] = n && bb ? t / n / bb : null;
+    });
+    li.push(['Média da rede (' + nomes(codigosUn().filter(function (u) { return R.unidades[u] && R.unidades[u].infra; })) + ')', lin(rede)]);
+    li.push(['Média dos postos do RS', lin(rs)]);
+    li.push(['Como é medido', 'Mil litros por bico por mês: volume médio dos últimos 12 meses fechados ÷ bicos do cadastro da ANP. GNV e Arla ficam fora.']);
+    return ajudaBox(li, 'Litros por bico de cada perfil');
+  }
   /* "?" de cada ficha: o racional do cálculo DESTE posto, com os números dele */
   function ajudaPosto(o) {
     var semHtml = function (x) { return String(x || '').replace(/<[^>]+>/g, ''); }, li = [];
@@ -756,6 +777,7 @@
     var kms = [2, 3, 5]; (D.exp.candidatos || []).forEach(function (c) { if (c.cnpj === cnpj && c.area.tipo === 'raio' && kms.indexOf(c.area.km) < 0) kms.push(c.area.km); });
     el('expArea').innerHTML = kms.map(function (k) { return '<option value="raio:' + k + '"' + (k === 3 ? ' selected' : '') + '>Raio de ' + k + ' km</option>'; }).join('') +
       codigosUn().filter(function (u) { return D.raio.unidades[u]; }).map(function (u) { return '<option value="un:' + esc(u) + '">Área do ' + esc(UNID()[u].nome) + '</option>'; }).join('');
+    el('expPerfilAj').innerHTML = ajudaPerfis();
     if (ja) { el('expPerfil').value = ja.perfil; el('expArea').value = ja.area.tipo === 'unidade' ? 'un:' + ja.area.u : 'raio:' + ja.area.km; }
     var inf = informada(p), split = inf && inf.otto != null && inf.diesel != null, aj0 = (ja && ja.ajuste) || {};
     el('expVol').value = inf ? inf.total : ''; el('expVolO').value = split ? inf.otto : ''; el('expVolD').value = split ? inf.diesel : '';
