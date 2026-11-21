@@ -513,6 +513,8 @@
     var r = null; codigosUn().forEach(function (u) { ((D.raio.unidades[u] || {}).postos || []).forEach(function (p) { if (p.cnpj === cnpj) r = p; }); }); return r;
   }
   function mediaEst(ms, p) { var s = 0; for (var i = 0; i < ms.length; i++) { var e = estPosto(ms[i], p); if (e == null) return null; s += e; } return ms.length ? s / ms.length : null; }
+  /* volume médio do posto num produto, seja qual for o filtro da tela */
+  function mediaEstProd(ms, p, prod) { var a = st.prod, v; st.prod = prod; try { v = mediaEst(ms, p); } finally { st.prod = a; } return v; }
   /* Projeção de um posto novo por PERFIL (decisão de 16/11/2026): urbano e rodovia, cada um com as
      unidades de referência dele (perfis do arquivo cifrado). Por grupo de produto (gasolina/etanol e
      diesel): padrão cheio (36 meses) = litros por bico por mês da referência (volume ÷ bicos do cadastro
@@ -540,17 +542,6 @@
     });
     return out;
   }
-  /* volume projetado do posto (infra) no perfil pf, na fração f do padrão; null sem padrão */
-  function projeta(inf, pf, f, comTeto) {
-    var t = 0, ok = false, noTeto = false;
-    GRUPOS.forEach(function (G) {
-      if (st.prod !== 'tot' && st.prod !== G[0]) return;
-      var x = pf && pf.g[G[0]], b = inf ? inf['b' + G[1]] : 0; if (!x) return;
-      var v = b * x.l; if (comTeto && v > x.teto) { v = x.teto; noTeto = true; }
-      t += v * f; ok = true;
-    });
-    return ok ? { v: t, teto: noTeto } : null;
-  }
   /* rampa da Expansão (18/11/2026): marcos em meses e fração do padrão; o último marco é sempre 100%.
      Arquivo cifrado: {m6,m12,m24} = frações e o padrão cheio em 36 meses; formato antigo {m6,m12} = 100% em 24. */
   function rampaExp() {
@@ -565,7 +556,7 @@
     var li = [
       ['Hoje', 'Volume informado por você, quando há. Sem ele, estimativa: média por posto da bandeira dele no RS (ANP) × bicos do posto ÷ bicos médios da bandeira.'],
       ['Padrão', 'Litros por bico por mês da unidade de referência do perfil (' + refs + '): compras dos últimos 12 meses fechados ÷ bicos do cadastro da ANP, separado em gasolina/etanol e diesel.'],
-      ['Projeção', 'Bicos do posto × padrão × fração da rampa (' + RP.map(function (r) { return num(r.f * 100, 0) + '% em ' + r.m; }).join(', ') + ' meses). Nunca abaixo do marco anterior nem do volume de hoje.'],
+      ['Projeção', 'Por produto: bicos do posto × padrão × fração da rampa (' + RP.map(function (r) { return num(r.f * 100, 0) + '% em ' + r.m; }).join(', ') + ' meses), nunca abaixo do volume de hoje naquele produto. Em "Ajustar" dá para informar o volume de hoje por produto e mudar o alvo (% do padrão) de cada um.'],
       comTeto ? ['Teto', 'O posto novo não passa do volume médio da unidade de referência em cada produto: mais bicos não trazem mais clientes na mesma proporção.'] : null,
       ['Rede', 'Volume projetado no último marco ÷ compras médias da rede no período escolhido.'],
       ['Na área', 'Posição do posto pelo volume entre os postos da área (raio ou área de uma unidade nossa); fatia = volume dele ÷ soma da área.'],
@@ -583,8 +574,8 @@
     li.push(['Hoje', num(o.vol, 0) + ' m³/mês (' + PROD_NOME[st.prod] + ', ' + perLbl(st.mes) + '). ' + '\n' + (o.inf ? 'Volume informado por você (' + num(o.inf.total, 0) + ' m³/mês por mês típico), ajustado mês a mês pela ANP.' : 'Estimado: média por posto da bandeira ' + nomeBand(o.p.bandeira) + ' no RS × bicos dele ÷ bicos médios da bandeira.')]);
     if (!o.bc || !o.pf) li.push(['Projeção', 'Sem projeção: ' + (!o.pf ? 'o perfil do posto não tem unidade de referência.' : 'o cadastro da ANP não traz os bicos deste posto.')]);
     else {
-      li.push(['Padrão', o.pf.nome + ' (referência ' + nomes(o.pf.us) + ')' + (o.gs.length ? ':\n' + o.gs.map(function (g) { return g.nome + ': ' + g.b + ' bicos × ' + num(g.l, 1) + ' mil L = ' + num(g.bruto, 0) + ' m³' + (g.cortou ? ' → teto de ' + num(g.teto, 0) : ''); }).join('\n') : '') + '\nPadrão cheio do posto: ' + num(o.cheio, 0) + ' m³/mês.']);
-      li.push(['Projeção', o.passos.map(function (q) { return q.m + ' meses: ' + num(q.f * 100, 0) + '% × ' + num(o.cheio, 0) + ' = ' + num(q.v, 0) + (q.piso ? ' (piso anterior)' : ''); }).join('\n') + '\nNunca abaixo do marco anterior nem do volume de hoje.']);
+      li.push(['Padrão', o.pf.nome + ' (referência ' + nomes(o.pf.us) + ')' + (o.gs.length ? ':\n' + o.gs.map(function (g) { return g.nome + ': ' + g.b + ' bicos × ' + num(g.l, 1) + ' mil L = ' + num(g.bruto, 0) + ' m³' + (g.cortou ? ' → teto de ' + num(g.teto, 0) : '') + (g.aj !== 1 ? ' × alvo ' + num(g.aj * 100, 0) + '% = ' + num(g.alvo, 0) : '') + ' (hoje ' + num(g.hoje, 0) + ')'; }).join('\n') : '')]);
+      li.push(['Projeção', o.passos.map(function (q) { return q.m + ' meses (' + num(q.f * 100, 0) + '%): ' + num(q.v, 0) + (q.pisos.length ? ' — ' + q.pisos.join(' e ') + ' mantém hoje' : ''); }).join('\n') + '\nEm cada produto, o maior entre o volume de hoje e padrão × fração; o total é a soma.']);
       li.push(['Rede', 'Último marco ' + num(o.fim, 0) + ' ÷ compras médias da rede ' + num(o.nosRede, 0) + ' m³/mês\n= ' + sinal(o.fim / o.nosRede * 100, 0) + ' sobre a rede.']);
     }
     li.push(['Na área', o.pos + 'º entre ' + o.n + ' postos (' + o.rot + ')\n' + pct(o.vol / o.sam * 100, 1) + ' de ' + num(o.sam, 0) + ' m³/mês, a soma da área.']);
@@ -647,28 +638,39 @@
         var fm = F.ultimo_mes, fa = anoAnt(fm), x1 = F.meses[fm] && F.meses[fm].municipios[mun], x0 = F.meses[fa] && F.meses[fa].municipios[mun];
         if (x1 && x0) frTxt = ' · frota <b class="' + cls(cresc(x0.total, x1.total)) + '">' + sinal(cresc(x0.total, x1.total)) + '</b>';
       }
-      /* projeção: bicos do posto × litros por bico da rede (nunca abaixo do volume de hoje) */
-      var bc = bicosDe(p.infra, st.prod), pf = PF[c.perfil] || null;
-      var passoV = function (f, ant) { var x = f && bc ? projeta(p.infra, pf, f, comTeto) : null; return x ? { v: Math.max(ant, x.v), teto: x.teto } : null; };
-      var sp = [], ant = vol; RP.forEach(function (r) { var x = passoV(r.f, ant); sp.push(x); if (x) ant = x.v; });
-      var gsP = [], cheioX = bc && pf ? projeta(p.infra, pf, 1, comTeto) : null, pas = [], fimV = vol;
+      /* projeção POR PRODUTO (21/11/2026): em cada produto vale o maior entre o volume de hoje e
+         bicos × padrão × fração da rampa × alvo do posto (c.ajuste, 1 = padrão cheio); o total é a soma.
+         Posto que já vende acima do padrão num produto mantém esse volume e ainda cresce no outro. */
+      var bc = bicosDe(p.infra, st.prod), pf = PF[c.perfil] || null, aj = c.ajuste || {};
+      var gsP = [], fixo = 0;
       GRUPOS.forEach(function (G) {
         if (st.prod !== 'tot' && st.prod !== G[0]) return;
-        var x = pf && pf.g[G[0]], b = p.infra ? p.infra['b' + G[1]] : 0; if (!x || !b) return;
-        gsP.push({ nome: G[2], b: b, l: x.l, bruto: b * x.l, teto: x.teto, cortou: comTeto && b * x.l > x.teto });
+        var x = pf && pf.g[G[0]], b = p.infra ? p.infra['b' + G[1]] : 0, hj = mediaEstProd(meses, p, G[0]) || 0;
+        if (!x || !b) { fixo += hj; return; }
+        var bruto = b * x.l, cortou = comTeto && bruto > x.teto, a = aj[G[0]] > 0 ? aj[G[0]] : 1;
+        gsP.push({ k: G[0], nome: G[2], b: b, l: x.l, bruto: bruto, teto: x.teto, cortou: cortou, aj: a, hoje: hj, alvo: (cortou ? x.teto : bruto) * a, ant: hj });
       });
-      RP.forEach(function (r, k) { var x = sp[k]; if (x && cheioX) { pas.push({ m: r.m, f: r.f, v: x.v, piso: x.v > cheioX.v * r.f + 0.5 }); fimV = x.v; } });
+      var temProj = !!(bc && pf && gsP.length), sp = [], pas = [], fimV = vol, cheio = fixo;
+      gsP.forEach(function (g) { cheio += g.alvo; });
+      RP.forEach(function (r) {
+        if (!temProj) { sp.push(null); return; }
+        var v = fixo, pisos = [], sobem = [];
+        gsP.forEach(function (g) { var pv = g.alvo * r.f; (g.ant > pv + 0.5 ? pisos : sobem).push(g.nome.toLowerCase()); g.ant = Math.max(g.ant, pv); v += g.ant; });
+        sp.push({ v: v, f: r.f, pisos: pisos, sobem: sobem, teto: gsP.some(function (g) { return g.cortou; }) });
+        pas.push({ m: r.m, f: r.f, v: v, pisos: pisos }); fimV = v;
+      });
+      gsP.forEach(function (g) { g.fim = g.ant; });
       var aberto = !!EXP_ABERTOS[idx];
-      var ajP = ajudaPosto({ vol: vol, inf: inf, p: p, bc: bc, pf: pf, gs: gsP, cheio: cheioX ? cheioX.v : 0, passos: pas, fim: fimV, nosRede: nosRede, n: linhas.length, rot: rot, pos: pos, sam: sam, efeitos: efeitos, munTxt: munTxt, frTxt: frTxt });
-      var h = '<div class="ficha"><div class="ficha-topo"><div class="ficha-tt">' + ajP + '<h3>' + esc(c.apelido) + '</h3></div>' + (gere ? '<button type="button" class="exp-rem" data-rem="' + esc(c.cnpj) + '">Remover</button>' : '') + '</div><p class="nota">' + (pf ? '<b>' + esc(pf.nome) + '</b> · ' : '') + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(mun)) + (dists ? ' · ' + esc(dists) : '') + '</p>';
+      var ajP = ajudaPosto({ vol: vol, inf: inf, p: p, bc: bc, pf: pf, gs: gsP, cheio: cheio, passos: pas, fim: fimV, nosRede: nosRede, n: linhas.length, rot: rot, pos: pos, sam: sam, efeitos: efeitos, munTxt: munTxt, frTxt: frTxt });
+      var h = '<div class="ficha"><div class="ficha-topo"><div class="ficha-tt">' + ajP + '<h3>' + esc(c.apelido) + '</h3></div>' + (gere ? '<span class="exp-bts"><button type="button" class="exp-rem" data-aj="' + esc(c.cnpj) + '" title="Perfil, área, volume de hoje por produto e alvo da projeção">Ajustar</button><button type="button" class="exp-rem" data-rem="' + esc(c.cnpj) + '">Remover</button></span>' : '') + '</div><p class="nota">' + (pf ? '<b>' + esc(pf.nome) + '</b> · ' : '') + esc(nomeBand(p.bandeira)) + ' · ' + esc(nomeCidade(mun)) + (dists ? ' · ' + esc(dists) : '') + '</p>';
       var passo = function (rt, v, sub) { return '<div class="mini"><div class="lbl">' + rt + '</div><div class="val">' + num(v, 0) + '<small>m³/mês</small>' + (v > vol * 1.005 ? ' <small class="up">' + sinal((v / vol - 1) * 100, 0) + '</small>' : '') + '</div><div class="sub">' + sub + '</div></div>'; };
       h += '<div class="quad">' + passo('Hoje' + (inf ? ' · informado' : ' · estimado'), vol, p.infra ? p.infra.bo + ' + ' + p.infra.bd + ' bicos' : '') +
         RP.map(function (r, k) { var x = sp[k], ult = k === RP.length - 1; if (!x) return '';
-          /* marco em que o padrão fica abaixo do volume de hoje: vale o de hoje, e o rótulo diz isso */
-          var pad = cheioX ? cheioX.v * r.f : 0, piso = cheioX && x.v > pad + 0.5;
-          var sub = piso ? '<span title="O padrão do perfil neste marco (' + num(pad, 0) + ' m³/mês) fica abaixo do volume de hoje: a projeção mantém o de hoje.">mantém hoje · padrão ' + num(pad, 0) + '</span>' : num(r.f * 100, 0) + '% do padrão';
-          return passo('Em ' + r.m + ' meses', x.v, ult ? (piso ? sub + ' · ' : x.teto ? 'no teto · ' : '') + 'rede ' + sinal(x.v / nosRede * 100, 0) : sub); }).join('') +
+          var pc = num(r.f * 100, 0) + '% do ' + (gsP.some(function (g) { return g.aj !== 1; }) ? 'alvo' : 'padrão');
+          var sub = !x.pisos.length ? pc : !x.sobem.length ? '<span title="Neste marco o padrão fica abaixo do volume de hoje em todos os produtos: a projeção mantém o de hoje.">mantém hoje</span>' : '<span title="Em ' + esc(x.pisos.join(' e ')) + ' o padrão fica abaixo do volume de hoje: mantém o de hoje.">' + pc + ' em ' + esc(x.sobem.join(' e ')) + '</span>';
+          return passo('Em ' + r.m + ' meses', x.v, ult ? (x.pisos.length ? sub + ' · ' : x.teto ? 'no teto · ' : '') + 'rede ' + sinal(x.v / nosRede * 100, 0) : sub); }).join('') +
         '<div class="mini"><div class="lbl">Na área</div><div class="val">' + pos + 'º<small>de ' + linhas.length + '</small></div><div class="sub">' + pct(vol / sam * 100, 1) + ' de ' + num(sam, 0) + ' m³/mês · ' + esc(rot) + '</div></div></div>';
+      if (temProj && gsP.length > 1) h += '<p class="nota exp-prod">' + gsP.map(function (g) { return '<b>' + g.nome + '</b> ' + num(g.hoje, 0) + ' → ' + num(g.fim, 0) + (g.aj !== 1 ? ' <small class="falta">alvo ' + num(g.aj * 100, 0) + '%</small>' : ''); }).join(' · ') + ' <small class="falta">m³/mês, hoje → ' + RP[RP.length - 1].m + ' meses</small></p>';
       h += '<p class="exp-ef">' + (efeitos.length ? '<b>SOM com ele:</b> ' + efeitos.join(' · ') : '<b>Área nova</b> para a rede') + (munTxt ? '<br><span class="falta">' + munTxt + frTxt + '</span>' : '') + '</p>';
       h += '<details class="dobra" data-exp="' + idx + '"' + (aberto ? ' open' : '') + '><summary>Ver os ' + linhas.length + ' postos da área</summary><div class="tabela"><table class="rk"><thead><tr><th class="num">#</th><th>Posto</th><th class="num mo">km</th><th class="num">m³/mês</th><th class="num">Fatia</th></tr></thead><tbody>' + linhas.map(function (l, i) {
         if (l.cand) return '<tr class="dest"><td class="num">' + (i + 1) + '</td><td>' + esc(c.apelido) + ' (em avaliação)</td><td class="num mo">—</td><td class="num">' + num(l.v, 0) + '</td><td class="num">' + pct(l.v / sam * 100, 1) + '</td></tr>';
@@ -730,11 +732,16 @@
     var p = postoArea(cnpj); if (!p) return;
     expSel = p; el('expAchados').innerHTML = ''; el('expBusca').value = '';
     el('expEsc').innerHTML = '<b>' + esc(nomePosto(p.nome)) + '</b> <small>' + esc(nomeBand(p.bandeira)) + ' · ' + esc([p.bairro, p.municipio].filter(Boolean).map(nomeCidade).join(' · ')) + (p.infra ? ' · ' + p.infra.bo + ' + ' + p.infra.bd + ' bicos' : ' · sem bicos no cadastro') + '</small>';
-    el('expApelido').value = nomePosto(p.nome).slice(0, 40);
+    var ja = (D.exp.candidatos || []).filter(function (c) { return c.cnpj === cnpj; })[0] || null;
+    el('expApelido').value = ja ? ja.apelido : nomePosto(p.nome).slice(0, 40);
     el('expPerfil').innerHTML = Object.keys(D.exp.perfis).map(function (k) { return '<option value="' + esc(k) + '">' + esc(D.exp.perfis[k].nome || k) + '</option>'; }).join('');
-    el('expArea').innerHTML = [2, 3, 5].map(function (k) { return '<option value="raio:' + k + '"' + (k === 3 ? ' selected' : '') + '>Raio de ' + k + ' km</option>'; }).join('') +
+    var kms = [2, 3, 5]; (D.exp.candidatos || []).forEach(function (c) { if (c.cnpj === cnpj && c.area.tipo === 'raio' && kms.indexOf(c.area.km) < 0) kms.push(c.area.km); });
+    el('expArea').innerHTML = kms.map(function (k) { return '<option value="raio:' + k + '"' + (k === 3 ? ' selected' : '') + '>Raio de ' + k + ' km</option>'; }).join('') +
       codigosUn().filter(function (u) { return D.raio.unidades[u]; }).map(function (u) { return '<option value="un:' + esc(u) + '">Área do ' + esc(UNID()[u].nome) + '</option>'; }).join('');
-    var inf = informada(p); el('expVol').value = inf ? inf.total : '';
+    if (ja) { el('expPerfil').value = ja.perfil; el('expArea').value = ja.area.tipo === 'unidade' ? 'un:' + ja.area.u : 'raio:' + ja.area.km; }
+    var inf = informada(p), split = inf && inf.otto != null && inf.diesel != null, aj0 = (ja && ja.ajuste) || {};
+    el('expVol').value = inf ? inf.total : ''; el('expVolO').value = split ? inf.otto : ''; el('expVolD').value = split ? inf.diesel : '';
+    el('expAjO').value = aj0.otto > 0 ? Math.round(aj0.otto * 100) : ''; el('expAjD').value = aj0.diesel > 0 ? Math.round(aj0.diesel * 100) : '';
     el('expCampos').hidden = false; expMsg(''); el('expApelido').focus();
   }
   function expFecha() { expSel = null; el('expForm').hidden = true; el('expCampos').hidden = true; el('expAchados').innerHTML = ''; el('expBusca').value = ''; expMsg(''); }
@@ -744,21 +751,38 @@
     var p = expSel, apelido = el('expApelido').value.trim(), ar = el('expArea').value.split(':'), vol = +el('expVol').value || 0, bt = el('expSalva');
     if (!apelido) { expMsg('Dê um apelido ao posto.'); return; }
     var cand = { cnpj: p.cnpj, apelido: apelido, perfil: el('expPerfil').value, area: ar[0] === 'un' ? { tipo: 'unidade', u: ar[1] } : { tipo: 'raio', km: +ar[1] } };
+    var antes = (D.exp.candidatos || []).filter(function (c) { return c.cnpj === p.cnpj; })[0];
+    if (antes && antes.descartados) cand.descartados = antes.descartados;
+    if (antes && antes.nota) cand.nota = antes.nota;
+    /* alvo da projeção por produto, em % do padrão do perfil (em branco ou 100 = padrão cheio) */
+    var ajO = +el('expAjO').value || 0, ajD = +el('expAjD').value || 0, aj = {};
+    if ((ajO && (ajO < 10 || ajO > 300)) || (ajD && (ajD < 10 || ajD > 300))) { expMsg('O alvo vai de 10% a 300% do padrão.'); return; }
+    if (ajO && ajO !== 100) aj.otto = ajO / 100; if (ajD && ajD !== 100) aj.diesel = ajD / 100;
+    if (aj.otto || aj.diesel) cand.ajuste = aj;
+    /* volume de hoje: por produto (os dois campos) ou só o total */
+    var sO = el('expVolO').value.trim(), sD = el('expVolD').value.trim(), vO = +sO || 0, vD = +sD || 0, porProd = sO !== '' && sD !== '' && vO + vD > 0;
+    if ((sO !== '') !== (sD !== '')) { expMsg('Preencha gasolina/etanol e diesel (use 0 se não vende), ou só o total.'); return; }
+    if (porProd) vol = vO + vD;
     bt.disabled = true; expMsg('Cifrando e gravando…');
     try {
       var ex = await gravaCifrado('expansao.enc.json', 'sapatao-mercado-v1-exp', 'chore: atualiza os postos em avaliação do Market Share (manual)', function (x) {
         if (!x || !x.perfis) throw new Error('o arquivo de avaliação não abriu');
-        x.candidatos = (x.candidatos || []).filter(function (c) { return c.cnpj !== cand.cnpj; }); x.candidatos.push(cand); return x;
+        var k = -1; (x.candidatos || []).forEach(function (c, n) { if (c.cnpj === cand.cnpj) k = n; });
+        x.candidatos = x.candidatos || []; if (k >= 0) x.candidatos[k] = cand; else x.candidatos.push(cand); return x;
       });
       D.exp = ex;
       var inf = informada(p);
-      if (vol > 0 && (!inf || inf.total !== vol)) {
+      var igual = inf && inf.total === vol && (porProd ? inf.otto === vO && inf.diesel === vD : inf.otto == null);
+      if (vol > 0 && !igual) {
         D.estim = await gravaCifrado('estimativas.enc.json', 'sapatao-mercado-v1-est', 'chore: atualiza as estimativas de concorrentes do Market Share (manual)', function (x) {
           x = x || { v: 1, unidade: 'm3/mês', postos: {} }; x.postos = x.postos || {};
-          x.postos[p.cnpj] = { nome: nomePosto(p.nome), total: vol, ref: D.anp.ultimo_fechado, fonte: window.sapataoAuth.user.nome, em: hojeIso() }; return x;
+          var reg = { nome: nomePosto(p.nome), total: vol, ref: D.anp.ultimo_fechado, fonte: window.sapataoAuth.user.nome, em: hojeIso() };
+          if (porProd) { reg.otto = vO; reg.diesel = vD; }
+          var ant = x.postos[p.cnpj]; if (ant && ant.obs) reg.obs = ant.obs;
+          x.postos[p.cnpj] = reg; return x;
         });
       }
-      expFecha(); desenha(); el('n-exp').textContent = 'Posto incluído. Nos outros aparelhos aparece em 1–2 minutos.';
+      expFecha(); desenha(); el('n-exp').textContent = 'Posto gravado. Nos outros aparelhos aparece em 1–2 minutos.';
     } catch (e) { expMsg('Não consegui gravar (' + e.message + ').'); }
     bt.disabled = false;
   }
@@ -875,7 +899,10 @@
   el('expAchados').addEventListener('click', function (ev) { var b = ev.target.closest('button[data-cnpj]'); if (b) expEscolhe(b.dataset.cnpj); });
   el('expCancela').addEventListener('click', expFecha);
   el('expForm').addEventListener('submit', expSalva);
-  el('expFichas').addEventListener('click', function (ev) { var b = ev.target.closest('button[data-rem]'); if (b) expRemove(b.dataset.rem); });
+  el('expFichas').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-rem]'); if (b) { expRemove(b.dataset.rem); return; }
+    var a = ev.target.closest('button[data-aj]'); if (a) { el('expForm').hidden = false; expEscolhe(a.dataset.aj); el('expForm').scrollIntoView({ block: 'center' }); }
+  });
   el('tReg').addEventListener('click', abreUn); el('tReg').addEventListener('keydown', abreUn);
   desenha();
 })();
