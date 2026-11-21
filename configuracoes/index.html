@@ -163,6 +163,7 @@ tr:last-child td{border-bottom:none}
       <div class="tbl"><table class="us-tbl" id="us-tbl"></table></div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
         <button type="button" class="btn" id="us-add" style="margin-top:0">+ Adicionar usuário</button>
+        <button type="button" class="btn" id="us-reset-todos" style="margin-top:0" title="Uma senha provisória para todos os usuários ativos, menos você. Cada um cria a própria senha no próximo acesso.">Redefinir senhas de todos</button>
         <button type="button" class="btn destaque" id="us-salvar" style="margin-top:0">Salvar alterações</button>
       </div>
       <p class="lead" id="us-msg" style="margin-top:10px;margin-bottom:0"></p>
@@ -401,6 +402,20 @@ document.getElementById('us-add').addEventListener('click',()=>{
     usRender();
     usDiz('Usuário criado com permissão "Só lê" nos dois painéis — ajuste e clique em "Salvar alterações".');
   }));
+});
+/* senha provisória única para todos os usuários ativos, menos o admin logado; cada um troca no próximo acesso */
+document.getElementById('us-reset-todos').addEventListener('click',()=>{
+  if(!usDoc)return;
+  const A=window.sapataoAuth,alvos=usDoc.usuarios.filter(u=>u.id!==A.user.id&&u.ativo!==false);
+  if(!alvos.length){usDiz('Não há outros usuários ativos.',true);return;}
+  const s=prompt('Senha provisória para '+alvos.length+' usuário(s): '+alvos.map(u=>u.nome).join(', ')+' (mínimo '+A.senhaMin+' caracteres). Cada um cria a própria no próximo acesso:');
+  if(s===null)return;
+  for(const u of alvos){const probl=A.senhaProblema(s,u);if(probl){usDiz(probl+' ('+u.nome+') Nada foi alterado.',true);return;}}
+  usDiz('Preparando as senhas…');
+  usPend.push(Promise.all(alvos.map(u=>A.defineSenha(u,s).then(()=>{
+    u.trocar=true;
+    usEnvelopes=usEnvelopes.filter(e=>e.id!==u.id);usEnvelopes.push({id:u.id,senha:s});
+  }))).then(()=>usDiz('Senha provisória pronta para '+alvos.length+' usuário(s) — clique em "Salvar alterações" para gravar.')));
 });
 document.getElementById('us-salvar').addEventListener('click',async ()=>{
   const A=window.sapataoAuth;

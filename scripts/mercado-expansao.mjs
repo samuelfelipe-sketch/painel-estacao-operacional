@@ -10,6 +10,7 @@
        teto:true|false,   (posto novo limitado ao volume da unidade de referência, por produto)
        candidatos:[ { cnpj, apelido, perfil:'urbano'|'rodovia',
                       area:{tipo:'raio', km} | {tipo:'unidade', u:'<código da nossa unidade>'},
+                      ajuste?:{otto?,diesel?},   (alvo da projeção por produto, fração do padrão do perfil; ausente = 1)
                       descartados?:[cnpj…], nota? } ] }
    area 'raio' = vizinhança automática: postos de mercado/postos-raio.json (`area`) a até km
    do candidato; area 'unidade' = a mesma área (lista de concorrentes escolhida) de uma unidade
@@ -45,6 +46,7 @@ if (cmd === 'abre') {
     if (!/^\d{14}$/.test(c.cnpj || '')) falha('CNPJ inválido na lista.');
     if (!c.apelido) falha('candidato sem apelido.');
     if (Object.keys(perfis).length && !perfis[c.perfil]) falha('candidato sem perfil (urbano ou rodovia).');
+    for (const v of Object.values(c.ajuste || {})) if (!(v >= 0.1 && v <= 3)) falha('ajuste inválido (fração do padrão entre 0,1 e 3).');
     const a = c.area || {};
     if (!(a.tipo === 'raio' && a.km > 0) && !(a.tipo === 'unidade' && a.u)) falha('candidato sem área (raio em km ou unidade).');
   }
