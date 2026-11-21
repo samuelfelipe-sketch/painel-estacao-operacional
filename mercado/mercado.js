@@ -684,6 +684,7 @@
   function podeGerir() { var A = window.sapataoAuth, K = window.sapataoCofre; return !!(A && A.user && A.user.admin && D.exp && D.exp.perfis && temRaio() && K && K.cifra); }
   function semAcento(x) { return String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function hojeIso() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  var SEM_CHAVE = 'a chave de publicação ou a sessão deste aparelho venceu — toque em Sair, entre de novo e tente outra vez';
   async function gravaCifrado(arq, cache, msg, muda) {
     var K = window.sapataoCofre, tok = window.sapataoChave && window.sapataoChave.token();
     if (!tok) throw new Error('este aparelho não tem a chave de publicação — saia e entre com a senha');
@@ -694,11 +695,13 @@
       var j = await g.json(); sha = j.sha;
       atual = await K.decifra(JSON.parse(atob(String(j.content || '').replace(/\s/g, ''))));
       if (!atual) throw new Error('não consegui abrir o arquivo atual');
-    } else if (g.status !== 404) throw new Error('HTTP ' + g.status);
+    } else if (g.status === 401 || g.status === 403) throw new Error(SEM_CHAVE);
+    else if (g.status !== 404) throw new Error('HTTP ' + g.status);
     var novo = muda(atual); novo.atualizado_em = new Date().toISOString().slice(0, 16);
     var doc = await K.cifra(novo), body = { message: msg, branch: 'main', content: btoa(JSON.stringify(doc)) };
     if (sha) body.sha = sha;
     var r = await fetch(GH_MERC + arq, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+    if (r.status === 401 || r.status === 403) throw new Error(SEM_CHAVE);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     try { localStorage.setItem(cache, JSON.stringify(doc)); } catch (e) {}
     return novo;
