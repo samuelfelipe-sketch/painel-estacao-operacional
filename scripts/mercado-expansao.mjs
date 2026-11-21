@@ -9,6 +9,7 @@
        (perfil misto: { nome, mix:{ otto:{de:'<perfil>',f:<fração>}, diesel:{de:'<perfil>',f:<fração>} } } — cada produto
         vem de outro perfil, numa fração do padrão dele)
        rampa:{ m6:<fração do padrão em 6 meses>, m12:<em 12>, m24:<em 24> },   (36 meses = 100%; sem m24 = formato antigo, 100% em 24)
+       h24:<fator do posto 24 horas sobre o alvo, ex. 1.1>,   (candidato com h24:true; o padrão vem de unidades 5h–23h)
        teto:true|false,   (posto novo limitado ao volume da unidade de referência, por produto)
        candidatos:[ { cnpj, apelido, perfil:'urbano'|'rodovia',
                       area:{tipo:'raio', km} | {tipo:'unidade', u:'<código da nossa unidade>'},
@@ -47,6 +48,7 @@ if (cmd === 'abre') {
     else if (!Array.isArray(pf.ref) || !pf.ref.length) falha(`perfil ${nome} sem unidade de referência.`);
   }
   if (novo.rampa) for (const kk of ['m6', 'm12', ...(novo.rampa.m24 != null ? ['m24'] : [])]) if (!(novo.rampa[kk] > 0 && novo.rampa[kk] <= 1)) falha('rampa inválida (frações entre 0 e 1).');
+  if (novo.h24 != null && !(novo.h24 >= 1 && novo.h24 <= 2)) falha('h24 inválido (fator entre 1 e 2).');
   for (const c of novo.candidatos) {
     if (!/^\d{14}$/.test(c.cnpj || '')) falha('CNPJ inválido na lista.');
     if (!c.apelido) falha('candidato sem apelido.');
@@ -55,7 +57,7 @@ if (cmd === 'abre') {
     const a = c.area || {};
     if (!(a.tipo === 'raio' && a.km > 0) && !(a.tipo === 'unidade' && a.u)) falha('candidato sem área (raio em km ou unidade).');
   }
-  const doc0 = { v: 1, atualizado_em: new Date().toISOString().slice(0, 16), perfis, ...(novo.rampa ? { rampa: novo.rampa } : {}), teto: novo.teto !== false, candidatos: novo.candidatos };
+  const doc0 = { v: 1, atualizado_em: new Date().toISOString().slice(0, 16), perfis, ...(novo.rampa ? { rampa: novo.rampa } : {}), ...(novo.h24 ? { h24: novo.h24 } : {}), teto: novo.teto !== false, candidatos: novo.candidatos };
   const doc = cifra(doc0, k);
   if (JSON.stringify(decifra(doc, k)) !== JSON.stringify(doc0)) falha('a conferência da cifra falhou.');
   writeFileSync(ARQ, JSON.stringify(doc) + '\n');
