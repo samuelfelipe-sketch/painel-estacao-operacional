@@ -38,6 +38,7 @@ tr:last-child td{border-bottom:none}
 .us-tbl select,.us-tbl input[type=text]{font-family:'Archivo',sans-serif;font-size:12.5px;border:1px solid var(--linha);border-radius:6px;padding:5px 7px;background:#fff;color:var(--verde);max-width:130px}
 .us-mini{font-family:'Archivo',sans-serif;font-weight:600;font-size:12px;color:var(--verde);background:#fff;border:1px solid var(--linha);border-radius:14px;padding:4px 11px;cursor:pointer}
 .us-mini:hover{border-color:var(--verde-suave)}
+.us-excluir{color:#8C1D18}.us-excluir:hover{border-color:#8C1D18}
 .campo{width:100%;font-family:'Archivo',sans-serif;font-size:14px;border:1px solid var(--linha);border-radius:8px;padding:9px 11px;background:#fff;color:var(--verde);margin:4px 0}
 .campo-mono{font-family:'IBM Plex Mono',monospace;font-size:12.5px}
 .btn{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#fff;background:var(--verde);border:none;border-radius:8px;padding:9px 16px;cursor:pointer;margin-top:8px}
@@ -312,7 +313,7 @@ snBtn.addEventListener('click',async ()=>{
 
 /* ---- administração de usuários (admin) ---- */
 const usTbl=document.getElementById('us-tbl'),usMsg=document.getElementById('us-msg');
-let usDoc=null,usSha=null,usEnvelopes=[],usPend=[];
+let usDoc=null,usSha=null,usEnvelopes=[],usPend=[],usExcl=[];
 function usDiz(t,erro){usMsg.textContent=t;usMsg.style.color=erro?'#8C1D18':'#1D6B3C';}
 const PERMS=[['edita','Edita'],['le','Só lê'],['nao','Sem acesso']];
 const PERMS_PE=[['edita','Edita'],['followup','Só follow-ups'],['le','Só lê'],['nao','Sem acesso']];
@@ -321,7 +322,7 @@ const PERMS_OPER=[['le','Acessa'],['nao','Sem acesso']];
 function sel(v,cls,i,ops){return '<select class="'+cls+'" data-i="'+i+'">'+(ops||PERMS).map(p=>'<option value="'+p[0]+'"'+(v===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select>';}
 function usRender(){
   if(!usDoc)return;
-  usTbl.innerHTML='<tr><th>Usuário</th><th>Vendas</th><th>Fluxo de Caixa</th><th>Negociação</th><th>Market Share</th><th>Plan. Comercial</th><th>Plan. Estratégico</th><th>Admin</th><th>Ativo</th><th>Senha</th></tr>'
+  usTbl.innerHTML='<tr><th>Usuário</th><th>Vendas</th><th>Fluxo de Caixa</th><th>Negociação</th><th>Market Share</th><th>Plan. Comercial</th><th>Plan. Estratégico</th><th>Admin</th><th>Ativo</th><th>Senha</th><th></th></tr>'
     +usDoc.usuarios.map((u,i)=>{
       const p=u.perm||{};
       return '<tr><td><input type="text" class="us-nome" data-i="'+i+'" value="'+esc(u.nome)+'"></td>'
@@ -333,11 +334,12 @@ function usRender(){
         +'<td>'+(u.admin?'<span class="pill">edita</span>':sel(p.pe||'nao','us-pe',i,PERMS_PE))+'</td>'
         +'<td><input type="checkbox" class="us-admin" data-i="'+i+'"'+(u.admin?' checked':'')+'></td>'
         +'<td><input type="checkbox" class="us-ativo" data-i="'+i+'"'+(u.ativo!==false?' checked':'')+'></td>'
-        +'<td><button type="button" class="us-mini us-senha" data-i="'+i+'">redefinir</button></td></tr>';
+        +'<td><button type="button" class="us-mini us-senha" data-i="'+i+'">redefinir</button></td>'
+        +'<td>'+(u.id===window.sapataoAuth.user.id?'':'<button type="button" class="us-mini us-excluir" data-i="'+i+'" title="Remove o usuário da lista e apaga a chave dele do cofre">excluir</button>')+'</td></tr>';
     }).join('');
 }
 async function usCarrega(){
-  try{const r=await usuariosDoRepo();usDoc=r.doc;usSha=r.sha;usRender();usDiz('');}
+  try{const r=await usuariosDoRepo();usDoc=r.doc;usSha=r.sha;usExcl=[];usRender();usDiz('');}
   catch(e){usDiz('Não consegui carregar a lista ('+e.message+').',true);}
 }
 function usId(nome){
@@ -360,6 +362,17 @@ usTbl.addEventListener('change',ev=>{
   if(ev.target.classList.contains('us-ativo'))u.ativo=ev.target.checked;
 });
 usTbl.addEventListener('click',ev=>{
+  if(ev.target.classList.contains('us-excluir')){
+    const i=+ev.target.dataset.i,u=usDoc.usuarios[i];
+    if(!u||u.id===window.sapataoAuth.user.id)return;
+    if(!confirm('Excluir o usuário '+u.nome+'? Ele perde o acesso a todos os painéis. O histórico do que ele fez continua.'))return;
+    usDoc.usuarios.splice(i,1);
+    usExcl.push(u.id);
+    usEnvelopes=usEnvelopes.filter(e=>e.id!==u.id);
+    usRender();
+    usDiz(u.nome+' sai da lista — clique em "Salvar alterações" para gravar.');
+    return;
+  }
   if(!ev.target.classList.contains('us-senha'))return;
   const i=+ev.target.dataset.i,u=usDoc.usuarios[i];
   const s=prompt('Senha provisória para '+u.nome+' (mínimo '+window.sapataoAuth.senhaMin+' caracteres). No primeiro acesso a pessoa troca por uma só dela:');
@@ -409,8 +422,16 @@ document.getElementById('us-salvar').addEventListener('click',async ()=>{
     }
     usEnvelopes=[];
     /* quem está desativado perde o envelope: a senha antiga não abre mais a chave */
-    const inativos=usDoc.usuarios.filter(u=>u.ativo===false).map(u=>u.id);
+    const excl=usExcl.filter(id=>!usDoc.usuarios.some(u=>u.id===id));
+    const inativos=usDoc.usuarios.filter(u=>u.ativo===false).map(u=>u.id).concat(excl);
     if(inativos.length)await window.sapataoChave.removeEnvelopes(inativos);
+    /* usuário excluído: os aparelhos dele saem das notificações push */
+    if(excl.length){try{
+      const s=await subsDoc();let mudou=false;
+      Object.keys(s.doc.subs||{}).forEach(k=>{if(excl.indexOf(s.doc.subs[k].u)>=0){delete s.doc.subs[k];mudou=true;}});
+      if(mudou)await gravaSubs(s.doc,s.sha,'chore: remove aparelho das notificações push');
+    }catch(e){}}
+    usExcl=[];
     usDiz('Usuários gravados! As permissões valem no próximo acesso de cada um.');
     usCarrega();
   }catch(e){usDiz('Não consegui gravar ('+e.message+').',true);}
