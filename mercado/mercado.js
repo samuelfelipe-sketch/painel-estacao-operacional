@@ -538,7 +538,22 @@
         });
         g[G[0]] = n && bic ? { l: vol / bic, teto: vol / n } : null;
       });
-      out[k] = { nome: pf.nome || k, us: us, g: g };
+      if (!pf.mix) out[k] = { nome: pf.nome || k, us: us, g: g, rot: nomes(us) };
+    });
+    /* perfil MISTO (21/11/2026): cada produto vem de outro perfil, numa fração dele —
+       mix:{otto:{de:'urbano',f:0.7},diesel:{de:'rodovia',f:0.8}} (litros por bico × f) */
+    Object.keys(D.exp.perfis || {}).forEach(function (k) {
+      var pf = D.exp.perfis[k]; if (!pf.mix) return;
+      var g = {}, us = [], rot = [];
+      GRUPOS.forEach(function (G) {
+        var m = pf.mix[G[0]], b = m && out[m.de], x = b && b.g[G[0]];
+        /* teto do misto = a maior unidade de referência da rede naquele produto (o da origem × f
+           prenderia um posto grande ao tamanho de uma unidade pequena) */
+        var tt = 0; Object.keys(out).forEach(function (o) { var y = out[o].g[G[0]]; if (y && y.teto > tt) tt = y.teto; });
+        g[G[0]] = x ? { l: x.l * m.f, teto: tt } : null;
+        if (x) { rot.push(G[2].toLowerCase() + ' ' + num(m.f * 100, 0) + '% do ' + b.nome); b.us.forEach(function (u) { if (us.indexOf(u) < 0) us.push(u); }); }
+      });
+      out[k] = { nome: pf.nome || k, us: us, g: g, rot: rot.join(' · ') };
     });
     return out;
   }
@@ -552,7 +567,7 @@
   }
   /* botão "?" da Expansão (18/11/2026): o racional de cada conta, ao passar o mouse, focar ou tocar */
   function ajudaExp(PF, RP, comTeto) {
-    var refs = Object.keys(PF).map(function (k) { return PF[k].nome + ' = ' + nomes(PF[k].us); }).join('; ');
+    var refs = Object.keys(PF).map(function (k) { return PF[k].nome + ' = ' + PF[k].rot; }).join('; ');
     var li = [
       ['Hoje', 'Volume informado por você, quando há. Sem ele, estimativa: média por posto da bandeira dele no RS (ANP) × bicos do posto ÷ bicos médios da bandeira.'],
       ['Padrão', 'Litros por bico por mês da unidade de referência do perfil (' + refs + '): compras dos últimos 12 meses fechados ÷ bicos do cadastro da ANP, separado em gasolina/etanol e diesel.'],
@@ -574,7 +589,7 @@
     li.push(['Hoje', num(o.vol, 0) + ' m³/mês (' + PROD_NOME[st.prod] + ', ' + perLbl(st.mes) + '). ' + '\n' + (o.inf ? 'Volume informado por você (' + num(o.inf.total, 0) + ' m³/mês por mês típico), ajustado mês a mês pela ANP.' : 'Estimado: média por posto da bandeira ' + nomeBand(o.p.bandeira) + ' no RS × bicos dele ÷ bicos médios da bandeira.')]);
     if (!o.bc || !o.pf) li.push(['Projeção', 'Sem projeção: ' + (!o.pf ? 'o perfil do posto não tem unidade de referência.' : 'o cadastro da ANP não traz os bicos deste posto.')]);
     else {
-      li.push(['Padrão', o.pf.nome + ' (referência ' + nomes(o.pf.us) + ')' + (o.gs.length ? ':\n' + o.gs.map(function (g) { return g.nome + ': ' + g.b + ' bicos × ' + num(g.l, 1) + ' mil L = ' + num(g.bruto, 0) + ' m³' + (g.cortou ? ' → teto de ' + num(g.teto, 0) : '') + (g.aj !== 1 ? ' × alvo ' + num(g.aj * 100, 0) + '% = ' + num(g.alvo, 0) : '') + ' (hoje ' + num(g.hoje, 0) + ')'; }).join('\n') : '')]);
+      li.push(['Padrão', o.pf.nome + ' (referência ' + o.pf.rot + ')' + (o.gs.length ? ':\n' + o.gs.map(function (g) { return g.nome + ': ' + g.b + ' bicos × ' + num(g.l, 1) + ' mil L = ' + num(g.bruto, 0) + ' m³' + (g.cortou ? ' → teto de ' + num(g.teto, 0) : '') + (g.aj !== 1 ? ' × alvo ' + num(g.aj * 100, 0) + '% = ' + num(g.alvo, 0) : '') + ' (hoje ' + num(g.hoje, 0) + ')'; }).join('\n') : '')]);
       li.push(['Projeção', o.passos.map(function (q) { return q.m + ' meses (' + num(q.f * 100, 0) + '%): ' + num(q.v, 0) + (q.pisos.length ? ' — ' + q.pisos.join(' e ') + ' mantém hoje' : ''); }).join('\n') + '\nEm cada produto, o maior entre o volume de hoje e padrão × fração; o total é a soma.']);
       li.push(['Rede', 'Último marco ' + num(o.fim, 0) + ' ÷ compras médias da rede ' + num(o.nosRede, 0) + ' m³/mês\n= ' + sinal(o.fim / o.nosRede * 100, 0) + ' sobre a rede.']);
     }
@@ -600,7 +615,7 @@
     el('expPadrao').innerHTML = '<p class="exp-pad">' + ajudaExp(PF, RP, comTeto) + 'Rampa: ' + RP.map(function (r) { return '<b>' + num(r.f * 100, 0) + '%</b> em ' + r.m; }).join(' · ') + ' meses</p>' +
       '<details class="dobra"><summary>Padrões por perfil</summary><div class="tabela"><table class="rk"><thead><tr><th>Perfil</th><th>Produto</th>' + RP.map(function (r) { return '<th class="num"' + (r === RP[0] ? ' title="Mil litros por bico por mês"' : '') + '>' + r.m + ' meses</th>'; }).join('') + '<th class="num" title="Volume máximo do posto novo: o da unidade de referência">Teto (m³)</th></tr></thead><tbody>' + Object.keys(PF).map(function (k) {
         var pf = PF[k];
-        return gs.map(function (G, i) { var x = pf.g[G[0]]; return '<tr><td>' + (i ? '' : '<b>' + esc(pf.nome) + '</b> <small class="falta">' + esc(nomes(pf.us)) + '</small>') + '</td><td>' + G[2] + '</td>' + RP.map(function (r) { return '<td class="num">' + (x ? mil(x.l * r.f) : '—') + '</td>'; }).join('') + '<td class="num">' + (x && comTeto ? num(x.teto, 0) : '—') + '</td></tr>'; }).join('');
+        return gs.map(function (G, i) { var x = pf.g[G[0]]; return '<tr><td>' + (i ? '' : '<b>' + esc(pf.nome) + '</b> <small class="falta">' + esc(pf.rot) + '</small>') + '</td><td>' + G[2] + '</td>' + RP.map(function (r) { return '<td class="num">' + (x ? mil(x.l * r.f) : '—') + '</td>'; }).join('') + '<td class="num">' + (x && comTeto ? num(x.teto, 0) : '—') + '</td></tr>'; }).join('');
       }).join('') + '</tbody></table></div><p class="nota">Mil litros por bico por mês.</p></details>';
     box.innerHTML = D.exp.candidatos.map(function (c, idx) {
       var p = postoArea(c.cnpj);
