@@ -38,26 +38,37 @@ jobs:
         with:
           node-version: 20
       - name: Baixar liquidos.zip da ANP
+        id: baixa
         run: |
           mkdir -p /tmp/anp/csv
-          for i in 1 2 3 4; do
-            curl -L --fail --retry 3 --retry-delay 10 --max-time 1500 \
-              -A 'Mozilla/5.0 (painel-estacao-operacional; GitHub Actions)' \
-              -o /tmp/anp/liquidos.zip \
-              'https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/mdpg/liquidos.zip' && break
-            echo "tentativa $i falhou; aguardando"; sleep $((i*30))
+          URL='https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/mdpg/liquidos.zip'
+          UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+          ok=0
+          # o gov.br às vezes derruba a conexão vinda dos servidores do GitHub (curl 35):
+          # alterna HTTP/1.1 e HTTP/2 e espera mais entre as tentativas
+          for i in 1 2 3 4 5 6; do
+            if [ $((i % 2)) -eq 1 ]; then V='--http1.1'; else V=''; fi
+            if curl -L --fail $V --tlsv1.2 --max-time 900 -A "$UA" -H 'Accept: application/zip,*/*' -o /tmp/anp/liquidos.zip "$URL"; then ok=1; break; fi
+            echo "tentativa $i falhou; aguardando"; sleep $((i*45))
           done
-          ls -la /tmp/anp/liquidos.zip
-          unzip -l /tmp/anp/liquidos.zip
-          unzip -o -q /tmp/anp/liquidos.zip -d /tmp/anp/csv
-          find /tmp/anp/csv -type f -printf '%s\t%p\n' | sort -k2
+          if [ "$ok" = 1 ] && unzip -tq /tmp/anp/liquidos.zip >/dev/null 2>&1; then
+            ls -la /tmp/anp/liquidos.zip
+            unzip -o -q /tmp/anp/liquidos.zip -d /tmp/anp/csv
+            find /tmp/anp/csv -type f -printf '%s\t%p\n' | sort -k2
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            # sem o arquivo da ANP o painel segue com a última base publicada; tenta de novo no próximo dia
+            echo "::warning::A ANP não respondeu nesta execução; a base anterior foi mantida."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Inspecionar (cabeçalho, valores distintos, linhas por ano)
+        if: ${{ steps.baixa.outputs.ok == 'true' }}
         run: node scripts/mercado-anp.mjs --pasta /tmp/anp/csv --inspeciona
       - name: Agregar
-        if: ${{ !inputs.inspecionar }}
+        if: ${{ steps.baixa.outputs.ok == 'true' && !inputs.inspecionar }}
         run: node scripts/mercado-anp.mjs --pasta /tmp/anp/csv --saida mercado/anp-vendas.json --desde '${{ inputs.desde || '2024-01' }}'
       - name: Publicar se mudou
-        if: ${{ !inputs.inspecionar }}
+        if: ${{ steps.baixa.outputs.ok == 'true' && !inputs.inspecionar }}
         run: |
           git add mercado/anp-vendas.json
           if git diff --cached --quiet; then echo "sem mudança"; exit 0; fi
