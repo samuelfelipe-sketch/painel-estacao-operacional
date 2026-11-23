@@ -176,7 +176,10 @@ segmento saíram).
   repartição por distribuidora vem do último mês fechado; no mês em curso os dias que faltam entram pela média do
   mesmo dia da semana nas últimas 4 semanas (`diaMes`, `calibDiario`, `fatorDiario` no `mercado.js`). Sem esse arquivo
   vale a prévia antiga (mesmo mês do ano passado × tendência de 12 meses). Atualização: o CSV precisa ser baixado do
-  painel (o link direto do arquivo ainda não foi identificado) e rodado o script; só então o dado diário avança.
+  Fonte real: Receita Dados da Sefaz-RS ("volume de combustíveis adquiridos pelos postos do RS", por isso bate com o
+  segmento revendedores da ANP), `https://receitadados.sefaz.rs.gov.br/Arquivos/CombustiveisVolumeVendas.csv`. O workflow
+  `mercado-diario.yml` baixa todo dia ~06:30 BRT e só commita quando o arquivo muda; se o site não responder, mantém o
+  anterior com um aviso (sem falhar). Mesma página tem `CombustiveisVariacaoPMPF*.csv` (preço médio por município).
 - **Mês a mês com todos os anos** (16/11/2026): a tabela da aba Evolução lista todos os meses
   desde o primeiro mês de compras, com a linha de total de cada ano (`tr.ano`) e volumes
   absolutos (TAM e compras) além das variações; no celular ficam só as variações e a fatia.

@@ -1,0 +1,55 @@
+name: Market Share — venda diária do RS
+
+# Baixa o CSV de volume diário de combustíveis adquiridos pelos postos do RS (Receita Dados da
+# Sefaz-RS, mesmo painel que a ANP cita) e regrava mercado/anp-diario.json. Roda todo dia de manhã;
+# só commita quando o arquivo muda. Se o site não responder, mantém o arquivo anterior com um aviso.
+on:
+  schedule:
+    - cron: '30 9 * * *' # 06:30 em Brasília, todo dia
+  push:
+    paths:
+      - '.github/workflows/mercado-diario.yml'
+      - 'scripts/mercado-anp-diario.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mercado-diario-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Baixar o CSV de vendas diárias
+        id: baixa
+        run: |
+          mkdir -p /tmp/dia
+          ok=0
+          for i in 1 2 3 4; do
+            if curl -L --fail --max-time 300 -A 'Mozilla/5.0 (X11; Linux x86_64) Chrome/124.0' \
+                 -o /tmp/dia/vendas.csv 'https://receitadados.sefaz.rs.gov.br/Arquivos/CombustiveisVolumeVendas.csv' \
+               && head -c 40 /tmp/dia/vendas.csv | grep -q 'Combustivel'; then ok=1; break; fi
+            echo "tentativa $i falhou; aguardando"; sleep $((i*30))
+          done
+          if [ "$ok" = 1 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::A Sefaz-RS não respondeu; o arquivo anterior foi mantido."; echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Agregar por dia
+        if: ${{ steps.baixa.outputs.ok == 'true' }}
+        run: node scripts/mercado-anp-diario.mjs --csv /tmp/dia/vendas.csv
+      - name: Publicar se mudou
+        if: ${{ steps.baixa.outputs.ok == 'true' }}
+        run: |
+          git add mercado/anp-diario.json
+          if git diff --cached --quiet; then echo "sem mudança"; exit 0; fi
+          git config user.name 'Rotina Market Share'
+          git config user.email 'noreply@estacaosapatao.com.br'
+          git commit -m 'chore: atualiza a venda diária do RS no Market Share (automático)'
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
