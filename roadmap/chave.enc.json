@@ -24,6 +24,12 @@
       "salt": "uABLuKOuKor+Zopl0sXNIg==",
       "iv": "WR40iptdEqvY5239",
       "ct": "IAN4ZkP4aD16XKJj2xxodYn9j2lb3zxB/jPPPQh0Qe8FWBMQ4iVbmOniUyExpFkaBogQ2xl8Wwr+lu1UdmTxfeiYhHNo1G/3dDDuMwirGiX+QrHVZkbAHZwmxkHdc5bZODp3FYVhXMCaAet2wZmIrTPrJepRWrVuHYgkfvN3D9YwqDTQ5EF1Hlg+Ku228texMhykFvh9a7psk3oeJbbINucfgzOcbUTv"
+    },
+    "rafael": {
+      "i": 600000,
+      "salt": "M5cxuOf9kCNu1E1YVOZ+Rg==",
+      "iv": "dpRJIsgvgdy12nYl",
+      "ct": "Yake7lUNrrl9smY1+AmdnT+0iBF4FLCOk7zb8IedWgGN6xphJwVXymg9TgAK0VZiyBBLaObTNlOaIlrBZtQBm4j69EBABBn/rFGp+e97nPdV9L94B2gbHWkiVGjgVE8bqmp5RrFbDwt7D8qEnfEkSDlC4uYTSwqYJnu3RvVDZnx39jbI/lG3JS3jNNMy4LgAtyd3jas8K2rIPgeWz3xBWZ+nz7Vw7HrF"
     }
   }
 }
