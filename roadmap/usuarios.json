@@ -71,10 +71,9 @@
    "kdf": {
     "alg": "pbkdf2-sha256",
     "i": 600000,
-    "s": "3+rfojjhxeK/IkN1jiHq8g==",
-    "h": "praqw/ldJ875BT9WQn51FNrKGpbYdvSXddRg5BI3ZRU="
-   },
-   "trocar": true
+    "s": "Mo/tY6s0MLyE+9XVkCU1Cw==",
+    "h": "m/8rSTnsVZhtbT/6iE3z1P7KEk7BPtHy50HdWAUTfxc="
+   }
   },
   {
    "id": "rafael",
