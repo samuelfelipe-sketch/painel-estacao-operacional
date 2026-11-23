@@ -284,7 +284,14 @@ snBtn.addEventListener('click',async ()=>{
     }catch(e){snDiz('Não consegui gravar ('+e.message+').',true);}
     snBtn.disabled=false;return;
   }
-  if(!token()){snDiz('Este aparelho precisa da chave de publicação para gravar a senha — fale com o administrador.',true);return;}
+  if(!token()){
+    /* o aparelho entrou sem receber a chave (leitura do cofre falhou no login, ou a sessão veio salva):
+       a senha atual digitada aqui abre o envelope da própria pessoa */
+    snBtn.disabled=true;snDiz('Preparando este aparelho…');
+    try{if(atual&&await A.confere(A.user,atual)){A.pw=atual;await window.sapataoChave.busca();}}catch(e){}
+    snBtn.disabled=false;
+    if(!token()){snDiz(atual?'Não consegui preparar este aparelho. Confira a senha atual; se estiver certa, toque em Sair, entre de novo e tente outra vez.':'Digite a senha atual.',true);return;}
+  }
   const probl=A.senhaProblema(nova,A.user);if(probl){snDiz(probl,true);return;}
   if(nova===atual){snDiz('A senha nova precisa ser diferente da atual.',true);return;}
   if(nova!==conf){snDiz('A confirmação não bate com a senha nova.',true);return;}

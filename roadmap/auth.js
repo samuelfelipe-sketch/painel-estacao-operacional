@@ -407,10 +407,19 @@
     busca: function () {
       if (!A.user || !A.pw || !window.crypto || !crypto.subtle) return Promise.resolve(false);
       if (C.token() && window.sapataoCofre.dek()) return Promise.resolve(false); /* já tem tudo */
-      return fetch(KEY_URL + '?ref=main&t=' + Date.now(), { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' })
-        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-        .then(function (j) {
-          var doc = JSON.parse(b64dec(j.content));
+      /* a API do GitHub sem token aceita poucas leituras por hora POR REDE (o escritório inteiro
+         divide a cota): se ela recusar, o cofre é lido pelo endereço de arquivos, que não tem essa cota */
+      var leCofre = function () {
+        return fetch(KEY_URL + '?ref=main&t=' + Date.now(), { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' })
+          .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+          .then(function (j) { return JSON.parse(b64dec(j.content)); })
+          .catch(function () {
+            return fetch(RAW_BASE + 'roadmap/chave.enc.json?t=' + Date.now(), { cache: 'no-store' })
+              .then(function (r) { if (!r.ok) throw 0; return r.json(); });
+          });
+      };
+      return leCofre()
+        .then(function (doc) {
           var envs = [];
           if (doc.v === 2 && doc.envelopes) {
             if (doc.envelopes[A.user.id]) envs.push(doc.envelopes[A.user.id]);
