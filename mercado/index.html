@@ -355,15 +355,15 @@ html,body{overflow-anchor:none} /* quem segura a tela no lugar ao trocar uma op�
 var CACHE_S='sapatao-mercado-v1', CACHE_A='sapatao-mercado-anp-v1';
 var REPO='https://raw.githubusercontent.com/samuelfelipe-sketch/painel-estacao-operacional/main/mercado/';
 var API='https://api.github.com/repos/samuelfelipe-sketch/painel-estacao-operacional/contents/mercado/';
-var abriu=false, ANP=null, SAP=null, RAIO=null, EST=null, EXP=null, REGIAO=null, FROTA=null;
+var abriu=false, DIA=null, ANP=null, SAP=null, RAIO=null, EST=null, EXP=null, REGIAO=null, FROTA=null;
 function mostra(){
   if(!ANP||!SAP)return;
-  window.DADOS_MERCADO={anp:ANP,sapatao:SAP,raio:RAIO,estim:EST,exp:EXP,regiao:REGIAO,frota:FROTA};
+  window.DADOS_MERCADO={diario:DIA,anp:ANP,sapatao:SAP,raio:RAIO,estim:EST,exp:EXP,regiao:REGIAO,frota:FROTA};
   if(abriu){ if(window.renderMercado)window.renderMercado(window.DADOS_MERCADO); return; }
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=33';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=34';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){
@@ -388,6 +388,7 @@ async function carrega(){
     var ca=JSON.parse(localStorage.getItem(CACHE_A)||'null'); if(ca&&ca.dados)ANP=ca;
     var cs=JSON.parse(localStorage.getItem(CACHE_S)||'null'); if(cs){var d=await decifraDoc(cs); if(d)SAP=d;}
     RAIO=JSON.parse(localStorage.getItem(CACHE_A+'-raio')||'null');
+    DIA=JSON.parse(localStorage.getItem(CACHE_A+'-dia')||'null');
     REGIAO=JSON.parse(localStorage.getItem(CACHE_A+'-regiao')||'null'); FROTA=JSON.parse(localStorage.getItem(CACHE_A+'-frota')||'null');
     var cx=JSON.parse(localStorage.getItem(CACHE_S+'-exp')||'null'); if(cx){var dx=await decifraDoc(cx); if(dx)EXP=dx;}
     var ce=JSON.parse(localStorage.getItem(CACHE_S+'-est')||'null'); if(ce){var de=await decifraDoc(ce); if(de)EST=de;}
@@ -395,13 +396,14 @@ async function carrega(){
   }catch(e){}
   /* 2) rede: o que mudou manda */
   try{
-    var [anp,sap,raio,est,exp,regiao,frota]=await Promise.all([pega('anp-vendas.json'),pega('sapatao.enc.json'),pega('postos-raio.json'),pega('estimativas.enc.json'),pega('expansao.enc.json'),pega('regiao.json'),pega('frota.json')]);
+    var [anp,sap,raio,est,exp,regiao,frota,dia]=await Promise.all([pega('anp-vendas.json'),pega('sapatao.enc.json'),pega('postos-raio.json'),pega('estimativas.enc.json'),pega('expansao.enc.json'),pega('regiao.json'),pega('frota.json'),pega('anp-diario.json')]);
     if(!anp&&!ANP){falha(' A base da ANP ainda não foi publicada (o workflow "Market Share — base ANP" grava mercado/anp-vendas.json).');return;}
     if(!sap&&!SAP){falha(' Os volumes do Sapatão ainda não foram publicados (scripts/mercado-sapatao.mjs).');return;}
     var mudou=false;
     if(anp&&JSON.stringify(anp)!==JSON.stringify(ANP)){ANP=anp;mudou=true;try{localStorage.setItem(CACHE_A,JSON.stringify(anp));}catch(e){}}
     if(raio&&raio.v>=2&&JSON.stringify(raio)!==JSON.stringify(RAIO)){RAIO=raio;mudou=true;try{localStorage.setItem(CACHE_A+'-raio',JSON.stringify(raio));}catch(e){}}
     if(regiao&&JSON.stringify(regiao)!==JSON.stringify(REGIAO)){REGIAO=regiao;mudou=true;try{localStorage.setItem(CACHE_A+'-regiao',JSON.stringify(regiao));}catch(e){}}
+    if(dia&&dia.dias&&JSON.stringify(dia)!==JSON.stringify(DIA)){DIA=dia;mudou=true;try{localStorage.setItem(CACHE_A+'-dia',JSON.stringify(dia));}catch(e){}}
     if(frota&&JSON.stringify(frota)!==JSON.stringify(FROTA)){FROTA=frota;mudou=true;try{localStorage.setItem(CACHE_A+'-frota',JSON.stringify(frota));}catch(e){}}
     if(exp&&exp.enc===1){var cx2=null;try{cx2=JSON.parse(localStorage.getItem(CACHE_S+'-exp')||'null');}catch(e){}
       if(!cx2||cx2.ct!==exp.ct){var dx2=await decifraDoc(exp);if(dx2){EXP=dx2;mudou=true;try{localStorage.setItem(CACHE_S+'-exp',JSON.stringify(exp));}catch(e){}}}}

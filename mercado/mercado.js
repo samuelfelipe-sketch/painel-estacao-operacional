@@ -83,6 +83,34 @@
     }
     return (memo[k] = n >= 3 && b > 0 ? { f: a / b, n: n } : null);
   }
+  /* ---- venda diária no RS (ANP, painel "Volume de Vendas RS"; mercado/anp-diario.json) ----
+     Cobre o mês que a ANP ainda não fechou. Dias que faltam no mês corrente entram pela média do mesmo
+     dia da semana nas últimas 4 semanas. Calibração = razão entre o fechamento mensal da ANP (postos) e
+     a soma diária, média dos últimos 12 meses fechados (erro medido contra meses fechados: cerca de 1%). */
+  function diaMes(ym, g) {
+    var DD = D.diario && D.diario.dias; if (!DD) return null;
+    var n = ultimoDia(ym), s = 0, tem = 0, ult = null, d, k;
+    for (d = 1; d <= n; d++) { k = ym + '-' + String(d).padStart(2, '0'); if (DD[k]) { s += DD[k][g]; tem++; ult = d; } }
+    if (!tem) return null;
+    if (tem < n) {
+      var med = {}, ct = {}, base = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1, ult);
+      for (var b = 0; b < 28; b++) { var dt = new Date(base.getTime() - b * 864e5), kk = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); if (DD[kk]) { var w = dt.getDay(); med[w] = (med[w] || 0) + DD[kk][g]; ct[w] = (ct[w] || 0) + 1; } }
+      for (d = ult + 1; d <= n; d++) { var w2 = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1, d).getDay(); if (!ct[w2]) return null; s += med[w2] / ct[w2]; }
+    }
+    return s;
+  }
+  function calibDiario(g) {
+    var k = 'cal|' + g; if (k in memo) return memo[k];
+    var ms = fechadosAnp().slice(-12), a = 0, b = 0, n = 0;
+    ms.forEach(function (m) { var dm = diaMes(m, g), x = mktReal(m, 'rev', g ? 'diesel' : 'otto'); if (dm && x && ultimoDia(m) && D.diario.dias[m + '-' + String(ultimoDia(m)).padStart(2, '0')]) { a += x.Total * 1000; b += dm; n++; } });
+    return (memo[k] = n >= 6 && b > 0 ? a / b : null);
+  }
+  /* fator pelo qual a repartição do último mês fechado é multiplicada para chegar ao mês ym; null sem dado diário */
+  function fatorDiario(ym, prod, ultFechado) {
+    var g = prod === 'otto' ? 0 : prod === 'diesel' ? 1 : -1; if (g < 0 || !D.diario) return null;
+    var dm = diaMes(ym, g), c = calibDiario(g), ult = mktReal(ultFechado, 'rev', prod);
+    return dm && c && ult && ult.Total > 0 ? dm * c / 1000 / ult.Total : null;
+  }
   function mktP(ym, seg, prod) {
     seg = seg || 'rev'; prod = prod || st.prod;
     var k = ym + '|' + seg + '|' + prod; if (k in memo) return memo[k];
@@ -92,10 +120,14 @@
       if (ult && ym > ult && ym <= shiftMes(ult, 6)) {
         if (prod === 'tot') {
           var o = mktP(ym, seg, 'otto'), d = mktP(ym, seg, 'diesel');
-          if (o && d) { r = { _prev: true }; Object.keys(o).forEach(function (kk) { if (kk !== '_prev') r[kk] = (o[kk] || 0) + (d[kk] || 0); }); }
+          if (o && d) { r = { _prev: true }; if (o._dia && d._dia) r._dia = true; Object.keys(o).forEach(function (kk) { if (kk !== '_prev' && kk !== '_dia') r[kk] = (o[kk] || 0) + (d[kk] || 0); }); }
         } else {
           var a = mktReal(anoAnt(ym), seg, prod), t = tendencia(seg, prod), fs = fechadosAnp(), mix = mktReal(fs[fs.length - 1], seg, prod);
-          if (a && t && a.Total > 0) {
+          var kd = fatorDiario(ym, prod, fs[fs.length - 1]);
+          if (kd && mix) {
+            /* mês sem fechamento da ANP, mas com a venda diária do RS: total do dia a dia × calibração, repartição do último mês fechado */
+            r = { _prev: true, _dia: true }; Object.keys(mix).forEach(function (kk) { r[kk] = mix[kk] * kd; });
+          } else if (a && t && a.Total > 0) {
             var total = a.Total * t.f, base = mix && mix.Total > 0 ? mix : a, fx = total / base.Total;
             r = { _prev: true }; Object.keys(base).forEach(function (kk) { r[kk] = base[kk] * fx; });
           }
@@ -259,7 +291,9 @@
     c.push('<span class="chip">ANP até <b>' + (ultA ? mesLbl(ultA) : '—') + '</b> · compras até <b>' + (cob ? cob.slice(8) + '/' + cob.slice(5, 7) : ult ? mesLbl(ult) : '—') + '</b></span>');
     if (st.per !== 'mes') c.push('<span class="chip"><b>' + perLbl(st.mes) + '</b></span>');
     var meses = mesesValidos(), prev = meses.filter(ehPrevia), curso = meses.filter(sapParcial);
-    if (prev.length) c.push('<span class="chip alerta" title="A ANP ainda não publicou: mesmo mês do ano passado × crescimento médio dos últimos 12 meses">Prévia: mercado de ' + prev.map(mesLbl).join(', ') + ' projetado</span>');
+    var pDia = prev.filter(function (m) { var x = mktP(m, 'rev'); return x && x._dia; }), pFor = prev.filter(function (m) { return pDia.indexOf(m) < 0; });
+    if (pDia.length) c.push('<span class="chip alerta" title="A ANP ainda não fechou o mês: usamos a venda diária do RS publicada por ela (calibrada com os últimos 12 meses fechados). O mês em curso completa os dias que faltam pela média do mesmo dia da semana.">Mercado de ' + pDia.map(mesLbl).join(', ') + ' pela venda diária da ANP</span>');
+    if (pFor.length) c.push('<span class="chip alerta" title="A ANP ainda não publicou: mesmo mês do ano passado × crescimento médio dos últimos 12 meses">Prévia: mercado de ' + pFor.map(mesLbl).join(', ') + ' projetado</span>');
     if (curso.length) c.push('<span class="chip alerta" title="Compras até o último dia lançado, projetadas pelo ritmo para o mês inteiro">' + curso.map(mesLbl).join(', ') + ' em curso (até dia ' + sapMes(curso[0]).cobertura.ate.slice(8) + ')</span>');
     meses.filter(function (m) { return !ehPrevia(m) && anpParcial(m); }).forEach(function (m) { c.push('<span class="chip alerta">ANP ainda fechando ' + mesLbl(m) + '</span>'); });
     el('chips').innerHTML = c.join('');
@@ -461,7 +495,7 @@
   }
 
   /* ---------- aba Bandeiras (apoio à negociação) ---------- */
-  function mktSoma(ms, seg) { var M = null; ms.forEach(function (m) { var x = mktP(m, seg); if (!x) return; M = M || {}; Object.keys(x).forEach(function (k) { if (k !== '_prev') M[k] = (M[k] || 0) + x[k]; }); }); return M; }
+  function mktSoma(ms, seg) { var M = null; ms.forEach(function (m) { var x = mktP(m, seg); if (!x) return; M = M || {}; Object.keys(x).forEach(function (k) { if (k !== '_prev' && k !== '_dia') M[k] = (M[k] || 0) + x[k]; }); }); return M; }
   function bandeiras() {
     var meses = mesesValidos(), base = meses.map(anoAnt), us = unSel(), baseTxt = perLbl(anoAnt(st.mes));
     var temBase = meses.length > 0 && base.every(function (m) { return mktReal(m, 'rev') && sapMes(m); });

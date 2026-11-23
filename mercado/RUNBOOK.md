@@ -168,6 +168,15 @@ segmento saíram).
   Cada ficha tem também o seu "?" (`ajudaPosto()`), com a conta DAQUELE posto e os números dele
   (bicos × padrão, teto, marcos da rampa, posição na área, SOM, município); segue o filtro de produto
   e período.
+- **Venda diária da ANP** (23/11/2026, `mercado/anp-diario.json`, público): vendas diárias de gasolina C + etanol
+  (otto) e diesel S10 + S500 no RS, do painel dinâmico de preços da ANP ("Volume de Vendas RS"), em m³ por dia,
+  desde 2024-01. Gerado por `node scripts/mercado-anp-diario.mjs --csv <CombustiveisVolumeVendas.csv>`. Serve ao mês
+  que a ANP ainda não fechou: o TAM sai do total diário × calibração (razão entre o fechamento mensal de
+  revendedores e a soma diária, média dos 12 últimos meses fechados; erro medido contra meses fechados ≈ 1%) e a
+  repartição por distribuidora vem do último mês fechado; no mês em curso os dias que faltam entram pela média do
+  mesmo dia da semana nas últimas 4 semanas (`diaMes`, `calibDiario`, `fatorDiario` no `mercado.js`). Sem esse arquivo
+  vale a prévia antiga (mesmo mês do ano passado × tendência de 12 meses). Atualização: o CSV precisa ser baixado do
+  painel (o link direto do arquivo ainda não foi identificado) e rodado o script; só então o dado diário avança.
 - **Mês a mês com todos os anos** (16/11/2026): a tabela da aba Evolução lista todos os meses
   desde o primeiro mês de compras, com a linha de total de cada ano (`tr.ano`) e volumes
   absolutos (TAM e compras) além das variações; no celular ficam só as variações e a fatia.
