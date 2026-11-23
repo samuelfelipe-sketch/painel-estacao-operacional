@@ -51,10 +51,9 @@
    "kdf": {
     "alg": "pbkdf2-sha256",
     "i": 600000,
-    "s": "RiSO9wFIV9mL8ils5YVUww==",
-    "h": "uwe58aaxf0lrHpVQNm+beA+RRQSG431D7gupKbQfVkc="
-   },
-   "trocar": true
+    "s": "Z0kdZzikWftY4u7uoQEjfw==",
+    "h": "sy+5E4kdR98W+SJTaXc/kNZWfYr+Onbo1a8iQzRPHgs="
+   }
   },
   {
    "id": "sonia",
