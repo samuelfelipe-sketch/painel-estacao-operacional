@@ -33,10 +33,9 @@
    "kdf": {
     "alg": "pbkdf2-sha256",
     "i": 600000,
-    "s": "aZdH93EOHOFr4iCJIsrmDQ==",
-    "h": "5gZX7rd4kmhp+f9L/FLKE/i15iP58EcDAzSsP0kJVyM="
-   },
-   "trocar": true
+    "s": "YYFZPQGoi5ZFz7hGmEP4gw==",
+    "h": "wzGYbRFjcFDhylQW5oLtmUE/qjBP48A8sgs4XRUEuYI="
+   }
   },
   {
    "id": "gabi",
