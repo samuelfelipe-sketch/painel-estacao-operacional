@@ -70,8 +70,8 @@ function decifra(doc, k) {
   return JSON.parse(pt.toString('utf8'));
 }
 
-/* produto do Argo → família do painel */
-const FAMILIA = { GC: 'gasolina', GA: 'gasolina', VP: 'gasolina', ET: 'etanol', DS: 'diesel', DC: 'diesel', S10: 'diesel', S500: 'diesel', GASOLINA: 'gasolina', ETANOL: 'etanol', DIESEL: 'diesel' };
+/* produto do Argo → família do painel (DSA = diesel S10 aditivado Evolux, comprado pela PS desde 08/2023: entra como diesel) */
+const FAMILIA = { GC: 'gasolina', GA: 'gasolina', VP: 'gasolina', ET: 'etanol', DS: 'diesel', DC: 'diesel', DSA: 'diesel', S10: 'diesel', S500: 'diesel', GASOLINA: 'gasolina', ETANOL: 'etanol', DIESEL: 'diesel' };
 const r3 = x => Math.round(x * 1000) / 1000;
 function vazio() { return { otto: 0, gasolina: 0, etanol: 0, diesel: 0 }; }
 function somaProduto(acc, cod, litros) {
