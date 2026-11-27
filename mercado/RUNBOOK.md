@@ -91,7 +91,9 @@ em 04/11, notas que mudam de dia entre 31/10 e 01/11). Por isso o mês anterior 
 **Histórico e fechamento pelo PDF do Argo:** o "Relatório de Compra de Combustíveis"
 em PDF (Tipo Completo, qualquer período, todas as unidades) é a fonte mais completa.
 Carregado em 24/10/2026 o período 01/01/2025 → 30/09/2026 (jul–set/26 trocados pela
-versão do PDF). Passos, tudo fora do repositório:
+versão do PDF). Em 27/11/2026 entrou o PDF de 01/01/2020 a 31/12/2024 (SF desde 2020, PS desde 25/02/2022,
+AS só em 2026), 60 meses novos sem alterar nenhum de 2025 em diante; `compras-pdf.mjs` passou a ler também item
+com descrição comprida encostada na coluna das notas (ex.: GNV). Passos, tudo fora do repositório:
 ```
 pdftotext -layout relatorio.pdf /tmp/ms/rel.txt
 node scripts/compras-pdf.mjs --txt /tmp/ms/rel.txt --saida /tmp/ms/compras-pdf.csv

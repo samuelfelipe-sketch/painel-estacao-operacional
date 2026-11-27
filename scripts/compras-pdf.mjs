@@ -26,6 +26,8 @@ const N = '(-?[\\d.]+,\\d+)';
 const RE_UNI = /^\s*(\d+) - (.+?) \| CNPJ:/;
 const RE_DATA = /^\s+(\d{2}\/\d{2}\/\d{4})\s*$/;
 const RE_ITEM = new RegExp(`^\\s{4,}([A-Z0-9]{1,4} - .+?)\\s{2,}(\\S.*?)\\s{2,}${N}\\s+${N}\\s+${N}\\s+${N}\\s+${N}\\s*$`);
+/* descrição comprida encosta na coluna das notas (um espaço só, ex.: "GNV - GÁS NATURAL 163710/1"): leitura de reserva */
+const RE_ITEM2 = new RegExp(`^\\s{4,}([A-Z0-9]{1,4} - .+?)\\s(\\d+/\\d+.*?)\\s{2,}${N}\\s+${N}\\s+${N}\\s+${N}\\s+${N}\\s*$`);
 const RE_CODIGO = /^\s{4,}[A-Z0-9]{1,4} - /;
 const RE_TOT = new RegExp(`^\\s+Total:\\s+${N}\\s+${N}\\s+${N}\\s*$`);
 const RE_TUNI = new RegExp(`^\\s+Total Unidade de Negócio:\\s+${N}\\s+${N}\\s+${N}\\s*$`);
@@ -42,7 +44,7 @@ for (let i = 0; i < linhas.length; i++) {
   let m;
   if ((m = RE_UNI.exec(l))) { if (uni !== m[1]) { uni = m[1]; razao = m[2].trim(); } ult = null; continue; }
   if ((m = RE_DATA.exec(l))) { if (data !== m[1]) { data = m[1]; } ult = null; continue; }
-  if ((m = RE_ITEM.exec(l))) {
+  if ((m = RE_ITEM.exec(l) || RE_ITEM2.exec(l))) {
     if (!uni || !data) falha(`item sem unidade/data na linha ${i + 1}.`);
     const it = { uni, razao, data, desc: m[1].trim(), notas: m[2].trim(), q: m[3], pc: m[4], tc: m[5], ce: m[6], te: m[7] };
     itens.push(it); ult = it;
