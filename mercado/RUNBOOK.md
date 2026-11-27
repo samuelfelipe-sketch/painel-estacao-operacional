@@ -10,7 +10,7 @@ segmento (posto revendedor, só bandeirados, todos os segmentos).
 
 | Arquivo | Conteúdo | Sensível? | Quem grava |
 |---|---|---|---|
-| `mercado/anp-vendas.json` | mercado agregado por recorte × mês × segmento × produto × distribuidora (mil m³), desde 2024-01 | não (dado público da ANP) | workflow `mercado-anp.yml` |
+| `mercado/anp-vendas.json` | mercado agregado por recorte × mês × segmento × produto × distribuidora (mil m³), desde 2020-01 | não (dado público da ANP) | workflow `mercado-anp.yml` |
 | `mercado/sapatao.enc.json` | compras do Sapatão por mês × bandeira × produto (m³) — **CIFRADO** com a chave dos dados | **sim** | `scripts/mercado-sapatao.mjs` |
 | `mercado/regiao-raio.json` | por unidade: CNPJ, coordenada (link do Google Maps), raio/trecho/corredor e a **lista de concorrentes escolhida pelo Samuel** (`concorrentes`) + `descartados` | não (dado público) | à mão, quando o Samuel reclassifica |
 | `mercado/expansao.enc.json` | postos em avaliação para entrar na rede (CNPJ, apelido, área por raio ou a área de uma unidade nossa) — **CIFRADO**; a lista de alvos é estratégica e nunca aparece em claro, nem em commit ou log | **sim** | `scripts/mercado-expansao.mjs grava --json <arquivo fora do repo>` |
@@ -145,7 +145,7 @@ segmento saíram).
   um ano antes), por segmento e grupo de produto (`tendencia()` e `mktP` no `mercado.js`, até 6
   meses à frente; mínimo de 3 meses comparáveis). Não parte mais do último mês fechado, que
   sozinho pode ser atípico. A repartição entre distribuidoras segue o último mês fechado. Por
-  isso a base da ANP começa em 2024-01 (`--desde` do `mercado-anp.mjs`). No teste contra os meses
+  isso a base da ANP começa em 2020-01 desde 27/11/2026 (antes 2024-01; `--desde` do `mercado-anp.mjs`). No teste contra os meses
   já publicados a regra nova errou menos que a antiga. Mês em curso = compras até o dia coberto
   × dias do mês ÷ dias cobertos. Tudo o que é prévia leva o selo PRÉVIA e some quando a ANP
   publica. O mês padrão ao abrir é o último com compras fechadas (publicado ou prévia).
@@ -170,12 +170,12 @@ segmento saíram).
   e período.
 - **Base mensal da ANP por tarefa agendada** (27/11/2026): o gov.br recusa com frequência as conexões do GitHub
   (curl 35), então a tarefa agendada "Market Share — base ANP (vendas mensais) diária" (~04:12 BRT, ambiente Default
-  com `www.gov.br` em `allowed_hosts`) baixa o `liquidos.zip` daqui, roda `mercado-anp.mjs --desde 2024-01` e só commita
+  com `www.gov.br` em `allowed_hosts`) baixa o `liquidos.zip` daqui, roda `mercado-anp.mjs --desde 2020-01` e só commita
   se mudou. O workflow `mercado-anp.yml` segue como reserva (agora não falha quando o gov.br não responde). Se a tarefa
   disser que o host está bloqueado, conferir `allowed_hosts` do ambiente (Edit do ambiente na barra de título).
 - **Venda diária da ANP** (23/11/2026, `mercado/anp-diario.json`, público): vendas diárias de gasolina C + etanol
   (otto) e diesel S10 + S500 no RS, do painel dinâmico de preços da ANP ("Volume de Vendas RS"), em m³ por dia,
-  desde 2024-01. Gerado por `node scripts/mercado-anp-diario.mjs --csv <CombustiveisVolumeVendas.csv>`. Serve ao mês
+  desde 2020-01. Gerado por `node scripts/mercado-anp-diario.mjs --csv <CombustiveisVolumeVendas.csv>`. Serve ao mês
   que a ANP ainda não fechou: o TAM sai do total diário × calibração (razão entre o fechamento mensal de
   revendedores e a soma diária, média dos 12 últimos meses fechados; erro medido contra meses fechados ≈ 1%) e a
   repartição por distribuidora vem do último mês fechado; no mês em curso os dias que faltam entram pela média do

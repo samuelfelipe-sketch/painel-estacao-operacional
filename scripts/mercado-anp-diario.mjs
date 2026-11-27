@@ -5,7 +5,7 @@
    Uso: node scripts/mercado-anp-diario.mjs --csv <arquivo.csv> [--desde 2024-01-01] */
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 const args = process.argv.slice(2), opt = n => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : null; };
-const csv = opt('csv'), desde = opt('desde') || '2024-01-01';
+const csv = opt('csv'), desde = opt('desde') || '2020-01-01';
 if (!csv) { console.error('uso: --csv <arquivo>'); process.exit(1); }
 const dia = {};
 let lidas = 0;

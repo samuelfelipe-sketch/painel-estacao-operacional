@@ -14,7 +14,7 @@
      UF Destino; Mercado Destinatario; Quantidade de Produto (mil m3)
 
    Uso:
-     node scripts/mercado-anp.mjs --pasta <dir com os CSVs> [--saida mercado/anp-vendas.json] [--desde 2024-01]
+     node scripts/mercado-anp.mjs --pasta <dir com os CSVs> [--saida mercado/anp-vendas.json] [--desde 2020-01]
      node scripts/mercado-anp.mjs --pasta <dir> --inspeciona      → só descreve os arquivos (cabeçalho, valores distintos, linhas por ano)
 
    Saída: por escopo (RS, SUL, BR) × mês × segmento (rev = posto revendedor,
@@ -33,7 +33,7 @@ function falha(m) { console.error('ERRO: ' + m); process.exit(1); }
 
 const pasta = opt('pasta'); if (!pasta) falha('informe --pasta <diretório com os CSVs da ANP>.');
 const saida = resolve(opt('saida', 'mercado/anp-vendas.json'));
-const desde = opt('desde', '2024-01');
+const desde = opt('desde', '2020-01');
 const inspeciona = flag('inspeciona');
 const TOP = 12; /* distribuidoras nomeadas por escopo; o resto vira "Outras" */
 
@@ -225,11 +225,14 @@ const r3 = x => Math.round(x * 1000) / 1000;
 /* distribuidoras nomeadas por escopo: as maiores no segmento revendedor, somando o período */
 const nomeadas = {};
 for (const e of ESCOPOS) {
+  /* ranking pelos 24 últimos meses (não pelo período todo): ampliar o histórico para trás não troca quem aparece com nome */
+  const recentes = new Set([...new Set([...cel.keys()].map(k => k.split('|')[1]))].sort().slice(-24));
   const tot = new Map();
-  for (const [k, m] of cel) { const [esc, , s, p] = k.split('|'); if (esc !== e || s !== 'rev' || p !== 'otto') continue; for (const [d, v] of m) tot.set(d, (tot.get(d) || 0) + v); }
-  for (const [k, m] of cel) { const [esc, , s, p] = k.split('|'); if (esc !== e || s !== 'rev' || p !== 'diesel') continue; for (const [d, v] of m) tot.set(d, (tot.get(d) || 0) + v); }
+  for (const [k, m] of cel) { const [esc, ym, s, p] = k.split('|'); if (esc !== e || s !== 'rev' || p !== 'otto' || !recentes.has(ym)) continue; for (const [d, v] of m) tot.set(d, (tot.get(d) || 0) + v); }
+  for (const [k, m] of cel) { const [esc, ym, s, p] = k.split('|'); if (esc !== e || s !== 'rev' || p !== 'diesel' || !recentes.has(ym)) continue; for (const [d, v] of m) tot.set(d, (tot.get(d) || 0) + v); }
   const ordem = [...tot.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0]);
-  const fixas = ['Raízen', 'Ipiranga', 'Vibra'];
+  /* nomes que o painel usa para a média por posto de cada bandeira (BAND_ANP do mercado.js) ficam sempre nomeados */
+  const fixas = ['Raízen', 'Ipiranga', 'Vibra', 'Rodoil', 'Charrua', 'Potencial', 'Santa Lucia', 'Stang', 'Ciapetro'];
   nomeadas[e] = [...new Set([...fixas, ...ordem])].slice(0, TOP);
 }
 

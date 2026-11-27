@@ -20,7 +20,7 @@ on:
       desde:
         description: 'Primeiro mês da série (AAAA-MM)'
         type: string
-        default: '2024-01'
+        default: '2020-01'
 
 permissions:
   contents: write
@@ -66,7 +66,7 @@ jobs:
         run: node scripts/mercado-anp.mjs --pasta /tmp/anp/csv --inspeciona
       - name: Agregar
         if: ${{ steps.baixa.outputs.ok == 'true' && !inputs.inspecionar }}
-        run: node scripts/mercado-anp.mjs --pasta /tmp/anp/csv --saida mercado/anp-vendas.json --desde '${{ inputs.desde || '2024-01' }}'
+        run: node scripts/mercado-anp.mjs --pasta /tmp/anp/csv --saida mercado/anp-vendas.json --desde '${{ inputs.desde || '2020-01' }}'
       - name: Publicar se mudou
         if: ${{ steps.baixa.outputs.ok == 'true' && !inputs.inspecionar }}
         run: |
