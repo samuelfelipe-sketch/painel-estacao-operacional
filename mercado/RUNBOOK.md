@@ -168,6 +168,11 @@ segmento saíram).
   Cada ficha tem também o seu "?" (`ajudaPosto()`), com a conta DAQUELE posto e os números dele
   (bicos × padrão, teto, marcos da rampa, posição na área, SOM, município); segue o filtro de produto
   e período.
+- **Base mensal da ANP por tarefa agendada** (27/11/2026): o gov.br recusa com frequência as conexões do GitHub
+  (curl 35), então a tarefa agendada "Market Share — base ANP (vendas mensais) diária" (~04:12 BRT, ambiente Default
+  com `www.gov.br` em `allowed_hosts`) baixa o `liquidos.zip` daqui, roda `mercado-anp.mjs --desde 2024-01` e só commita
+  se mudou. O workflow `mercado-anp.yml` segue como reserva (agora não falha quando o gov.br não responde). Se a tarefa
+  disser que o host está bloqueado, conferir `allowed_hosts` do ambiente (Edit do ambiente na barra de título).
 - **Venda diária da ANP** (23/11/2026, `mercado/anp-diario.json`, público): vendas diárias de gasolina C + etanol
   (otto) e diesel S10 + S500 no RS, do painel dinâmico de preços da ANP ("Volume de Vendas RS"), em m³ por dia,
   desde 2024-01. Gerado por `node scripts/mercado-anp-diario.mjs --csv <CombustiveisVolumeVendas.csv>`. Serve ao mês
