@@ -190,6 +190,9 @@ segmento saíram).
   segmento revendedores da ANP), `https://receitadados.sefaz.rs.gov.br/Arquivos/CombustiveisVolumeVendas.csv`. O workflow
   `mercado-diario.yml` baixa todo dia ~06:30 BRT e só commita quando o arquivo muda; se o site não responder, mantém o
   anterior com um aviso (sem falhar). Mesma página tem `CombustiveisVariacaoPMPF*.csv` (preço médio por município).
+- **Ano a ano** (27/11/2026, aba Evolução, antes da tabela mensal): barras do crescimento do mercado (TAM) e do
+  Sapatão nas mesmas unidades contra o ano anterior, com o SOM de cada ano embaixo (`graficoAno`); o ano em curso leva
+  asterisco e cor mais clara (período parcial); segue o filtro de produto e de unidade.
 - **Mês a mês com todos os anos** (16/11/2026): a tabela da aba Evolução lista todos os meses
   desde o primeiro mês de compras, com a linha de total de cada ano (`tr.ano`) e volumes
   absolutos (TAM e compras) além das variações; no celular ficam só as variações e a fatia.

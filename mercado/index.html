@@ -284,6 +284,10 @@ html,body{overflow-anchor:none} /* quem segura a tela no lugar ao trocar uma op�
     <p class="nota" id="n-evo"></p>
     <div class="legenda" id="legEvo"></div>
     <div class="chartbox"><svg id="cEvo" role="img" aria-label="SOM de cada unidade por mês"></svg><div class="tip" id="tipEvo" hidden></div></div>
+    <h2 style="margin-top:26px">Ano a ano: nós × mercado</h2>
+    <p class="nota" id="n-ano"></p>
+    <div class="legenda" id="legAno"></div>
+    <div class="chartbox"><svg id="cAno" role="img" aria-label="Crescimento do mercado e do Sapatão por ano, com o SOM de cada ano"></svg></div>
     <h2 style="margin-top:26px">Crescemos mais que o mercado?</h2>
     <p class="nota" id="n-evoT"></p>
     <div class="tabela"><table id="tEvo"><thead></thead><tbody></tbody></table></div>
@@ -363,7 +367,7 @@ function mostra(){
   abriu=true;
   document.getElementById('carregando').hidden=true;
   document.getElementById('app').hidden=false;
-  var s=document.createElement('script');s.src='mercado.js?v=34';document.body.appendChild(s);
+  var s=document.createElement('script');s.src='mercado.js?v=35';document.body.appendChild(s);
 }
 function falha(msg){if(!abriu)document.getElementById('carregando').innerHTML='<b>Não foi possível abrir o painel</b>'+msg;}
 async function decifraDoc(doc){

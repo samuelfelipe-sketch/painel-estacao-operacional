@@ -437,6 +437,42 @@
     svg.onmousemove = mostra; svg.onclick = mostra;
     svg.onmouseleave = function () { tip.hidden = true; };
   }
+  /* Ano a ano (pedido de 27/11/2026): barras do crescimento do mercado (TAM) e do Sapatão nas mesmas unidades
+     contra o ano anterior, e o SOM de cada ano embaixo. O ano em curso é parcial: compara o mesmo período. */
+  function graficoAno(anos, us) {
+    var svg = el('cAno'), ys = Object.keys(anos).sort(), dados = [];
+    ys.forEach(function (a) {
+      var ms = anos[a], base = ms.map(anoAnt), tam = tamDe(ms), n = nosDe(ms, us);
+      var tamA = base.every(function (b) { return mktReal(b, 'rev'); }) ? tamDe(base) : null, nA = base.every(sapMes) ? nosDe(base, us) : null;
+      var mesmas = nA != null ? us.filter(function (u) { return nosDe(base, [u]) > 0 && nosDe(ms, [u]) > 0; }) : [];
+      var gM = mesmas.length ? cresc(nosDe(base, mesmas), nosDe(ms, mesmas)) : null;
+      var som = temRaio() ? calc(ms, us, uniao(us)) : null;
+      dados.push({ a: a, parcial: ms.some(function (m) { return ehPrevia(m) || sapParcial(m); }), parte: ms.length < 12, gT: cresc(tamA, tam), gM: gM, som: som ? som.som : null });
+    });
+    el('n-ano').textContent = 'Crescimento contra o ano anterior (' + (todasUn() ? 'unidades que já existiam' : 'seleção') + ') e SOM de cada ano.';
+    el('legAno').innerHTML = '<span><i style="background:#9AA8BA"></i>Mercado (TAM)</span><span><i style="background:#004438"></i>' + esc(quem()) + '</span>';
+    var com = dados.filter(function (d) { return d.gT != null || d.gM != null; });
+    if (!dados.length) { svg.setAttribute('viewBox', '0 0 640 60'); svg.innerHTML = '<text x="320" y="36" text-anchor="middle">Sem dados.</text>'; return; }
+    var W = 680, H = 270, L = 40, Rg = 12, T = 22, B = 56, mn = 0, mx = 0;
+    com.forEach(function (d) { [d.gT, d.gM].forEach(function (v) { if (v != null) { mn = Math.min(mn, v); mx = Math.max(mx, v); } }); });
+    var passo = Math.max(5, Math.ceil(Math.max(mx, -mn) / 3 / 5) * 5); mx = Math.ceil(mx / passo) * passo || passo; mn = Math.floor(mn / passo) * passo;
+    var y = function (v) { return T + (H - T - B) * (1 - (v - mn) / (mx - mn)); }, n = dados.length, larg = (W - L - Rg) / n, g = '', i;
+    for (var v = mn; v <= mx + 0.001; v += passo) g += '<line x1="' + L + '" x2="' + (W - Rg) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="' + (v === 0 ? '#D4DAE3' : '#EEF1F5') + '"/><text x="' + (L - 6) + '" y="' + (y(v) + 4).toFixed(1) + '" text-anchor="end">' + (v > 0 ? '+' : '') + v + '%</text>';
+    var barras = '', rot = '';
+    dados.forEach(function (d, k) {
+      var cx = L + larg * (k + 0.5), bw = Math.min(30, larg * 0.32);
+      [[d.gT, '#9AA8BA', -1], [d.gM, '#004438', 1]].forEach(function (b) {
+        if (b[0] == null) return;
+        var x0 = cx + (b[2] < 0 ? -bw - 2 : 2), y0 = y(0), y1 = y(b[0]), topo = Math.min(y0, y1), alt = Math.abs(y1 - y0);
+        barras += '<rect x="' + x0.toFixed(1) + '" y="' + topo.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(alt, 1).toFixed(1) + '" rx="3" fill="' + b[1] + '"' + (d.parcial ? ' fill-opacity=".6"' : '') + '><title>' + d.a + ': ' + sinal(b[0]) + '</title></rect>' +
+          '<text x="' + (x0 + bw / 2).toFixed(1) + '" y="' + (b[0] >= 0 ? topo - 4 : topo + alt + 12).toFixed(1) + '" text-anchor="middle" style="font-size:11px;fill:#16211C;font-weight:600">' + (b[0] > 0 ? '+' : '') + num(b[0], 1) + '</text>';
+      });
+      rot += '<text x="' + cx.toFixed(1) + '" y="' + (H - 30) + '" text-anchor="middle" style="font-size:12px;fill:#16211C;font-weight:700">' + d.a + (d.parte ? '*' : '') + '</text>' +
+        '<text x="' + cx.toFixed(1) + '" y="' + (H - 12) + '" text-anchor="middle" style="font-size:11px">' + (d.som != null ? 'SOM ' + num(d.som, 1) + '%' : '—') + '</text>';
+    });
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.innerHTML = g + barras + rot;
+  }
   function evolucao() {
     var us = unSel(), todos = mesesSap().filter(function (m) { return mktP(m, 'rev'); });
     /* 1) SOM mês a mês por unidade */
@@ -468,6 +504,7 @@
     }
     var anos = {}, linhas = [];
     todos.forEach(function (m) { (anos[m.slice(0, 4)] = anos[m.slice(0, 4)] || []).push(m); });
+    graficoAno(anos, us);
     Object.keys(anos).sort().reverse().forEach(function (a) {
       var ms = anos[a], pv = ms.some(function (m) { return ehPrevia(m) || sapParcial(m); });
       linhas.push(linhaEvo('<b>' + a + '</b> <small class="falta">' + mesLbl(ms[0]).slice(0, 3) + (ms.length > 1 ? '–' + mesLbl(ms[ms.length - 1]).slice(0, 3) : '') + '</small>' + (pv ? '<span class="parc">PRÉVIA</span>' : ''), ms, 'total ano'));
