@@ -229,6 +229,9 @@
     return t;
   }
   function lista(u) { return ((D.raio.unidades[u] || {}).postos || []).filter(function (p) { return !p.fora_do_cadastro; }); }
+  /* unidades que compraram em algum dos meses: a área de uma unidade sem compra (a AS antes de 2026, p.ex.) não entra
+     no SAM da rede — senão os concorrentes dela diluem o SOM sem que haja volume nosso do outro lado */
+  function ativas(ms, uu) { return uu.filter(function (u) { return ms.some(function (m) { return nos(m, [u]) > 0; }); }); }
   function uniao(uu) { var vis = {}, r = []; uu.forEach(function (u) { lista(u).forEach(function (p) { if (!vis[p.cnpj]) { vis[p.cnpj] = 1; r.push(p); } }); }); return r; }
   function conc(ms, ps) { var s = 0; for (var i = 0; i < ms.length; i++) for (var j = 0; j < ps.length; j++) { var a = estPosto(ms[i], ps[j]); if (a == null) return null; s += a; } return s; }
   /* SAM e SOM (média por mês) das unidades uu contra os concorrentes ps; só meses em que alguma delas comprou */
@@ -240,10 +243,10 @@
   }
   /* SOM da seleção e a variação contra o ano anterior nas MESMAS unidades (unidade nova não infla a conta) */
   function somSel(meses, uu) {
-    var a = calc(meses, uu, uniao(uu)); if (!a) return null;
+    var a = calc(meses, uu, uniao(ativas(meses, uu))); if (!a) return null;
     var uB = uu.filter(function (u) { var x = calc(meses, [u], lista(u)); return x && calc(x.ms.map(anoAnt), [u], lista(u)); });
-    var aV = uB.length === uu.length ? a : uB.length ? calc(meses, uB, uniao(uB)) : null;
-    var b = aV ? calc(aV.ms.map(anoAnt), uB, uniao(uB)) : null;
+    var aV = uB.length === uu.length ? a : uB.length ? calc(meses, uB, uniao(ativas(meses, uB))) : null;
+    var b = aV ? calc(aV.ms.map(anoAnt), uB, uniao(ativas(aV.ms.map(anoAnt), uB))) : null;
     if (b && aV && b.n !== aV.n) b = null;
     return { a: a, aV: aV, b: b, uB: uB, dif: aV && b ? aV.som - b.som : null };
   }
@@ -319,7 +322,7 @@
       h += card('SAM', 'nossas áreas', '—', temRaio() ? 'Sem compras no período.' : 'Sem lista de concorrentes.');
       h += card('SOM', 'nossa fatia', '—', '');
     } else {
-      var nConc = uniao(us).length, samA = r.temBase ? calc(r.base, us, uniao(us)) : null, gSam = samA && samA.n === S.a.n ? cresc(samA.sam, S.a.sam) : null;
+      var nConc = uniao(ativas(r.meses, us)).length, samA = r.temBase ? calc(r.base, us, uniao(ativas(r.base, us))) : null, gSam = samA && samA.n === S.a.n ? cresc(samA.sam, S.a.sam) : null;
       h += card('SAM', us.length > 1 ? 'nossas áreas' : 'área do ' + esc(nomes(us)), num(noPer(S.a, S.a.sam), 0) + '<small>' + uniVol() + '</small>',
         'Nós + ' + nConc + ' concorrentes',
         delta(gSam, sinal(gSam) + ' vs ' + baseTxt));
@@ -394,7 +397,7 @@
     var linhas = us.filter(function (u) { return R.unidades[u]; }).map(linha);
     if (us.length > 1) {
       var S = somSel(meses, us), so = S && S.uB.length && S.uB.length < us.length;
-      linhas.push('<tr class="total"><td><b>' + (todasUn() ? 'Rede' : 'Seleção') + '</b><br><small class="falta">' + uniao(us).length + ' concorrentes</small></td><td class="num">' + (S ? num(noPer(S.a, S.a.sam), 0) : traco()) + '</td><td class="num mo">' + (S ? num(noPer(S.a, S.a.nos), 0) : traco()) + '</td><td class="num"><b>' + (S ? pct(S.a.som, 1) : '—') + '</b></td><td class="num mo">' + (S && S.b ? pct(S.b.som, 1) + (so ? '<br><small class="falta">só ' + esc(nomes(S.uB)) + '</small>' : '') : traco()) + '</td><td class="num">' + (S ? fmtDif(S.dif) : traco()) + '</td><td class="num mo">' + (redeB ? '<b>' + num(redeV / redeB, 1) + '</b><br><small>' + vsRS(redeV / redeB, rsG) + '</small>' : traco()) + '</td></tr>');
+      linhas.push('<tr class="total"><td><b>' + (todasUn() ? 'Rede' : 'Seleção') + '</b><br><small class="falta">' + uniao(ativas(meses, us)).length + ' concorrentes</small></td><td class="num">' + (S ? num(noPer(S.a, S.a.sam), 0) : traco()) + '</td><td class="num mo">' + (S ? num(noPer(S.a, S.a.nos), 0) : traco()) + '</td><td class="num"><b>' + (S ? pct(S.a.som, 1) : '—') + '</b></td><td class="num mo">' + (S && S.b ? pct(S.b.som, 1) + (so ? '<br><small class="falta">só ' + esc(nomes(S.uB)) + '</small>' : '') : traco()) + '</td><td class="num">' + (S ? fmtDif(S.dif) : traco()) + '</td><td class="num mo">' + (redeB ? '<b>' + num(redeV / redeB, 1) + '</b><br><small>' + vsRS(redeV / redeB, rsG) + '</small>' : traco()) + '</td></tr>');
       if (redeB) linhas[linhas.length - 1] = linhas[linhas.length - 1].replace('</small></td>', '</small><small class="so-cel lb"><br><b>' + num(redeV / redeB, 1) + '</b> mil L/bico · ' + vsRS(redeV / redeB, rsG) + '</small></td>');
     }
     t.querySelector('tbody').innerHTML = meses.length ? linhas.join('') : '<tr><td colspan="7" class="falta">Sem mercado e compras para ' + esc(perLbl(st.mes)) + '.</td></tr>';
@@ -446,7 +449,7 @@
       var tamA = base.every(function (b) { return mktReal(b, 'rev'); }) ? tamDe(base) : null, nA = base.every(sapMes) ? nosDe(base, us) : null;
       var mesmas = nA != null ? us.filter(function (u) { return nosDe(base, [u]) > 0 && nosDe(ms, [u]) > 0; }) : [];
       var gM = mesmas.length ? cresc(nosDe(base, mesmas), nosDe(ms, mesmas)) : null;
-      var som = temRaio() ? calc(ms, us, uniao(us)) : null;
+      var som = temRaio() ? calc(ms, us, uniao(ativas(ms, us))) : null;
       dados.push({ a: a, parcial: ms.some(function (m) { return ehPrevia(m) || sapParcial(m); }), parte: ms.length < 12, gT: cresc(tamA, tam), gM: gM, som: som ? som.som : null });
     });
     el('n-ano').textContent = 'Crescimento contra o ano anterior (' + (todasUn() ? 'unidades que já existiam' : 'seleção') + ') e SOM de cada ano.';
@@ -482,7 +485,7 @@
       if (us.length > 1) series.push({ k: 'rede', cor: '#16211C', nome: todasUn() ? 'Rede' : 'Seleção', traco: true, grossa: true });
       pts = todos.map(function (m) {
         var v = {}; us.forEach(function (u) { var c = calc([m], [u], lista(u)); v[u] = c ? c.som : null; });
-        if (us.length > 1) { var c2 = calc([m], us, uniao(us)); v.rede = c2 ? c2.som : null; }
+        if (us.length > 1) { var c2 = calc([m], us, uniao(ativas([m], us))); v.rede = c2 ? c2.som : null; }
         return { m: m, v: v, previa: ehPrevia(m) || sapParcial(m) };
       }).filter(function (p) { return series.some(function (s) { return p.v[s.k] != null; }); });
     }
@@ -499,7 +502,7 @@
       var tamA = base.every(function (b) { return mktReal(b, 'rev'); }) ? tamDe(base) : null, nA = base.every(sapMes) ? nosDe(base, us) : null;
       var mesmas = nA != null ? us.filter(function (u) { return nosDe(base, [u]) > 0 && nosDe(ms, [u]) > 0; }) : [];
       var gT = cresc(tamA, tam), gN = cresc(nA, n), gM = mesmas.length ? cresc(nosDe(base, mesmas), nosDe(ms, mesmas)) : null;
-      var som = temRaio() ? calc(ms, us, uniao(us)) : null;
+      var som = temRaio() ? calc(ms, us, uniao(ativas(ms, us))) : null;
       return '<tr' + (clsTr ? ' class="' + clsTr + '"' : '') + '><td>' + rot + '</td><td class="num mo">' + (tam ? num(tam / 1000, 1) : traco()) + '</td><td class="num">' + fmtVar(gT) + '</td><td class="num">' + (n != null ? num(n, 0) : traco()) + '</td><td class="num">' + fmtVar(gN) + '</td><td class="num mo">' + fmtVar(gM) + '</td><td class="num">' + fmtDif(gM != null && gT != null ? gM - gT : null) + '</td><td class="num">' + (tam && n != null ? pct(n / tam * 100, 2) : traco()) + '</td><td class="num mo">' + (som ? pct(som.som, 1) : traco()) + '</td></tr>';
     }
     var anos = {}, linhas = [];

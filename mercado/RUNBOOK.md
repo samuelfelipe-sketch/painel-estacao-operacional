@@ -145,6 +145,7 @@ segmento saíram).
   (`mercado/estimativas.enc.json`, cifrado) usa fator = informado ÷ régua no mês `ref`.
   Conferida nas nossas unidades, a régua erra perto de 10% no total por posto.
 - **SOM** = nossas compras ÷ SAM. Sem meta definida (o Samuel avalia o painel antes).
+  O SAM da rede/seleção só junta a área das unidades que **compraram no período** (`ativas()`): a AS não entra antes de jul/2026 (28/11/2026 — antes os concorrentes dela baixavam o SOM da rede abaixo do de SF e PS).
 - **Prévia** (regra de 16/11/2026, substitui a de 15/11): mês sem ANP = o MESMO MÊS DO ANO
   PASSADO × o crescimento médio dos últimos 12 meses fechados (soma dos 12 ÷ soma dos mesmos 12
   um ano antes), por segmento e grupo de produto (`tendencia()` e `mktP` no `mercado.js`, até 6
